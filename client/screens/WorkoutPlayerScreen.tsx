@@ -15,13 +15,13 @@ import Animated, {
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { ProgressRing } from '@/components/ProgressRing';
+import { GrowingCircle } from '@/components/GrowingCircle';
 import { FormTipsSheet } from '@/components/FormTipsSheet';
 import { useTheme } from '@/hooks/useTheme';
 import { Spacing, BorderRadius, Typography } from '@/constants/theme';
 import { DayTemplate, Segment } from '@/data/workoutProgram';
 import { WorkoutEngine, WorkoutState, WorkoutPhase } from '@/lib/workoutEngine';
-import { hapticsManager } from '@/lib/hapticsManager';
+import { hapticsManager, HapticPulseController } from '@/lib/hapticsManager';
 import { storage, UserSettings, defaultSettings } from '@/lib/storage';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
@@ -45,8 +45,10 @@ export default function WorkoutPlayerScreen() {
   const [showTips, setShowTips] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [totalSeconds, setTotalSeconds] = useState(0);
+  const [phaseDuration, setPhaseDuration] = useState(3);
 
   const engineRef = useRef<WorkoutEngine | null>(null);
+  const hapticPulseRef = useRef<HapticPulseController>(new HapticPulseController());
   const appStateRef = useRef(AppState.currentState);
   const startTimeRef = useRef<Date | null>(null);
 
@@ -63,6 +65,12 @@ export default function WorkoutPlayerScreen() {
   }, [loadSettings]);
 
   useEffect(() => {
+    return () => {
+      hapticPulseRef.current.stop();
+    };
+  }, []);
+
+  useEffect(() => {
     startTimeRef.current = new Date();
     
     const engine = new WorkoutEngine(workout, {
@@ -75,19 +83,29 @@ export default function WorkoutPlayerScreen() {
       onPhaseChange: async (newPhase, segment) => {
         setCurrentPhase(newPhase);
         
+        const duration = newPhase === 'squeeze' 
+          ? segment.squeezeSeconds 
+          : segment.restSeconds;
+        setPhaseDuration(duration);
+        
         phaseScale.value = 0.8;
         phaseOpacity.value = 0.5;
         phaseScale.value = withSpring(1, { damping: 12, stiffness: 200 });
         phaseOpacity.value = withTiming(1, { duration: 200 });
         
-        await hapticsManager.triggerSegmentTypeHaptic(
-          segment.type,
-          newPhase,
-          settings
-        );
+        if (newPhase === 'squeeze') {
+          hapticPulseRef.current.start(segment.type, settings);
+        } else {
+          hapticPulseRef.current.stop();
+        }
       },
       onSegmentChange: (segment) => {
         setCurrentSegment(segment);
+        setPhaseDuration(segment.squeezeSeconds);
+        
+        if (hapticPulseRef.current.isActive()) {
+          hapticPulseRef.current.updateSegmentType(segment.type);
+        }
       },
       onSetChange: (current, total) => {
         setSetInfo({ current, total });
@@ -96,6 +114,7 @@ export default function WorkoutPlayerScreen() {
         setRepInfo({ current, total });
       },
       onComplete: async (seconds) => {
+        hapticPulseRef.current.stop();
         setTotalSeconds(seconds);
         setIsComplete(true);
         await hapticsManager.triggerComplete(settings);
@@ -114,9 +133,16 @@ export default function WorkoutPlayerScreen() {
 
     engineRef.current = engine;
     setCurrentSegment(engine.getCurrentSegment());
+    
+    const firstSegment = engine.getCurrentSegment();
+    if (firstSegment) {
+      setPhaseDuration(firstSegment.squeezeSeconds);
+    }
+    
     engine.start();
 
     return () => {
+      hapticPulseRef.current.stop();
       engine.destroy();
     };
   }, [workout, settings, phaseScale, phaseOpacity]);
@@ -128,6 +154,12 @@ export default function WorkoutPlayerScreen() {
         nextAppState === 'active'
       ) {
         engineRef.current?.handleAppForeground();
+        
+        if (currentPhase === 'squeeze' && currentSegment && workoutState?.isRunning && !workoutState?.isPaused) {
+          hapticPulseRef.current.start(currentSegment.type, settings);
+        }
+      } else if (nextAppState.match(/inactive|background/)) {
+        hapticPulseRef.current.stop();
       }
       appStateRef.current = nextAppState;
     });
@@ -135,7 +167,7 @@ export default function WorkoutPlayerScreen() {
     return () => {
       subscription.remove();
     };
-  }, []);
+  }, [currentPhase, currentSegment, settings, workoutState?.isRunning, workoutState?.isPaused]);
 
   const handlePauseResume = async () => {
     if (!engineRef.current || !workoutState) return;
@@ -144,24 +176,31 @@ export default function WorkoutPlayerScreen() {
     
     if (workoutState.isPaused) {
       engineRef.current.resume();
+      if (currentPhase === 'squeeze' && currentSegment) {
+        hapticPulseRef.current.start(currentSegment.type, settings);
+      }
     } else {
       engineRef.current.pause();
+      hapticPulseRef.current.stop();
     }
   };
 
   const handleSkip = async () => {
     if (!engineRef.current) return;
     await hapticsManager.triggerSelection();
+    hapticPulseRef.current.stop();
     engineRef.current.skipSegment();
   };
 
   const handleEnd = async () => {
     if (!engineRef.current) return;
     await hapticsManager.triggerWarning();
+    hapticPulseRef.current.stop();
     engineRef.current.end();
   };
 
   const handleClose = () => {
+    hapticPulseRef.current.stop();
     navigation.goBack();
   };
 
@@ -173,14 +212,6 @@ export default function WorkoutPlayerScreen() {
   const phaseColor = currentPhase === 'squeeze' ? theme.squeeze : theme.rest;
   const ringProgress =
     progress.total > 0 ? progress.current / progress.total : 0;
-  const phaseProgress =
-    workoutState && currentSegment
-      ? 1 -
-        workoutState.secondsRemaining /
-          (currentPhase === 'squeeze'
-            ? currentSegment.squeezeSeconds
-            : currentSegment.restSeconds)
-      : 0;
 
   if (isComplete) {
     return (
@@ -293,18 +324,18 @@ export default function WorkoutPlayerScreen() {
             </ThemedText>
           </Animated.View>
 
-          <View style={styles.ringContainer}>
-            <ProgressRing
-              progress={phaseProgress}
-              size={240}
-              strokeWidth={12}
-              color={phaseColor}
-              backgroundColor={theme.backgroundDefault}
+          <View style={styles.circleContainer}>
+            <GrowingCircle
+              phase={currentPhase}
+              segmentType={currentSegment?.type || 'slowHolds'}
+              durationSeconds={phaseDuration}
+              isActive={workoutState?.isRunning && !workoutState?.isPaused}
+              size={260}
             >
-              <ThemedText style={[styles.countdown, { color: theme.text }]}>
+              <ThemedText style={[styles.countdown, { color: '#FFFFFF' }]}>
                 {workoutState?.secondsRemaining || 0}
               </ThemedText>
-            </ProgressRing>
+            </GrowingCircle>
           </View>
 
           <View style={styles.segmentInfo}>
@@ -397,11 +428,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: Spacing['2xl'],
   },
-  ringContainer: {
+  circleContainer: {
     marginBottom: Spacing['2xl'],
   },
   countdown: {
     ...Typography.countdown,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   segmentInfo: {
     alignItems: 'center',
