@@ -20,71 +20,100 @@ const getImpactStyle = (
   }
 };
 
+const getTapInterval = (segmentType: SegmentType, intensity: HapticIntensity): number => {
+  const baseInterval = {
+    slowHolds: 600,
+    quickFlicks: 150,
+    elevator: 400,
+    reverse: 400,
+    breathing: 800,
+  }[segmentType];
+
+  const intensityMultiplier = {
+    light: 1.3,
+    medium: 1.0,
+    heavy: 0.7,
+  }[intensity];
+
+  return Math.round(baseInterval * intensityMultiplier);
+};
+
+const getHapticStyle = (
+  segmentType: SegmentType,
+  intensity: HapticIntensity
+): Haptics.ImpactFeedbackStyle => {
+  if (segmentType === 'quickFlicks') {
+    return Haptics.ImpactFeedbackStyle.Light;
+  }
+  
+  if (segmentType === 'breathing') {
+    return intensity === 'heavy' 
+      ? Haptics.ImpactFeedbackStyle.Medium 
+      : Haptics.ImpactFeedbackStyle.Light;
+  }
+
+  return getImpactStyle(intensity);
+};
+
+export class HapticPulseController {
+  private intervalId: NodeJS.Timeout | null = null;
+  private isRunning = false;
+  private settings: UserSettings | null = null;
+  private segmentType: SegmentType = 'slowHolds';
+
+  start(segmentType: SegmentType, settings: UserSettings): void {
+    if (!settings.hapticsEnabled || !hapticsManager.isSupported()) {
+      return;
+    }
+
+    this.stop();
+    
+    this.settings = settings;
+    this.segmentType = segmentType;
+    this.isRunning = true;
+
+    const interval = getTapInterval(segmentType, settings.hapticIntensity);
+    const style = getHapticStyle(segmentType, settings.hapticIntensity);
+
+    this.triggerPulse(style);
+
+    this.intervalId = setInterval(() => {
+      if (this.isRunning) {
+        this.triggerPulse(style);
+      }
+    }, interval);
+  }
+
+  private async triggerPulse(style: Haptics.ImpactFeedbackStyle): Promise<void> {
+    try {
+      await Haptics.impactAsync(style);
+    } catch (error) {
+      console.warn('Haptics pulse error:', error);
+    }
+  }
+
+  stop(): void {
+    this.isRunning = false;
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
+  }
+
+  updateSegmentType(segmentType: SegmentType): void {
+    if (this.isRunning && this.settings) {
+      this.start(segmentType, this.settings);
+    }
+  }
+
+  isActive(): boolean {
+    return this.isRunning;
+  }
+}
+
 export const hapticsManager = {
   isSupported(): boolean {
     return Platform.OS === 'ios' || Platform.OS === 'android';
-  },
-
-  async triggerSqueeze(settings: UserSettings): Promise<void> {
-    if (!settings.hapticsEnabled || !this.isSupported()) return;
-
-    try {
-      await Haptics.impactAsync(getImpactStyle(settings.hapticIntensity));
-      
-      if (settings.hapticIntensity === 'heavy') {
-        await new Promise(resolve => setTimeout(resolve, 50));
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      }
-    } catch (error) {
-      console.warn('Haptics error:', error);
-    }
-  },
-
-  async triggerRest(settings: UserSettings): Promise<void> {
-    if (!settings.hapticsEnabled || !this.isSupported()) return;
-    if (settings.restCueStyle === 'none') return;
-
-    try {
-      if (settings.restCueStyle === 'light') {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      } else {
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }
-    } catch (error) {
-      console.warn('Haptics error:', error);
-    }
-  },
-
-  async triggerQuickFlick(settings: UserSettings): Promise<void> {
-    if (!settings.hapticsEnabled || !this.isSupported()) return;
-
-    try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch (error) {
-      console.warn('Haptics error:', error);
-    }
-  },
-
-  async triggerElevatorStep(
-    settings: UserSettings,
-    step: number,
-    totalSteps: number
-  ): Promise<void> {
-    if (!settings.hapticsEnabled || !this.isSupported()) return;
-
-    try {
-      const intensity = step / totalSteps;
-      
-      if (intensity <= 0.33) {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      } else if (intensity <= 0.66) {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      } else {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      }
-    } catch (error) {
-      console.warn('Haptics error:', error);
-    }
   },
 
   async triggerComplete(settings: UserSettings): Promise<void> {
@@ -96,34 +125,6 @@ export const hapticsManager = {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
       console.warn('Haptics error:', error);
-    }
-  },
-
-  async triggerSegmentTypeHaptic(
-    segmentType: SegmentType,
-    phase: 'squeeze' | 'rest',
-    settings: UserSettings
-  ): Promise<void> {
-    if (!settings.hapticsEnabled || !this.isSupported()) return;
-
-    if (phase === 'rest') {
-      await this.triggerRest(settings);
-      return;
-    }
-
-    switch (segmentType) {
-      case 'quickFlicks':
-        await this.triggerQuickFlick(settings);
-        break;
-      case 'elevator':
-      case 'reverse':
-        await this.triggerSqueeze(settings);
-        break;
-      case 'slowHolds':
-      case 'breathing':
-      default:
-        await this.triggerSqueeze(settings);
-        break;
     }
   },
 
