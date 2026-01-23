@@ -1,13 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
   withSpring,
-  withSequence,
-  withRepeat,
-  Easing,
   cancelAnimation,
 } from 'react-native-reanimated';
 
@@ -23,38 +20,20 @@ interface GrowingCircleProps {
   children?: React.ReactNode;
 }
 
-const getAnimationConfig = (segmentType: SegmentType, durationMs: number) => {
+const getDurationMultiplier = (segmentType: SegmentType): number => {
   switch (segmentType) {
     case 'quickFlicks':
-      return {
-        easing: Easing.out(Easing.quad),
-        duration: durationMs,
-      };
+      return 0.8;
     case 'slowHolds':
-      return {
-        easing: Easing.inOut(Easing.sine),
-        duration: durationMs,
-      };
+      return 1.0;
     case 'elevator':
-      return {
-        easing: Easing.steps(4, true),
-        duration: durationMs,
-      };
+      return 1.0;
     case 'reverse':
-      return {
-        easing: Easing.steps(4, true),
-        duration: durationMs,
-      };
+      return 1.0;
     case 'breathing':
-      return {
-        easing: Easing.inOut(Easing.ease),
-        duration: durationMs,
-      };
+      return 1.0;
     default:
-      return {
-        easing: Easing.linear,
-        duration: durationMs,
-      };
+      return 1.0;
   }
 };
 
@@ -69,31 +48,28 @@ export function GrowingCircle({
   const { theme } = useTheme();
   const scale = useSharedValue(0.3);
   const opacity = useSharedValue(1);
+  const phaseKeyRef = useRef(`${phase}-${Date.now()}`);
 
   const minSize = size * 0.3;
   const maxSize = size;
 
   useEffect(() => {
+    phaseKeyRef.current = `${phase}-${Date.now()}`;
+    
     if (!isActive) {
       cancelAnimation(scale);
       return;
     }
 
-    const durationMs = durationSeconds * 1000;
-    const config = getAnimationConfig(segmentType, durationMs);
+    const multiplier = getDurationMultiplier(segmentType);
+    const durationMs = durationSeconds * 1000 * multiplier;
 
     if (phase === 'squeeze') {
       scale.value = 0.3;
-      scale.value = withTiming(1, {
-        duration: config.duration,
-        easing: config.easing,
-      });
+      scale.value = withTiming(1, { duration: durationMs });
     } else {
       scale.value = 1;
-      scale.value = withTiming(0.3, {
-        duration: config.duration,
-        easing: Easing.out(Easing.ease),
-      });
+      scale.value = withTiming(0.3, { duration: durationMs });
     }
   }, [phase, segmentType, durationSeconds, isActive, scale]);
 
@@ -158,11 +134,6 @@ const styles = StyleSheet.create({
   circle: {
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
   },
   innerContent: {
     justifyContent: 'center',
