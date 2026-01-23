@@ -1,8 +1,9 @@
-import React from "react";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import HomeScreen from "@/screens/HomeScreen";
-import { HeaderTitle } from "@/components/HeaderTitle";
-import { useScreenOptions } from "@/hooks/useScreenOptions";
+import React from 'react';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
+import HomeScreen from '@/screens/HomeScreen';
+import { HeaderTitle } from '@/components/HeaderTitle';
+import { useScreenOptions } from '@/hooks/useScreenOptions';
 
 export type HomeStackParamList = {
   Home: undefined;
@@ -19,7 +20,7 @@ export default function HomeStackNavigator() {
         name="Home"
         component={HomeScreen}
         options={{
-          headerTitle: () => <HeaderTitle title="My App" />,
+          headerTitle: () => <HeaderTitle title="PulseKegel" />,
         }}
       />
     </Stack.Navigator>
