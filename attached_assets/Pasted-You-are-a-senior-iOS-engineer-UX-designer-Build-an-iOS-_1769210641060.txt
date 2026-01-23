@@ -1,0 +1,129 @@
+You are a senior iOS engineer + UX designer. Build an iOS-only app in SwiftUI that runs on iPhone (portrait first) and provides daily pelvic-floor (Kegel) workouts, with real-time visual cues AND vibration/haptics indicating when to SQUEEZE vs REST. I will develop and run this in Replit, so produce a complete Xcode-style Swift Package / iOS project structure that can be edited in Replit, with clear build/run steps and minimal external dependencies.
+
+APP (working name): PulseKegel iOS
+
+CORE FEATURES (MVP)
+1) Daily Workout
+- The app selects “Today’s Workout” from a built-in 12-week program (phases and progression).
+- User can start/pause/resume/skip segment/end workout.
+- Workout guidance uses:
+  - Visual: big “SQUEEZE” / “REST” state + countdown + progress ring
+  - Haptics: distinct patterns for squeeze vs rest and for quick flicks.
+
+2) Tracking
+- Persist completion locally (no login).
+- Track streak, last completed date, total sessions, total minutes.
+- Show a simple calendar view of completed days.
+
+3) Settings
+- Haptics on/off
+- Haptic intensity (where supported)
+- Rest cue style: off / light tap / full pattern
+- Large text + high contrast toggle
+- Optional “Recovery Mode” toggle (reduces volume 50% + adds relaxation segment)
+
+TECH REQUIREMENTS
+- Swift 5.9+ (or latest stable supported by Replit toolchain)
+- SwiftUI UI layer
+- Local persistence:
+  - Prefer SwiftData if available; otherwise CoreData; otherwise file-based JSON in Application Support.
+- Haptics:
+  - Use CoreHaptics when available.
+  - Fallback to UIFeedbackGenerator (UINotificationFeedbackGenerator / UIImpactFeedbackGenerator) on devices that don’t support advanced patterns.
+- Offline-first. No network calls required.
+
+WORKOUT MODEL
+- Program -> Weeks -> Day templates (e.g., Mon/Wed/Fri strength, Tue/Thu speed)
+- A Workout consists of ordered Segments.
+- Segment fields:
+  - id, name, instructions
+  - sets, repsPerSet
+  - squeezeSeconds, restSeconds
+  - type: slowHolds | quickFlicks | elevator | reverse | breathing
+  - For elevator: rampSteps = [0.25, 0.5, 0.75, 1.0] with 1s each (configurable)
+- Provide a default 12-week plan:
+  - Weeks 1–2 control
+  - Weeks 3–6 strength/endurance
+  - Weeks 7–10 power/coordination
+  - Weeks 11–12 maintenance
+
+WORKOUT ENGINE (CRITICAL)
+- Implement a deterministic state machine:
+  - workout -> segmentIndex -> setIndex -> repIndex -> phase (squeeze/rest) -> tick remaining seconds
+- Timer accuracy:
+  - Use a time-base approach (Date timestamps) not drift-prone intervals.
+  - Must survive background/foreground:
+    - On background: store the current state and phase start time.
+    - On foreground: recompute remaining time; continue or auto-advance if time elapsed.
+- Haptic triggers MUST fire precisely at transitions:
+  - Start SQUEEZE
+  - Start REST
+  - For quick flicks: short tap each squeeze.
+
+HAPTIC DESIGN
+- SQUEEZE:
+  - Strong “start” pulse (CoreHaptics pattern or heavy impact)
+- REST:
+  - Light tap OR none (user setting)
+- QUICK FLICKS:
+  - Brief tap each 1s squeeze
+- SETTINGS:
+  - intensity: light/medium/heavy (map to patterns)
+  - rest cues: none/light/normal
+
+VISUAL DESIGN
+- Minimal, clean, one-handed.
+- Workout Player screen:
+  - Huge center label: SQUEEZE/REST
+  - Big countdown number
+  - Circular progress ring around countdown
+  - Segment name + “Set X of Y” + “Rep X of N”
+  - Controls: Pause/Resume, Next, End
+- Home screen:
+  - “Start Today’s Workout”
+  - Shows week/phase, estimated duration, streak, last completed
+  - Recovery mode toggle
+- Progress screen:
+  - Monthly calendar grid (simple) with completed days marked
+  - Stats summary (streak, sessions, minutes)
+- Settings screen:
+  - toggles and pickers for haptics + accessibility
+- Accessibility:
+  - Support Dynamic Type
+  - High contrast mode
+  - Haptic-only is not allowed: must always have strong visual cue too.
+
+SAFETY / ONBOARDING
+- One-time onboarding modal with:
+  - Not medical advice
+  - Stop if pain, urinary urgency, pelvic pressure occurs
+  - Don’t regularly practice by stopping urine midstream
+- “Form Tips” sheet accessible from player:
+  - breathe normally
+  - don’t squeeze glutes/abs
+  - full relaxation matters
+
+DELIVERABLES
+- A complete iOS SwiftUI codebase with:
+  - Models (Program, Workout, Segment, Session)
+  - Persistence layer
+  - WorkoutEngine (state machine)
+  - HapticsManager (CoreHaptics + fallback)
+  - Views: HomeView, PlayerView, ProgressView, SettingsView, OnboardingView
+- Include sample program data in-code or as local JSON file bundled with app.
+- Include a README with:
+  - How to run in Replit
+  - Any required Replit template or build command
+  - Notes about CoreHaptics device support
+
+IMPLEMENTATION ORDER
+1) Create models + sample 12-week program data
+2) Build WorkoutEngine with unit tests for transitions and streak logic
+3) Build PlayerView wired to engine + haptics
+4) Add persistence + Home/Progress/Settings
+5) Add onboarding + form tips + recovery mode
+
+OUTPUT FORMAT
+- Print the full directory structure first.
+- Then provide complete code files (each file labeled with its path).
+- Then provide README with steps to run in Replit.
