@@ -1,10 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
   withSpring,
+  withSequence,
+  withDelay,
   cancelAnimation,
   Easing,
 } from 'react-native-reanimated';
@@ -19,6 +21,7 @@ interface PowerBarProps {
   isActive: boolean;
   height: number;
   width?: number;
+  rampSteps?: number[];
 }
 
 const SEGMENT_COUNT = 15;
@@ -109,9 +112,11 @@ export function PowerBar({
   isActive,
   height,
   width = 140,
+  rampSteps,
 }: PowerBarProps) {
   const progress = useSharedValue(0);
   const segmentHeight = (height - (SEGMENT_COUNT - 1) * SEGMENT_GAP - 32) / SEGMENT_COUNT;
+  const phaseKeyRef = useRef(0);
 
   useEffect(() => {
     if (!isActive) {
@@ -119,13 +124,76 @@ export function PowerBar({
       return;
     }
 
+    phaseKeyRef.current += 1;
+
     if (phase === 'squeeze') {
       const durationMs = durationSeconds * 1000;
       progress.value = 0;
-      progress.value = withTiming(1, { 
-        duration: durationMs,
-        easing: Easing.linear,
-      });
+
+      switch (segmentType) {
+        case 'quickFlicks':
+          progress.value = withTiming(1, { 
+            duration: 100,
+            easing: Easing.out(Easing.cubic),
+          });
+          break;
+
+        case 'elevator':
+          if (rampSteps && rampSteps.length > 0) {
+            const stepDuration = durationMs / rampSteps.length;
+            let animation = withTiming(rampSteps[0], { 
+              duration: stepDuration * 0.3,
+              easing: Easing.out(Easing.cubic),
+            });
+            
+            for (let i = 1; i < rampSteps.length; i++) {
+              animation = withSequence(
+                animation,
+                withDelay(
+                  stepDuration * 0.7,
+                  withTiming(rampSteps[i], { 
+                    duration: stepDuration * 0.3,
+                    easing: Easing.out(Easing.cubic),
+                  })
+                )
+              );
+            }
+            progress.value = animation;
+          } else {
+            progress.value = withTiming(1, { 
+              duration: durationMs,
+              easing: Easing.linear,
+            });
+          }
+          break;
+
+        case 'contractRelax':
+          progress.value = withTiming(1, { 
+            duration: Math.min(durationMs * 0.4, 400),
+            easing: Easing.out(Easing.cubic),
+          });
+          break;
+
+        case 'breathing':
+          progress.value = withTiming(0.6, { 
+            duration: durationMs,
+            easing: Easing.inOut(Easing.sine),
+          });
+          break;
+
+        case 'blockRest':
+          progress.value = 0;
+          break;
+
+        case 'reverse':
+        case 'slowHolds':
+        default:
+          progress.value = withTiming(1, { 
+            duration: durationMs,
+            easing: Easing.linear,
+          });
+          break;
+      }
     } else {
       cancelAnimation(progress);
       progress.value = withSpring(0, {
@@ -134,7 +202,7 @@ export function PowerBar({
         mass: 0.3,
       });
     }
-  }, [phase, durationSeconds, isActive, progress]);
+  }, [phase, segmentType, durationSeconds, isActive, progress, rampSteps]);
 
   const segments = [];
   for (let i = SEGMENT_COUNT - 1; i >= 0; i--) {
@@ -163,7 +231,6 @@ export function PowerBar({
             <View style={styles.segmentsContainer}>
               {segments}
             </View>
-            <View style={styles.scanlines} />
           </LinearGradient>
         </View>
       </LinearGradient>
@@ -207,14 +274,5 @@ const styles = StyleSheet.create({
   },
   segment: {
     alignSelf: 'center',
-  },
-  scanlines: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    opacity: 0.05,
-    backgroundColor: 'transparent',
   },
 });

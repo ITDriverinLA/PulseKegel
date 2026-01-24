@@ -409,6 +409,7 @@ export default function WorkoutPlayerScreen() {
               isActive={workoutState?.isRunning && !workoutState?.isPaused}
               height={300}
               width={120}
+              rampSteps={currentSegment?.rampSteps}
             />
             <View style={styles.countdownContainer}>
               <Animated.Text style={[styles.countdown, countdownStyle]}>
