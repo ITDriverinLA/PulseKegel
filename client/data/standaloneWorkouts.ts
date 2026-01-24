@@ -142,6 +142,65 @@ export const standaloneWorkouts: StandaloneWorkout[] = [
     },
   },
   {
+    id: 'endurance',
+    name: 'Endurance',
+    description: 'Extended holds to build stamina and control',
+    icon: 'battery-charging',
+    accentColor: '#FF6B35',
+    estimatedMinutes: 7,
+    workout: {
+      id: 'standalone-endurance',
+      name: 'Endurance',
+      dayType: 'strength',
+      estimatedMinutes: 7,
+      segments: [
+        createSegment(
+          'en-warmup',
+          'Warm Up',
+          'Light squeezes to prepare',
+          1,
+          5,
+          3,
+          3,
+          'slowHolds'
+        ),
+        createBlockRest('en-rest1', 15),
+        createSegment(
+          'en-main1',
+          'Long Holds',
+          'Hold as long as you can, then fully relax',
+          2,
+          4,
+          12,
+          15,
+          'slowHolds'
+        ),
+        createBlockRest('en-rest2', 25),
+        createSegment(
+          'en-main2',
+          'Sustained Squeeze',
+          'Maintain steady pressure throughout',
+          2,
+          3,
+          15,
+          12,
+          'slowHolds'
+        ),
+        createBlockRest('en-rest3', 20),
+        createSegment(
+          'en-cooldown',
+          'Recovery Breathing',
+          'Deep breaths and complete relaxation',
+          1,
+          4,
+          5,
+          6,
+          'breathing'
+        ),
+      ],
+    },
+  },
+  {
     id: 'elevator',
     name: 'Elevator',
     description: 'Staged contractions for coordination and control',
