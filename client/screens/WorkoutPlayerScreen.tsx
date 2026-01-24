@@ -119,7 +119,7 @@ export default function WorkoutPlayerScreen() {
         phaseOpacity.value = withTiming(1, { duration: 200 });
         
         if (newPhase === 'squeeze') {
-          hapticPulseRef.current.start(segment.type, settings);
+          hapticPulseRef.current.start(segment.type, settings, segment.squeezeSeconds, segment.rampSteps);
         } else {
           hapticPulseRef.current.stop();
         }
@@ -129,7 +129,7 @@ export default function WorkoutPlayerScreen() {
         setPhaseDuration(segment.squeezeSeconds);
         
         if (hapticPulseRef.current.isActive()) {
-          hapticPulseRef.current.updateSegmentType(segment.type);
+          hapticPulseRef.current.updateSegmentType(segment.type, segment.squeezeSeconds, segment.rampSteps);
         }
       },
       onSetChange: (current, total) => {
@@ -181,7 +181,7 @@ export default function WorkoutPlayerScreen() {
         engineRef.current?.handleAppForeground();
         
         if (currentPhase === 'squeeze' && currentSegment && workoutState?.isRunning && !workoutState?.isPaused) {
-          hapticPulseRef.current.start(currentSegment.type, settings);
+          hapticPulseRef.current.start(currentSegment.type, settings, currentSegment.squeezeSeconds, currentSegment.rampSteps);
         }
       } else if (nextAppState.match(/inactive|background/)) {
         hapticPulseRef.current.stop();
@@ -202,7 +202,7 @@ export default function WorkoutPlayerScreen() {
     if (workoutState.isPaused) {
       engineRef.current.resume();
       if (currentPhase === 'squeeze' && currentSegment) {
-        hapticPulseRef.current.start(currentSegment.type, settings);
+        hapticPulseRef.current.start(currentSegment.type, settings, currentSegment.squeezeSeconds, currentSegment.rampSteps);
       }
     } else {
       engineRef.current.pause();

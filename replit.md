@@ -103,5 +103,6 @@ All data stored locally via AsyncStorage:
 
 ## User Preferences
 - Haptics: on/off, intensity (light/medium/heavy), rest cue style
+- Dynamic haptic intensity: Haptics match the power bar level (light at bottom, heavy at top)
 - Accessibility: High contrast mode, large text mode
 - Recovery Mode: 50% reduced intensity with relaxation segment

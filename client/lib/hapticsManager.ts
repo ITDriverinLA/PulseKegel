@@ -5,30 +5,15 @@ import { UserSettings } from '@/lib/storage';
 
 type HapticIntensity = 'light' | 'medium' | 'heavy';
 
-const getImpactStyle = (
-  intensity: HapticIntensity
-): Haptics.ImpactFeedbackStyle => {
-  switch (intensity) {
-    case 'light':
-      return Haptics.ImpactFeedbackStyle.Light;
-    case 'medium':
-      return Haptics.ImpactFeedbackStyle.Medium;
-    case 'heavy':
-      return Haptics.ImpactFeedbackStyle.Heavy;
-    default:
-      return Haptics.ImpactFeedbackStyle.Medium;
-  }
-};
-
 const getTapInterval = (segmentType: SegmentType, intensity: HapticIntensity): number => {
   const baseIntervalMap: Record<SegmentType, number> = {
-    slowHolds: 600,
-    quickFlicks: 150,
-    elevator: 400,
+    slowHolds: 500,
+    quickFlicks: 120,
+    elevator: 350,
     reverse: 400,
-    breathing: 800,
+    breathing: 700,
     blockRest: 0,
-    contractRelax: 350,
+    contractRelax: 300,
   };
   
   const baseInterval = baseIntervalMap[segmentType];
@@ -42,27 +27,28 @@ const getTapInterval = (segmentType: SegmentType, intensity: HapticIntensity): n
   return Math.round(baseInterval * intensityMultiplier);
 };
 
-const getHapticStyle = (
-  segmentType: SegmentType,
-  intensity: HapticIntensity
+const getProgressBasedStyle = (
+  progress: number,
+  baseIntensity: HapticIntensity
 ): Haptics.ImpactFeedbackStyle => {
-  if (segmentType === 'quickFlicks') {
+  if (progress < 0.33) {
     return Haptics.ImpactFeedbackStyle.Light;
-  }
-  
-  if (segmentType === 'breathing' || segmentType === 'blockRest') {
-    return intensity === 'heavy' 
-      ? Haptics.ImpactFeedbackStyle.Medium 
-      : Haptics.ImpactFeedbackStyle.Light;
-  }
-  
-  if (segmentType === 'contractRelax') {
-    return intensity === 'heavy'
-      ? Haptics.ImpactFeedbackStyle.Heavy
+  } else if (progress < 0.66) {
+    return baseIntensity === 'light' 
+      ? Haptics.ImpactFeedbackStyle.Light 
       : Haptics.ImpactFeedbackStyle.Medium;
+  } else {
+    switch (baseIntensity) {
+      case 'light':
+        return Haptics.ImpactFeedbackStyle.Medium;
+      case 'medium':
+        return Haptics.ImpactFeedbackStyle.Heavy;
+      case 'heavy':
+        return Haptics.ImpactFeedbackStyle.Heavy;
+      default:
+        return Haptics.ImpactFeedbackStyle.Heavy;
+    }
   }
-
-  return getImpactStyle(intensity);
 };
 
 export class HapticPulseController {
@@ -70,8 +56,16 @@ export class HapticPulseController {
   private isRunning = false;
   private settings: UserSettings | null = null;
   private segmentType: SegmentType = 'slowHolds';
+  private startTime: number = 0;
+  private durationMs: number = 0;
+  private rampSteps: number[] | undefined;
 
-  start(segmentType: SegmentType, settings: UserSettings): void {
+  start(
+    segmentType: SegmentType, 
+    settings: UserSettings, 
+    durationSeconds: number = 5,
+    rampSteps?: number[]
+  ): void {
     if (!settings.hapticsEnabled || !hapticsManager.isSupported()) {
       return;
     }
@@ -81,25 +75,63 @@ export class HapticPulseController {
     this.settings = settings;
     this.segmentType = segmentType;
     this.isRunning = true;
+    this.startTime = Date.now();
+    this.durationMs = durationSeconds * 1000;
+    this.rampSteps = rampSteps;
     
     if (segmentType === 'blockRest') {
       return;
     }
 
     const interval = getTapInterval(segmentType, settings.hapticIntensity);
-    const style = getHapticStyle(segmentType, settings.hapticIntensity);
-
-    this.triggerPulse(style);
+    
+    this.triggerProgressPulse();
 
     this.intervalId = setInterval(() => {
       if (this.isRunning) {
-        this.triggerPulse(style);
+        this.triggerProgressPulse();
       }
     }, interval);
   }
 
-  private async triggerPulse(style: Haptics.ImpactFeedbackStyle): Promise<void> {
+  private calculateProgress(): number {
+    if (this.durationMs <= 0) return 0;
+    
+    const elapsed = Date.now() - this.startTime;
+    let progress = Math.min(elapsed / this.durationMs, 1);
+
+    switch (this.segmentType) {
+      case 'quickFlicks':
+        return 1;
+
+      case 'elevator':
+        if (this.rampSteps && this.rampSteps.length > 0) {
+          const stepDuration = this.durationMs / this.rampSteps.length;
+          const currentStep = Math.floor(elapsed / stepDuration);
+          const clampedStep = Math.min(currentStep, this.rampSteps.length - 1);
+          return this.rampSteps[clampedStep];
+        }
+        return progress;
+
+      case 'contractRelax':
+        return Math.min(elapsed / (this.durationMs * 0.5), 1);
+
+      case 'breathing':
+        return progress * 0.65;
+
+      case 'reverse':
+      case 'slowHolds':
+      default:
+        return progress;
+    }
+  }
+
+  private async triggerProgressPulse(): Promise<void> {
+    if (!this.settings) return;
+    
     try {
+      const progress = this.calculateProgress();
+      const style = getProgressBasedStyle(progress, this.settings.hapticIntensity);
       await Haptics.impactAsync(style);
     } catch (error) {
       console.warn('Haptics pulse error:', error);
@@ -114,9 +146,9 @@ export class HapticPulseController {
     }
   }
 
-  updateSegmentType(segmentType: SegmentType): void {
+  updateSegmentType(segmentType: SegmentType, durationSeconds: number = 5, rampSteps?: number[]): void {
     if (this.isRunning && this.settings) {
-      this.start(segmentType, this.settings);
+      this.start(segmentType, this.settings, durationSeconds, rampSteps);
     }
   }
 
