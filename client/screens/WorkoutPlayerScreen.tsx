@@ -334,8 +334,8 @@ export default function WorkoutPlayerScreen() {
               segmentType={currentSegment?.type || 'slowHolds'}
               durationSeconds={phaseDuration}
               isActive={workoutState?.isRunning && !workoutState?.isPaused}
-              height={220}
-              width={60}
+              height={280}
+              width={100}
             />
             <ThemedText style={[styles.countdown, { color: theme.text }]}>
               {workoutState?.secondsRemaining || 0}
