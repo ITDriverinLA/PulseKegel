@@ -15,7 +15,7 @@ import Animated, {
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { GrowingCircle } from '@/components/GrowingCircle';
+import { PowerBar } from '@/components/PowerBar';
 import { FormTipsSheet } from '@/components/FormTipsSheet';
 import { useTheme } from '@/hooks/useTheme';
 import { Spacing, BorderRadius, Typography } from '@/constants/theme';
@@ -328,18 +328,18 @@ export default function WorkoutPlayerScreen() {
             </ThemedText>
           </Animated.View>
 
-          <View style={styles.circleContainer}>
-            <GrowingCircle
+          <View style={styles.powerBarContainer}>
+            <ThemedText style={[styles.countdown, { color: theme.text }]}>
+              {workoutState?.secondsRemaining || 0}
+            </ThemedText>
+            <PowerBar
               phase={currentPhase}
               segmentType={currentSegment?.type || 'slowHolds'}
               durationSeconds={phaseDuration}
               isActive={workoutState?.isRunning && !workoutState?.isPaused}
-              size={260}
-            >
-              <ThemedText style={[styles.countdown, { color: '#FFFFFF' }]}>
-                {workoutState?.secondsRemaining || 0}
-              </ThemedText>
-            </GrowingCircle>
+              width={280}
+              height={28}
+            />
           </View>
 
           <View style={styles.segmentInfo}>
@@ -432,14 +432,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: Spacing['2xl'],
   },
-  circleContainer: {
+  powerBarContainer: {
+    alignItems: 'center',
     marginBottom: Spacing['2xl'],
   },
   countdown: {
     ...Typography.countdown,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
+    marginBottom: Spacing.xl,
   },
   segmentInfo: {
     alignItems: 'center',
