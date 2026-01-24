@@ -5,12 +5,14 @@ PulseKegel is a mobile app for daily pelvic floor (Kegel) workouts with real-tim
 
 ## Key Features
 - 12-week progressive workout program with 7 exercise types (slow holds, quick flicks, elevator, reverse, breathing, block rest, contract-relax)
+- **Quick Workout Selection** - Choose individual workouts outside the 12-week program (Quick Flicks, Slow Holds, Elevator, Reverse Kegels, Contract-Relax, Full Daily, Coordination)
 - Real-time workout player with SQUEEZE/REST/BREATHE visual cues and haptic feedback
-- Growing circle animation with variable speed based on workout type
+- Vertical LED-style power bar with exercise-specific animations (fills to 100%, slower 600ms return animation)
 - Progress tracking with streak counter, calendar view, and statistics
 - Recovery mode for reduced intensity workouts
 - Customizable haptic intensity and rest cue styles
 - One-time onboarding with safety disclaimers
+- Futuristic cyberpunk UI with dark gradients and neon accents
 
 ## Workout Program Structure
 
@@ -76,6 +78,7 @@ client/
 - **ProgressTab** - Calendar view of completed days, stats
 - **SettingsTab** - Haptics, accessibility, workout preferences
 - **WorkoutPlayer** (Modal) - Full-screen workout guidance
+- **WorkoutPicker** (Modal) - Choose individual quick workouts
 
 ## Workout Engine
 The workout engine (`client/lib/workoutEngine.ts`) is a deterministic state machine that:
