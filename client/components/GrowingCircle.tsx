@@ -32,6 +32,10 @@ const getDurationMultiplier = (segmentType: SegmentType): number => {
       return 1.0;
     case 'breathing':
       return 1.0;
+    case 'blockRest':
+      return 1.0;
+    case 'contractRelax':
+      return 0.9;
     default:
       return 1.0;
   }

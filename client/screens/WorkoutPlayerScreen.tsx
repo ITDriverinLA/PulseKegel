@@ -317,10 +317,14 @@ export default function WorkoutPlayerScreen() {
             <ThemedText
               style={[
                 styles.phaseLabel,
-                { color: phaseColor },
+                { color: currentSegment?.type === 'blockRest' ? theme.rest : phaseColor },
               ]}
             >
-              {currentPhase === 'squeeze' ? 'SQUEEZE' : 'REST'}
+              {currentSegment?.type === 'blockRest' 
+                ? 'BREATHE' 
+                : currentPhase === 'squeeze' 
+                  ? 'SQUEEZE' 
+                  : 'REST'}
             </ThemedText>
           </Animated.View>
 

@@ -21,13 +21,17 @@ const getImpactStyle = (
 };
 
 const getTapInterval = (segmentType: SegmentType, intensity: HapticIntensity): number => {
-  const baseInterval = {
+  const baseIntervalMap: Record<SegmentType, number> = {
     slowHolds: 600,
     quickFlicks: 150,
     elevator: 400,
     reverse: 400,
     breathing: 800,
-  }[segmentType];
+    blockRest: 0,
+    contractRelax: 350,
+  };
+  
+  const baseInterval = baseIntervalMap[segmentType];
 
   const intensityMultiplier = {
     light: 1.3,
@@ -46,10 +50,16 @@ const getHapticStyle = (
     return Haptics.ImpactFeedbackStyle.Light;
   }
   
-  if (segmentType === 'breathing') {
+  if (segmentType === 'breathing' || segmentType === 'blockRest') {
     return intensity === 'heavy' 
       ? Haptics.ImpactFeedbackStyle.Medium 
       : Haptics.ImpactFeedbackStyle.Light;
+  }
+  
+  if (segmentType === 'contractRelax') {
+    return intensity === 'heavy'
+      ? Haptics.ImpactFeedbackStyle.Heavy
+      : Haptics.ImpactFeedbackStyle.Medium;
   }
 
   return getImpactStyle(intensity);
@@ -71,6 +81,10 @@ export class HapticPulseController {
     this.settings = settings;
     this.segmentType = segmentType;
     this.isRunning = true;
+    
+    if (segmentType === 'blockRest') {
+      return;
+    }
 
     const interval = getTapInterval(segmentType, settings.hapticIntensity);
     const style = getHapticStyle(segmentType, settings.hapticIntensity);
