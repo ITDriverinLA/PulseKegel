@@ -1,5 +1,5 @@
-import React from 'react';
-import { StyleSheet, View, Pressable } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, View, Pressable, LayoutChangeEvent } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   withSpring,
@@ -25,6 +25,7 @@ export function SegmentedControl<T extends string>({
   label,
 }: SegmentedControlProps<T>) {
   const { theme, isDark } = useTheme();
+  const [trackWidth, setTrackWidth] = useState(0);
   const selectedIndex = options.findIndex(o => o.value === value);
   const indicatorPosition = useSharedValue(selectedIndex);
 
@@ -35,14 +36,16 @@ export function SegmentedControl<T extends string>({
     });
   }, [selectedIndex, indicatorPosition]);
 
+  const optionWidth = trackWidth > 0 ? (trackWidth - 6) / options.length : 0;
+
   const indicatorStyle = useAnimatedStyle(() => {
     return {
       transform: [
         {
-          translateX: indicatorPosition.value * (100 / options.length) + '%' as any,
+          translateX: indicatorPosition.value * optionWidth,
         },
       ],
-      width: `${100 / options.length}%`,
+      width: optionWidth,
     };
   });
 
@@ -51,6 +54,10 @@ export function SegmentedControl<T extends string>({
       await hapticsManager.triggerSelection();
       onChange(optionValue);
     }
+  };
+
+  const handleLayout = (event: LayoutChangeEvent) => {
+    setTrackWidth(event.nativeEvent.layout.width);
   };
 
   return (
@@ -65,15 +72,18 @@ export function SegmentedControl<T extends string>({
           styles.track,
           { backgroundColor: isDark ? theme.backgroundSecondary : theme.backgroundDefault },
         ]}
+        onLayout={handleLayout}
       >
-        <Animated.View
-          style={[
-            styles.indicator,
-            { backgroundColor: isDark ? theme.backgroundTertiary : '#FFFFFF' },
-            indicatorStyle,
-          ]}
-        />
-        {options.map((option, index) => (
+        {trackWidth > 0 ? (
+          <Animated.View
+            style={[
+              styles.indicator,
+              { backgroundColor: isDark ? theme.backgroundTertiary : '#FFFFFF' },
+              indicatorStyle,
+            ]}
+          />
+        ) : null}
+        {options.map((option) => (
           <Pressable
             key={option.value}
             style={styles.option}
@@ -112,12 +122,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 3,
     bottom: 3,
+    left: 3,
     borderRadius: BorderRadius.xs,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
   },
   option: {
     flex: 1,
