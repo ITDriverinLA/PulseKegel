@@ -4,17 +4,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Feather } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useAnimatedStyle,
   withSpring,
   withTiming,
+  withRepeat,
   useSharedValue,
   FadeIn,
   ZoomIn,
+  interpolateColor,
 } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { PowerBar } from '@/components/PowerBar';
 import { FormTipsSheet } from '@/components/FormTipsSheet';
 import { useTheme } from '@/hooks/useTheme';
@@ -27,6 +29,11 @@ import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
 type RouteProps = RouteProp<RootStackParamList, 'WorkoutPlayer'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+const NEON_GREEN = '#00FF88';
+const NEON_CYAN = '#00FFFF';
+const NEON_PINK = '#FF3366';
+const NEON_PURPLE = '#9D4EDD';
 
 export default function WorkoutPlayerScreen() {
   const insets = useSafeAreaInsets();
@@ -54,6 +61,9 @@ export default function WorkoutPlayerScreen() {
 
   const phaseScale = useSharedValue(1);
   const phaseOpacity = useSharedValue(1);
+  const glowPulse = useSharedValue(0);
+  const backgroundPulse = useSharedValue(0);
+  const phaseColorValue = useSharedValue(0);
 
   const loadSettings = useCallback(async () => {
     const userSettings = await storage.getSettings();
@@ -63,6 +73,19 @@ export default function WorkoutPlayerScreen() {
   useEffect(() => {
     loadSettings();
   }, [loadSettings]);
+
+  useEffect(() => {
+    glowPulse.value = withRepeat(
+      withTiming(1, { duration: 1500 }),
+      -1,
+      true
+    );
+    backgroundPulse.value = withRepeat(
+      withTiming(1, { duration: 3000 }),
+      -1,
+      true
+    );
+  }, [glowPulse, backgroundPulse]);
 
   useEffect(() => {
     return () => {
@@ -82,6 +105,8 @@ export default function WorkoutPlayerScreen() {
       },
       onPhaseChange: async (newPhase, segment) => {
         setCurrentPhase(newPhase);
+        
+        phaseColorValue.value = withTiming(newPhase === 'squeeze' ? 1 : 0, { duration: 300 });
         
         const duration = newPhase === 'squeeze' 
           ? segment.squeezeSeconds 
@@ -145,7 +170,7 @@ export default function WorkoutPlayerScreen() {
       hapticPulseRef.current.stop();
       engine.destroy();
     };
-  }, [workout, settings, phaseScale, phaseOpacity]);
+  }, [workout, settings, phaseScale, phaseOpacity, phaseColorValue]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
@@ -209,13 +234,57 @@ export default function WorkoutPlayerScreen() {
     opacity: phaseOpacity.value,
   }));
 
-  const phaseColor = currentPhase === 'squeeze' ? theme.squeeze : theme.rest;
+  const phaseLabelStyle = useAnimatedStyle(() => {
+    const color = interpolateColor(
+      phaseColorValue.value,
+      [0, 1],
+      [NEON_CYAN, NEON_GREEN]
+    );
+    return {
+      color,
+      textShadowColor: color,
+      textShadowOffset: { width: 0, height: 0 },
+      textShadowRadius: 20,
+    };
+  });
+
+  const countdownStyle = useAnimatedStyle(() => {
+    const glowIntensity = 0.5 + glowPulse.value * 0.5;
+    const color = interpolateColor(
+      phaseColorValue.value,
+      [0, 1],
+      [NEON_CYAN, NEON_GREEN]
+    );
+    return {
+      color,
+      textShadowColor: color,
+      textShadowOffset: { width: 0, height: 0 },
+      textShadowRadius: 30 * glowIntensity,
+    };
+  });
+
   const ringProgress =
     progress.total > 0 ? progress.current / progress.total : 0;
 
+  const getPhaseLabel = () => {
+    if (currentSegment?.type === 'blockRest') return 'BREATHE';
+    return currentPhase === 'squeeze' ? 'SQUEEZE' : 'REST';
+  };
+
+  const getPhaseLabelColor = () => {
+    if (currentSegment?.type === 'blockRest') return NEON_PURPLE;
+    return currentPhase === 'squeeze' ? NEON_GREEN : NEON_CYAN;
+  };
+
   if (isComplete) {
     return (
-      <ThemedView style={styles.container}>
+      <View style={styles.container}>
+        <LinearGradient
+          colors={['#0a0a1a', '#1a0a2e', '#0a1a2e', '#0a0a1a']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
         <View
           style={[
             styles.content,
@@ -227,49 +296,49 @@ export default function WorkoutPlayerScreen() {
         >
           <View style={styles.header}>
             <View style={{ width: 40 }} />
-            <ThemedText type="h4">Complete</ThemedText>
+            <ThemedText type="h4" style={{ color: '#fff' }}>Complete</ThemedText>
             <Pressable onPress={handleClose} style={styles.headerButton}>
-              <Feather name="x" size={24} color={theme.text} />
+              <Feather name="x" size={24} color="#fff" />
             </Pressable>
           </View>
 
           <View style={styles.completeContent}>
             <Animated.View
               entering={ZoomIn.duration(400)}
-              style={[styles.completeIcon, { backgroundColor: `${theme.success}20` }]}
+              style={[styles.completeIcon, { backgroundColor: `${NEON_GREEN}20` }]}
             >
-              <Feather name="check-circle" size={80} color={theme.success} />
+              <Feather name="check-circle" size={80} color={NEON_GREEN} />
             </Animated.View>
 
             <Animated.View entering={FadeIn.delay(200)}>
-              <ThemedText type="h1" style={styles.completeTitle}>
+              <ThemedText type="h1" style={[styles.completeTitle, { color: '#fff' }]}>
                 Great Job!
               </ThemedText>
               <ThemedText
                 type="body"
-                style={[styles.completeSubtitle, { color: theme.textSecondary }]}
+                style={[styles.completeSubtitle, { color: 'rgba(255,255,255,0.6)' }]}
               >
                 You completed today's workout
               </ThemedText>
             </Animated.View>
 
             <Animated.View entering={FadeIn.delay(400)} style={styles.completeStats}>
-              <View style={[styles.completeStat, { backgroundColor: theme.backgroundDefault }]}>
-                <Feather name="clock" size={24} color={theme.primary} />
-                <ThemedText type="h3" style={{ marginTop: Spacing.sm }}>
+              <View style={[styles.completeStat, { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1 }]}>
+                <Feather name="clock" size={24} color={NEON_CYAN} />
+                <ThemedText type="h3" style={{ marginTop: Spacing.sm, color: '#fff' }}>
                   {Math.ceil(totalSeconds / 60)}
                 </ThemedText>
-                <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                <ThemedText type="small" style={{ color: 'rgba(255,255,255,0.6)' }}>
                   Minutes
                 </ThemedText>
               </View>
               
-              <View style={[styles.completeStat, { backgroundColor: theme.backgroundDefault }]}>
-                <Feather name="target" size={24} color={theme.primary} />
-                <ThemedText type="h3" style={{ marginTop: Spacing.sm }}>
+              <View style={[styles.completeStat, { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1 }]}>
+                <Feather name="target" size={24} color={NEON_PINK} />
+                <ThemedText type="h3" style={{ marginTop: Spacing.sm, color: '#fff' }}>
                   {workout.segments.reduce((acc, s) => acc + s.sets * s.repsPerSet, 0)}
                 </ThemedText>
-                <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                <ThemedText type="small" style={{ color: 'rgba(255,255,255,0.6)' }}>
                   Reps
                 </ThemedText>
               </View>
@@ -278,19 +347,25 @@ export default function WorkoutPlayerScreen() {
 
           <Pressable
             onPress={handleClose}
-            style={[styles.doneButton, { backgroundColor: theme.primary }]}
+            style={[styles.doneButton, { backgroundColor: NEON_GREEN }]}
           >
-            <ThemedText type="body" style={{ color: '#FFFFFF', fontWeight: '600' }}>
+            <ThemedText type="body" style={{ color: '#000', fontWeight: '700' }}>
               Done
             </ThemedText>
           </Pressable>
         </View>
-      </ThemedView>
+      </View>
     );
   }
 
   return (
-    <ThemedView style={styles.container}>
+    <View style={styles.container}>
+      <LinearGradient
+        colors={['#0a0a1a', '#1a0a2e', '#0a1a2e', '#0a0a1a']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
       <View
         style={[
           styles.content,
@@ -302,30 +377,28 @@ export default function WorkoutPlayerScreen() {
       >
         <View style={styles.header}>
           <Pressable onPress={handleClose} style={styles.headerButton}>
-            <Feather name="x" size={24} color={theme.text} />
+            <Feather name="x" size={24} color="rgba(255,255,255,0.8)" />
           </Pressable>
-          <ThemedText type="small" style={{ color: theme.textSecondary }}>
+          <ThemedText type="small" style={{ color: 'rgba(255,255,255,0.5)' }}>
             Week {weekNumber} - {phase}
           </ThemedText>
           <Pressable onPress={() => setShowTips(true)} style={styles.headerButton}>
-            <Feather name="help-circle" size={24} color={theme.text} />
+            <Feather name="help-circle" size={24} color="rgba(255,255,255,0.8)" />
           </Pressable>
         </View>
 
         <View style={styles.mainContent}>
           <Animated.View style={phaseAnimatedStyle}>
-            <ThemedText
+            <Animated.Text
               style={[
                 styles.phaseLabel,
-                { color: currentSegment?.type === 'blockRest' ? theme.rest : phaseColor },
+                currentSegment?.type === 'blockRest' 
+                  ? { color: NEON_PURPLE, textShadowColor: NEON_PURPLE, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 20 }
+                  : phaseLabelStyle,
               ]}
             >
-              {currentSegment?.type === 'blockRest' 
-                ? 'BREATHE' 
-                : currentPhase === 'squeeze' 
-                  ? 'SQUEEZE' 
-                  : 'REST'}
-            </ThemedText>
+              {getPhaseLabel()}
+            </Animated.Text>
           </Animated.View>
 
           <View style={styles.powerBarContainer}>
@@ -334,62 +407,77 @@ export default function WorkoutPlayerScreen() {
               segmentType={currentSegment?.type || 'slowHolds'}
               durationSeconds={phaseDuration}
               isActive={workoutState?.isRunning && !workoutState?.isPaused}
-              height={280}
-              width={100}
+              height={300}
+              width={120}
             />
-            <ThemedText style={[styles.countdown, { color: theme.text }]}>
-              {workoutState?.secondsRemaining || 0}
-            </ThemedText>
+            <View style={styles.countdownContainer}>
+              <Animated.Text style={[styles.countdown, countdownStyle]}>
+                {workoutState?.secondsRemaining || 0}
+              </Animated.Text>
+              <ThemedText type="small" style={styles.countdownLabel}>
+                seconds
+              </ThemedText>
+            </View>
           </View>
 
           <View style={styles.segmentInfo}>
-            <ThemedText type="h4" style={styles.segmentName}>
+            <ThemedText type="h4" style={[styles.segmentName, { color: '#fff' }]}>
               {currentSegment?.name || ''}
             </ThemedText>
             <ThemedText
               type="body"
-              style={[styles.segmentDetail, { color: theme.textSecondary }]}
+              style={[styles.segmentDetail, { color: 'rgba(255,255,255,0.5)' }]}
             >
               Set {setInfo.current} of {setInfo.total} • Rep {repInfo.current} of{' '}
               {repInfo.total}
             </ThemedText>
           </View>
 
-          <View style={[styles.progressBar, { backgroundColor: theme.backgroundDefault }]}>
-            <Animated.View
-              style={[
-                styles.progressFill,
-                { backgroundColor: theme.primary, width: `${ringProgress * 100}%` },
-              ]}
-            />
+          <View style={styles.progressBarContainer}>
+            <View style={styles.progressBar}>
+              <LinearGradient
+                colors={[NEON_GREEN, NEON_CYAN]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[styles.progressFill, { width: `${ringProgress * 100}%` }]}
+              />
+            </View>
+            <ThemedText type="small" style={styles.progressText}>
+              {Math.round(ringProgress * 100)}%
+            </ThemedText>
           </View>
         </View>
 
         <View style={styles.controls}>
           <Pressable
             onPress={handlePauseResume}
-            style={[styles.mainButton, { backgroundColor: theme.primary }]}
+            style={styles.mainButton}
           >
-            <Feather
-              name={workoutState?.isPaused ? 'play' : 'pause'}
-              size={32}
-              color="#FFFFFF"
-            />
+            <LinearGradient
+              colors={[NEON_GREEN, '#00CC66']}
+              style={styles.mainButtonGradient}
+            >
+              <Feather
+                name={workoutState?.isPaused ? 'play' : 'pause'}
+                size={32}
+                color="#000"
+              />
+            </LinearGradient>
           </Pressable>
 
           <View style={styles.secondaryControls}>
             <Pressable
               onPress={handleSkip}
-              style={[styles.secondaryButton, { backgroundColor: theme.backgroundDefault }]}
+              style={styles.secondaryButton}
             >
-              <Feather name="skip-forward" size={20} color={theme.text} />
-              <ThemedText type="small" style={{ marginLeft: Spacing.xs }}>
+              <Feather name="skip-forward" size={20} color="rgba(255,255,255,0.8)" />
+              <ThemedText type="small" style={{ marginLeft: Spacing.xs, color: 'rgba(255,255,255,0.8)' }}>
                 Skip
               </ThemedText>
             </Pressable>
 
             <Pressable onPress={handleEnd}>
-              <ThemedText type="small" style={{ color: theme.textSecondary }}>
+              <ThemedText type="small" style={{ color: 'rgba(255,255,255,0.4)' }}>
                 End Workout
               </ThemedText>
             </Pressable>
@@ -398,13 +486,14 @@ export default function WorkoutPlayerScreen() {
       </View>
 
       <FormTipsSheet visible={showTips} onClose={() => setShowTips(false)} />
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#0a0a1a',
   },
   content: {
     flex: 1,
@@ -428,7 +517,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   phaseLabel: {
-    ...Typography.stateLabel,
+    fontSize: 36,
+    fontWeight: '800',
+    letterSpacing: 8,
     textAlign: 'center',
     marginBottom: Spacing['2xl'],
   },
@@ -437,10 +528,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing['2xl'],
-    gap: Spacing['2xl'],
+    gap: Spacing['3xl'],
+  },
+  countdownContainer: {
+    alignItems: 'center',
   },
   countdown: {
-    ...Typography.countdown,
+    fontSize: 72,
+    fontWeight: '200',
+    letterSpacing: -2,
+  },
+  countdownLabel: {
+    color: 'rgba(255,255,255,0.4)',
+    marginTop: Spacing.xs,
+    textTransform: 'uppercase',
+    letterSpacing: 2,
   },
   segmentInfo: {
     alignItems: 'center',
@@ -452,32 +554,47 @@ const styles = StyleSheet.create({
   segmentDetail: {
     textAlign: 'center',
   },
-  progressBar: {
+  progressBarContainer: {
     width: '100%',
-    height: 4,
-    borderRadius: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  progressBar: {
+    flex: 1,
+    height: 6,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 3,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    borderRadius: 2,
+    borderRadius: 3,
+  },
+  progressText: {
+    color: 'rgba(255,255,255,0.5)',
+    width: 40,
+    textAlign: 'right',
   },
   controls: {
     alignItems: 'center',
     paddingTop: Spacing.xl,
   },
   mainButton: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    marginBottom: Spacing.xl,
+    borderRadius: 40,
+    shadowColor: NEON_GREEN,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  mainButtonGradient: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.xl,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
   },
   secondaryControls: {
     flexDirection: 'row',
@@ -490,6 +607,9 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     paddingHorizontal: Spacing.lg,
     borderRadius: BorderRadius.full,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
   },
   completeContent: {
     flex: 1,
