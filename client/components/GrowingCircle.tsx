@@ -72,8 +72,7 @@ export function GrowingCircle({
       scale.value = 0.3;
       scale.value = withTiming(1, { duration: durationMs });
     } else {
-      scale.value = 1;
-      scale.value = withTiming(0.3, { duration: durationMs });
+      cancelAnimation(scale);
     }
   }, [phase, segmentType, durationSeconds, isActive, scale]);
 
