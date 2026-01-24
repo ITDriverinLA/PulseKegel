@@ -1,4 +1,4 @@
-export type SegmentType = 'slowHolds' | 'quickFlicks' | 'elevator' | 'reverse' | 'breathing';
+export type SegmentType = 'slowHolds' | 'quickFlicks' | 'elevator' | 'reverse' | 'breathing' | 'blockRest' | 'contractRelax';
 
 export interface Segment {
   id: string;
@@ -15,7 +15,7 @@ export interface Segment {
 export interface DayTemplate {
   id: string;
   name: string;
-  dayType: 'strength' | 'speed' | 'coordination' | 'rest';
+  dayType: 'strength' | 'speed' | 'coordination' | 'rest' | 'daily' | 'alternate';
   segments: Segment[];
   estimatedMinutes: number;
 }
@@ -53,6 +53,116 @@ const createSegment = (
   type,
   rampSteps,
 });
+
+const createBlockRest = (id: string): Segment =>
+  createSegment(
+    id,
+    'Block Rest',
+    'Breathe deeply and fully relax your pelvic floor',
+    1,
+    1,
+    0,
+    25,
+    'blockRest'
+  );
+
+const dailyDriverWorkout = (weekNum: number): DayTemplate => {
+  return {
+    id: `w${weekNum}-daily`,
+    name: 'Daily Driver',
+    dayType: 'daily',
+    estimatedMinutes: 8,
+    segments: [
+      createSegment(
+        `w${weekNum}-slow-holds`,
+        'Slow Holds',
+        'Squeeze firmly and hold, then fully relax',
+        1,
+        8,
+        8,
+        12,
+        'slowHolds'
+      ),
+      createBlockRest(`w${weekNum}-rest1`),
+      createSegment(
+        `w${weekNum}-quick-flicks`,
+        'Quick Flicks',
+        'Quick squeeze and release rhythm',
+        1,
+        20,
+        1,
+        1,
+        'quickFlicks'
+      ),
+      createBlockRest(`w${weekNum}-rest2`),
+      createSegment(
+        `w${weekNum}-contract-relax`,
+        'Contract-Relax',
+        'Short squeeze with longer relaxation',
+        1,
+        10,
+        2,
+        4,
+        'contractRelax'
+      ),
+      createBlockRest(`w${weekNum}-rest3`),
+      createSegment(
+        `w${weekNum}-reverse`,
+        'Reverse Kegels',
+        'Gently release and drop tension downward',
+        1,
+        10,
+        5,
+        5,
+        'reverse'
+      ),
+    ],
+  };
+};
+
+const alternateDayWorkout = (weekNum: number): DayTemplate => {
+  return {
+    id: `w${weekNum}-alternate`,
+    name: 'Coordination Day',
+    dayType: 'alternate',
+    estimatedMinutes: 7,
+    segments: [
+      createSegment(
+        `w${weekNum}-elevator`,
+        'Elevators',
+        'Step up tension: 25% to 50% to 75% to 100%, then step down',
+        1,
+        5,
+        8,
+        12,
+        'elevator',
+        [0.25, 0.5, 0.75, 1.0]
+      ),
+      createBlockRest(`w${weekNum}-alt-rest1`),
+      createSegment(
+        `w${weekNum}-alt-flicks`,
+        'Quick Flicks',
+        'Quick squeeze and release rhythm',
+        1,
+        30,
+        1,
+        1,
+        'quickFlicks'
+      ),
+      createBlockRest(`w${weekNum}-alt-rest2`),
+      createSegment(
+        `w${weekNum}-alt-reverse`,
+        'Reverse Kegels',
+        'Gently release and drop tension downward',
+        1,
+        12,
+        5,
+        5,
+        'reverse'
+      ),
+    ],
+  };
+};
 
 const strengthDay = (weekNum: number): DayTemplate => {
   const baseHold = Math.min(3 + Math.floor(weekNum / 2), 10);
@@ -180,7 +290,7 @@ const generateWeek = (weekNum: number): Week => {
     phaseDescription = 'Increasing hold duration and reps';
   } else if (weekNum <= 10) {
     phase = 'Power';
-    phaseDescription = 'Advanced coordination and power';
+    phaseDescription = 'Block-based training for power and endurance';
   } else {
     phase = 'Maintenance';
     phaseDescription = 'Maintaining your progress';
@@ -199,15 +309,19 @@ const generateWeek = (weekNum: number): Week => {
     days.push(speedDay(weekNum));
     days.push(coordinationDay(weekNum));
   } else if (weekNum <= 10) {
-    days.push(coordinationDay(weekNum));
-    days.push(strengthDay(weekNum));
-    days.push(speedDay(weekNum));
-    days.push(coordinationDay(weekNum));
-    days.push(strengthDay(weekNum));
+    days.push(dailyDriverWorkout(weekNum));
+    days.push(alternateDayWorkout(weekNum));
+    days.push(dailyDriverWorkout(weekNum));
+    days.push(alternateDayWorkout(weekNum));
+    days.push(dailyDriverWorkout(weekNum));
+    days.push(dailyDriverWorkout(weekNum));
+    days.push(dailyDriverWorkout(weekNum));
   } else {
-    days.push(strengthDay(weekNum));
-    days.push(speedDay(weekNum));
-    days.push(coordinationDay(weekNum));
+    days.push(dailyDriverWorkout(weekNum));
+    days.push(alternateDayWorkout(weekNum));
+    days.push(dailyDriverWorkout(weekNum));
+    days.push(dailyDriverWorkout(weekNum));
+    days.push(dailyDriverWorkout(weekNum));
   }
   
   return {
@@ -260,12 +374,21 @@ export const getWorkoutForRecoveryMode = (workout: DayTemplate): DayTemplate => 
   return {
     ...workout,
     segments: [
-      ...workout.segments.map(segment => ({
-        ...segment,
-        sets: Math.max(1, Math.floor(segment.sets * 0.5)),
-        squeezeSeconds: Math.max(2, Math.floor(segment.squeezeSeconds * 0.75)),
-        restSeconds: segment.restSeconds + 2,
-      })),
+      ...workout.segments.map(segment => {
+        if (segment.type === 'blockRest') {
+          return {
+            ...segment,
+            restSeconds: segment.restSeconds + 5,
+          };
+        }
+        return {
+          ...segment,
+          sets: Math.max(1, Math.floor(segment.sets * 0.5)),
+          repsPerSet: Math.max(1, Math.ceil(segment.repsPerSet * 0.7)),
+          squeezeSeconds: Math.max(2, Math.floor(segment.squeezeSeconds * 0.75)),
+          restSeconds: segment.restSeconds + 2,
+        };
+      }),
       createSegment(
         'recovery-breathing',
         'Relaxation',
