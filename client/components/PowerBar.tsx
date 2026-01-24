@@ -6,7 +6,9 @@ import Animated, {
   withTiming,
   withSpring,
   cancelAnimation,
+  Easing,
 } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { SegmentType } from '@/data/workoutProgram';
 
@@ -19,36 +21,46 @@ interface PowerBarProps {
   width?: number;
 }
 
-const SEGMENT_COUNT = 12;
-const SEGMENT_GAP = 4;
+const SEGMENT_COUNT = 15;
+const SEGMENT_GAP = 3;
 
 const SEGMENT_COLORS = [
-  '#22C55E',
-  '#22C55E',
-  '#22C55E',
-  '#22C55E',
-  '#84CC16',
-  '#84CC16',
-  '#EAB308',
-  '#EAB308',
-  '#F97316',
-  '#F97316',
-  '#EF4444',
-  '#EF4444',
+  '#00FF88',
+  '#00FF88',
+  '#00FF88',
+  '#00FF88',
+  '#00FF88',
+  '#39FF14',
+  '#39FF14',
+  '#FFFF00',
+  '#FFFF00',
+  '#FF9500',
+  '#FF9500',
+  '#FF6B00',
+  '#FF3366',
+  '#FF3366',
+  '#FF0055',
 ];
 
-const SEGMENT_INACTIVE = 'rgba(30, 30, 30, 0.8)';
+const SEGMENT_GLOW_COLORS = [
+  'rgba(0, 255, 136, 0.6)',
+  'rgba(0, 255, 136, 0.6)',
+  'rgba(0, 255, 136, 0.6)',
+  'rgba(0, 255, 136, 0.6)',
+  'rgba(0, 255, 136, 0.6)',
+  'rgba(57, 255, 20, 0.6)',
+  'rgba(57, 255, 20, 0.6)',
+  'rgba(255, 255, 0, 0.6)',
+  'rgba(255, 255, 0, 0.6)',
+  'rgba(255, 149, 0, 0.6)',
+  'rgba(255, 149, 0, 0.6)',
+  'rgba(255, 107, 0, 0.6)',
+  'rgba(255, 51, 102, 0.6)',
+  'rgba(255, 51, 102, 0.6)',
+  'rgba(255, 0, 85, 0.6)',
+];
 
-const getDurationMultiplier = (segmentType: SegmentType): number => {
-  switch (segmentType) {
-    case 'quickFlicks':
-      return 0.8;
-    case 'contractRelax':
-      return 0.9;
-    default:
-      return 1.0;
-  }
-};
+const SEGMENT_INACTIVE = 'rgba(20, 20, 30, 0.9)';
 
 function PowerBarSegment({ 
   index, 
@@ -61,16 +73,17 @@ function PowerBarSegment({
   segmentHeight: number;
   width: number;
 }) {
-  const threshold = (index + 1) / SEGMENT_COUNT;
+  const threshold = (index + 0.5) / SEGMENT_COUNT;
   
   const animatedStyle = useAnimatedStyle(() => {
     const isLit = progress.value >= threshold;
     return {
       backgroundColor: isLit ? SEGMENT_COLORS[index] : SEGMENT_INACTIVE,
-      shadowColor: isLit ? SEGMENT_COLORS[index] : 'transparent',
-      shadowOpacity: isLit ? 0.8 : 0,
-      shadowRadius: isLit ? 8 : 0,
+      shadowColor: isLit ? SEGMENT_GLOW_COLORS[index] : 'transparent',
+      shadowOpacity: isLit ? 1 : 0,
+      shadowRadius: isLit ? 12 : 0,
       shadowOffset: { width: 0, height: 0 },
+      transform: [{ scale: isLit ? 1.02 : 1 }],
     };
   });
 
@@ -80,8 +93,8 @@ function PowerBarSegment({
         styles.segment,
         {
           height: segmentHeight,
-          width: width - 16,
-          borderRadius: 4,
+          width: width - 24,
+          borderRadius: 3,
         },
         animatedStyle,
       ]}
@@ -95,10 +108,10 @@ export function PowerBar({
   durationSeconds,
   isActive,
   height,
-  width = 120,
+  width = 140,
 }: PowerBarProps) {
   const progress = useSharedValue(0);
-  const segmentHeight = (height - (SEGMENT_COUNT - 1) * SEGMENT_GAP - 16) / SEGMENT_COUNT;
+  const segmentHeight = (height - (SEGMENT_COUNT - 1) * SEGMENT_GAP - 32) / SEGMENT_COUNT;
 
   useEffect(() => {
     if (!isActive) {
@@ -107,19 +120,21 @@ export function PowerBar({
     }
 
     if (phase === 'squeeze') {
-      const multiplier = getDurationMultiplier(segmentType);
-      const durationMs = durationSeconds * 1000 * multiplier;
+      const durationMs = durationSeconds * 1000;
       progress.value = 0;
-      progress.value = withTiming(1, { duration: durationMs });
+      progress.value = withTiming(1, { 
+        duration: durationMs,
+        easing: Easing.linear,
+      });
     } else {
       cancelAnimation(progress);
       progress.value = withSpring(0, {
-        damping: 20,
-        stiffness: 300,
-        mass: 0.5,
+        damping: 15,
+        stiffness: 400,
+        mass: 0.3,
       });
     }
-  }, [phase, segmentType, durationSeconds, isActive, progress]);
+  }, [phase, durationSeconds, isActive, progress]);
 
   const segments = [];
   for (let i = SEGMENT_COUNT - 1; i >= 0; i--) {
@@ -136,13 +151,22 @@ export function PowerBar({
 
   return (
     <View style={[styles.container, { height, width }]}>
-      <View style={styles.bezel}>
-        <View style={styles.innerBezel}>
-          <View style={styles.segmentsContainer}>
-            {segments}
-          </View>
+      <LinearGradient
+        colors={['#1a1a2e', '#16213e', '#0f0f23']}
+        style={styles.outerBezel}
+      >
+        <View style={styles.bezelRing}>
+          <LinearGradient
+            colors={['#0a0a14', '#0d0d1a', '#050510']}
+            style={styles.innerBezel}
+          >
+            <View style={styles.segmentsContainer}>
+              {segments}
+            </View>
+            <View style={styles.scanlines} />
+          </LinearGradient>
         </View>
-      </View>
+      </LinearGradient>
     </View>
   );
 }
@@ -152,27 +176,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  bezel: {
+  outerBezel: {
     flex: 1,
     width: '100%',
-    backgroundColor: '#1a1a1a',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 4,
     borderWidth: 2,
-    borderColor: '#333',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
-    elevation: 8,
+    borderColor: '#2a2a4a',
+  },
+  bezelRing: {
+    flex: 1,
+    borderRadius: 12,
+    padding: 3,
+    borderWidth: 1,
+    borderColor: '#3a3a5a',
+    backgroundColor: '#1a1a2e',
   },
   innerBezel: {
     flex: 1,
-    backgroundColor: '#0a0a0a',
-    borderRadius: 8,
-    padding: 8,
+    borderRadius: 10,
+    padding: 12,
     borderWidth: 1,
-    borderColor: '#222',
+    borderColor: '#1a1a2e',
+    overflow: 'hidden',
   },
   segmentsContainer: {
     flex: 1,
@@ -181,5 +207,14 @@ const styles = StyleSheet.create({
   },
   segment: {
     alignSelf: 'center',
+  },
+  scanlines: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    opacity: 0.05,
+    backgroundColor: 'transparent',
   },
 });
