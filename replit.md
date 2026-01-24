@@ -4,12 +4,46 @@
 PulseKegel is a mobile app for daily pelvic floor (Kegel) workouts with real-time visual cues and haptic feedback. Built with Expo (React Native) and Express.js backend.
 
 ## Key Features
-- 12-week progressive workout program with 5 exercise types (slow holds, quick flicks, elevator, reverse, breathing)
-- Real-time workout player with SQUEEZE/REST visual cues and haptic feedback
+- 12-week progressive workout program with 7 exercise types (slow holds, quick flicks, elevator, reverse, breathing, block rest, contract-relax)
+- Real-time workout player with SQUEEZE/REST/BREATHE visual cues and haptic feedback
+- Growing circle animation with variable speed based on workout type
 - Progress tracking with streak counter, calendar view, and statistics
 - Recovery mode for reduced intensity workouts
 - Customizable haptic intensity and rest cue styles
 - One-time onboarding with safety disclaimers
+
+## Workout Program Structure
+
+### Weeks 1-2: Control Phase
+- 3 days/week with strength and speed training
+- Building awareness and control
+
+### Weeks 3-6: Strength Phase  
+- 5 days/week with strength, speed, and coordination training
+- Increasing hold duration and reps
+
+### Weeks 7-10: Power Phase (Block-Based)
+- 7 days/week with alternating "Daily Driver" and "Coordination Day" workouts
+- 20-30 second breathing breaks between exercise blocks
+
+**Daily Driver (5 days/week) - ~8 minutes:**
+- Block 1: Slow Holds (8 reps × 8s squeeze / 12s rest)
+- Block Rest: 25s breathing break
+- Block 2: Quick Flicks (20 reps × 1s/1s)
+- Block Rest: 25s breathing break
+- Block 3: Contract-Relax (10 reps × 2s/4s)
+- Block Rest: 25s breathing break
+- Block 4: Reverse Kegels (10 reps × 5s/5s)
+
+**Coordination Day (2 days/week) - ~7 minutes:**
+- Block 1: Elevators (5 reps with step pattern)
+- Block Rest: 25s breathing break
+- Block 2: Quick Flicks (30 reps × 1s/1s)
+- Block Rest: 25s breathing break
+- Block 3: Reverse Kegels (12 reps × 5s/5s)
+
+### Weeks 11-12: Maintenance Phase
+- 5 days/week continuing block-based structure
 
 ## Project Architecture
 
