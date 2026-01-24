@@ -5,23 +5,25 @@ import Animated, {
   useSharedValue,
   withTiming,
   cancelAnimation,
+  interpolateColor,
 } from 'react-native-reanimated';
 
 import { SegmentType } from '@/data/workoutProgram';
-import { BorderRadius } from '@/constants/theme';
 
 interface PowerBarProps {
   phase: 'squeeze' | 'rest';
   segmentType: SegmentType;
   durationSeconds: number;
   isActive: boolean;
-  width: number;
-  height?: number;
+  height: number;
+  width?: number;
   children?: React.ReactNode;
 }
 
-const POWER_BAR_COLOR = '#8B5CF6';
-const TRACK_COLOR = 'rgba(139, 92, 246, 0.2)';
+const POWER_BAR_LOW = '#C4B5FD';
+const POWER_BAR_MID = '#8B5CF6';
+const POWER_BAR_HIGH = '#6D28D9';
+const TRACK_COLOR = 'rgba(139, 92, 246, 0.15)';
 
 const getDurationMultiplier = (segmentType: SegmentType): number => {
   switch (segmentType) {
@@ -39,8 +41,8 @@ export function PowerBar({
   segmentType,
   durationSeconds,
   isActive,
-  width,
-  height = 24,
+  height,
+  width = 80,
   children,
 }: PowerBarProps) {
   const progress = useSharedValue(0);
@@ -51,31 +53,37 @@ export function PowerBar({
       return;
     }
 
-    const multiplier = getDurationMultiplier(segmentType);
-    const durationMs = durationSeconds * 1000 * multiplier;
-
     if (phase === 'squeeze') {
+      const multiplier = getDurationMultiplier(segmentType);
+      const durationMs = durationSeconds * 1000 * multiplier;
       progress.value = 0;
       progress.value = withTiming(1, { duration: durationMs });
     } else {
-      progress.value = 1;
-      progress.value = withTiming(0, { duration: durationMs });
+      cancelAnimation(progress);
+      progress.value = 0;
     }
   }, [phase, segmentType, durationSeconds, isActive, progress]);
 
   const animatedBarStyle = useAnimatedStyle(() => {
+    const barColor = interpolateColor(
+      progress.value,
+      [0, 0.5, 1],
+      [POWER_BAR_LOW, POWER_BAR_MID, POWER_BAR_HIGH]
+    );
+    
     return {
-      width: `${progress.value * 100}%`,
+      height: `${progress.value * 100}%`,
+      backgroundColor: barColor,
     };
   });
 
   return (
     <View style={styles.wrapper}>
-      <View style={[styles.track, { width, height, borderRadius: height / 2 }]}>
+      <View style={[styles.track, { height, width, borderRadius: width / 2 }]}>
         <Animated.View
           style={[
             styles.fill,
-            { height, borderRadius: height / 2 },
+            { width, borderRadius: width / 2 },
             animatedBarStyle,
           ]}
         />
@@ -92,12 +100,12 @@ const styles = StyleSheet.create({
   track: {
     backgroundColor: TRACK_COLOR,
     overflow: 'hidden',
+    justifyContent: 'flex-end',
   },
   fill: {
-    backgroundColor: POWER_BAR_COLOR,
     position: 'absolute',
     left: 0,
-    top: 0,
+    bottom: 0,
   },
   content: {
     marginTop: 24,

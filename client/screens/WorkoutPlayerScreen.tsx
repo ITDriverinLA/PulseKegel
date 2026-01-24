@@ -329,17 +329,17 @@ export default function WorkoutPlayerScreen() {
           </Animated.View>
 
           <View style={styles.powerBarContainer}>
-            <ThemedText style={[styles.countdown, { color: theme.text }]}>
-              {workoutState?.secondsRemaining || 0}
-            </ThemedText>
             <PowerBar
               phase={currentPhase}
               segmentType={currentSegment?.type || 'slowHolds'}
               durationSeconds={phaseDuration}
               isActive={workoutState?.isRunning && !workoutState?.isPaused}
-              width={280}
-              height={28}
+              height={220}
+              width={60}
             />
+            <ThemedText style={[styles.countdown, { color: theme.text }]}>
+              {workoutState?.secondsRemaining || 0}
+            </ThemedText>
           </View>
 
           <View style={styles.segmentInfo}>
@@ -433,12 +433,14 @@ const styles = StyleSheet.create({
     marginBottom: Spacing['2xl'],
   },
   powerBarContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: Spacing['2xl'],
+    gap: Spacing['2xl'],
   },
   countdown: {
     ...Typography.countdown,
-    marginBottom: Spacing.xl,
   },
   segmentInfo: {
     alignItems: 'center',
