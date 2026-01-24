@@ -132,8 +132,8 @@ export function PowerBar({
 
       switch (segmentType) {
         case 'quickFlicks':
-          progress.value = withTiming(1, { 
-            duration: 100,
+          progress.value = withTiming(1.05, { 
+            duration: 150,
             easing: Easing.out(Easing.cubic),
           });
           break;
@@ -142,17 +142,18 @@ export function PowerBar({
           if (rampSteps && rampSteps.length > 0) {
             const stepDuration = durationMs / rampSteps.length;
             let animation = withTiming(rampSteps[0], { 
-              duration: stepDuration * 0.3,
+              duration: stepDuration * 0.25,
               easing: Easing.out(Easing.cubic),
             });
             
             for (let i = 1; i < rampSteps.length; i++) {
+              const targetValue = i === rampSteps.length - 1 ? 1.05 : rampSteps[i];
               animation = withSequence(
                 animation,
                 withDelay(
-                  stepDuration * 0.7,
-                  withTiming(rampSteps[i], { 
-                    duration: stepDuration * 0.3,
+                  stepDuration * 0.75,
+                  withTiming(targetValue, { 
+                    duration: stepDuration * 0.25,
                     easing: Easing.out(Easing.cubic),
                   })
                 )
@@ -160,7 +161,7 @@ export function PowerBar({
             }
             progress.value = animation;
           } else {
-            progress.value = withTiming(1, { 
+            progress.value = withTiming(1.05, { 
               duration: durationMs,
               easing: Easing.linear,
             });
@@ -168,14 +169,14 @@ export function PowerBar({
           break;
 
         case 'contractRelax':
-          progress.value = withTiming(1, { 
-            duration: Math.min(durationMs * 0.4, 400),
+          progress.value = withTiming(1.05, { 
+            duration: Math.min(durationMs * 0.5, 500),
             easing: Easing.out(Easing.cubic),
           });
           break;
 
         case 'breathing':
-          progress.value = withTiming(0.6, { 
+          progress.value = withTiming(0.65, { 
             duration: durationMs,
             easing: Easing.inOut(Easing.sine),
           });
@@ -188,18 +189,17 @@ export function PowerBar({
         case 'reverse':
         case 'slowHolds':
         default:
-          progress.value = withTiming(1, { 
-            duration: durationMs,
-            easing: Easing.linear,
+          progress.value = withTiming(1.05, { 
+            duration: durationMs * 0.95,
+            easing: Easing.out(Easing.quad),
           });
           break;
       }
     } else {
       cancelAnimation(progress);
-      progress.value = withSpring(0, {
-        damping: 15,
-        stiffness: 400,
-        mass: 0.3,
+      progress.value = withTiming(0, {
+        duration: 600,
+        easing: Easing.out(Easing.cubic),
       });
     }
   }, [phase, segmentType, durationSeconds, isActive, progress, rampSteps]);
