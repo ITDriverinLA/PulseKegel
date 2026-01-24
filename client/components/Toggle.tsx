@@ -17,13 +17,16 @@ interface ToggleProps {
   onValueChange: (value: boolean) => void;
   label?: string;
   disabled?: boolean;
+  activeColor?: string;
+  labelColor?: string;
 }
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
-export function Toggle({ value, onValueChange, label, disabled = false }: ToggleProps) {
+export function Toggle({ value, onValueChange, label, disabled = false, activeColor, labelColor }: ToggleProps) {
   const { theme, isDark } = useTheme();
   const toggleProgress = useSharedValue(value ? 1 : 0);
+  const activeTrackColor = activeColor || theme.primary;
 
   React.useEffect(() => {
     toggleProgress.value = withSpring(value ? 1 : 0, {
@@ -36,7 +39,7 @@ export function Toggle({ value, onValueChange, label, disabled = false }: Toggle
     const backgroundColor = interpolateColor(
       toggleProgress.value,
       [0, 1],
-      [isDark ? '#555' : '#D1D5DB', theme.primary]
+      [isDark ? '#555' : '#D1D5DB', activeTrackColor]
     );
     return { backgroundColor };
   });
@@ -67,7 +70,7 @@ export function Toggle({ value, onValueChange, label, disabled = false }: Toggle
       disabled={disabled}
     >
       {label ? (
-        <ThemedText type="body" style={styles.label}>
+        <ThemedText type="body" style={[styles.label, labelColor ? { color: labelColor } : undefined]}>
           {label}
         </ThemedText>
       ) : null}

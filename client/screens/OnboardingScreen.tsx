@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Image, Dimensions } from 'react-native';
+import { StyleSheet, View, Image, Dimensions, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useAnimatedStyle,
   withSpring,
   FadeIn,
   FadeOut,
+  useSharedValue,
+  WithSpringConfig,
 } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { Button } from '@/components/Button';
-import { useTheme } from '@/hooks/useTheme';
 import { Spacing, BorderRadius } from '@/constants/theme';
 
 interface OnboardingScreenProps {
@@ -19,6 +19,9 @@ interface OnboardingScreenProps {
 }
 
 const { width } = Dimensions.get('window');
+
+const NEON_GREEN = '#00FF88';
+const NEON_CYAN = '#00FFFF';
 
 const pages = [
   {
@@ -41,9 +44,18 @@ const pages = [
   },
 ];
 
+const springConfig: WithSpringConfig = {
+  damping: 15,
+  mass: 0.3,
+  stiffness: 150,
+  overshootClamping: true,
+  energyThreshold: 0.001,
+};
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const [currentPage, setCurrentPage] = useState(0);
-  const { theme } = useTheme();
   const insets = useSafeAreaInsets();
 
   const isLastPage = currentPage === pages.length - 1;
@@ -57,7 +69,11 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <View style={styles.container}>
+      <LinearGradient
+        colors={['#0a0a1a', '#1a0a2e', '#0a1a2e', '#0a0a1a']}
+        style={StyleSheet.absoluteFill}
+      />
       <View
         style={[
           styles.content,
@@ -91,7 +107,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
             </ThemedText>
             <ThemedText
               type="body"
-              style={[styles.description, { color: theme.textSecondary }]}
+              style={styles.description}
             >
               {pages[currentPage].description}
             </ThemedText>
@@ -104,34 +120,73 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
               <PageDot
                 key={index}
                 active={index === currentPage}
-                theme={theme}
               />
             ))}
           </View>
 
-          <Button onPress={handleNext} style={styles.button}>
+          <NeonButton onPress={handleNext}>
             {isLastPage ? 'Get Started' : 'Continue'}
-          </Button>
+          </NeonButton>
         </View>
       </View>
-    </ThemedView>
+    </View>
   );
 }
 
-function PageDot({ active, theme }: { active: boolean; theme: any }) {
+function PageDot({ active }: { active: boolean }) {
   const animatedStyle = useAnimatedStyle(() => ({
     width: withSpring(active ? 24 : 8, { damping: 15, stiffness: 150 }),
     opacity: withSpring(active ? 1 : 0.4, { damping: 15, stiffness: 150 }),
   }));
 
   return (
-    <Animated.View
-      style={[
-        styles.dot,
-        { backgroundColor: theme.primary },
-        animatedStyle,
-      ]}
-    />
+    <View style={active ? styles.dotGlow : undefined}>
+      <Animated.View
+        style={[
+          styles.dot,
+          { backgroundColor: NEON_GREEN },
+          animatedStyle,
+        ]}
+      />
+    </View>
+  );
+}
+
+function NeonButton({ onPress, children }: { onPress: () => void; children: React.ReactNode }) {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.98, springConfig);
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, springConfig);
+  };
+
+  return (
+    <AnimatedPressable
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      style={[styles.buttonWrapper, animatedStyle]}
+    >
+      <View style={styles.buttonGlow}>
+        <LinearGradient
+          colors={[NEON_GREEN, NEON_CYAN, NEON_GREEN]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.button}
+        >
+          <ThemedText type="body" style={styles.buttonText}>
+            {children}
+          </ThemedText>
+        </LinearGradient>
+      </View>
+    </AnimatedPressable>
   );
 }
 
@@ -162,11 +217,13 @@ const styles = StyleSheet.create({
   title: {
     textAlign: 'center',
     marginBottom: Spacing.lg,
+    color: '#fff',
   },
   description: {
     textAlign: 'center',
     lineHeight: 24,
     paddingHorizontal: Spacing.lg,
+    color: 'rgba(255,255,255,0.6)',
   },
   footer: {
     paddingBottom: Spacing.lg,
@@ -182,7 +239,31 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
   },
-  button: {
+  dotGlow: {
+    shadowColor: NEON_GREEN,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  buttonWrapper: {
     width: '100%',
+  },
+  buttonGlow: {
+    shadowColor: NEON_GREEN,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  button: {
+    height: Spacing.buttonHeight,
+    borderRadius: BorderRadius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonText: {
+    fontWeight: '600',
+    color: '#000',
   },
 });

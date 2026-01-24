@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, Text } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
 import { ThemedText } from '@/components/ThemedText';
@@ -11,11 +11,28 @@ interface StatCardProps {
   label: string;
   value: string | number;
   color?: string;
+  darkMode?: boolean;
 }
 
-export function StatCard({ icon, label, value, color }: StatCardProps) {
+export function StatCard({ icon, label, value, color, darkMode }: StatCardProps) {
   const { theme } = useTheme();
   const iconColor = color || theme.primary;
+
+  if (darkMode) {
+    return (
+      <View style={styles.darkCard}>
+        <View style={[styles.iconContainer, { backgroundColor: `${iconColor}20` }]}>
+          <Feather name={icon} size={20} color={iconColor} />
+        </View>
+        <Text style={styles.darkValue}>
+          {value}
+        </Text>
+        <Text style={styles.darkLabel}>
+          {label}
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
@@ -42,6 +59,15 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     alignItems: 'center',
   },
+  darkCard: {
+    flex: 1,
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
   iconContainer: {
     width: 40,
     height: 40,
@@ -53,7 +79,18 @@ const styles = StyleSheet.create({
   value: {
     marginBottom: Spacing.xs,
   },
+  darkValue: {
+    marginBottom: Spacing.xs,
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#fff',
+  },
   label: {
     textAlign: 'center',
+  },
+  darkLabel: {
+    textAlign: 'center',
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.6)',
   },
 });

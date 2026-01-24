@@ -16,6 +16,10 @@ interface SegmentedControlProps<T extends string> {
   value: T;
   onChange: (value: T) => void;
   label?: string;
+  labelColor?: string;
+  trackColor?: string;
+  indicatorColor?: string;
+  textColor?: string;
 }
 
 export function SegmentedControl<T extends string>({
@@ -23,6 +27,10 @@ export function SegmentedControl<T extends string>({
   value,
   onChange,
   label,
+  labelColor,
+  trackColor,
+  indicatorColor,
+  textColor,
 }: SegmentedControlProps<T>) {
   const { theme, isDark } = useTheme();
   const [trackWidth, setTrackWidth] = useState(0);
@@ -63,14 +71,14 @@ export function SegmentedControl<T extends string>({
   return (
     <View style={styles.container}>
       {label ? (
-        <ThemedText type="body" style={styles.label}>
+        <ThemedText type="body" style={[styles.label, labelColor ? { color: labelColor } : undefined]}>
           {label}
         </ThemedText>
       ) : null}
       <View
         style={[
           styles.track,
-          { backgroundColor: isDark ? theme.backgroundSecondary : theme.backgroundDefault },
+          { backgroundColor: trackColor || (isDark ? theme.backgroundSecondary : theme.backgroundDefault) },
         ]}
         onLayout={handleLayout}
       >
@@ -78,7 +86,7 @@ export function SegmentedControl<T extends string>({
           <Animated.View
             style={[
               styles.indicator,
-              { backgroundColor: isDark ? theme.backgroundTertiary : '#FFFFFF' },
+              { backgroundColor: indicatorColor || (isDark ? theme.backgroundTertiary : '#FFFFFF') },
               indicatorStyle,
             ]}
           />
@@ -93,6 +101,7 @@ export function SegmentedControl<T extends string>({
               type="small"
               style={[
                 styles.optionText,
+                textColor ? { color: textColor } : undefined,
                 option.value === value && { fontWeight: '600' },
               ]}
             >

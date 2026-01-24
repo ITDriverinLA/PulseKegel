@@ -1,24 +1,25 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, Image, RefreshControl } from 'react-native';
+import { StyleSheet, View, Image, RefreshControl, ScrollView, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 
-import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
-import { ThemedText } from '@/components/ThemedText';
 import { StatCard } from '@/components/StatCard';
 import { CalendarGrid } from '@/components/CalendarGrid';
-import { useTheme } from '@/hooks/useTheme';
 import { Spacing, BorderRadius } from '@/constants/theme';
 import { storage, UserProgress } from '@/lib/storage';
+
+const NEON_GREEN = '#00FF88';
+const NEON_CYAN = '#00FFFF';
+const NEON_PINK = '#FF3366';
 
 export default function ProgressScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
-  const { theme } = useTheme();
   const navigation = useNavigation();
 
   const [progress, setProgress] = useState<UserProgress | null>(null);
@@ -48,104 +49,112 @@ export default function ProgressScreen() {
   const hasProgress = progress && progress.completedDates.length > 0;
 
   return (
-    <KeyboardAwareScrollViewCompat
-      style={{ flex: 1, backgroundColor: theme.backgroundRoot }}
-      contentContainerStyle={{
-        paddingTop: headerHeight + Spacing.xl,
-        paddingBottom: tabBarHeight + Spacing.xl,
-        paddingHorizontal: Spacing.lg,
-        flexGrow: 1,
-      }}
-      scrollIndicatorInsets={{ bottom: insets.bottom }}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={theme.primary}
-        />
-      }
-    >
-      {hasProgress ? (
-        <>
-          <Animated.View
-            entering={FadeInDown.duration(400).delay(100)}
-            style={styles.statsContainer}
-          >
-            <StatCard
-              icon="zap"
-              label="Current Streak"
-              value={progress.currentStreak}
-              color={theme.success}
-            />
-            <View style={{ width: Spacing.sm }} />
-            <StatCard
-              icon="check-circle"
-              label="Total Sessions"
-              value={progress.totalSessions}
-              color={theme.primary}
-            />
-            <View style={{ width: Spacing.sm }} />
-            <StatCard
-              icon="clock"
-              label="Total Minutes"
-              value={progress.totalMinutes}
-              color={theme.warning}
-            />
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.duration(400).delay(200)}>
-            <CalendarGrid
-              completedDates={progress.completedDates}
-              currentMonth={currentMonth}
-              onMonthChange={setCurrentMonth}
-            />
-          </Animated.View>
-
-          <Animated.View
-            entering={FadeInDown.duration(400).delay(300)}
-            style={styles.longestStreakContainer}
-          >
-            <View
-              style={[
-                styles.longestStreakCard,
-                { backgroundColor: theme.backgroundDefault },
-              ]}
-            >
-              <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                Longest Streak
-              </ThemedText>
-              <ThemedText type="h2" style={[styles.longestStreak, { color: theme.success }]}>
-                {progress.longestStreak} days
-              </ThemedText>
-            </View>
-          </Animated.View>
-        </>
-      ) : (
-        <Animated.View
-          entering={FadeInDown.duration(400)}
-          style={styles.emptyContainer}
-        >
-          <Image
-            source={require('../../assets/images/empty-progress.png')}
-            style={styles.emptyImage}
-            resizeMode="contain"
+    <View style={styles.container}>
+      <LinearGradient
+        colors={['#0a0a1a', '#1a0a2e', '#0a1a2e', '#0a0a1a']}
+        style={StyleSheet.absoluteFill}
+      />
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={{
+          paddingTop: headerHeight + Spacing.xl,
+          paddingBottom: tabBarHeight + Spacing.xl,
+          paddingHorizontal: Spacing.lg,
+          flexGrow: 1,
+        }}
+        scrollIndicatorInsets={{ bottom: insets.bottom }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={NEON_CYAN}
           />
-          <ThemedText type="h3" style={styles.emptyTitle}>
-            Start Your Journey
-          </ThemedText>
-          <ThemedText
-            type="body"
-            style={[styles.emptyDescription, { color: theme.textSecondary }]}
+        }
+      >
+        {hasProgress ? (
+          <>
+            <Animated.View
+              entering={FadeInDown.duration(400).delay(100)}
+              style={styles.statsContainer}
+            >
+              <StatCard
+                icon="zap"
+                label="Current Streak"
+                value={progress.currentStreak}
+                color={NEON_GREEN}
+                darkMode
+              />
+              <View style={{ width: Spacing.sm }} />
+              <StatCard
+                icon="check-circle"
+                label="Total Sessions"
+                value={progress.totalSessions}
+                color={NEON_CYAN}
+                darkMode
+              />
+              <View style={{ width: Spacing.sm }} />
+              <StatCard
+                icon="clock"
+                label="Total Minutes"
+                value={progress.totalMinutes}
+                color={NEON_PINK}
+                darkMode
+              />
+            </Animated.View>
+
+            <Animated.View entering={FadeInDown.duration(400).delay(200)}>
+              <CalendarGrid
+                completedDates={progress.completedDates}
+                currentMonth={currentMonth}
+                onMonthChange={setCurrentMonth}
+                darkMode
+              />
+            </Animated.View>
+
+            <Animated.View
+              entering={FadeInDown.duration(400).delay(300)}
+              style={styles.longestStreakContainer}
+            >
+              <View style={styles.longestStreakCard}>
+                <Text style={styles.longestStreakLabel}>
+                  Longest Streak
+                </Text>
+                <Text style={styles.longestStreakValue}>
+                  {progress.longestStreak} days
+                </Text>
+              </View>
+            </Animated.View>
+          </>
+        ) : (
+          <Animated.View
+            entering={FadeInDown.duration(400)}
+            style={styles.emptyContainer}
           >
-            Complete your first workout to begin tracking your progress here.
-          </ThemedText>
-        </Animated.View>
-      )}
-    </KeyboardAwareScrollViewCompat>
+            <Image
+              source={require('../../assets/images/empty-progress.png')}
+              style={styles.emptyImage}
+              resizeMode="contain"
+            />
+            <Text style={styles.emptyTitle}>
+              Start Your Journey
+            </Text>
+            <Text style={styles.emptyDescription}>
+              Complete your first workout to begin tracking your progress here.
+            </Text>
+          </Animated.View>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
   statsContainer: {
     flexDirection: 'row',
     marginBottom: Spacing.lg,
@@ -157,8 +166,18 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
     alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
-  longestStreak: {
+  longestStreakLabel: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.6)',
+  },
+  longestStreakValue: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: NEON_GREEN,
     marginTop: Spacing.xs,
   },
   emptyContainer: {
@@ -175,9 +194,14 @@ const styles = StyleSheet.create({
   emptyTitle: {
     textAlign: 'center',
     marginBottom: Spacing.md,
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#fff',
   },
   emptyDescription: {
     textAlign: 'center',
     lineHeight: 24,
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.6)',
   },
 });

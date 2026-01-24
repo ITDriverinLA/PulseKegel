@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, Image, Pressable, RefreshControl } from 'react-native';
+import { StyleSheet, View, Text, Pressable, RefreshControl, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
@@ -7,13 +7,9 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Feather } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 
-import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
-import { ThemedText } from '@/components/ThemedText';
-import { Card } from '@/components/Card';
-import { Button } from '@/components/Button';
 import { Toggle } from '@/components/Toggle';
-import { useTheme } from '@/hooks/useTheme';
 import { Spacing, BorderRadius } from '@/constants/theme';
 import { storage, UserSettings, UserProgress, defaultSettings } from '@/lib/storage';
 import {
@@ -24,13 +20,18 @@ import {
 } from '@/data/workoutProgram';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
+const NEON_GREEN = '#00FF88';
+const NEON_CYAN = '#00FFFF';
+const NEON_PINK = '#FF3366';
+const NEON_PURPLE = '#9D4EDD';
+const DARK_GRADIENT = ['#0a0a1a', '#1a0a2e', '#0a1a2e', '#0a0a1a'] as const;
+
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
-  const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
 
   const [progress, setProgress] = useState<UserProgress | null>(null);
@@ -111,187 +112,170 @@ export default function HomeScreen() {
   };
 
   return (
-    <KeyboardAwareScrollViewCompat
-      style={{ flex: 1, backgroundColor: theme.backgroundRoot }}
-      contentContainerStyle={{
-        paddingTop: headerHeight + Spacing.xl,
-        paddingBottom: tabBarHeight + Spacing.xl,
-        paddingHorizontal: Spacing.lg,
-      }}
-      scrollIndicatorInsets={{ bottom: insets.bottom }}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={theme.primary}
-        />
-      }
+    <LinearGradient
+      colors={DARK_GRADIENT}
+      style={styles.gradientContainer}
     >
-      <Animated.View entering={FadeInDown.duration(400).delay(100)}>
-        <View style={styles.streakContainer}>
-          <View
-            style={[
-              styles.streakBadge,
-              { backgroundColor: `${theme.success}15` },
-            ]}
-          >
-            <Feather name="zap" size={24} color={theme.success} />
-            <ThemedText type="h2" style={[styles.streakNumber, { color: theme.success }]}>
-              {progress?.currentStreak || 0}
-            </ThemedText>
-            <ThemedText
-              type="small"
-              style={[styles.streakLabel, { color: theme.textSecondary }]}
-            >
-              Day Streak
-            </ThemedText>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={{
+          paddingTop: headerHeight + Spacing.xl,
+          paddingBottom: tabBarHeight + Spacing.xl,
+          paddingHorizontal: Spacing.lg,
+        }}
+        scrollIndicatorInsets={{ bottom: insets.bottom }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={NEON_GREEN}
+          />
+        }
+      >
+        <Animated.View entering={FadeInDown.duration(400).delay(100)}>
+          <View style={styles.streakContainer}>
+            <View style={styles.streakBadge}>
+              <Feather name="zap" size={24} color={NEON_GREEN} />
+              <Text style={styles.streakNumber}>
+                {progress?.currentStreak || 0}
+              </Text>
+              <Text style={styles.streakLabel}>
+                Day Streak
+              </Text>
+            </View>
           </View>
-        </View>
-      </Animated.View>
+        </Animated.View>
 
-      <Animated.View entering={FadeInDown.duration(400).delay(200)}>
-        <Card elevation={1} style={styles.workoutCard}>
-          {todaysWorkout ? (
-            <>
-              <View style={styles.workoutHeader}>
-                <View>
-                  <ThemedText
-                    type="small"
-                    style={[styles.phaseLabel, { color: theme.primary }]}
-                  >
-                    Week {todaysWorkout.week.weekNumber} - {todaysWorkout.week.phase}
-                  </ThemedText>
-                  <ThemedText type="h3" style={styles.workoutTitle}>
-                    {todaysWorkout.workout.name}
-                  </ThemedText>
-                </View>
-                <View
-                  style={[
-                    styles.durationBadge,
-                    { backgroundColor: theme.backgroundSecondary },
-                  ]}
-                >
-                  <Feather name="clock" size={14} color={theme.textSecondary} />
-                  <ThemedText
-                    type="small"
-                    style={{ color: theme.textSecondary, marginLeft: Spacing.xs }}
-                  >
-                    {settings.recoveryMode
-                      ? getWorkoutForRecoveryMode(todaysWorkout.workout).estimatedMinutes
-                      : todaysWorkout.workout.estimatedMinutes}{' '}
-                    min
-                  </ThemedText>
-                </View>
-              </View>
-
-              <ThemedText
-                type="small"
-                style={[styles.phaseDescription, { color: theme.textSecondary }]}
-              >
-                {todaysWorkout.week.phaseDescription}
-              </ThemedText>
-
-              <View style={styles.segmentsList}>
-                {(settings.recoveryMode
-                  ? getWorkoutForRecoveryMode(todaysWorkout.workout)
-                  : todaysWorkout.workout
-                ).segments.map((segment, index) => (
-                  <View key={segment.id} style={styles.segmentItem}>
-                    <View
-                      style={[
-                        styles.segmentDot,
-                        { backgroundColor: theme.primary },
-                      ]}
-                    />
-                    <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                      {segment.name} ({segment.sets}x{segment.repsPerSet})
-                    </ThemedText>
+        <Animated.View entering={FadeInDown.duration(400).delay(200)}>
+          <View style={styles.card}>
+            {todaysWorkout ? (
+              <>
+                <View style={styles.workoutHeader}>
+                  <View>
+                    <Text style={styles.phaseLabel}>
+                      Week {todaysWorkout.week.weekNumber} - {todaysWorkout.week.phase}
+                    </Text>
+                    <Text style={styles.workoutTitle}>
+                      {todaysWorkout.workout.name}
+                    </Text>
                   </View>
-                ))}
-              </View>
+                  <View style={styles.durationBadge}>
+                    <Feather name="clock" size={14} color="rgba(255,255,255,0.6)" />
+                    <Text style={styles.durationText}>
+                      {settings.recoveryMode
+                        ? getWorkoutForRecoveryMode(todaysWorkout.workout).estimatedMinutes
+                        : todaysWorkout.workout.estimatedMinutes}{' '}
+                      min
+                    </Text>
+                  </View>
+                </View>
 
-              <Button onPress={handleStartWorkout} style={styles.startButton}>
-                Start Workout
-              </Button>
-            </>
-          ) : (
-            <View style={styles.loadingContainer}>
-              <ThemedText type="body">Loading workout...</ThemedText>
+                <Text style={styles.phaseDescription}>
+                  {todaysWorkout.week.phaseDescription}
+                </Text>
+
+                <View style={styles.segmentsList}>
+                  {(settings.recoveryMode
+                    ? getWorkoutForRecoveryMode(todaysWorkout.workout)
+                    : todaysWorkout.workout
+                  ).segments.map((segment) => (
+                    <View key={segment.id} style={styles.segmentItem}>
+                      <View style={styles.segmentDot} />
+                      <Text style={styles.segmentText}>
+                        {segment.name} ({segment.sets}x{segment.repsPerSet})
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+
+                <Pressable onPress={handleStartWorkout} style={styles.startButtonContainer}>
+                  <LinearGradient
+                    colors={[NEON_GREEN, NEON_CYAN]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.startButton}
+                  >
+                    <Text style={styles.startButtonText}>Start Workout</Text>
+                  </LinearGradient>
+                </Pressable>
+              </>
+            ) : (
+              <View style={styles.loadingContainer}>
+                <Text style={styles.loadingText}>Loading workout...</Text>
+              </View>
+            )}
+          </View>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.duration(400).delay(300)}>
+          <View style={styles.card}>
+            <View style={styles.recoveryHeader}>
+              <View style={styles.recoveryInfo}>
+                <View style={styles.recoveryIcon}>
+                  <Feather name="heart" size={20} color={NEON_PURPLE} />
+                </View>
+                <View style={styles.recoveryText}>
+                  <Text style={styles.recoveryTitle}>
+                    Recovery Mode
+                  </Text>
+                  <Text style={styles.recoverySubtitle}>
+                    Reduced intensity with relaxation
+                  </Text>
+                </View>
+              </View>
+              <Toggle
+                value={settings.recoveryMode}
+                onValueChange={handleRecoveryModeChange}
+              />
             </View>
-          )}
-        </Card>
-      </Animated.View>
+          </View>
+        </Animated.View>
 
-      <Animated.View entering={FadeInDown.duration(400).delay(300)}>
-        <Card elevation={1} style={styles.recoveryCard}>
-          <View style={styles.recoveryHeader}>
-            <View style={styles.recoveryInfo}>
-              <View
-                style={[
-                  styles.recoveryIcon,
-                  { backgroundColor: `${theme.warning}15` },
-                ]}
-              >
-                <Feather name="heart" size={20} color={theme.warning} />
-              </View>
-              <View style={styles.recoveryText}>
-                <ThemedText type="body" style={{ fontWeight: '600' }}>
-                  Recovery Mode
-                </ThemedText>
-                <ThemedText
-                  type="small"
-                  style={{ color: theme.textSecondary }}
-                >
-                  Reduced intensity with relaxation
-                </ThemedText>
-              </View>
+        <Animated.View entering={FadeInDown.duration(400).delay(400)}>
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Feather name="check-circle" size={18} color={NEON_GREEN} />
+              <Text style={styles.statValue}>
+                {progress?.totalSessions || 0}
+              </Text>
+              <Text style={styles.statLabel}>
+                Sessions
+              </Text>
             </View>
-            <Toggle
-              value={settings.recoveryMode}
-              onValueChange={handleRecoveryModeChange}
-            />
+            
+            <View style={styles.statItem}>
+              <Feather name="clock" size={18} color={NEON_CYAN} />
+              <Text style={styles.statValue}>
+                {progress?.totalMinutes || 0}
+              </Text>
+              <Text style={styles.statLabel}>
+                Minutes
+              </Text>
+            </View>
+            
+            <View style={styles.statItem}>
+              <Feather name="calendar" size={18} color={NEON_CYAN} />
+              <Text style={styles.statValue}>
+                {formatLastCompleted(progress?.lastCompletedDate || null)}
+              </Text>
+              <Text style={styles.statLabel}>
+                Last Done
+              </Text>
+            </View>
           </View>
-        </Card>
-      </Animated.View>
-
-      <Animated.View entering={FadeInDown.duration(400).delay(400)}>
-        <View style={styles.statsRow}>
-          <View style={[styles.statItem, { backgroundColor: theme.backgroundDefault }]}>
-            <Feather name="check-circle" size={18} color={theme.primary} />
-            <ThemedText type="body" style={styles.statValue}>
-              {progress?.totalSessions || 0}
-            </ThemedText>
-            <ThemedText type="small" style={{ color: theme.textSecondary }}>
-              Sessions
-            </ThemedText>
-          </View>
-          
-          <View style={[styles.statItem, { backgroundColor: theme.backgroundDefault }]}>
-            <Feather name="clock" size={18} color={theme.primary} />
-            <ThemedText type="body" style={styles.statValue}>
-              {progress?.totalMinutes || 0}
-            </ThemedText>
-            <ThemedText type="small" style={{ color: theme.textSecondary }}>
-              Minutes
-            </ThemedText>
-          </View>
-          
-          <View style={[styles.statItem, { backgroundColor: theme.backgroundDefault }]}>
-            <Feather name="calendar" size={18} color={theme.primary} />
-            <ThemedText type="body" style={styles.statValue}>
-              {formatLastCompleted(progress?.lastCompletedDate || null)}
-            </ThemedText>
-            <ThemedText type="small" style={{ color: theme.textSecondary }}>
-              Last Done
-            </ThemedText>
-          </View>
-        </View>
-      </Animated.View>
-    </KeyboardAwareScrollViewCompat>
+        </Animated.View>
+      </ScrollView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  gradientContainer: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
   streakContainer: {
     alignItems: 'center',
     marginBottom: Spacing['2xl'],
@@ -301,18 +285,32 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xl,
     paddingHorizontal: Spacing['3xl'],
     borderRadius: BorderRadius['2xl'],
+    backgroundColor: 'rgba(0, 255, 136, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 255, 136, 0.3)',
   },
   streakNumber: {
     fontSize: 48,
     lineHeight: 56,
     fontWeight: '700',
     marginTop: Spacing.sm,
+    color: NEON_GREEN,
+    textShadowColor: NEON_GREEN,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 20,
   },
   streakLabel: {
     marginTop: Spacing.xs,
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.6)',
   },
-  workoutCard: {
+  card: {
     marginBottom: Spacing.lg,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    padding: Spacing.lg,
   },
   workoutHeader: {
     flexDirection: 'row',
@@ -323,9 +321,17 @@ const styles = StyleSheet.create({
   phaseLabel: {
     fontWeight: '600',
     marginBottom: Spacing.xs,
+    fontSize: 14,
+    color: NEON_CYAN,
+    textShadowColor: NEON_CYAN,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 10,
   },
   workoutTitle: {
     marginBottom: Spacing.xs,
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#fff',
   },
   durationBadge: {
     flexDirection: 'row',
@@ -333,9 +339,17 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.sm,
     borderRadius: BorderRadius.full,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  durationText: {
+    color: 'rgba(255,255,255,0.6)',
+    marginLeft: Spacing.xs,
+    fontSize: 14,
   },
   phaseDescription: {
     marginBottom: Spacing.lg,
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.6)',
   },
   segmentsList: {
     marginBottom: Spacing.lg,
@@ -350,16 +364,41 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
     marginRight: Spacing.sm,
+    backgroundColor: NEON_GREEN,
+  },
+  segmentText: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 14,
+  },
+  startButtonContainer: {
+    marginTop: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    overflow: 'hidden',
+    shadowColor: NEON_GREEN,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 15,
+    elevation: 10,
   },
   startButton: {
-    marginTop: Spacing.sm,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: BorderRadius.md,
+  },
+  startButtonText: {
+    color: '#0a0a1a',
+    fontSize: 16,
+    fontWeight: '700',
   },
   loadingContainer: {
     paddingVertical: Spacing['3xl'],
     alignItems: 'center',
   },
-  recoveryCard: {
-    marginBottom: Spacing.lg,
+  loadingText: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 16,
   },
   recoveryHeader: {
     flexDirection: 'row',
@@ -378,9 +417,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: Spacing.md,
+    backgroundColor: 'rgba(157, 78, 221, 0.15)',
   },
   recoveryText: {
     flex: 1,
+  },
+  recoveryTitle: {
+    fontWeight: '600',
+    fontSize: 16,
+    color: '#fff',
+  },
+  recoverySubtitle: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 14,
   },
   statsRow: {
     flexDirection: 'row',
@@ -391,10 +440,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: Spacing.lg,
     borderRadius: BorderRadius.md,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   statValue: {
     fontWeight: '600',
     marginTop: Spacing.xs,
     marginBottom: Spacing.xs,
+    fontSize: 16,
+    color: '#fff',
+  },
+  statLabel: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 14,
   },
 });
