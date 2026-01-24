@@ -91,6 +91,10 @@ export default function HomeScreen() {
     });
   };
 
+  const handleQuickWorkout = () => {
+    navigation.navigate('WorkoutPicker');
+  };
+
   const formatLastCompleted = (dateStr: string | null): string => {
     if (!dateStr) return 'Never';
     
@@ -188,16 +192,22 @@ export default function HomeScreen() {
                   ))}
                 </View>
 
-                <Pressable onPress={handleStartWorkout} style={styles.startButtonContainer}>
-                  <LinearGradient
-                    colors={[NEON_GREEN, NEON_CYAN]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.startButton}
-                  >
-                    <Text style={styles.startButtonText}>Start Workout</Text>
-                  </LinearGradient>
-                </Pressable>
+                <View style={styles.buttonsRow}>
+                  <Pressable onPress={handleStartWorkout} style={styles.startButtonContainer}>
+                    <LinearGradient
+                      colors={[NEON_GREEN, NEON_CYAN]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.startButton}
+                    >
+                      <Text style={styles.startButtonText}>Start Program</Text>
+                    </LinearGradient>
+                  </Pressable>
+                  <Pressable onPress={handleQuickWorkout} style={styles.quickWorkoutButton}>
+                    <Feather name="zap" size={18} color={NEON_CYAN} />
+                    <Text style={styles.quickWorkoutText}>Quick</Text>
+                  </Pressable>
+                </View>
               </>
             ) : (
               <View style={styles.loadingContainer}>
@@ -370,8 +380,13 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.6)',
     fontSize: 14,
   },
-  startButtonContainer: {
+  buttonsRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
     marginTop: Spacing.sm,
+  },
+  startButtonContainer: {
+    flex: 1,
     borderRadius: BorderRadius.md,
     overflow: 'hidden',
     shadowColor: NEON_GREEN,
@@ -382,7 +397,7 @@ const styles = StyleSheet.create({
   },
   startButton: {
     paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.xl,
+    paddingHorizontal: Spacing.lg,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: BorderRadius.md,
@@ -391,6 +406,23 @@ const styles = StyleSheet.create({
     color: '#0a0a1a',
     fontSize: 16,
     fontWeight: '700',
+  },
+  quickWorkoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    backgroundColor: 'rgba(0, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 255, 255, 0.3)',
+  },
+  quickWorkoutText: {
+    color: NEON_CYAN,
+    fontSize: 14,
+    fontWeight: '600',
   },
   loadingContainer: {
     paddingVertical: Spacing['3xl'],

@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import MainTabNavigator from '@/navigation/MainTabNavigator';
 import WorkoutPlayerScreen from '@/screens/WorkoutPlayerScreen';
+import WorkoutPickerScreen from '@/screens/WorkoutPickerScreen';
 import OnboardingScreen from '@/screens/OnboardingScreen';
 import { useScreenOptions } from '@/hooks/useScreenOptions';
 import { storage } from '@/lib/storage';
@@ -15,6 +16,7 @@ export type RootStackParamList = {
     weekNumber: number;
     phase: string;
   };
+  WorkoutPicker: undefined;
   Onboarding: undefined;
 };
 
@@ -62,6 +64,14 @@ export default function RootStackNavigator() {
           presentation: 'fullScreenModal',
           headerShown: false,
           gestureEnabled: false,
+        }}
+      />
+      <Stack.Screen
+        name="WorkoutPicker"
+        component={WorkoutPickerScreen}
+        options={{
+          presentation: 'modal',
+          headerShown: false,
         }}
       />
     </Stack.Navigator>
