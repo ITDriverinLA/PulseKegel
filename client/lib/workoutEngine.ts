@@ -15,7 +15,10 @@ export interface WorkoutState {
   phaseStartTime: number | null;
   pauseStartTime: number | null;
   totalPausedTime: number;
+  isSetRest: boolean;
 }
+
+const SET_REST_SECONDS = 10;
 
 export interface WorkoutEngineCallbacks {
   onStateChange: (state: WorkoutState) => void;
@@ -52,6 +55,7 @@ export class WorkoutEngine {
       phaseStartTime: null,
       pauseStartTime: null,
       totalPausedTime: 0,
+      isSetRest: false,
     };
   }
 
@@ -212,6 +216,13 @@ export class WorkoutEngine {
       this.state.secondsRemaining = segment.restSeconds;
       this.state.phaseStartTime = Date.now();
       this.callbacks.onPhaseChange('rest', segment);
+    } else if (this.state.isSetRest) {
+      this.state.isSetRest = false;
+      this.state.phase = 'squeeze';
+      this.state.secondsRemaining = segment.squeezeSeconds;
+      this.state.phaseStartTime = Date.now();
+      this.callbacks.onRepChange(1, segment.repsPerSet);
+      this.callbacks.onPhaseChange('squeeze', segment);
     } else {
       this.advanceRep();
     }
@@ -253,12 +264,12 @@ export class WorkoutEngine {
       return;
     }
 
-    this.state.phase = 'squeeze';
-    this.state.secondsRemaining = segment.squeezeSeconds;
+    this.state.isSetRest = true;
+    this.state.phase = 'rest';
+    this.state.secondsRemaining = SET_REST_SECONDS;
     this.state.phaseStartTime = Date.now();
     this.callbacks.onSetChange(this.state.setIndex + 1, segment.sets);
-    this.callbacks.onRepChange(1, segment.repsPerSet);
-    this.callbacks.onPhaseChange('squeeze', segment);
+    this.callbacks.onPhaseChange('rest', segment);
   }
 
   private advanceToNextSegment(): void {
