@@ -165,15 +165,26 @@ const alternateDayWorkout = (weekNum: number): DayTemplate => {
 };
 
 const strengthDay = (weekNum: number): DayTemplate => {
-  const baseHold = Math.min(3 + Math.floor(weekNum / 2), 10);
-  const sets = Math.min(2 + Math.floor(weekNum / 3), 5);
-  const reps = Math.min(5 + Math.floor(weekNum / 2), 10);
+  // Week 1: 5s hold, Week 6: 8s hold, max 10s
+  const baseHold = Math.min(5 + Math.floor((weekNum - 1) / 2), 10);
+  // Week 1: 3 sets, gradually increase to 5
+  const sets = Math.min(3 + Math.floor((weekNum - 1) / 3), 5);
+  // Week 1: 8 reps, gradually increase to 12
+  const reps = Math.min(8 + Math.floor((weekNum - 1) / 2), 12);
+  // Rest time increases slightly with hold time
+  const restSeconds = Math.min(5 + Math.floor((weekNum - 1) / 3), 8);
+  
+  // Calculate estimated time: exercise + set rests + cool down
+  const exerciseTime = sets * reps * (baseHold + restSeconds);
+  const setRestTime = (sets - 1) * 10; // 10s rest between sets
+  const coolDownTime = 30;
+  const totalSeconds = exerciseTime + setRestTime + coolDownTime;
   
   return {
     id: `w${weekNum}-strength`,
     name: 'Strength Training',
     dayType: 'strength',
-    estimatedMinutes: Math.ceil((sets * reps * (baseHold + 3)) / 60) + 2,
+    estimatedMinutes: Math.ceil(totalSeconds / 60),
     segments: [
       createSegment(
         `w${weekNum}-slow`,
@@ -182,17 +193,17 @@ const strengthDay = (weekNum: number): DayTemplate => {
         sets,
         reps,
         baseHold,
-        3,
+        restSeconds,
         'slowHolds'
       ),
       createSegment(
-        `w${weekNum}-breathing`,
-        'Breathing Reset',
-        'Gentle squeeze with deep breaths',
+        `w${weekNum}-cooldown`,
+        'Cool Down',
+        'Relax and breathe deeply',
         1,
-        3,
-        4,
-        4,
+        1,
+        0,
+        30,
         'breathing'
       ),
     ],
