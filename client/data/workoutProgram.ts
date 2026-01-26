@@ -174,11 +174,18 @@ const strengthDay = (weekNum: number): DayTemplate => {
   // Rest time 5-6 seconds
   const restSeconds = Math.min(5 + Math.floor((weekNum - 1) / 4), 6);
   
-  // Calculate estimated time: exercise + set rests + cool down
-  const exerciseTime = sets * reps * (baseHold + restSeconds);
-  const setRestTime = (sets - 1) * 10; // 10s rest between sets
+  // Quick flicks reps (shorter burst after slow holds)
+  const flickReps = Math.min(10 + weekNum * 2, 20);
+  // Reverse kegel reps
+  const reverseReps = Math.min(4 + Math.floor(weekNum / 2), 8);
+  
+  // Calculate time with all exercises
+  const slowHoldTime = sets * reps * (baseHold + restSeconds);
+  const flickTime = flickReps * 2; // 1s squeeze + 1s rest
+  const reverseTime = reverseReps * 8; // 4s release + 4s rest
+  const blockRestTime = 20; // breathing break between exercises
   const coolDownTime = 30;
-  const totalSeconds = exerciseTime + setRestTime + coolDownTime;
+  const totalSeconds = slowHoldTime + blockRestTime + flickTime + blockRestTime + reverseTime + coolDownTime;
   
   return {
     id: `w${weekNum}-strength`,
@@ -195,6 +202,28 @@ const strengthDay = (weekNum: number): DayTemplate => {
         baseHold,
         restSeconds,
         'slowHolds'
+      ),
+      createBlockRest(`w${weekNum}-str-rest1`),
+      createSegment(
+        `w${weekNum}-flicks`,
+        'Quick Flicks',
+        'Quick squeeze and release rhythm',
+        1,
+        flickReps,
+        1,
+        1,
+        'quickFlicks'
+      ),
+      createBlockRest(`w${weekNum}-str-rest2`),
+      createSegment(
+        `w${weekNum}-reverse`,
+        'Reverse Kegels',
+        'Gently release and drop tension',
+        1,
+        reverseReps,
+        4,
+        4,
+        'reverse'
       ),
       createSegment(
         `w${weekNum}-cooldown`,
