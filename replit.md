@@ -104,5 +104,13 @@ All data stored locally via AsyncStorage:
 ## User Preferences
 - Haptics: on/off, intensity (light/medium/heavy), rest cue style
 - Dynamic haptic intensity: Haptics match the power bar level (light at bottom, heavy at top)
+- Distinct haptic patterns per exercise type:
+  - Slow Holds: Steady pulses with progressive intensity build
+  - Quick Flicks: Rapid staccato bursts in groups of 3 with micro-pauses
+  - Elevator: Stepped double-pulses that speed up as you climb
+  - Reverse Kegels: Gentle, widely-spaced pulses
+  - Contract-Relax: Double-pulse pattern with intensity ramp
+  - Breathing: Very slow, soft wave-like rhythm
+- Haptic transition cues: Start cue when squeeze begins, peak cue at 90%, double-tap on phase change
 - Accessibility: High contrast mode, large text mode
 - Recovery Mode: 50% reduced intensity with relaxation segment
