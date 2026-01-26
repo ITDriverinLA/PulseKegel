@@ -222,11 +222,11 @@ const speedDay = (weekNum: number): DayTemplate => {
       createSegment(
         `w${weekNum}-recovery`,
         'Cool Down',
-        'Gentle breathing to relax',
+        'Relax and breathe deeply',
         1,
-        2,
-        3,
-        5,
+        1,
+        0,
+        30,
         'breathing'
       ),
     ],

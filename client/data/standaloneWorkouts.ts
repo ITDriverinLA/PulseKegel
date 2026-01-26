@@ -44,6 +44,18 @@ const createBlockRest = (id: string, seconds: number = 20): Segment =>
     'blockRest'
   );
 
+const createCoolDown = (id: string, seconds: number = 30): Segment =>
+  createSegment(
+    id,
+    'Cool Down',
+    'Relax and breathe deeply',
+    1,
+    1,
+    0,
+    seconds,
+    'breathing'
+  );
+
 export const standaloneWorkouts: StandaloneWorkout[] = [
   {
     id: 'quick-flicks',
@@ -80,16 +92,7 @@ export const standaloneWorkouts: StandaloneWorkout[] = [
           'quickFlicks'
         ),
         createBlockRest('qf-rest2', 20),
-        createSegment(
-          'qf-cooldown',
-          'Cool Down',
-          'Deep breathing to relax',
-          1,
-          3,
-          3,
-          5,
-          'breathing'
-        ),
+        createCoolDown('qf-cooldown', 30),
       ],
     },
   },
@@ -128,16 +131,7 @@ export const standaloneWorkouts: StandaloneWorkout[] = [
           'slowHolds'
         ),
         createBlockRest('sh-rest2', 20),
-        createSegment(
-          'sh-cooldown',
-          'Breathing Reset',
-          'Gentle squeeze with deep breaths',
-          1,
-          4,
-          4,
-          4,
-          'breathing'
-        ),
+        createCoolDown('sh-cooldown', 30),
       ],
     },
   },
@@ -187,16 +181,7 @@ export const standaloneWorkouts: StandaloneWorkout[] = [
           'slowHolds'
         ),
         createBlockRest('en-rest3', 20),
-        createSegment(
-          'en-cooldown',
-          'Recovery Breathing',
-          'Deep breaths and complete relaxation',
-          1,
-          4,
-          5,
-          6,
-          'breathing'
-        ),
+        createCoolDown('en-cooldown', 30),
       ],
     },
   },
@@ -236,16 +221,7 @@ export const standaloneWorkouts: StandaloneWorkout[] = [
           [0.25, 0.5, 0.75, 1.0]
         ),
         createBlockRest('el-rest2', 20),
-        createSegment(
-          'el-cooldown',
-          'Relaxation',
-          'Deep breathing and release',
-          1,
-          3,
-          4,
-          5,
-          'breathing'
-        ),
+        createCoolDown('el-cooldown', 30),
       ],
     },
   },
@@ -284,16 +260,7 @@ export const standaloneWorkouts: StandaloneWorkout[] = [
           'reverse'
         ),
         createBlockRest('rv-rest2', 20),
-        createSegment(
-          'rv-cooldown',
-          'Deep Relaxation',
-          'Complete release and breathing',
-          1,
-          5,
-          4,
-          6,
-          'breathing'
-        ),
+        createCoolDown('rv-cooldown', 30),
       ],
     },
   },
@@ -332,16 +299,7 @@ export const standaloneWorkouts: StandaloneWorkout[] = [
           'contractRelax'
         ),
         createBlockRest('cr-rest2', 20),
-        createSegment(
-          'cr-cooldown',
-          'Breathing',
-          'Calm breathing to finish',
-          1,
-          3,
-          3,
-          5,
-          'breathing'
-        ),
+        createCoolDown('cr-cooldown', 30),
       ],
     },
   },
