@@ -417,7 +417,7 @@ export default function WorkoutPlayerScreen() {
                 {workoutState?.secondsRemaining || 0}
               </Animated.Text>
               <ThemedText type="small" style={styles.countdownLabel}>
-                seconds
+                {(workoutState?.secondsRemaining || 0) === 1 ? 'second' : 'seconds'}
               </ThemedText>
             </View>
           </View>

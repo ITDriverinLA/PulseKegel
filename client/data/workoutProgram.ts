@@ -240,16 +240,23 @@ const strengthDay = (weekNum: number): DayTemplate => {
 };
 
 const speedDay = (weekNum: number): DayTemplate => {
-  // Week 1: 4 sets, gradually increase to 6
-  const sets = Math.min(4 + Math.floor((weekNum - 1) / 3), 6);
-  // Week 1: 30 reps, gradually increase to 40
-  const reps = Math.min(30 + Math.floor((weekNum - 1) / 2) * 2, 40);
+  // Week 1: 2 sets of quick flicks, gradually increase
+  const flickSets = Math.min(2 + Math.floor((weekNum - 1) / 3), 4);
+  // Week 1: 20 reps per set, gradually increase to 30
+  const flickReps = Math.min(20 + Math.floor((weekNum - 1) / 2) * 2, 30);
+  // Contract-relax reps
+  const contractReps = Math.min(6 + weekNum, 12);
+  // Slow hold reps (fewer, for contrast)
+  const slowReps = Math.min(4 + Math.floor(weekNum / 2), 8);
+  const slowHold = Math.min(4 + Math.floor(weekNum / 3), 6);
   
-  // Calculate estimated time: exercise + set rests + cool down
-  const exerciseTime = sets * reps * 2; // 1s squeeze + 1s rest
-  const setRestTime = (sets - 1) * 10; // 10s rest between sets
+  // Calculate estimated time with all exercises
+  const flickTime = flickSets * flickReps * 2; // 1s squeeze + 1s rest
+  const contractTime = contractReps * 6; // 2s squeeze + 4s rest
+  const slowTime = slowReps * (slowHold + 4); // hold + rest
+  const blockRestTime = 20;
   const coolDownTime = 30;
-  const totalSeconds = exerciseTime + setRestTime + coolDownTime;
+  const totalSeconds = flickTime + blockRestTime + contractTime + blockRestTime + slowTime + coolDownTime;
   
   return {
     id: `w${weekNum}-speed`,
@@ -261,11 +268,33 @@ const speedDay = (weekNum: number): DayTemplate => {
         `w${weekNum}-flicks`,
         'Quick Flicks',
         'Quick squeeze and release rhythm',
-        sets,
-        reps,
+        flickSets,
+        flickReps,
         1,
         1,
         'quickFlicks'
+      ),
+      createBlockRest(`w${weekNum}-spd-rest1`),
+      createSegment(
+        `w${weekNum}-contract`,
+        'Contract-Relax',
+        'Short squeeze with longer relaxation',
+        1,
+        contractReps,
+        2,
+        4,
+        'contractRelax'
+      ),
+      createBlockRest(`w${weekNum}-spd-rest2`),
+      createSegment(
+        `w${weekNum}-slow`,
+        'Slow Holds',
+        'Squeeze and hold for control',
+        1,
+        slowReps,
+        slowHold,
+        4,
+        'slowHolds'
       ),
       createSegment(
         `w${weekNum}-cooldown`,
