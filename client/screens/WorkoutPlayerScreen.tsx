@@ -121,6 +121,7 @@ export default function WorkoutPlayerScreen() {
         if (newPhase === 'squeeze') {
           hapticPulseRef.current.start(segment.type, settings, segment.squeezeSeconds, segment.rampSteps);
         } else {
+          hapticPulseRef.current.triggerTransitionCue();
           hapticPulseRef.current.stop();
         }
       },

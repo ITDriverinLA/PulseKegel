@@ -5,32 +5,93 @@ import { UserSettings } from '@/lib/storage';
 
 type HapticIntensity = 'light' | 'medium' | 'heavy';
 
-const getTapInterval = (segmentType: SegmentType, intensity: HapticIntensity): number => {
-  const baseIntervalMap: Record<SegmentType, number> = {
-    slowHolds: 500,
-    quickFlicks: 120,
-    elevator: 350,
-    reverse: 400,
-    breathing: 700,
-    blockRest: 0,
-    contractRelax: 300,
-  };
-  
-  const baseInterval = baseIntervalMap[segmentType];
+interface PatternConfig {
+  baseInterval: number;
+  burstCount: number;
+  burstGap: number;
+  groupPause: number;
+  progressiveSpeed: boolean;
+  progressiveIntensity: boolean;
+}
 
-  const intensityMultiplier = {
-    light: 1.3,
-    medium: 1.0,
-    heavy: 0.7,
-  }[intensity];
+const PATTERN_CONFIGS: Record<SegmentType, PatternConfig> = {
+  slowHolds: {
+    baseInterval: 450,
+    burstCount: 1,
+    burstGap: 0,
+    groupPause: 0,
+    progressiveSpeed: false,
+    progressiveIntensity: true,
+  },
+  quickFlicks: {
+    baseInterval: 80,
+    burstCount: 3,
+    burstGap: 60,
+    groupPause: 150,
+    progressiveSpeed: false,
+    progressiveIntensity: false,
+  },
+  elevator: {
+    baseInterval: 350,
+    burstCount: 2,
+    burstGap: 80,
+    groupPause: 300,
+    progressiveSpeed: true,
+    progressiveIntensity: true,
+  },
+  reverse: {
+    baseInterval: 600,
+    burstCount: 1,
+    burstGap: 0,
+    groupPause: 0,
+    progressiveSpeed: false,
+    progressiveIntensity: false,
+  },
+  breathing: {
+    baseInterval: 900,
+    burstCount: 1,
+    burstGap: 0,
+    groupPause: 0,
+    progressiveSpeed: false,
+    progressiveIntensity: false,
+  },
+  blockRest: {
+    baseInterval: 0,
+    burstCount: 0,
+    burstGap: 0,
+    groupPause: 0,
+    progressiveSpeed: false,
+    progressiveIntensity: false,
+  },
+  contractRelax: {
+    baseInterval: 200,
+    burstCount: 2,
+    burstGap: 100,
+    groupPause: 400,
+    progressiveSpeed: false,
+    progressiveIntensity: true,
+  },
+};
 
-  return Math.round(baseInterval * intensityMultiplier);
+const getIntensityMultiplier = (intensity: HapticIntensity): number => {
+  return { light: 1.4, medium: 1.0, heavy: 0.7 }[intensity];
 };
 
 const getProgressBasedStyle = (
   progress: number,
-  baseIntensity: HapticIntensity
+  baseIntensity: HapticIntensity,
+  segmentType: SegmentType
 ): Haptics.ImpactFeedbackStyle => {
+  if (segmentType === 'reverse' || segmentType === 'breathing') {
+    return Haptics.ImpactFeedbackStyle.Light;
+  }
+
+  if (segmentType === 'quickFlicks') {
+    return baseIntensity === 'heavy' 
+      ? Haptics.ImpactFeedbackStyle.Medium 
+      : Haptics.ImpactFeedbackStyle.Light;
+  }
+
   if (progress < 0.33) {
     return Haptics.ImpactFeedbackStyle.Light;
   } else if (progress < 0.66) {
@@ -42,7 +103,6 @@ const getProgressBasedStyle = (
       case 'light':
         return Haptics.ImpactFeedbackStyle.Medium;
       case 'medium':
-        return Haptics.ImpactFeedbackStyle.Heavy;
       case 'heavy':
         return Haptics.ImpactFeedbackStyle.Heavy;
       default:
@@ -52,13 +112,15 @@ const getProgressBasedStyle = (
 };
 
 export class HapticPulseController {
-  private intervalId: NodeJS.Timeout | null = null;
+  private mainTimeoutId: NodeJS.Timeout | null = null;
   private isRunning = false;
   private settings: UserSettings | null = null;
   private segmentType: SegmentType = 'slowHolds';
   private startTime: number = 0;
   private durationMs: number = 0;
   private rampSteps: number[] | undefined;
+  private hasTriggeredPeakCue = false;
+  private pulseCount = 0;
 
   start(
     segmentType: SegmentType, 
@@ -78,20 +140,41 @@ export class HapticPulseController {
     this.startTime = Date.now();
     this.durationMs = durationSeconds * 1000;
     this.rampSteps = rampSteps;
+    this.hasTriggeredPeakCue = false;
+    this.pulseCount = 0;
     
     if (segmentType === 'blockRest') {
       return;
     }
 
-    const interval = getTapInterval(segmentType, settings.hapticIntensity);
+    this.triggerStartCue();
     
-    this.triggerProgressPulse();
-
-    this.intervalId = setInterval(() => {
+    setTimeout(() => {
       if (this.isRunning) {
-        this.triggerProgressPulse();
+        this.scheduleNextPattern();
       }
-    }, interval);
+    }, 150);
+  }
+
+  private async triggerStartCue(): Promise<void> {
+    try {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    } catch (error) {
+      console.warn('Haptic start cue error:', error);
+    }
+  }
+
+  private async triggerPeakCue(): Promise<void> {
+    if (this.hasTriggeredPeakCue) return;
+    this.hasTriggeredPeakCue = true;
+    
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      await new Promise(resolve => setTimeout(resolve, 50));
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    } catch (error) {
+      console.warn('Haptic peak cue error:', error);
+    }
   }
 
   private calculateProgress(): number {
@@ -117,32 +200,81 @@ export class HapticPulseController {
         return Math.min(elapsed / (this.durationMs * 0.5), 1);
 
       case 'breathing':
-        return progress * 0.65;
+        return progress * 0.5;
 
       case 'reverse':
+        return 0.3;
+
       case 'slowHolds':
       default:
         return progress;
     }
   }
 
-  private async triggerProgressPulse(): Promise<void> {
-    if (!this.settings) return;
-    
-    try {
-      const progress = this.calculateProgress();
-      const style = getProgressBasedStyle(progress, this.settings.hapticIntensity);
-      await Haptics.impactAsync(style);
-    } catch (error) {
-      console.warn('Haptics pulse error:', error);
+  private async scheduleNextPattern(): Promise<void> {
+    if (!this.isRunning || !this.settings) return;
+
+    const config = PATTERN_CONFIGS[this.segmentType];
+    const progress = this.calculateProgress();
+    const intensityMultiplier = getIntensityMultiplier(this.settings.hapticIntensity);
+
+    if (progress >= 0.9 && !this.hasTriggeredPeakCue && this.segmentType !== 'quickFlicks') {
+      await this.triggerPeakCue();
     }
+
+    let speedFactor = 1;
+    if (config.progressiveSpeed) {
+      speedFactor = 1 - (progress * 0.4);
+    }
+
+    const style = getProgressBasedStyle(progress, this.settings.hapticIntensity, this.segmentType);
+
+    for (let i = 0; i < config.burstCount; i++) {
+      if (!this.isRunning) return;
+      
+      try {
+        await Haptics.impactAsync(style);
+      } catch (error) {
+        console.warn('Haptics pulse error:', error);
+      }
+      
+      if (i < config.burstCount - 1 && config.burstGap > 0) {
+        await new Promise(resolve => setTimeout(resolve, config.burstGap * speedFactor));
+      }
+    }
+
+    this.pulseCount++;
+
+    if (!this.isRunning) return;
+
+    let nextInterval = config.baseInterval * intensityMultiplier * speedFactor;
+    
+    if (config.groupPause > 0 && this.pulseCount % 3 === 0) {
+      nextInterval += config.groupPause;
+    }
+
+    this.mainTimeoutId = setTimeout(() => {
+      this.scheduleNextPattern();
+    }, nextInterval);
   }
 
   stop(): void {
     this.isRunning = false;
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
+    if (this.mainTimeoutId) {
+      clearTimeout(this.mainTimeoutId);
+      this.mainTimeoutId = null;
+    }
+  }
+
+  async triggerTransitionCue(): Promise<void> {
+    if (!this.settings?.hapticsEnabled || !hapticsManager.isSupported()) return;
+    
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      await new Promise(resolve => setTimeout(resolve, 80));
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch (error) {
+      console.warn('Haptic transition cue error:', error);
     }
   }
 
@@ -167,7 +299,9 @@ export const hapticsManager = {
 
     try {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise(resolve => setTimeout(resolve, 150));
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await new Promise(resolve => setTimeout(resolve, 150));
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
       console.warn('Haptics error:', error);
@@ -199,6 +333,18 @@ export const hapticsManager = {
     
     try {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } catch (error) {
+      console.warn('Haptics error:', error);
+    }
+  },
+
+  async triggerPhaseTransition(settings: UserSettings): Promise<void> {
+    if (!settings.hapticsEnabled || !this.isSupported()) return;
+    
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      await new Promise(resolve => setTimeout(resolve, 100));
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch (error) {
       console.warn('Haptics error:', error);
     }
