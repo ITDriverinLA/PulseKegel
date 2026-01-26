@@ -72,7 +72,7 @@ function PowerBarSegment({
   width,
 }: { 
   index: number; 
-  progress: Animated.SharedValue<number>;
+  progress: { value: number };
   segmentHeight: number;
   width: number;
 }) {
@@ -178,7 +178,7 @@ export function PowerBar({
         case 'breathing':
           progress.value = withTiming(0.65, { 
             duration: durationMs,
-            easing: Easing.inOut(Easing.sine),
+            easing: Easing.inOut(Easing.sin),
           });
           break;
 
