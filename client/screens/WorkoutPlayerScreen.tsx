@@ -407,7 +407,7 @@ export default function WorkoutPlayerScreen() {
               phase={currentPhase}
               segmentType={currentSegment?.type || 'slowHolds'}
               durationSeconds={phaseDuration}
-              isActive={workoutState?.isRunning && !workoutState?.isPaused}
+              isActive={Boolean(workoutState?.isRunning && !workoutState?.isPaused)}
               height={300}
               width={120}
               rampSteps={currentSegment?.rampSteps}
