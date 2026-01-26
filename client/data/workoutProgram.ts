@@ -165,14 +165,14 @@ const alternateDayWorkout = (weekNum: number): DayTemplate => {
 };
 
 const strengthDay = (weekNum: number): DayTemplate => {
-  // Week 1: 5s hold, Week 6: 8s hold, max 10s
-  const baseHold = Math.min(5 + Math.floor((weekNum - 1) / 2), 10);
-  // Week 1: 3 sets, gradually increase to 5
-  const sets = Math.min(3 + Math.floor((weekNum - 1) / 3), 5);
-  // Week 1: 8 reps, gradually increase to 12
-  const reps = Math.min(8 + Math.floor((weekNum - 1) / 2), 12);
-  // Rest time increases slightly with hold time
-  const restSeconds = Math.min(5 + Math.floor((weekNum - 1) / 3), 8);
+  // Week 1: 5s hold, progressing to 8s by Week 6
+  const baseHold = Math.min(5 + Math.floor((weekNum - 1) / 2), 8);
+  // Week 1-3: 3 sets, Week 4-6: 4 sets
+  const sets = weekNum <= 3 ? 3 : 4;
+  // Week 1: 8 reps, gradually increase to 10
+  const reps = Math.min(8 + Math.floor((weekNum - 1) / 3), 10);
+  // Rest time 5-6 seconds
+  const restSeconds = Math.min(5 + Math.floor((weekNum - 1) / 4), 6);
   
   // Calculate estimated time: exercise + set rests + cool down
   const exerciseTime = sets * reps * (baseHold + restSeconds);
