@@ -176,12 +176,6 @@ export function PowerBar({
           break;
 
         case 'breathing':
-          progress.value = withTiming(0.65, { 
-            duration: durationMs,
-            easing: Easing.inOut(Easing.sin),
-          });
-          break;
-
         case 'blockRest':
           progress.value = 0;
           break;

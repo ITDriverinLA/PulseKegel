@@ -143,7 +143,7 @@ export class HapticPulseController {
     this.hasTriggeredPeakCue = false;
     this.pulseCount = 0;
     
-    if (segmentType === 'blockRest') {
+    if (segmentType === 'blockRest' || segmentType === 'breathing') {
       return;
     }
 
