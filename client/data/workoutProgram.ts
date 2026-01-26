@@ -211,14 +211,22 @@ const strengthDay = (weekNum: number): DayTemplate => {
 };
 
 const speedDay = (weekNum: number): DayTemplate => {
-  const sets = Math.min(3 + Math.floor(weekNum / 4), 6);
-  const reps = Math.min(8 + weekNum, 20);
+  // Week 1: 4 sets, gradually increase to 6
+  const sets = Math.min(4 + Math.floor((weekNum - 1) / 3), 6);
+  // Week 1: 30 reps, gradually increase to 40
+  const reps = Math.min(30 + Math.floor((weekNum - 1) / 2) * 2, 40);
+  
+  // Calculate estimated time: exercise + set rests + cool down
+  const exerciseTime = sets * reps * 2; // 1s squeeze + 1s rest
+  const setRestTime = (sets - 1) * 10; // 10s rest between sets
+  const coolDownTime = 30;
+  const totalSeconds = exerciseTime + setRestTime + coolDownTime;
   
   return {
     id: `w${weekNum}-speed`,
     name: 'Speed Training',
     dayType: 'speed',
-    estimatedMinutes: Math.ceil((sets * reps * 2) / 60) + 2,
+    estimatedMinutes: Math.ceil(totalSeconds / 60),
     segments: [
       createSegment(
         `w${weekNum}-flicks`,
@@ -231,7 +239,7 @@ const speedDay = (weekNum: number): DayTemplate => {
         'quickFlicks'
       ),
       createSegment(
-        `w${weekNum}-recovery`,
+        `w${weekNum}-cooldown`,
         'Cool Down',
         'Relax and breathe deeply',
         1,
@@ -245,35 +253,49 @@ const speedDay = (weekNum: number): DayTemplate => {
 };
 
 const coordinationDay = (weekNum: number): DayTemplate => {
-  const sets = Math.min(2 + Math.floor(weekNum / 4), 4);
+  // Week 3: 2 sets, gradually increase to 4
+  const sets = Math.min(2 + Math.floor((weekNum - 1) / 3), 4);
+  // Elevator reps start at 5, increase to 8
+  const elevatorReps = Math.min(5 + Math.floor((weekNum - 1) / 2), 8);
+  // Hold time for elevator steps
+  const elevatorHold = Math.min(6 + Math.floor((weekNum - 1) / 2), 10);
+  // Final hold increases with weeks
+  const finalHold = Math.min(8 + weekNum, 15);
+  
+  // Calculate estimated time
+  const elevatorTime = sets * elevatorReps * (elevatorHold + 6); // hold + rest
+  const reverseTime = Math.max(1, sets - 1) * 4 * (5 + 5); // 4 reps × (5s + 5s)
+  const finalTime = finalHold + 5;
+  const setRestTime = (sets - 1) * 10;
+  const coolDownTime = 30;
+  const totalSeconds = elevatorTime + reverseTime + finalTime + setRestTime + coolDownTime;
   
   return {
     id: `w${weekNum}-coordination`,
     name: 'Coordination',
     dayType: 'coordination',
-    estimatedMinutes: Math.ceil((sets * 4 * 8) / 60) + 3,
+    estimatedMinutes: Math.ceil(totalSeconds / 60),
     segments: [
       createSegment(
         `w${weekNum}-elevator`,
         'Elevator',
-        'Gradually increase tension in steps',
+        'Step up tension: 25% to 50% to 75% to 100%',
         sets,
-        4,
-        2,
-        2,
+        elevatorReps,
+        elevatorHold,
+        6,
         'elevator',
         [0.25, 0.5, 0.75, 1.0]
       ),
       createSegment(
         `w${weekNum}-reverse`,
-        'Reverse Elevator',
-        'Gradually decrease tension',
+        'Reverse Kegels',
+        'Gently release and drop tension',
         Math.max(1, sets - 1),
-        3,
-        2,
-        2,
-        'reverse',
-        [1.0, 0.75, 0.5, 0.25]
+        4,
+        5,
+        5,
+        'reverse'
       ),
       createSegment(
         `w${weekNum}-final`,
@@ -281,9 +303,19 @@ const coordinationDay = (weekNum: number): DayTemplate => {
         'One strong hold to finish',
         1,
         1,
-        Math.min(5 + weekNum, 15),
+        finalHold,
         5,
         'slowHolds'
+      ),
+      createSegment(
+        `w${weekNum}-coord-cooldown`,
+        'Cool Down',
+        'Relax and breathe deeply',
+        1,
+        1,
+        0,
+        30,
+        'breathing'
       ),
     ],
   };
