@@ -100,6 +100,11 @@ export default function WorkoutPlayerScreen() {
   useEffect(() => {
     startTimeRef.current = new Date();
     
+    const workoutSettings = {
+      restDuration: settings.restDuration,
+      cooldownEnabled: settings.cooldownEnabled,
+    };
+    
     const engine = new WorkoutEngine(workout, {
       onStateChange: (state) => {
         setWorkoutState(state);
@@ -159,7 +164,7 @@ export default function WorkoutPlayerScreen() {
         }
       },
       onTick: () => {},
-    });
+    }, workoutSettings);
 
     engineRef.current = engine;
     setCurrentSegment(engine.getCurrentSegment());

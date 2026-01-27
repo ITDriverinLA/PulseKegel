@@ -191,7 +191,7 @@ export default function SettingsScreen() {
                 maximumValue={10}
                 step={1}
                 value={settings.restDuration}
-                onSlidingComplete={(value) => updateSetting('restDuration', value)}
+                onSlidingComplete={(value: number) => updateSetting('restDuration', value)}
                 minimumTrackTintColor={NEON_GREEN}
                 maximumTrackTintColor="rgba(255,255,255,0.2)"
                 thumbTintColor={NEON_GREEN}

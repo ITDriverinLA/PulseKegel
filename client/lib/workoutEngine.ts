@@ -2,6 +2,16 @@ import { DayTemplate, Segment } from '@/data/workoutProgram';
 
 export type WorkoutPhase = 'squeeze' | 'rest';
 
+export interface WorkoutSettings {
+  restDuration: number;
+  cooldownEnabled: boolean;
+}
+
+export const defaultWorkoutSettings: WorkoutSettings = {
+  restDuration: 5,
+  cooldownEnabled: true,
+};
+
 export interface WorkoutState {
   isRunning: boolean;
   isPaused: boolean;
@@ -36,11 +46,19 @@ export class WorkoutEngine {
   private callbacks: WorkoutEngineCallbacks;
   private tickInterval: NodeJS.Timeout | null = null;
   private segments: Segment[];
+  private settings: WorkoutSettings;
 
-  constructor(workout: DayTemplate, callbacks: WorkoutEngineCallbacks) {
+  constructor(workout: DayTemplate, callbacks: WorkoutEngineCallbacks, settings?: WorkoutSettings) {
     this.workout = workout;
     this.callbacks = callbacks;
-    this.segments = workout.segments;
+    this.settings = settings || defaultWorkoutSettings;
+    
+    // Filter out cooldown segment if disabled (cooldown segments have 'cooldown' in their ID)
+    let filteredSegments = workout.segments;
+    if (!this.settings.cooldownEnabled) {
+      filteredSegments = workout.segments.filter(s => !s.id.includes('cooldown'));
+    }
+    this.segments = filteredSegments;
     
     this.state = {
       isRunning: false,
@@ -212,10 +230,22 @@ export class WorkoutEngine {
     }
 
     if (this.state.phase === 'squeeze') {
-      this.state.phase = 'rest';
-      this.state.secondsRemaining = segment.restSeconds;
-      this.state.phaseStartTime = Date.now();
-      this.callbacks.onPhaseChange('rest', segment);
+      // Check if this is the last rep of the last set - skip rest if next is block rest or cooldown
+      const isLastRep = this.state.repIndex === segment.repsPerSet - 1;
+      const isLastSet = this.state.setIndex === segment.sets - 1;
+      const nextSegment = this.segments[this.state.segmentIndex + 1];
+      const nextIsBlockRestOrEnd = !nextSegment || nextSegment.type === 'blockRest' || nextSegment.id.includes('cooldown');
+      
+      if (isLastRep && isLastSet && nextIsBlockRestOrEnd) {
+        // Skip rest and go directly to next segment
+        this.advanceRep();
+      } else {
+        // Normal rest between reps - use custom rest duration
+        this.state.phase = 'rest';
+        this.state.secondsRemaining = this.settings.restDuration;
+        this.state.phaseStartTime = Date.now();
+        this.callbacks.onPhaseChange('rest', segment);
+      }
     } else if (this.state.isSetRest) {
       this.state.isSetRest = false;
       this.state.phase = 'squeeze';
