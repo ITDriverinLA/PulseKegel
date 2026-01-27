@@ -184,7 +184,7 @@ const strengthDay = (weekNum: number): DayTemplate => {
   const flickTime = flickReps * 2; // 1s squeeze + 1s rest
   const reverseTime = reverseReps * 8; // 4s release + 4s rest
   const blockRestTime = 20; // breathing break between exercises
-  const coolDownTime = 30;
+  const coolDownTime = 20;
   const totalSeconds = slowHoldTime + blockRestTime + flickTime + blockRestTime + reverseTime + coolDownTime;
   
   return {
@@ -232,7 +232,7 @@ const strengthDay = (weekNum: number): DayTemplate => {
         1,
         1,
         0,
-        30,
+        20,
         'breathing'
       ),
     ],
@@ -255,7 +255,7 @@ const speedDay = (weekNum: number): DayTemplate => {
   const contractTime = contractReps * 6; // 2s squeeze + 4s rest
   const slowTime = slowReps * (slowHold + 4); // hold + rest
   const blockRestTime = 20;
-  const coolDownTime = 30;
+  const coolDownTime = 20;
   const totalSeconds = flickTime + blockRestTime + contractTime + blockRestTime + slowTime + coolDownTime;
   
   return {
@@ -303,7 +303,7 @@ const speedDay = (weekNum: number): DayTemplate => {
         1,
         1,
         0,
-        30,
+        20,
         'breathing'
       ),
     ],
@@ -325,7 +325,7 @@ const coordinationDay = (weekNum: number): DayTemplate => {
   const reverseTime = Math.max(1, sets - 1) * 4 * (5 + 5); // 4 reps × (5s + 5s)
   const finalTime = finalHold + 5;
   const setRestTime = (sets - 1) * 10;
-  const coolDownTime = 30;
+  const coolDownTime = 20;
   const totalSeconds = elevatorTime + reverseTime + finalTime + setRestTime + coolDownTime;
   
   return {
@@ -372,7 +372,7 @@ const coordinationDay = (weekNum: number): DayTemplate => {
         1,
         1,
         0,
-        30,
+        20,
         'breathing'
       ),
     ],

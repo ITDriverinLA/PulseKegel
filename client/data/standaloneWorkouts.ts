@@ -44,7 +44,7 @@ const createBlockRest = (id: string, seconds: number = 20): Segment =>
     'blockRest'
   );
 
-const createCoolDown = (id: string, seconds: number = 30): Segment =>
+const createCoolDown = (id: string, seconds: number = 20): Segment =>
   createSegment(
     id,
     'Cool Down',
@@ -92,7 +92,7 @@ export const standaloneWorkouts: StandaloneWorkout[] = [
           'quickFlicks'
         ),
         createBlockRest('qf-rest2', 20),
-        createCoolDown('qf-cooldown', 30),
+        createCoolDown('qf-cooldown', 20),
       ],
     },
   },
@@ -131,7 +131,7 @@ export const standaloneWorkouts: StandaloneWorkout[] = [
           'slowHolds'
         ),
         createBlockRest('sh-rest2', 20),
-        createCoolDown('sh-cooldown', 30),
+        createCoolDown('sh-cooldown', 20),
       ],
     },
   },
@@ -181,7 +181,7 @@ export const standaloneWorkouts: StandaloneWorkout[] = [
           'slowHolds'
         ),
         createBlockRest('en-rest3', 20),
-        createCoolDown('en-cooldown', 30),
+        createCoolDown('en-cooldown', 20),
       ],
     },
   },
@@ -221,7 +221,7 @@ export const standaloneWorkouts: StandaloneWorkout[] = [
           [0.25, 0.5, 0.75, 1.0]
         ),
         createBlockRest('el-rest2', 20),
-        createCoolDown('el-cooldown', 30),
+        createCoolDown('el-cooldown', 20),
       ],
     },
   },
@@ -260,7 +260,7 @@ export const standaloneWorkouts: StandaloneWorkout[] = [
           'reverse'
         ),
         createBlockRest('rv-rest2', 20),
-        createCoolDown('rv-cooldown', 30),
+        createCoolDown('rv-cooldown', 20),
       ],
     },
   },
@@ -299,7 +299,7 @@ export const standaloneWorkouts: StandaloneWorkout[] = [
           'contractRelax'
         ),
         createBlockRest('cr-rest2', 20),
-        createCoolDown('cr-cooldown', 30),
+        createCoolDown('cr-cooldown', 20),
       ],
     },
   },
