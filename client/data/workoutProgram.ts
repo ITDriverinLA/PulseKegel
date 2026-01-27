@@ -1,4 +1,4 @@
-export type SegmentType = 'slowHolds' | 'quickFlicks' | 'elevator' | 'reverse' | 'breathing' | 'blockRest' | 'contractRelax';
+export type SegmentType = 'slowHolds' | 'quickFlicks' | 'elevator' | 'reverse' | 'breathing' | 'blockRest' | 'contractRelax' | 'getReady';
 
 export interface Segment {
   id: string;
@@ -66,6 +66,18 @@ const createBlockRest = (id: string): Segment =>
     'blockRest'
   );
 
+const createGetReady = (id: string): Segment =>
+  createSegment(
+    id,
+    'Get Ready',
+    'Prepare yourself for the workout',
+    1,
+    1,
+    0,
+    5,
+    'getReady'
+  );
+
 const dailyDriverWorkout = (weekNum: number): DayTemplate => {
   return {
     id: `w${weekNum}-daily`,
@@ -73,6 +85,7 @@ const dailyDriverWorkout = (weekNum: number): DayTemplate => {
     dayType: 'daily',
     estimatedMinutes: 8,
     segments: [
+      createGetReady(`w${weekNum}-getready`),
       createSegment(
         `w${weekNum}-slow-holds`,
         'Slow Holds',
@@ -127,6 +140,7 @@ const alternateDayWorkout = (weekNum: number): DayTemplate => {
     dayType: 'alternate',
     estimatedMinutes: 7,
     segments: [
+      createGetReady(`w${weekNum}-alt-getready`),
       createSegment(
         `w${weekNum}-elevator`,
         'Elevators',
@@ -193,6 +207,7 @@ const strengthDay = (weekNum: number): DayTemplate => {
     dayType: 'strength',
     estimatedMinutes: Math.ceil(totalSeconds / 60),
     segments: [
+      createGetReady(`w${weekNum}-str-getready`),
       createSegment(
         `w${weekNum}-slow`,
         'Slow Holds',
@@ -264,6 +279,7 @@ const speedDay = (weekNum: number): DayTemplate => {
     dayType: 'speed',
     estimatedMinutes: Math.ceil(totalSeconds / 60),
     segments: [
+      createGetReady(`w${weekNum}-spd-getready`),
       createSegment(
         `w${weekNum}-flicks`,
         'Quick Flicks',
@@ -334,6 +350,7 @@ const coordinationDay = (weekNum: number): DayTemplate => {
     dayType: 'coordination',
     estimatedMinutes: Math.ceil(totalSeconds / 60),
     segments: [
+      createGetReady(`w${weekNum}-coord-getready`),
       createSegment(
         `w${weekNum}-elevator`,
         'Elevator',

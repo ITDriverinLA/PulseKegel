@@ -268,11 +268,15 @@ export default function WorkoutPlayerScreen() {
     progress.total > 0 ? progress.current / progress.total : 0;
 
   const getPhaseLabel = () => {
+    if (currentSegment?.type === 'getReady') {
+      return `STARTING IN ${workoutState?.secondsRemaining || 5}`;
+    }
     if (currentSegment?.type === 'blockRest') return 'BREATHE';
     return currentPhase === 'squeeze' ? 'SQUEEZE' : 'REST';
   };
 
   const getPhaseLabelColor = () => {
+    if (currentSegment?.type === 'getReady') return NEON_CYAN;
     if (currentSegment?.type === 'blockRest') return NEON_PURPLE;
     return currentPhase === 'squeeze' ? NEON_GREEN : NEON_CYAN;
   };
@@ -393,9 +397,11 @@ export default function WorkoutPlayerScreen() {
             <Animated.Text
               style={[
                 styles.phaseLabel,
-                currentSegment?.type === 'blockRest' 
-                  ? { color: NEON_PURPLE, textShadowColor: NEON_PURPLE, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 20 }
-                  : phaseLabelStyle,
+                currentSegment?.type === 'getReady'
+                  ? { color: NEON_CYAN, textShadowColor: NEON_CYAN, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 20, fontSize: 36 }
+                  : currentSegment?.type === 'blockRest' 
+                    ? { color: NEON_PURPLE, textShadowColor: NEON_PURPLE, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 20 }
+                    : phaseLabelStyle,
               ]}
             >
               {getPhaseLabel()}
@@ -407,32 +413,43 @@ export default function WorkoutPlayerScreen() {
               phase={currentPhase}
               segmentType={currentSegment?.type || 'slowHolds'}
               durationSeconds={phaseDuration}
-              isActive={Boolean(workoutState?.isRunning && !workoutState?.isPaused)}
+              isActive={Boolean(workoutState?.isRunning && !workoutState?.isPaused && currentSegment?.type !== 'getReady')}
               height={300}
               width={120}
               rampSteps={currentSegment?.rampSteps}
             />
-            <View style={styles.countdownContainer}>
-              <Animated.Text style={[styles.countdown, countdownStyle]}>
-                {workoutState?.secondsRemaining || 0}
-              </Animated.Text>
-              <ThemedText type="small" style={styles.countdownLabel}>
-                {(workoutState?.secondsRemaining || 0) === 1 ? 'second' : 'seconds'}
-              </ThemedText>
-            </View>
+            {currentSegment?.type !== 'getReady' ? (
+              <View style={styles.countdownContainer}>
+                <Animated.Text style={[styles.countdown, countdownStyle]}>
+                  {workoutState?.secondsRemaining || 0}
+                </Animated.Text>
+                <ThemedText type="small" style={styles.countdownLabel}>
+                  {(workoutState?.secondsRemaining || 0) === 1 ? 'second' : 'seconds'}
+                </ThemedText>
+              </View>
+            ) : null}
           </View>
 
           <View style={styles.segmentInfo}>
             <ThemedText type="h4" style={[styles.segmentName, { color: '#fff' }]}>
-              {currentSegment?.name || ''}
+              {currentSegment?.type === 'getReady' ? 'Get Ready' : currentSegment?.name || ''}
             </ThemedText>
-            <ThemedText
-              type="body"
-              style={[styles.segmentDetail, { color: 'rgba(255,255,255,0.5)' }]}
-            >
-              Set {setInfo.current} of {setInfo.total} • Rep {repInfo.current} of{' '}
-              {repInfo.total}
-            </ThemedText>
+            {currentSegment?.type !== 'getReady' ? (
+              <ThemedText
+                type="body"
+                style={[styles.segmentDetail, { color: 'rgba(255,255,255,0.5)' }]}
+              >
+                Set {setInfo.current} of {setInfo.total} • Rep {repInfo.current} of{' '}
+                {repInfo.total}
+              </ThemedText>
+            ) : (
+              <ThemedText
+                type="body"
+                style={[styles.segmentDetail, { color: 'rgba(255,255,255,0.5)' }]}
+              >
+                Prepare for your workout
+              </ThemedText>
+            )}
           </View>
 
           <View style={styles.progressBarContainer}>

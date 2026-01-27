@@ -56,6 +56,18 @@ const createCoolDown = (id: string, seconds: number = 20): Segment =>
     'breathing'
   );
 
+const createGetReady = (id: string): Segment =>
+  createSegment(
+    id,
+    'Get Ready',
+    'Prepare yourself for the workout',
+    1,
+    1,
+    0,
+    5,
+    'getReady'
+  );
+
 export const standaloneWorkouts: StandaloneWorkout[] = [
   {
     id: 'quick-flicks',
@@ -70,6 +82,7 @@ export const standaloneWorkouts: StandaloneWorkout[] = [
       dayType: 'speed',
       estimatedMinutes: 4,
       segments: [
+        createGetReady('qf-getready'),
         createSegment(
           'qf-warmup',
           'Warm Up',
@@ -109,6 +122,7 @@ export const standaloneWorkouts: StandaloneWorkout[] = [
       dayType: 'strength',
       estimatedMinutes: 6,
       segments: [
+        createGetReady('sh-getready'),
         createSegment(
           'sh-warmup',
           'Warm Up',
@@ -148,6 +162,7 @@ export const standaloneWorkouts: StandaloneWorkout[] = [
       dayType: 'strength',
       estimatedMinutes: 7,
       segments: [
+        createGetReady('en-getready'),
         createSegment(
           'en-warmup',
           'Warm Up',
@@ -198,6 +213,7 @@ export const standaloneWorkouts: StandaloneWorkout[] = [
       dayType: 'coordination',
       estimatedMinutes: 5,
       segments: [
+        createGetReady('el-getready'),
         createSegment(
           'el-warmup',
           'Warm Up',
@@ -238,6 +254,7 @@ export const standaloneWorkouts: StandaloneWorkout[] = [
       dayType: 'coordination',
       estimatedMinutes: 5,
       segments: [
+        createGetReady('rv-getready'),
         createSegment(
           'rv-warmup',
           'Awareness',
@@ -277,6 +294,7 @@ export const standaloneWorkouts: StandaloneWorkout[] = [
       dayType: 'strength',
       estimatedMinutes: 5,
       segments: [
+        createGetReady('cr-getready'),
         createSegment(
           'cr-warmup',
           'Warm Up',
@@ -316,6 +334,7 @@ export const standaloneWorkouts: StandaloneWorkout[] = [
       dayType: 'daily',
       estimatedMinutes: 8,
       segments: [
+        createGetReady('fd-getready'),
         createSegment(
           'fd-slow-holds',
           'Slow Holds',
@@ -375,6 +394,7 @@ export const standaloneWorkouts: StandaloneWorkout[] = [
       dayType: 'alternate',
       estimatedMinutes: 7,
       segments: [
+        createGetReady('cd-getready'),
         createSegment(
           'cd-elevator',
           'Elevators',

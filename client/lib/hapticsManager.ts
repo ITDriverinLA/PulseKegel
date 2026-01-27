@@ -71,6 +71,14 @@ const PATTERN_CONFIGS: Record<SegmentType, PatternConfig> = {
     progressiveSpeed: false,
     progressiveIntensity: true,
   },
+  getReady: {
+    baseInterval: 0,
+    burstCount: 0,
+    burstGap: 0,
+    groupPause: 0,
+    progressiveSpeed: false,
+    progressiveIntensity: false,
+  },
 };
 
 const getIntensityMultiplier = (intensity: HapticIntensity): number => {
