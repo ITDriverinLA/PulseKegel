@@ -16,6 +16,8 @@ export interface UserSettings {
   highContrastMode: boolean;
   largeTextMode: boolean;
   recoveryMode: boolean;
+  restDuration: number;
+  cooldownEnabled: boolean;
 }
 
 export const defaultSettings: UserSettings = {
@@ -25,6 +27,8 @@ export const defaultSettings: UserSettings = {
   highContrastMode: false,
   largeTextMode: false,
   recoveryMode: false,
+  restDuration: 5,
+  cooldownEnabled: true,
 };
 
 export interface UserProgress {
