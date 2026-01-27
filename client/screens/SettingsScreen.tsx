@@ -7,6 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import Slider from '@react-native-community/slider';
 
 import { ThemedText } from '@/components/ThemedText';
 import { Toggle } from '@/components/Toggle';
@@ -176,6 +177,42 @@ export default function SettingsScreen() {
               Reduces intensity by 50% and adds a relaxation segment at the end of
               each workout.
             </Text>
+
+            <View style={styles.divider} />
+
+            <View style={styles.sliderContainer}>
+              <View style={styles.sliderHeader}>
+                <Text style={styles.sliderLabel}>Rest Duration</Text>
+                <Text style={styles.sliderValue}>{settings.restDuration}s</Text>
+              </View>
+              <Slider
+                style={styles.slider}
+                minimumValue={2}
+                maximumValue={10}
+                step={1}
+                value={settings.restDuration}
+                onSlidingComplete={(value) => updateSetting('restDuration', value)}
+                minimumTrackTintColor={NEON_GREEN}
+                maximumTrackTintColor="rgba(255,255,255,0.2)"
+                thumbTintColor={NEON_GREEN}
+              />
+              <Text style={styles.settingDescription}>
+                Time between reps (2-10 seconds)
+              </Text>
+            </View>
+
+            <View style={styles.divider} />
+
+            <Toggle
+              label="Cooldown Enabled"
+              value={settings.cooldownEnabled}
+              onValueChange={(value) => updateSetting('cooldownEnabled', value)}
+              activeColor={NEON_GREEN}
+              labelColor="#fff"
+            />
+            <Text style={styles.settingDescription}>
+              Skip the cooldown segment at the end of workouts when disabled.
+            </Text>
           </View>
         </Animated.View>
 
@@ -238,6 +275,28 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     fontSize: 12,
     color: 'rgba(255,255,255,0.5)',
+  },
+  sliderContainer: {
+    paddingVertical: Spacing.sm,
+  },
+  sliderHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.xs,
+  },
+  sliderLabel: {
+    fontSize: 16,
+    color: '#fff',
+  },
+  sliderValue: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: NEON_GREEN,
+  },
+  slider: {
+    width: '100%',
+    height: 40,
   },
   dangerButton: {
     flexDirection: 'row',
