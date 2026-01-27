@@ -5,6 +5,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useKeepAwake } from 'expo-keep-awake';
 import Animated, {
   useAnimatedStyle,
   withSpring,
@@ -36,6 +37,9 @@ const NEON_PINK = '#FF3366';
 const NEON_PURPLE = '#9D4EDD';
 
 export default function WorkoutPlayerScreen() {
+  // Keep screen awake during workout
+  useKeepAwake();
+  
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
@@ -551,6 +555,7 @@ const styles = StyleSheet.create({
   },
   countdownContainer: {
     alignItems: 'center',
+    width: 120,
   },
   countdown: {
     fontSize: 72,
