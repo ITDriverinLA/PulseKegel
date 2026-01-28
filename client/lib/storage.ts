@@ -17,6 +17,7 @@ export interface UserSettings {
   largeTextMode: boolean;
   recoveryMode: boolean;
   restDuration: number;
+  blockRestDuration: number;
   cooldownEnabled: boolean;
 }
 
@@ -28,6 +29,7 @@ export const defaultSettings: UserSettings = {
   largeTextMode: false,
   recoveryMode: false,
   restDuration: 5,
+  blockRestDuration: 25,
   cooldownEnabled: true,
 };
 

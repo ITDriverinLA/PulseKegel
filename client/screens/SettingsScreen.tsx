@@ -203,6 +203,29 @@ export default function SettingsScreen() {
 
             <View style={styles.divider} />
 
+            <View style={styles.sliderContainer}>
+              <View style={styles.sliderHeader}>
+                <Text style={styles.sliderLabel}>Block Rest Duration</Text>
+                <Text style={styles.sliderValue}>{settings.blockRestDuration}s</Text>
+              </View>
+              <Slider
+                style={styles.slider}
+                minimumValue={10}
+                maximumValue={45}
+                step={5}
+                value={settings.blockRestDuration}
+                onSlidingComplete={(value: number) => updateSetting('blockRestDuration', value)}
+                minimumTrackTintColor={NEON_CYAN}
+                maximumTrackTintColor="rgba(255,255,255,0.2)"
+                thumbTintColor={NEON_CYAN}
+              />
+              <Text style={styles.settingDescription}>
+                Breathing break between exercise blocks (10-45 seconds)
+              </Text>
+            </View>
+
+            <View style={styles.divider} />
+
             <Toggle
               label="Cooldown Enabled"
               value={settings.cooldownEnabled}

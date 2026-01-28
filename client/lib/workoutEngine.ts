@@ -4,11 +4,13 @@ export type WorkoutPhase = 'squeeze' | 'rest';
 
 export interface WorkoutSettings {
   restDuration: number;
+  blockRestDuration: number;
   cooldownEnabled: boolean;
 }
 
 export const defaultWorkoutSettings: WorkoutSettings = {
   restDuration: 5,
+  blockRestDuration: 25,
   cooldownEnabled: true,
 };
 
@@ -68,7 +70,7 @@ export class WorkoutEngine {
       setIndex: 0,
       repIndex: 0,
       phase: 'squeeze',
-      secondsRemaining: this.segments[0]?.squeezeSeconds || 0,
+      secondsRemaining: 0,
       totalElapsedSeconds: 0,
       phaseStartTime: null,
       pauseStartTime: null,
@@ -79,6 +81,13 @@ export class WorkoutEngine {
 
   getCurrentSegment(): Segment | null {
     return this.segments[this.state.segmentIndex] || null;
+  }
+
+  private getSegmentDuration(segment: Segment): number {
+    if (segment.type === 'blockRest') {
+      return this.settings.blockRestDuration;
+    }
+    return segment.squeezeSeconds;
   }
 
   getState(): WorkoutState {
@@ -117,6 +126,7 @@ export class WorkoutEngine {
     
     const segment = this.getCurrentSegment();
     if (segment) {
+      this.state.secondsRemaining = this.getSegmentDuration(segment);
       this.callbacks.onSegmentChange(segment, this.state.segmentIndex);
       this.callbacks.onSetChange(this.state.setIndex + 1, segment.sets);
       this.callbacks.onRepChange(this.state.repIndex + 1, segment.repsPerSet);
@@ -249,7 +259,7 @@ export class WorkoutEngine {
     } else if (this.state.isSetRest) {
       this.state.isSetRest = false;
       this.state.phase = 'squeeze';
-      this.state.secondsRemaining = segment.squeezeSeconds;
+      this.state.secondsRemaining = this.getSegmentDuration(segment);
       this.state.phaseStartTime = Date.now();
       this.callbacks.onRepChange(1, segment.repsPerSet);
       this.callbacks.onPhaseChange('squeeze', segment);
@@ -273,7 +283,7 @@ export class WorkoutEngine {
     }
 
     this.state.phase = 'squeeze';
-    this.state.secondsRemaining = segment.squeezeSeconds;
+    this.state.secondsRemaining = this.getSegmentDuration(segment);
     this.state.phaseStartTime = Date.now();
     this.callbacks.onRepChange(this.state.repIndex + 1, segment.repsPerSet);
     this.callbacks.onPhaseChange('squeeze', segment);
@@ -319,7 +329,7 @@ export class WorkoutEngine {
     }
 
     this.state.phase = 'squeeze';
-    this.state.secondsRemaining = newSegment.squeezeSeconds;
+    this.state.secondsRemaining = this.getSegmentDuration(newSegment);
     this.state.phaseStartTime = Date.now();
     
     this.callbacks.onSegmentChange(newSegment, this.state.segmentIndex);

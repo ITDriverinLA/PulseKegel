@@ -102,6 +102,7 @@ export default function WorkoutPlayerScreen() {
     
     const workoutSettings = {
       restDuration: settings.restDuration,
+      blockRestDuration: settings.blockRestDuration,
       cooldownEnabled: settings.cooldownEnabled,
     };
     
