@@ -115,6 +115,7 @@ All data stored locally via AsyncStorage:
 - Accessibility: High contrast mode, large text mode
 - Recovery Mode: 50% reduced intensity with relaxation segment
 - **Rest Duration**: Adjustable slider (2-10 seconds) for time between reps
+- **Block Rest Duration**: Adjustable slider (10-45 seconds) for breathing breaks between exercise blocks
 - **Cooldown Toggle**: Enable/disable the cooldown segment at the end of workouts
 - Screen stays awake during workouts (expo-keep-awake)
 - Smart rest skipping: After last rep of a set, transitions directly to block rest without extra rest countdown
