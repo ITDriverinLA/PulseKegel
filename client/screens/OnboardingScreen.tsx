@@ -10,9 +10,11 @@ import Animated, {
   useSharedValue,
   WithSpringConfig,
 } from 'react-native-reanimated';
+import { Feather } from '@expo/vector-icons';
 
 import { ThemedText } from '@/components/ThemedText';
 import { Spacing, BorderRadius } from '@/constants/theme';
+import { storage, AnatomyType } from '@/lib/storage';
 
 interface OnboardingScreenProps {
   onComplete: () => void;
@@ -22,6 +24,7 @@ const { width } = Dimensions.get('window');
 
 const NEON_GREEN = '#00FF88';
 const NEON_CYAN = '#00FFFF';
+const NEON_PINK = '#FF3366';
 
 const pages = [
   {
@@ -35,6 +38,12 @@ const pages = [
     title: 'Safety First',
     description:
       'This app is for wellness purposes only and is not medical advice. Stop immediately if you experience pain, urinary urgency, or pelvic pressure.',
+  },
+  {
+    type: 'anatomy',
+    title: 'Personalize Your Experience',
+    description:
+      'Select your anatomy type to receive tailored health insights and exercise guidance.',
   },
   {
     image: require('../../assets/images/icon.png'),
@@ -56,16 +65,24 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const [currentPage, setCurrentPage] = useState(0);
+  const [selectedAnatomy, setSelectedAnatomy] = useState<AnatomyType>(null);
   const insets = useSafeAreaInsets();
 
   const isLastPage = currentPage === pages.length - 1;
+  const isAnatomyPage = pages[currentPage].type === 'anatomy';
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (isLastPage) {
       onComplete();
     } else {
       setCurrentPage(prev => prev + 1);
     }
+  };
+
+  const handleAnatomySelect = async (type: AnatomyType) => {
+    setSelectedAnatomy(type);
+    await storage.saveSettings({ anatomyType: type });
+    setCurrentPage(prev => prev + 1);
   };
 
   return (
@@ -84,34 +101,79 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
         ]}
       >
         <View style={styles.pageContent}>
-          <Animated.View
-            key={currentPage}
-            entering={FadeIn.duration(300)}
-            exiting={FadeOut.duration(200)}
-            style={styles.imageContainer}
-          >
-            <Image
-              source={pages[currentPage].image}
-              style={styles.image}
-              resizeMode="contain"
-            />
-          </Animated.View>
-
-          <Animated.View
-            key={`text-${currentPage}`}
-            entering={FadeIn.duration(300).delay(100)}
-            style={styles.textContainer}
-          >
-            <ThemedText type="h1" style={styles.title}>
-              {pages[currentPage].title}
-            </ThemedText>
-            <ThemedText
-              type="body"
-              style={styles.description}
+          {isAnatomyPage ? (
+            <Animated.View
+              key={currentPage}
+              entering={FadeIn.duration(300)}
+              style={styles.anatomyContainer}
             >
-              {pages[currentPage].description}
-            </ThemedText>
-          </Animated.View>
+              <ThemedText type="h1" style={styles.title}>
+                {pages[currentPage].title}
+              </ThemedText>
+              <ThemedText type="body" style={styles.description}>
+                {pages[currentPage].description}
+              </ThemedText>
+              
+              <View style={styles.anatomyButtons}>
+                <Pressable
+                  style={styles.anatomyButton}
+                  onPress={() => handleAnatomySelect('female')}
+                >
+                  <LinearGradient
+                    colors={[NEON_PINK, '#FF6699']}
+                    style={styles.anatomyButtonGradient}
+                  >
+                    <Feather name="heart" size={32} color="#fff" />
+                    <ThemedText style={styles.anatomyButtonText}>Female</ThemedText>
+                  </LinearGradient>
+                </Pressable>
+                
+                <Pressable
+                  style={styles.anatomyButton}
+                  onPress={() => handleAnatomySelect('male')}
+                >
+                  <LinearGradient
+                    colors={[NEON_CYAN, '#00CCFF']}
+                    style={styles.anatomyButtonGradient}
+                  >
+                    <Feather name="shield" size={32} color="#fff" />
+                    <ThemedText style={styles.anatomyButtonText}>Male</ThemedText>
+                  </LinearGradient>
+                </Pressable>
+              </View>
+            </Animated.View>
+          ) : (
+            <>
+              <Animated.View
+                key={currentPage}
+                entering={FadeIn.duration(300)}
+                exiting={FadeOut.duration(200)}
+                style={styles.imageContainer}
+              >
+                <Image
+                  source={pages[currentPage].image}
+                  style={styles.image}
+                  resizeMode="contain"
+                />
+              </Animated.View>
+
+              <Animated.View
+                key={`text-${currentPage}`}
+                entering={FadeIn.duration(300).delay(100)}
+                style={styles.textContainer}
+              >
+                <ThemedText type="h1" style={styles.title}>
+                  {pages[currentPage].title}
+                </ThemedText>
+                <ThemedText
+                  type="body"
+                  style={styles.description}
+                >
+                  {pages[currentPage].description}
+                </ThemedText>
+              </Animated.View>
+            </>
+          )}
         </View>
 
         <View style={styles.footer}>
@@ -124,9 +186,11 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
             ))}
           </View>
 
-          <NeonButton onPress={handleNext}>
-            {isLastPage ? 'Get Started' : 'Continue'}
-          </NeonButton>
+          {!isAnatomyPage ? (
+            <NeonButton onPress={handleNext}>
+              {isLastPage ? 'Get Started' : 'Continue'}
+            </NeonButton>
+          ) : null}
         </View>
       </View>
     </View>
@@ -265,5 +329,31 @@ const styles = StyleSheet.create({
   buttonText: {
     fontWeight: '600',
     color: '#000',
+  },
+  anatomyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  anatomyButtons: {
+    flexDirection: 'row',
+    gap: Spacing.lg,
+    marginTop: Spacing['3xl'],
+  },
+  anatomyButton: {
+    borderRadius: BorderRadius.xl,
+    overflow: 'hidden',
+  },
+  anatomyButtonGradient: {
+    paddingVertical: Spacing['2xl'],
+    paddingHorizontal: Spacing['2xl'],
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.md,
+    minWidth: 120,
+  },
+  anatomyButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 16,
   },
 });
