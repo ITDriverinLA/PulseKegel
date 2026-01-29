@@ -45,12 +45,17 @@ export function WeeklyReviewModal({
   const fetchReviewMessage = async () => {
     setLoading(true);
     try {
-      const apiUrl = getApiUrl();
+      const apiUrl = getApiUrl().replace(/\/$/, ''); // Remove trailing slash
       const response = await fetch(`${apiUrl}/api/weekly-review`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ weekNumber, daysWorkedOut, totalMinutes, anatomyType, userName }),
       });
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      
       const data = await response.json();
       setMessage(data.message);
     } catch (error) {
