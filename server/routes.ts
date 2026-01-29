@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "node:http";
+import { join } from "node:path";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
@@ -74,6 +75,10 @@ No quotes in response.`;
           : `${weekNumber} weeks down! Your consistency is building real strength.`;
       res.json({ message: fallback });
     }
+  });
+
+  app.get("/privacy", (_req, res) => {
+    res.sendFile(join(__dirname, "templates", "privacy-policy.html"));
   });
 
   const httpServer = createServer(app);
