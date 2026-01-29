@@ -334,15 +334,27 @@ export default function SettingsScreen() {
             <Text style={styles.footerText}>
               Not medical advice. Consult a healthcare provider for pelvic health concerns.
             </Text>
-            <Pressable 
-              onPress={() => {
-                const apiUrl = getApiUrl().replace(/\/$/, '');
-                WebBrowser.openBrowserAsync(`${apiUrl}/privacy`);
-              }}
-              style={styles.privacyLink}
-            >
-              <Text style={styles.privacyLinkText}>Privacy Policy</Text>
-            </Pressable>
+            <View style={styles.footerLinks}>
+              <Pressable 
+                onPress={() => {
+                  const apiUrl = getApiUrl().replace(/\/$/, '');
+                  WebBrowser.openBrowserAsync(`${apiUrl}/about`);
+                }}
+                style={styles.privacyLink}
+              >
+                <Text style={styles.privacyLinkText}>About</Text>
+              </Pressable>
+              <Text style={styles.footerDivider}>|</Text>
+              <Pressable 
+                onPress={() => {
+                  const apiUrl = getApiUrl().replace(/\/$/, '');
+                  WebBrowser.openBrowserAsync(`${apiUrl}/privacy`);
+                }}
+                style={styles.privacyLink}
+              >
+                <Text style={styles.privacyLinkText}>Privacy Policy</Text>
+              </Pressable>
+            </View>
           </View>
         </Animated.View>
       </ScrollView>
@@ -483,8 +495,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: 'rgba(255,255,255,0.4)',
   },
-  privacyLink: {
+  footerLinks: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginTop: Spacing.md,
+    gap: Spacing.sm,
+  },
+  footerDivider: {
+    color: 'rgba(255,255,255,0.3)',
+    fontSize: 14,
+  },
+  privacyLink: {
     paddingVertical: Spacing.sm,
   },
   privacyLinkText: {
