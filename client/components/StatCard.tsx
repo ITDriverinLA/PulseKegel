@@ -39,14 +39,14 @@ export function StatCard({ icon, label, value, color, darkMode }: StatCardProps)
   return (
     <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
       <View style={[styles.iconContainer, { backgroundColor: `${iconColor}15` }]}>
-        <Feather name={icon} size={20} color={iconColor} />
+        <Feather name={icon} size={20 * fontScale} color={iconColor} />
       </View>
-      <ThemedText type="h3" style={styles.value}>
+      <ThemedText type="h3" style={[styles.value, { fontSize: 24 * fontScale }]}>
         {value}
       </ThemedText>
       <ThemedText
         type="small"
-        style={[styles.label, { color: theme.textSecondary }]}
+        style={[styles.label, { color: theme.textSecondary, fontSize: 11 * fontScale }]}
       >
         {label}
       </ThemedText>
