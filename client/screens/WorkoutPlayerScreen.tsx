@@ -232,7 +232,8 @@ export default function WorkoutPlayerScreen() {
     if (!engineRef.current) return;
     await hapticsManager.triggerWarning();
     hapticPulseRef.current.stop();
-    engineRef.current.end();
+    // Just stop and exit without recording completion - user must finish to earn streak
+    navigation.goBack();
   };
 
   const handleClose = () => {
