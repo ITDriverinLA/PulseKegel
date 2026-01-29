@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Modal, Pressable, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { StyleSheet, View, Modal, Pressable, Animated as RNAnimated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
@@ -82,6 +82,29 @@ export function WeeklyReviewModal({
 
   const accentColor = getAccentColor();
 
+  const pulseAnim = useRef(new RNAnimated.Value(0.4)).current;
+
+  useEffect(() => {
+    if (loading) {
+      const pulse = RNAnimated.loop(
+        RNAnimated.sequence([
+          RNAnimated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          RNAnimated.timing(pulseAnim, {
+            toValue: 0.4,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      pulse.start();
+      return () => pulse.stop();
+    }
+  }, [loading]);
+
   return (
     <Modal
       visible={visible}
@@ -132,7 +155,9 @@ export function WeeklyReviewModal({
 
             <Animated.View entering={FadeIn.delay(500)} style={styles.messageContainer}>
               {loading ? (
-                <ActivityIndicator size="small" color={accentColor} />
+                <RNAnimated.Text style={[styles.loadingText, { color: accentColor, opacity: pulseAnim }]}>
+                  Analysing Progress...
+                </RNAnimated.Text>
               ) : (
                 <ThemedText type="body" style={styles.message}>
                   {message}
@@ -224,6 +249,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: 'rgba(255, 255, 255, 0.9)',
     lineHeight: 24,
+  },
+  loadingText: {
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '600',
   },
   button: {
     width: '100%',
