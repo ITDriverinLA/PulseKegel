@@ -260,6 +260,28 @@ export default function SettingsScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(400).delay(400)}>
+          <Text style={styles.sectionTitle}>PERSONALIZATION</Text>
+          <View style={styles.card}>
+            <SegmentedControl
+              label="Anatomy Type"
+              options={[
+                { value: 'female', label: 'Female' },
+                { value: 'male', label: 'Male' },
+              ]}
+              value={settings.anatomyType || 'female'}
+              onChange={(value) => updateSetting('anatomyType', value as 'male' | 'female')}
+              labelColor="#fff"
+              trackColor="rgba(255,255,255,0.1)"
+              indicatorColor="rgba(255,255,255,0.2)"
+              textColor="#fff"
+            />
+            <Text style={styles.settingDescription}>
+              Used to personalize weekly progress insights and health benefits.
+            </Text>
+          </View>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.duration(400).delay(500)}>
           <Text style={styles.sectionTitle}>DATA</Text>
           <View style={styles.card}>
             <Pressable onPress={handleResetProgress} style={styles.dangerButton}>
@@ -276,7 +298,7 @@ export default function SettingsScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(400).delay(500)}>
+        <Animated.View entering={FadeInDown.duration(400).delay(600)}>
           <View style={styles.footer}>
             <Text style={styles.footerText}>PulseKegel v1.0.0</Text>
             <Text style={styles.footerText}>

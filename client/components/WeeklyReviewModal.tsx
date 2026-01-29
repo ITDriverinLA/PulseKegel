@@ -7,6 +7,7 @@ import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
 import { ThemedText } from '@/components/ThemedText';
 import { Spacing } from '@/constants/theme';
 import { getApiUrl } from '@/lib/query-client';
+import { AnatomyType } from '@/lib/storage';
 
 const NEON_GREEN = '#00ff88';
 const NEON_CYAN = '#00d4ff';
@@ -19,6 +20,7 @@ interface WeeklyReviewModalProps {
   weekNumber: number;
   daysWorkedOut: number;
   totalMinutes: number;
+  anatomyType: AnatomyType;
 }
 
 export function WeeklyReviewModal({
@@ -27,6 +29,7 @@ export function WeeklyReviewModal({
   weekNumber,
   daysWorkedOut,
   totalMinutes,
+  anatomyType,
 }: WeeklyReviewModalProps) {
   const [message, setMessage] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -35,7 +38,7 @@ export function WeeklyReviewModal({
     if (visible) {
       fetchReviewMessage();
     }
-  }, [visible, weekNumber, daysWorkedOut, totalMinutes]);
+  }, [visible, weekNumber, daysWorkedOut, totalMinutes, anatomyType]);
 
   const fetchReviewMessage = async () => {
     setLoading(true);
@@ -44,12 +47,15 @@ export function WeeklyReviewModal({
       const response = await fetch(`${apiUrl}/api/weekly-review`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ weekNumber, daysWorkedOut, totalMinutes }),
+        body: JSON.stringify({ weekNumber, daysWorkedOut, totalMinutes, anatomyType }),
       });
       const data = await response.json();
       setMessage(data.message);
     } catch (error) {
-      setMessage("Great work completing another week! Your dedication to pelvic floor health is paying off.");
+      const fallback = weekNumber === 1 
+        ? "You completed your first week! Your pelvic floor is already getting stronger."
+        : `${weekNumber} weeks down! Your consistency is building real strength.`;
+      setMessage(fallback);
     } finally {
       setLoading(false);
     }
