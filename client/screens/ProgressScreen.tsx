@@ -11,6 +11,7 @@ import { StatCard } from '@/components/StatCard';
 import { CalendarGrid } from '@/components/CalendarGrid';
 import { Spacing, BorderRadius } from '@/constants/theme';
 import { storage, UserProgress } from '@/lib/storage';
+import { useAccessibility } from '@/contexts/AccessibilityContext';
 
 const NEON_GREEN = '#00FF88';
 const NEON_CYAN = '#00FFFF';
@@ -21,6 +22,7 @@ export default function ProgressScreen() {
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const navigation = useNavigation();
+  const { fontScale, colors, highContrast } = useAccessibility();
 
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -115,11 +117,11 @@ export default function ProgressScreen() {
               entering={FadeInDown.duration(400).delay(300)}
               style={styles.longestStreakContainer}
             >
-              <View style={styles.longestStreakCard}>
-                <Text style={styles.longestStreakLabel}>
+              <View style={[styles.longestStreakCard, highContrast && { borderColor: colors.border }]}>
+                <Text style={[styles.longestStreakLabel, { fontSize: 12 * fontScale, color: colors.textSecondary }]}>
                   Longest Streak
                 </Text>
-                <Text style={styles.longestStreakValue}>
+                <Text style={[styles.longestStreakValue, { fontSize: 20 * fontScale, color: colors.accent }]}>
                   {progress.longestStreak} days
                 </Text>
               </View>

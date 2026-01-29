@@ -4,6 +4,7 @@ import { Feather } from '@expo/vector-icons';
 
 import { ThemedText } from '@/components/ThemedText';
 import { useTheme } from '@/hooks/useTheme';
+import { useAccessibility } from '@/contexts/AccessibilityContext';
 import { Spacing, BorderRadius } from '@/constants/theme';
 
 interface StatCardProps {
@@ -16,18 +17,19 @@ interface StatCardProps {
 
 export function StatCard({ icon, label, value, color, darkMode }: StatCardProps) {
   const { theme } = useTheme();
+  const { fontScale, colors } = useAccessibility();
   const iconColor = color || theme.primary;
 
   if (darkMode) {
     return (
       <View style={styles.darkCard}>
         <View style={[styles.iconContainer, { backgroundColor: `${iconColor}20` }]}>
-          <Feather name={icon} size={20} color={iconColor} />
+          <Feather name={icon} size={20 * fontScale} color={iconColor} />
         </View>
-        <Text style={styles.darkValue}>
+        <Text style={[styles.darkValue, { fontSize: 24 * fontScale }]}>
           {value}
         </Text>
-        <Text style={styles.darkLabel}>
+        <Text style={[styles.darkLabel, { fontSize: 11 * fontScale }]}>
           {label}
         </Text>
       </View>

@@ -18,6 +18,7 @@ import { SegmentedControl } from '@/components/SegmentedControl';
 import { Spacing, BorderRadius } from '@/constants/theme';
 import { storage, UserSettings, defaultSettings } from '@/lib/storage';
 import { hapticsManager } from '@/lib/hapticsManager';
+import { useAccessibility } from '@/contexts/AccessibilityContext';
 
 const NEON_GREEN = '#00FF88';
 const NEON_CYAN = '#00FFFF';
@@ -29,6 +30,7 @@ export default function SettingsScreen() {
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const navigation = useNavigation();
+  const { refresh: refreshAccessibility, fontScale, colors } = useAccessibility();
 
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -54,6 +56,9 @@ export default function SettingsScreen() {
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
     await storage.saveSettings({ [key]: value });
+    if (key === 'highContrastMode' || key === 'largeTextMode') {
+      refreshAccessibility();
+    }
   };
 
   const handleResetProgress = () => {

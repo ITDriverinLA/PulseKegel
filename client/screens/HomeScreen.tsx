@@ -13,6 +13,7 @@ import { Toggle } from '@/components/Toggle';
 import { WeeklyReviewModal } from '@/components/WeeklyReviewModal';
 import { Spacing, BorderRadius } from '@/constants/theme';
 import { storage, UserSettings, UserProgress, defaultSettings } from '@/lib/storage';
+import { useAccessibility } from '@/contexts/AccessibilityContext';
 import {
   getTodaysWorkout,
   getWorkoutForRecoveryMode,
@@ -34,6 +35,7 @@ export default function HomeScreen() {
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const navigation = useNavigation<NavigationProp>();
+  const { fontScale, colors, highContrast } = useAccessibility();
 
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
@@ -161,12 +163,12 @@ export default function HomeScreen() {
       >
         <Animated.View entering={FadeInDown.duration(400).delay(100)}>
           <View style={styles.streakContainer}>
-            <View style={styles.streakBadge}>
-              <Feather name="zap" size={24} color={NEON_GREEN} />
-              <Text style={styles.streakNumber}>
+            <View style={[styles.streakBadge, highContrast && { borderColor: colors.border }]}>
+              <Feather name="zap" size={24 * fontScale} color={colors.accent} />
+              <Text style={[styles.streakNumber, { fontSize: 48 * fontScale, color: colors.text }]}>
                 {progress?.currentStreak || 0}
               </Text>
-              <Text style={styles.streakLabel}>
+              <Text style={[styles.streakLabel, { fontSize: 14 * fontScale, color: colors.textSecondary }]}>
                 Day Streak
               </Text>
             </View>
@@ -179,10 +181,10 @@ export default function HomeScreen() {
               <>
                 <View style={styles.workoutHeader}>
                   <View>
-                    <Text style={styles.phaseLabel}>
+                    <Text style={[styles.phaseLabel, { fontSize: 14 * fontScale, color: colors.accentSecondary }]}>
                       Week {todaysWorkout.week.weekNumber} - {todaysWorkout.week.phase}
                     </Text>
-                    <Text style={styles.workoutTitle}>
+                    <Text style={[styles.workoutTitle, { fontSize: 24 * fontScale, color: colors.text }]}>
                       {todaysWorkout.workout.name}
                     </Text>
                   </View>
@@ -223,7 +225,7 @@ export default function HomeScreen() {
                       end={{ x: 1, y: 0 }}
                       style={styles.startButton}
                     >
-                      <Text style={styles.startButtonText}>Start Program</Text>
+                      <Text style={[styles.startButtonText, { fontSize: 16 * fontScale }]}>Start Program</Text>
                     </LinearGradient>
                   </Pressable>
                   <Pressable onPress={handleQuickWorkout} style={styles.quickWorkoutButton}>
