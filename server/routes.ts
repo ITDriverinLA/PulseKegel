@@ -10,19 +10,26 @@ const openai = new OpenAI({
 export async function registerRoutes(app: Express): Promise<Server> {
   // Weekly review AI endpoint
   app.post("/api/weekly-review", async (req, res) => {
+    const { daysWorkedOut, weekNumber, totalMinutes } = req.body;
+    
     try {
-      const { daysWorkedOut, weekNumber, totalMinutes } = req.body;
+      
+      const weekLabel = weekNumber === 1 ? "their very first week" : 
+                        weekNumber === 2 ? "2 weeks" :
+                        `${weekNumber} weeks`;
       
       const prompt = `You are a supportive fitness coach for a pelvic floor exercise app called PulseKegel. 
-The user just completed week ${weekNumber} of their 12-week program.
+The user just completed ${weekLabel} of their 12-week program.
 They worked out ${daysWorkedOut} out of 7 days this week, totaling ${totalMinutes} minutes of exercise.
 
 Write a brief, encouraging congratulations message (2-3 sentences max) that:
-- Acknowledges their specific effort this week
+- For week 1: Celebrate completing their FIRST week - this is a big milestone! Use phrases like "You did it!" or "Your first week is complete!"
+- For week 2+: Acknowledge the milestone with phrases like "${weekNumber} weeks down!" or "That's ${weekNumber} weeks of dedication!"
 - If ${daysWorkedOut} >= 5: Celebrate their dedication
 - If ${daysWorkedOut} is 3-4: Encourage them warmly and motivate for next week  
 - If ${daysWorkedOut} < 3: Be understanding and supportive, not judgmental
 - Keep it positive and personal
+- NEVER say "another week" - always reference the specific week number
 
 Respond with just the message, no quotes or extra formatting.`;
 
@@ -36,7 +43,10 @@ Respond with just the message, no quotes or extra formatting.`;
       res.json({ message });
     } catch (error) {
       console.error("Error generating weekly review:", error);
-      res.json({ message: "Congratulations on completing another week! Your consistency is building real strength." });
+      const fallback = weekNumber === 1 
+          ? "You did it! Your first week is complete. Keep up the great work!" 
+          : `${weekNumber} weeks down! Your consistency is building real strength.`;
+      res.json({ message: fallback });
     }
   });
 
