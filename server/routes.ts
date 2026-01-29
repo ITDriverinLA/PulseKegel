@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "node:http";
 import { join } from "node:path";
+import express from "express";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
@@ -80,6 +81,12 @@ No quotes in response.`;
   app.get("/privacy", (_req, res) => {
     res.sendFile(join(__dirname, "templates", "privacy-policy.html"));
   });
+
+  app.get("/about", (_req, res) => {
+    res.sendFile(join(__dirname, "templates", "about-page.html"));
+  });
+
+  app.use("/screenshots", express.static(join(__dirname, "public", "screenshots")));
 
   const httpServer = createServer(app);
 
