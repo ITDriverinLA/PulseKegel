@@ -1,25 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "node:http";
-import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
-import { existsSync } from "node:fs";
-import express from "express";
 import OpenAI from "openai";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-function getTemplatesDir(): string {
-  const prodPath = join(__dirname, "templates");
-  const devPath = join(__dirname, "..", "server", "templates");
-  return existsSync(prodPath) ? prodPath : devPath;
-}
-
-function getPublicDir(): string {
-  const prodPath = join(__dirname, "public");
-  const devPath = join(__dirname, "..", "server", "public");
-  return existsSync(prodPath) ? prodPath : devPath;
-}
+import { privacyPolicyHtml, getAboutPageHtml } from "./staticContent";
 
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
@@ -95,18 +77,15 @@ No quotes in response.`;
     }
   });
 
-  const templatesDir = getTemplatesDir();
-  const publicDir = getPublicDir();
-
   app.get("/privacy", (_req, res) => {
-    res.sendFile(join(templatesDir, "privacy-policy.html"));
+    res.setHeader('Content-Type', 'text/html');
+    res.send(privacyPolicyHtml);
   });
 
   app.get("/about", (_req, res) => {
-    res.sendFile(join(templatesDir, "about-page.html"));
+    res.setHeader('Content-Type', 'text/html');
+    res.send(getAboutPageHtml());
   });
-
-  app.use("/screenshots", express.static(join(publicDir, "screenshots")));
 
   const httpServer = createServer(app);
 
