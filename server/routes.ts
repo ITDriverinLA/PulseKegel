@@ -1,8 +1,12 @@
 import type { Express } from "express";
 import { createServer, type Server } from "node:http";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import express from "express";
 import OpenAI from "openai";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
