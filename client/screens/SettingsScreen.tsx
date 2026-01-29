@@ -8,6 +8,7 @@ import { Feather } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import Slider from '@react-native-community/slider';
+import { reloadAppAsync } from 'expo';
 
 import { ThemedText } from '@/components/ThemedText';
 import { Toggle } from '@/components/Toggle';
@@ -72,6 +73,32 @@ export default function SettingsScreen() {
               await loadSettings();
               await hapticsManager.triggerWarning();
             },
+          },
+        ]
+      );
+    }
+  };
+
+  const handleDeleteAllData = () => {
+    const deleteAndRestart = async () => {
+      await storage.clearAllData();
+      await reloadAppAsync();
+    };
+
+    if (Platform.OS === 'web') {
+      if (confirm('This will permanently delete all your data including your name, settings, and workout history. The app will restart. Continue?')) {
+        deleteAndRestart();
+      }
+    } else {
+      Alert.alert(
+        'Delete All My Data',
+        'This will permanently delete all your personal information, settings, and workout history. The app will restart and you will need to set up again.\n\nThis action cannot be undone.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete Everything',
+            style: 'destructive',
+            onPress: deleteAndRestart,
           },
         ]
       );
@@ -285,6 +312,13 @@ export default function SettingsScreen() {
             <Pressable onPress={handleResetProgress} style={styles.dangerButton}>
               <Feather name="trash-2" size={20} color={NEON_PINK} />
               <Text style={styles.dangerText}>Reset All Progress</Text>
+            </Pressable>
+            
+            <View style={styles.divider} />
+            
+            <Pressable onPress={handleDeleteAllData} style={styles.dangerButton}>
+              <Feather name="user-x" size={20} color={NEON_PINK} />
+              <Text style={styles.dangerText}>Delete All My Data</Text>
             </Pressable>
           </View>
         </Animated.View>
