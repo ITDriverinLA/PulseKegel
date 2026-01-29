@@ -78,6 +78,26 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleTestWeeklyReview = async () => {
+    const eightDaysAgo = new Date();
+    eightDaysAgo.setDate(eightDaysAgo.getDate() - 8);
+    const startDate = eightDaysAgo.toISOString().split('T')[0];
+    
+    const fiveDaysAgo = new Date();
+    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+    const workoutDate = fiveDaysAgo.toISOString().split('T')[0];
+    
+    await storage.setProgramStartDate(startDate);
+    await storage.addCompletedDate(workoutDate, 8);
+    await storage.setLastWeeklyReview(0);
+    
+    Alert.alert(
+      'Test Data Set',
+      'Program start backdated 8 days. Go to Today tab and pull down to refresh to see the weekly review.',
+      [{ text: 'OK' }]
+    );
+  };
+
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -246,6 +266,13 @@ export default function SettingsScreen() {
               <Feather name="trash-2" size={20} color={NEON_PINK} />
               <Text style={styles.dangerText}>Reset All Progress</Text>
             </Pressable>
+            
+            <View style={styles.divider} />
+            
+            <Pressable onPress={handleTestWeeklyReview} style={styles.testButton}>
+              <Feather name="calendar" size={20} color={NEON_CYAN} />
+              <Text style={styles.testText}>Test Weekly Review</Text>
+            </Pressable>
           </View>
         </Animated.View>
 
@@ -328,6 +355,16 @@ const styles = StyleSheet.create({
   },
   dangerText: {
     color: NEON_PINK,
+    marginLeft: Spacing.md,
+    fontSize: 16,
+  },
+  testButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+  },
+  testText: {
+    color: NEON_CYAN,
     marginLeft: Spacing.md,
     fontSize: 16,
   },
