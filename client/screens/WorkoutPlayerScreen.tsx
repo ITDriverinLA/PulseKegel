@@ -294,6 +294,30 @@ export default function WorkoutPlayerScreen() {
     return currentPhase === 'squeeze' ? NEON_GREEN : NEON_CYAN;
   };
 
+  const getExerciseDescription = () => {
+    if (!currentSegment) return '';
+    switch (currentSegment.type) {
+      case 'slowHolds':
+        return 'Tighten and hold steadily';
+      case 'quickFlicks':
+        return 'Quick contract and release';
+      case 'elevator':
+        return 'Gradually increase tension';
+      case 'reverse':
+        return 'Gently push outward';
+      case 'contractRelax':
+        return 'Contract then fully relax';
+      case 'breathing':
+        return 'Deep belly breaths';
+      case 'blockRest':
+        return 'Relax and breathe deeply';
+      case 'getReady':
+        return 'Prepare for the next exercise';
+      default:
+        return '';
+    }
+  };
+
   if (isComplete) {
     return (
       <View style={styles.container}>
@@ -419,6 +443,9 @@ export default function WorkoutPlayerScreen() {
             >
               {getPhaseLabel()}
             </Animated.Text>
+            <Text style={styles.exerciseDescription}>
+              {getExerciseDescription()}
+            </Text>
           </Animated.View>
 
           <View style={styles.powerBarContainer}>
@@ -553,7 +580,14 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 8,
     textAlign: 'center',
-    marginBottom: Spacing['2xl'],
+    marginBottom: Spacing.sm,
+  },
+  exerciseDescription: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.6)',
+    textAlign: 'center',
+    marginBottom: Spacing.xl,
+    fontStyle: 'italic',
   },
   powerBarContainer: {
     flexDirection: 'row',
