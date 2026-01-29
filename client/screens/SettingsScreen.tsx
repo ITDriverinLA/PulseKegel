@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, Pressable, Alert, Platform, ScrollView, Text, TextInput } from 'react-native';
+import { StyleSheet, View, Pressable, Alert, Platform, ScrollView, Text, TextInput, Modal } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
@@ -29,6 +29,7 @@ export default function SettingsScreen() {
   const navigation = useNavigation();
 
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const loadSettings = useCallback(async () => {
     const userSettings = await storage.getSettings();
@@ -80,15 +81,8 @@ export default function SettingsScreen() {
   };
 
   const handleDeleteAllData = () => {
-    const deleteAndRestart = async () => {
-      await storage.clearAllData();
-      await reloadAppAsync();
-    };
-
     if (Platform.OS === 'web') {
-      if (confirm('This will permanently delete all your data including your name, settings, and workout history. The app will restart. Continue?')) {
-        deleteAndRestart();
-      }
+      setShowDeleteModal(true);
     } else {
       Alert.alert(
         'Delete All My Data',
@@ -98,11 +92,20 @@ export default function SettingsScreen() {
           {
             text: 'Delete Everything',
             style: 'destructive',
-            onPress: deleteAndRestart,
+            onPress: async () => {
+              await storage.clearAllData();
+              await reloadAppAsync();
+            },
           },
         ]
       );
     }
+  };
+
+  const confirmDeleteAllData = async () => {
+    setShowDeleteModal(false);
+    await storage.clearAllData();
+    await reloadAppAsync();
   };
 
 
@@ -332,6 +335,59 @@ export default function SettingsScreen() {
           </View>
         </Animated.View>
       </ScrollView>
+
+      <Modal
+        visible={showDeleteModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowDeleteModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <LinearGradient
+              colors={['#1a1a2e', '#16213e', '#0f0f23']}
+              style={styles.modalGradient}
+            >
+              <View style={styles.modalIconContainer}>
+                <Feather name="alert-triangle" size={48} color={NEON_PINK} />
+              </View>
+              
+              <Text style={styles.modalTitle}>Delete All My Data</Text>
+              
+              <Text style={styles.modalMessage}>
+                This will permanently delete all your personal information, settings, and workout history.
+              </Text>
+              <Text style={styles.modalMessage}>
+                The app will restart and you will need to set up again.
+              </Text>
+              <Text style={[styles.modalMessage, { color: NEON_PINK, marginTop: Spacing.md }]}>
+                This action cannot be undone.
+              </Text>
+              
+              <View style={styles.modalButtons}>
+                <Pressable
+                  onPress={() => setShowDeleteModal(false)}
+                  style={styles.modalCancelButton}
+                >
+                  <Text style={styles.modalCancelText}>Cancel</Text>
+                </Pressable>
+                
+                <Pressable
+                  onPress={confirmDeleteAllData}
+                  style={styles.modalDeleteButton}
+                >
+                  <LinearGradient
+                    colors={[NEON_PINK, '#cc2952']}
+                    style={styles.modalDeleteGradient}
+                  >
+                    <Text style={styles.modalDeleteText}>Delete Everything</Text>
+                  </LinearGradient>
+                </Pressable>
+              </View>
+            </LinearGradient>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -437,5 +493,78 @@ const styles = StyleSheet.create({
     fontSize: 16,
     borderWidth: 1,
     borderColor: 'rgba(0,255,136,0.3)',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.xl,
+  },
+  modalContainer: {
+    width: '100%',
+    maxWidth: 360,
+    borderRadius: 24,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 51, 102, 0.3)',
+  },
+  modalGradient: {
+    padding: Spacing['2xl'],
+    alignItems: 'center',
+  },
+  modalIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255, 51, 102, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.lg,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: Spacing.lg,
+    textAlign: 'center',
+  },
+  modalMessage: {
+    fontSize: 15,
+    color: 'rgba(255, 255, 255, 0.8)',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    marginTop: Spacing['2xl'],
+    gap: Spacing.md,
+  },
+  modalCancelButton: {
+    flex: 1,
+    paddingVertical: Spacing.md,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalDeleteButton: {
+    flex: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  modalDeleteGradient: {
+    paddingVertical: Spacing.md,
+    alignItems: 'center',
+  },
+  modalDeleteText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
   },
 });
