@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Image, Dimensions, Pressable } from 'react-native';
+import { StyleSheet, View, Image, Dimensions, Pressable, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -40,6 +40,12 @@ const pages = [
       'This app is for wellness purposes only and is not medical advice. Stop immediately if you experience pain, urinary urgency, or pelvic pressure.',
   },
   {
+    type: 'name',
+    title: "What's Your Name?",
+    description:
+      "We'll use your name to personalize your weekly progress updates.",
+  },
+  {
     type: 'anatomy',
     title: 'Personalize Your Experience',
     description:
@@ -66,10 +72,12 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const [currentPage, setCurrentPage] = useState(0);
   const [selectedAnatomy, setSelectedAnatomy] = useState<AnatomyType>(null);
+  const [userName, setUserName] = useState('');
   const insets = useSafeAreaInsets();
 
   const isLastPage = currentPage === pages.length - 1;
   const isAnatomyPage = pages[currentPage].type === 'anatomy';
+  const isNamePage = pages[currentPage].type === 'name';
 
   const handleNext = async () => {
     if (isLastPage) {
@@ -77,6 +85,13 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
     } else {
       setCurrentPage(prev => prev + 1);
     }
+  };
+
+  const handleNameSubmit = async () => {
+    if (userName.trim()) {
+      await storage.saveSettings({ userName: userName.trim() });
+    }
+    setCurrentPage(prev => prev + 1);
   };
 
   const handleAnatomySelect = async (type: AnatomyType) => {
@@ -101,7 +116,46 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
         ]}
       >
         <View style={styles.pageContent}>
-          {isAnatomyPage ? (
+          {isNamePage ? (
+            <Animated.View
+              key={currentPage}
+              entering={FadeIn.duration(300)}
+              style={styles.nameContainer}
+            >
+              <Feather name="user" size={64} color={NEON_GREEN} style={styles.nameIcon} />
+              <ThemedText type="h1" style={styles.title}>
+                {pages[currentPage].title}
+              </ThemedText>
+              <ThemedText type="body" style={styles.description}>
+                {pages[currentPage].description}
+              </ThemedText>
+              
+              <TextInput
+                style={styles.nameInput}
+                placeholder="Enter your name"
+                placeholderTextColor="rgba(255,255,255,0.4)"
+                value={userName}
+                onChangeText={setUserName}
+                autoCapitalize="words"
+                autoCorrect={false}
+                returnKeyType="done"
+                onSubmitEditing={handleNameSubmit}
+              />
+              
+              <Pressable style={styles.nameButton} onPress={handleNameSubmit}>
+                <LinearGradient
+                  colors={[NEON_GREEN, NEON_CYAN]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.nameButtonGradient}
+                >
+                  <ThemedText style={styles.nameButtonText}>
+                    {userName.trim() ? 'Continue' : 'Skip'}
+                  </ThemedText>
+                </LinearGradient>
+              </Pressable>
+            </Animated.View>
+          ) : isAnatomyPage ? (
             <Animated.View
               key={currentPage}
               entering={FadeIn.duration(300)}
@@ -186,7 +240,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
             ))}
           </View>
 
-          {!isAnatomyPage ? (
+          {!isAnatomyPage && !isNamePage ? (
             <NeonButton onPress={handleNext}>
               {isLastPage ? 'Get Started' : 'Continue'}
             </NeonButton>
@@ -353,6 +407,42 @@ const styles = StyleSheet.create({
   },
   anatomyButtonText: {
     color: '#fff',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  nameContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.lg,
+  },
+  nameIcon: {
+    marginBottom: Spacing.xl,
+  },
+  nameInput: {
+    width: '100%',
+    height: 56,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: BorderRadius.lg,
+    paddingHorizontal: Spacing.lg,
+    marginTop: Spacing['2xl'],
+    color: '#fff',
+    fontSize: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(0,255,136,0.3)',
+  },
+  nameButton: {
+    width: '100%',
+    marginTop: Spacing.xl,
+    borderRadius: BorderRadius.full,
+    overflow: 'hidden',
+  },
+  nameButtonGradient: {
+    height: Spacing.buttonHeight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  nameButtonText: {
+    color: '#000',
     fontWeight: '600',
     fontSize: 16,
   },

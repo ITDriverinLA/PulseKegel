@@ -23,6 +23,7 @@ export interface UserSettings {
   blockRestDuration: number;
   cooldownEnabled: boolean;
   anatomyType: AnatomyType;
+  userName: string;
 }
 
 export const defaultSettings: UserSettings = {
@@ -36,6 +37,7 @@ export const defaultSettings: UserSettings = {
   blockRestDuration: 25,
   cooldownEnabled: true,
   anatomyType: null,
+  userName: '',
 };
 
 export interface UserProgress {

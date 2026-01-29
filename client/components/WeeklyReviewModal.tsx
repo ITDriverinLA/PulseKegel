@@ -21,6 +21,7 @@ interface WeeklyReviewModalProps {
   daysWorkedOut: number;
   totalMinutes: number;
   anatomyType: AnatomyType;
+  userName: string;
 }
 
 export function WeeklyReviewModal({
@@ -30,6 +31,7 @@ export function WeeklyReviewModal({
   daysWorkedOut,
   totalMinutes,
   anatomyType,
+  userName,
 }: WeeklyReviewModalProps) {
   const [message, setMessage] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -38,7 +40,7 @@ export function WeeklyReviewModal({
     if (visible) {
       fetchReviewMessage();
     }
-  }, [visible, weekNumber, daysWorkedOut, totalMinutes, anatomyType]);
+  }, [visible, weekNumber, daysWorkedOut, totalMinutes, anatomyType, userName]);
 
   const fetchReviewMessage = async () => {
     setLoading(true);
@@ -47,7 +49,7 @@ export function WeeklyReviewModal({
       const response = await fetch(`${apiUrl}/api/weekly-review`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ weekNumber, daysWorkedOut, totalMinutes, anatomyType }),
+        body: JSON.stringify({ weekNumber, daysWorkedOut, totalMinutes, anatomyType, userName }),
       });
       const data = await response.json();
       setMessage(data.message);

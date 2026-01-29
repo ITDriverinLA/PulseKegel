@@ -40,7 +40,7 @@ const MALE_HEALTH_BENEFITS = [
 export async function registerRoutes(app: Express): Promise<Server> {
   // Weekly review AI endpoint
   app.post("/api/weekly-review", async (req, res) => {
-    const { daysWorkedOut, weekNumber, totalMinutes, anatomyType } = req.body;
+    const { daysWorkedOut, weekNumber, totalMinutes, anatomyType, userName } = req.body;
     
     try {
       const weekLabel = weekNumber === 1 ? "their very first week" : 
@@ -51,14 +51,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const benefitIndex = (weekNumber - 1) % benefits.length;
       const weekBenefit = benefits[benefitIndex];
       const anatomyLabel = anatomyType === 'male' ? 'male' : 'female';
+      const nameInstruction = userName ? `Address them by name: "${userName}".` : "Do not use any name.";
       
       const prompt = `You are a supportive fitness coach for a pelvic floor exercise app called PulseKegel. 
 The user (${anatomyLabel} anatomy) just completed ${weekLabel} of their 12-week program.
 They worked out ${daysWorkedOut} out of 7 days this week, totaling ${totalMinutes} minutes of exercise.
+${nameInstruction}
 
 This week's health benefit to highlight: "${weekBenefit}"
 
 Write a brief, encouraging message (2-3 sentences max) that:
+- ${userName ? `Start with their name "${userName}" to make it personal` : "Keep it warm but don't use any name"}
 - For week 1: Celebrate completing their FIRST week! Use phrases like "You did it!" or "Your first week is complete!"
 - For week 2+: Acknowledge the milestone with phrases like "${weekNumber} weeks down!" or "That's ${weekNumber} weeks of dedication!"
 - Include ONE specific health insight about "${weekBenefit}" that they're building toward

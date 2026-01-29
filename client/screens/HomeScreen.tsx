@@ -306,6 +306,7 @@ export default function HomeScreen() {
         daysWorkedOut={weeklyReviewData?.daysWorkedOut || 0}
         totalMinutes={progress?.totalMinutes || 0}
         anatomyType={settings.anatomyType}
+        userName={settings.userName}
       />
     </LinearGradient>
   );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, Pressable, Alert, Platform, ScrollView, Text } from 'react-native';
+import { StyleSheet, View, Pressable, Alert, Platform, ScrollView, Text, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
@@ -262,6 +262,23 @@ export default function SettingsScreen() {
         <Animated.View entering={FadeInDown.duration(400).delay(400)}>
           <Text style={styles.sectionTitle}>PERSONALIZATION</Text>
           <View style={styles.card}>
+            <View style={styles.settingRow}>
+              <Text style={styles.settingLabel}>Your Name</Text>
+              <TextInput
+                style={styles.nameInput}
+                value={settings.userName}
+                onChangeText={(text) => updateSetting('userName', text)}
+                placeholder="Enter your name"
+                placeholderTextColor="rgba(255,255,255,0.4)"
+                autoCapitalize="words"
+              />
+            </View>
+            <Text style={styles.settingDescription}>
+              Used to personalize your weekly progress messages.
+            </Text>
+            
+            <View style={styles.divider} />
+            
             <SegmentedControl
               label="Anatomy Type"
               options={[
@@ -400,5 +417,27 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
     fontSize: 12,
     color: 'rgba(255,255,255,0.4)',
+  },
+  settingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.xs,
+  },
+  settingLabel: {
+    color: '#fff',
+    fontSize: 16,
+    marginRight: Spacing.md,
+  },
+  nameInput: {
+    flex: 1,
+    height: 40,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md,
+    color: '#fff',
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0,255,136,0.3)',
   },
 });
