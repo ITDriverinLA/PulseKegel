@@ -53,30 +53,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const anatomyLabel = anatomyType === 'male' ? 'male' : 'female';
       const nameInstruction = userName ? `Address them by name: "${userName}".` : "Do not use any name.";
       
-      const prompt = `You are a supportive fitness coach for a pelvic floor exercise app called PulseKegel.
-
-USER INFO:
-- Name: ${userName || "not provided"}
-- Anatomy: ${anatomyLabel}
-- Week completed: ${weekNumber} of 12
-- Days worked out this week: ${daysWorkedOut}/7
-- Total minutes: ${totalMinutes}
-
-HEALTH BENEFIT TO MENTION THIS WEEK: "${weekBenefit}"
-
-Write a 2-3 sentence encouraging message following these STRICT rules:
-${userName ? `1. MUST start the message with "${userName}," - this is required!` : "1. Do not use any name greeting."}
-2. ${weekNumber === 1 ? 'Celebrate their FIRST week complete! Say "first week" or "week 1 done"' : `Reference week ${weekNumber} specifically (e.g., "${weekNumber} weeks down!" or "Week ${weekNumber} complete!")`}
-3. MUST mention the specific health benefit "${weekBenefit}" - explain how their exercises are helping with this
-4. ${daysWorkedOut >= 5 ? "Celebrate their strong dedication!" : daysWorkedOut >= 3 ? "Encourage them warmly." : "Be understanding and supportive."}
-
-Example format${userName ? ` for user named ${userName}` : ""}:
-"${userName ? userName + ", " : ""}[celebration of week ${weekNumber}]! [Specific insight about ${weekBenefit}]. [Encouragement based on ${daysWorkedOut} days]."
-
-Respond with ONLY the message, no quotes.`;
+      const prompt = `Write a 2-sentence encouraging fitness message.
+${userName ? `Start with "${userName},"` : "No name."}
+Week ${weekNumber}${weekNumber === 1 ? " (first week!)" : ""}, ${daysWorkedOut} days, ${anatomyLabel}.
+Mention this benefit: "${weekBenefit}"
+${daysWorkedOut >= 5 ? "Celebrate dedication." : daysWorkedOut >= 3 ? "Warm encouragement." : "Supportive tone."}
+No quotes in response.`;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-5",
+        model: "gpt-5-nano",
         messages: [{ role: "user", content: prompt }],
       });
 
