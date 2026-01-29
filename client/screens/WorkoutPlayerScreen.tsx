@@ -282,7 +282,10 @@ export default function WorkoutPlayerScreen() {
       return `STARTING IN ${workoutState?.secondsRemaining || 5}`;
     }
     if (currentSegment?.type === 'blockRest') return 'BREATHE';
-    return currentPhase === 'squeeze' ? 'SQUEEZE' : 'REST';
+    if (currentPhase === 'squeeze') {
+      return currentSegment?.type === 'reverse' ? 'GENTLE PUSH' : 'SQUEEZE';
+    }
+    return 'REST';
   };
 
   const getPhaseLabelColor = () => {
