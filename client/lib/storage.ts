@@ -7,6 +7,7 @@ const STORAGE_KEYS = {
   SETTINGS: 'pulsekegel_settings',
   ONBOARDING_COMPLETE: 'pulsekegel_onboarding_complete',
   PROGRAM_START_DATE: 'pulsekegel_program_start_date',
+  LAST_WEEKLY_REVIEW: 'pulsekegel_last_weekly_review',
 };
 
 export interface UserSettings {
@@ -223,5 +224,53 @@ export const storage = {
     } catch (error) {
       console.error('Error clearing data:', error);
     }
+  },
+
+  async getLastWeeklyReview(): Promise<number | null> {
+    try {
+      const data = await AsyncStorage.getItem(STORAGE_KEYS.LAST_WEEKLY_REVIEW);
+      return data ? parseInt(data) : null;
+    } catch {
+      return null;
+    }
+  },
+
+  async setLastWeeklyReview(weekNumber: number): Promise<void> {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.LAST_WEEKLY_REVIEW, weekNumber.toString());
+    } catch (error) {
+      console.error('Error saving last weekly review:', error);
+    }
+  },
+
+  async shouldShowWeeklyReview(completedDates: string[], programStartDate: string | null): Promise<{ show: boolean; weekNumber: number; daysWorkedOut: number }> {
+    if (!programStartDate || completedDates.length === 0) {
+      return { show: false, weekNumber: 0, daysWorkedOut: 0 };
+    }
+
+    const startDate = new Date(programStartDate);
+    const today = new Date();
+    const daysSinceStart = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const currentWeek = Math.floor(daysSinceStart / 7) + 1;
+    
+    const lastReviewedWeek = await this.getLastWeeklyReview();
+    
+    if (daysSinceStart >= 7 && (lastReviewedWeek === null || currentWeek > lastReviewedWeek)) {
+      const weekToReview = lastReviewedWeek === null ? 1 : lastReviewedWeek + 1;
+      
+      const weekStartDate = new Date(startDate);
+      weekStartDate.setDate(weekStartDate.getDate() + (weekToReview - 1) * 7);
+      const weekEndDate = new Date(weekStartDate);
+      weekEndDate.setDate(weekEndDate.getDate() + 6);
+      
+      const daysWorkedOut = completedDates.filter(dateStr => {
+        const date = new Date(dateStr);
+        return date >= weekStartDate && date <= weekEndDate;
+      }).length;
+      
+      return { show: true, weekNumber: weekToReview, daysWorkedOut };
+    }
+    
+    return { show: false, weekNumber: currentWeek, daysWorkedOut: 0 };
   },
 };

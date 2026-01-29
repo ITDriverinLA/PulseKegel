@@ -10,6 +10,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { Toggle } from '@/components/Toggle';
+import { WeeklyReviewModal } from '@/components/WeeklyReviewModal';
 import { Spacing, BorderRadius } from '@/constants/theme';
 import { storage, UserSettings, UserProgress, defaultSettings } from '@/lib/storage';
 import {
@@ -42,6 +43,11 @@ export default function HomeScreen() {
     workout: DayTemplate;
   } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [showWeeklyReview, setShowWeeklyReview] = useState(false);
+  const [weeklyReviewData, setWeeklyReviewData] = useState<{
+    weekNumber: number;
+    daysWorkedOut: number;
+  } | null>(null);
 
   const loadData = useCallback(async () => {
     const [userProgress, userSettings, startDate] = await Promise.all([
@@ -55,6 +61,15 @@ export default function HomeScreen() {
     
     const workout = getTodaysWorkout(userProgress.completedDates, startDate || undefined);
     setTodaysWorkout(workout);
+    
+    const reviewCheck = await storage.shouldShowWeeklyReview(userProgress.completedDates, startDate);
+    if (reviewCheck.show) {
+      setWeeklyReviewData({
+        weekNumber: reviewCheck.weekNumber,
+        daysWorkedOut: reviewCheck.daysWorkedOut,
+      });
+      setShowWeeklyReview(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -93,6 +108,14 @@ export default function HomeScreen() {
 
   const handleQuickWorkout = () => {
     navigation.navigate('WorkoutPicker');
+  };
+
+  const handleWeeklyReviewClose = async () => {
+    if (weeklyReviewData) {
+      await storage.setLastWeeklyReview(weeklyReviewData.weekNumber);
+    }
+    setShowWeeklyReview(false);
+    setWeeklyReviewData(null);
   };
 
   const formatLastCompleted = (dateStr: string | null): string => {
@@ -275,6 +298,14 @@ export default function HomeScreen() {
           </View>
         </Animated.View>
       </ScrollView>
+      
+      <WeeklyReviewModal
+        visible={showWeeklyReview}
+        onClose={handleWeeklyReviewClose}
+        weekNumber={weeklyReviewData?.weekNumber || 1}
+        daysWorkedOut={weeklyReviewData?.daysWorkedOut || 0}
+        totalMinutes={progress?.totalMinutes || 0}
+      />
     </LinearGradient>
   );
 }
