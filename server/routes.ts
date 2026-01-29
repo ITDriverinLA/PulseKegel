@@ -2,11 +2,24 @@ import type { Express } from "express";
 import { createServer, type Server } from "node:http";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { existsSync } from "node:fs";
 import express from "express";
 import OpenAI from "openai";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+function getTemplatesDir(): string {
+  const prodPath = join(__dirname, "templates");
+  const devPath = join(__dirname, "..", "server", "templates");
+  return existsSync(prodPath) ? prodPath : devPath;
+}
+
+function getPublicDir(): string {
+  const prodPath = join(__dirname, "public");
+  const devPath = join(__dirname, "..", "server", "public");
+  return existsSync(prodPath) ? prodPath : devPath;
+}
 
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
@@ -82,15 +95,18 @@ No quotes in response.`;
     }
   });
 
+  const templatesDir = getTemplatesDir();
+  const publicDir = getPublicDir();
+
   app.get("/privacy", (_req, res) => {
-    res.sendFile(join(__dirname, "templates", "privacy-policy.html"));
+    res.sendFile(join(templatesDir, "privacy-policy.html"));
   });
 
   app.get("/about", (_req, res) => {
-    res.sendFile(join(__dirname, "templates", "about-page.html"));
+    res.sendFile(join(templatesDir, "about-page.html"));
   });
 
-  app.use("/screenshots", express.static(join(__dirname, "public", "screenshots")));
+  app.use("/screenshots", express.static(join(publicDir, "screenshots")));
 
   const httpServer = createServer(app);
 
