@@ -10,6 +10,8 @@ const STORAGE_KEYS = {
   LAST_WEEKLY_REVIEW: 'pulsekegel_last_weekly_review',
 };
 
+export type AnatomyType = 'male' | 'female' | null;
+
 export interface UserSettings {
   hapticsEnabled: boolean;
   hapticIntensity: 'light' | 'medium' | 'heavy';
@@ -20,6 +22,7 @@ export interface UserSettings {
   restDuration: number;
   blockRestDuration: number;
   cooldownEnabled: boolean;
+  anatomyType: AnatomyType;
 }
 
 export const defaultSettings: UserSettings = {
@@ -32,6 +35,7 @@ export const defaultSettings: UserSettings = {
   restDuration: 5,
   blockRestDuration: 25,
   cooldownEnabled: true,
+  anatomyType: null,
 };
 
 export interface UserProgress {
