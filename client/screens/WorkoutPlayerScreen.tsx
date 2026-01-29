@@ -443,9 +443,6 @@ export default function WorkoutPlayerScreen() {
             >
               {getPhaseLabel()}
             </Animated.Text>
-            <Text style={styles.exerciseDescription}>
-              {getExerciseDescription()}
-            </Text>
           </Animated.View>
 
           <View style={styles.powerBarContainer}>
@@ -474,6 +471,9 @@ export default function WorkoutPlayerScreen() {
             <ThemedText type="h4" style={[styles.segmentName, { color: '#fff' }]}>
               {currentSegment?.type === 'getReady' ? 'Get Ready' : currentSegment?.name || ''}
             </ThemedText>
+            <Text style={styles.exerciseDescription}>
+              {getExerciseDescription()}
+            </Text>
             {currentSegment?.type !== 'getReady' ? (
               <ThemedText
                 type="body"
@@ -580,13 +580,13 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 8,
     textAlign: 'center',
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing['2xl'],
   },
   exerciseDescription: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.6)',
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.5)',
     textAlign: 'center',
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing.xs,
     fontStyle: 'italic',
   },
   powerBarContainer: {
