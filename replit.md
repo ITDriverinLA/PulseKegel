@@ -112,7 +112,9 @@ All data stored locally via AsyncStorage:
   - Contract-Relax: Double-pulse pattern with intensity ramp
   - Breathing: Very slow, soft wave-like rhythm
 - Haptic transition cues: Start cue when squeeze begins, peak cue at 90%, double-tap on phase change
-- Accessibility: High contrast mode, large text mode
+- Accessibility (via AccessibilityContext):
+  - High Contrast Mode: Pure white text (#FFFFFF) on dark backgrounds with stronger borders
+  - Large Text Mode: 1.25x font scale applied to key UI elements (streak numbers, labels, buttons, stats)
 - Recovery Mode: 50% reduced intensity with relaxation segment
 - **Rest Duration**: Adjustable slider (2-10 seconds) for time between reps
 - **Block Rest Duration**: Adjustable slider (10-45 seconds) for breathing breaks between exercise blocks
