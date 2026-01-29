@@ -53,31 +53,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const anatomyLabel = anatomyType === 'male' ? 'male' : 'female';
       const nameInstruction = userName ? `Address them by name: "${userName}".` : "Do not use any name.";
       
-      const prompt = `You are a supportive fitness coach for a pelvic floor exercise app called PulseKegel. 
-The user (${anatomyLabel} anatomy) just completed ${weekLabel} of their 12-week program.
-They worked out ${daysWorkedOut} out of 7 days this week, totaling ${totalMinutes} minutes of exercise.
-${nameInstruction}
+      const prompt = `You are a supportive fitness coach for a pelvic floor exercise app called PulseKegel.
 
-This week's health benefit to highlight: "${weekBenefit}"
+USER INFO:
+- Name: ${userName || "not provided"}
+- Anatomy: ${anatomyLabel}
+- Week completed: ${weekNumber} of 12
+- Days worked out this week: ${daysWorkedOut}/7
+- Total minutes: ${totalMinutes}
 
-Write a brief, encouraging message (2-3 sentences max) that:
-- ${userName ? `Start with their name "${userName}" to make it personal` : "Keep it warm but don't use any name"}
-- For week 1: Celebrate completing their FIRST week! Use phrases like "You did it!" or "Your first week is complete!"
-- For week 2+: Acknowledge the milestone with phrases like "${weekNumber} weeks down!" or "That's ${weekNumber} weeks of dedication!"
-- Include ONE specific health insight about "${weekBenefit}" that they're building toward
-- Make each week's message UNIQUE by focusing on the specific benefit mentioned
-- If ${daysWorkedOut} >= 5: Celebrate their dedication
-- If ${daysWorkedOut} is 3-4: Encourage them warmly
-- If ${daysWorkedOut} < 3: Be understanding and supportive
-- Keep it positive, personal, and informative
-- NEVER say "another week" - always reference the specific week number
+HEALTH BENEFIT TO MENTION THIS WEEK: "${weekBenefit}"
 
-Respond with just the message, no quotes or extra formatting.`;
+Write a 2-3 sentence encouraging message following these STRICT rules:
+${userName ? `1. MUST start the message with "${userName}," - this is required!` : "1. Do not use any name greeting."}
+2. ${weekNumber === 1 ? 'Celebrate their FIRST week complete! Say "first week" or "week 1 done"' : `Reference week ${weekNumber} specifically (e.g., "${weekNumber} weeks down!" or "Week ${weekNumber} complete!")`}
+3. MUST mention the specific health benefit "${weekBenefit}" - explain how their exercises are helping with this
+4. ${daysWorkedOut >= 5 ? "Celebrate their strong dedication!" : daysWorkedOut >= 3 ? "Encourage them warmly." : "Be understanding and supportive."}
+
+Example format${userName ? ` for user named ${userName}` : ""}:
+"${userName ? userName + ", " : ""}[celebration of week ${weekNumber}]! [Specific insight about ${weekBenefit}]. [Encouragement based on ${daysWorkedOut} days]."
+
+Respond with ONLY the message, no quotes.`;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-5-mini",
+        model: "gpt-5",
         messages: [{ role: "user", content: prompt }],
-        max_tokens: 150,
       });
 
       const message = response.choices[0]?.message?.content || "Great work this week! Keep it up!";
