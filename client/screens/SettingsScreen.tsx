@@ -9,8 +9,10 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import Slider from '@react-native-community/slider';
 import { reloadAppAsync } from 'expo';
+import * as WebBrowser from 'expo-web-browser';
 
 import { ThemedText } from '@/components/ThemedText';
+import { getApiUrl } from '@/lib/query-client';
 import { Toggle } from '@/components/Toggle';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { Spacing, BorderRadius } from '@/constants/theme';
@@ -332,6 +334,15 @@ export default function SettingsScreen() {
             <Text style={styles.footerText}>
               Not medical advice. Consult a healthcare provider for pelvic health concerns.
             </Text>
+            <Pressable 
+              onPress={() => {
+                const apiUrl = getApiUrl().replace(/\/$/, '');
+                WebBrowser.openBrowserAsync(`${apiUrl}/privacy`);
+              }}
+              style={styles.privacyLink}
+            >
+              <Text style={styles.privacyLinkText}>Privacy Policy</Text>
+            </Pressable>
           </View>
         </Animated.View>
       </ScrollView>
@@ -471,6 +482,16 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
     fontSize: 12,
     color: 'rgba(255,255,255,0.4)',
+  },
+  privacyLink: {
+    marginTop: Spacing.md,
+    paddingVertical: Spacing.sm,
+  },
+  privacyLinkText: {
+    textAlign: 'center',
+    fontSize: 14,
+    color: '#00FFFF',
+    textDecorationLine: 'underline',
   },
   settingRow: {
     flexDirection: 'row',
