@@ -16,19 +16,27 @@ PulseKegel is a mobile app for daily pelvic floor (Kegel) workouts with real-tim
 
 ## Workout Program Structure
 
-### Weeks 1-2: Control Phase
-- 3 days/week with strength and speed training
-- Building awareness and control
+Each week is exactly 7 calendar days. If you start on a Wednesday, Week 1 ends the following Tuesday.
 
-### Weeks 3-6: Strength Phase  
-- 5 days/week with strength, speed, and coordination training
-- Increasing hold duration and reps
+### Weeks 1-2: Control Phase (3 workouts + 4 rest days)
+- Day 1: Strength Training
+- Day 2: Rest
+- Day 3: Strength Training
+- Day 4: Rest
+- Day 5: Speed Training
+- Days 6-7: Rest
 
-### Weeks 7-10: Power Phase (Block-Based)
-- 7 days/week with alternating "Daily Driver" and "Coordination Day" workouts
+### Weeks 3-6: Strength Phase (5 workouts + 2 rest days)
+- Day 1: Strength, Day 2: Speed, Day 3: Strength
+- Day 4: Rest
+- Day 5: Speed, Day 6: Coordination
+- Day 7: Rest
+
+### Weeks 7-10: Power Phase (7 workouts daily)
+- Alternating "Daily Driver" and "Coordination Day" workouts
 - 20-30 second breathing breaks between exercise blocks
 
-**Daily Driver (5 days/week) - ~8 minutes:**
+**Daily Driver (~8 minutes):**
 - Block 1: Slow Holds (8 reps × 8s squeeze / 12s rest)
 - Block Rest: 25s breathing break
 - Block 2: Quick Flicks (20 reps × 1s/1s)
@@ -37,15 +45,18 @@ PulseKegel is a mobile app for daily pelvic floor (Kegel) workouts with real-tim
 - Block Rest: 25s breathing break
 - Block 4: Reverse Kegels (10 reps × 5s/5s)
 
-**Coordination Day (2 days/week) - ~7 minutes:**
+**Coordination Day (~7 minutes):**
 - Block 1: Elevators (5 reps with step pattern)
 - Block Rest: 25s breathing break
 - Block 2: Quick Flicks (30 reps × 1s/1s)
 - Block Rest: 25s breathing break
 - Block 3: Reverse Kegels (12 reps × 5s/5s)
 
-### Weeks 11-12: Maintenance Phase
-- 5 days/week continuing block-based structure
+### Weeks 11-12: Maintenance Phase (5 workouts + 2 rest days)
+- Day 1: Daily Driver, Day 2: Coordination, Day 3: Daily Driver
+- Day 4: Rest
+- Day 5-6: Daily Driver
+- Day 7: Rest
 
 ## Project Architecture
 
