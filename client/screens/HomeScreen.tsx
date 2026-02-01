@@ -43,6 +43,7 @@ export default function HomeScreen() {
     week: Week;
     dayIndex: number;
     workout: DayTemplate;
+    isRestDay: boolean;
   } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [showWeeklyReview, setShowWeeklyReview] = useState(false);
@@ -178,62 +179,110 @@ export default function HomeScreen() {
         <Animated.View entering={FadeInDown.duration(400).delay(200)}>
           <View style={styles.card}>
             {todaysWorkout ? (
-              <>
-                <View style={styles.workoutHeader}>
-                  <View>
-                    <Text style={[styles.phaseLabel, { fontSize: 14 * fontScale, color: colors.accentSecondary }]}>
-                      Week {todaysWorkout.week.weekNumber} - {todaysWorkout.week.phase}
-                    </Text>
-                    <Text style={[styles.workoutTitle, { fontSize: 24 * fontScale, color: colors.text }]}>
-                      {todaysWorkout.workout.name}
-                    </Text>
-                  </View>
-                  <View style={styles.durationBadge}>
-                    <Feather name="clock" size={14} color="rgba(255,255,255,0.6)" />
-                    <Text style={styles.durationText}>
-                      {settings.recoveryMode
-                        ? getWorkoutForRecoveryMode(todaysWorkout.workout).estimatedMinutes
-                        : todaysWorkout.workout.estimatedMinutes}{' '}
-                      min
-                    </Text>
-                  </View>
-                </View>
-
-                <Text style={styles.phaseDescription}>
-                  {todaysWorkout.week.phaseDescription}
-                </Text>
-
-                <View style={styles.segmentsList}>
-                  {(settings.recoveryMode
-                    ? getWorkoutForRecoveryMode(todaysWorkout.workout)
-                    : todaysWorkout.workout
-                  ).segments.map((segment) => (
-                    <View key={segment.id} style={styles.segmentItem}>
-                      <View style={styles.segmentDot} />
-                      <Text style={styles.segmentText}>
-                        {segment.name} ({segment.sets}x{segment.repsPerSet})
+              todaysWorkout.isRestDay ? (
+                <>
+                  <View style={styles.workoutHeader}>
+                    <View>
+                      <Text style={[styles.phaseLabel, { fontSize: 14 * fontScale, color: colors.accentSecondary }]}>
+                        Week {todaysWorkout.week.weekNumber} - {todaysWorkout.week.phase}
+                      </Text>
+                      <Text style={[styles.workoutTitle, { fontSize: 24 * fontScale, color: colors.text }]}>
+                        Rest Day
                       </Text>
                     </View>
-                  ))}
-                </View>
+                    <View style={[styles.durationBadge, { backgroundColor: 'rgba(139, 92, 246, 0.2)' }]}>
+                      <Feather name="moon" size={14} color={NEON_PURPLE} />
+                      <Text style={[styles.durationText, { color: NEON_PURPLE }]}>
+                        Recovery
+                      </Text>
+                    </View>
+                  </View>
 
-                <View style={styles.buttonsRow}>
-                  <Pressable onPress={handleStartWorkout} style={styles.startButtonContainer}>
-                    <LinearGradient
-                      colors={[NEON_GREEN, NEON_CYAN]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      style={styles.startButton}
-                    >
-                      <Text style={[styles.startButtonText, { fontSize: 16 * fontScale }]}>Start Program</Text>
-                    </LinearGradient>
-                  </Pressable>
-                  <Pressable onPress={handleQuickWorkout} style={styles.quickWorkoutButton}>
-                    <Feather name="zap" size={18} color={NEON_CYAN} />
-                    <Text style={styles.quickWorkoutText}>Quick</Text>
-                  </Pressable>
-                </View>
-              </>
+                  <Text style={styles.phaseDescription}>
+                    Take today to recover. Your muscles grow stronger during rest!
+                  </Text>
+
+                  <View style={styles.restDayContent}>
+                    <View style={styles.restDayIcon}>
+                      <Feather name="battery-charging" size={32} color={NEON_PURPLE} />
+                    </View>
+                    <Text style={styles.restDayMessage}>
+                      Rest days are essential for muscle recovery and preventing overtraining. 
+                      Your pelvic floor is building strength from your previous workouts.
+                    </Text>
+                  </View>
+
+                  <View style={styles.buttonsRow}>
+                    <Pressable onPress={handleQuickWorkout} style={styles.startButtonContainer}>
+                      <LinearGradient
+                        colors={[NEON_PURPLE, NEON_PINK]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.startButton}
+                      >
+                        <Text style={[styles.startButtonText, { fontSize: 16 * fontScale }]}>Optional Quick Workout</Text>
+                      </LinearGradient>
+                    </Pressable>
+                  </View>
+                </>
+              ) : (
+                <>
+                  <View style={styles.workoutHeader}>
+                    <View>
+                      <Text style={[styles.phaseLabel, { fontSize: 14 * fontScale, color: colors.accentSecondary }]}>
+                        Week {todaysWorkout.week.weekNumber} - {todaysWorkout.week.phase}
+                      </Text>
+                      <Text style={[styles.workoutTitle, { fontSize: 24 * fontScale, color: colors.text }]}>
+                        {todaysWorkout.workout.name}
+                      </Text>
+                    </View>
+                    <View style={styles.durationBadge}>
+                      <Feather name="clock" size={14} color="rgba(255,255,255,0.6)" />
+                      <Text style={styles.durationText}>
+                        {settings.recoveryMode
+                          ? getWorkoutForRecoveryMode(todaysWorkout.workout).estimatedMinutes
+                          : todaysWorkout.workout.estimatedMinutes}{' '}
+                        min
+                      </Text>
+                    </View>
+                  </View>
+
+                  <Text style={styles.phaseDescription}>
+                    {todaysWorkout.week.phaseDescription}
+                  </Text>
+
+                  <View style={styles.segmentsList}>
+                    {(settings.recoveryMode
+                      ? getWorkoutForRecoveryMode(todaysWorkout.workout)
+                      : todaysWorkout.workout
+                    ).segments.map((segment) => (
+                      <View key={segment.id} style={styles.segmentItem}>
+                        <View style={styles.segmentDot} />
+                        <Text style={styles.segmentText}>
+                          {segment.name} ({segment.sets}x{segment.repsPerSet})
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+
+                  <View style={styles.buttonsRow}>
+                    <Pressable onPress={handleStartWorkout} style={styles.startButtonContainer}>
+                      <LinearGradient
+                        colors={[NEON_GREEN, NEON_CYAN]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.startButton}
+                      >
+                        <Text style={[styles.startButtonText, { fontSize: 16 * fontScale }]}>Start Program</Text>
+                      </LinearGradient>
+                    </Pressable>
+                    <Pressable onPress={handleQuickWorkout} style={styles.quickWorkoutButton}>
+                      <Feather name="zap" size={18} color={NEON_CYAN} />
+                      <Text style={styles.quickWorkoutText}>Quick</Text>
+                    </Pressable>
+                  </View>
+                </>
+              )
             ) : (
               <View style={styles.loadingContainer}>
                 <Text style={styles.loadingText}>Loading workout...</Text>
@@ -395,6 +444,27 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
     fontSize: 14,
     color: 'rgba(255,255,255,0.6)',
+  },
+  restDayContent: {
+    alignItems: 'center',
+    paddingVertical: Spacing.lg,
+    marginBottom: Spacing.lg,
+  },
+  restDayIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(139, 92, 246, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.md,
+  },
+  restDayMessage: {
+    textAlign: 'center',
+    fontSize: 14,
+    lineHeight: 22,
+    color: 'rgba(255,255,255,0.7)',
+    paddingHorizontal: Spacing.md,
   },
   segmentsList: {
     marginBottom: Spacing.lg,
