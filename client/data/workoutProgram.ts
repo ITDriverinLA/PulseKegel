@@ -18,7 +18,17 @@ export interface DayTemplate {
   dayType: 'strength' | 'speed' | 'coordination' | 'rest' | 'daily' | 'alternate';
   segments: Segment[];
   estimatedMinutes: number;
+  isRestDay?: boolean;
 }
+
+const createRestDay = (weekNum: number, dayNum: number): DayTemplate => ({
+  id: `w${weekNum}-rest-${dayNum}`,
+  name: 'Rest Day',
+  dayType: 'rest',
+  segments: [],
+  estimatedMinutes: 0,
+  isRestDay: true,
+});
 
 export interface Week {
   weekNumber: number;
@@ -417,29 +427,43 @@ const generateWeek = (weekNum: number): Week => {
   const days: DayTemplate[] = [];
   
   if (weekNum <= 2) {
-    days.push(strengthDay(weekNum));
-    days.push(strengthDay(weekNum));
-    days.push(speedDay(weekNum));
+    // Weeks 1-2: 3 workouts, 4 rest days (Mon/Wed/Fri pattern)
+    // Day 1: Strength, Day 2: Rest, Day 3: Strength, Day 4: Rest, Day 5: Speed, Day 6: Rest, Day 7: Rest
+    days.push(strengthDay(weekNum));           // Day 1
+    days.push(createRestDay(weekNum, 2));      // Day 2
+    days.push(strengthDay(weekNum));           // Day 3
+    days.push(createRestDay(weekNum, 4));      // Day 4
+    days.push(speedDay(weekNum));              // Day 5
+    days.push(createRestDay(weekNum, 6));      // Day 6
+    days.push(createRestDay(weekNum, 7));      // Day 7
   } else if (weekNum <= 6) {
-    days.push(strengthDay(weekNum));
-    days.push(speedDay(weekNum));
-    days.push(strengthDay(weekNum));
-    days.push(speedDay(weekNum));
-    days.push(coordinationDay(weekNum));
+    // Weeks 3-6: 5 workouts, 2 rest days
+    // Day 1: Strength, Day 2: Speed, Day 3: Strength, Day 4: Rest, Day 5: Speed, Day 6: Coordination, Day 7: Rest
+    days.push(strengthDay(weekNum));           // Day 1
+    days.push(speedDay(weekNum));              // Day 2
+    days.push(strengthDay(weekNum));           // Day 3
+    days.push(createRestDay(weekNum, 4));      // Day 4
+    days.push(speedDay(weekNum));              // Day 5
+    days.push(coordinationDay(weekNum));       // Day 6
+    days.push(createRestDay(weekNum, 7));      // Day 7
   } else if (weekNum <= 10) {
-    days.push(dailyDriverWorkout(weekNum));
-    days.push(alternateDayWorkout(weekNum));
-    days.push(dailyDriverWorkout(weekNum));
-    days.push(alternateDayWorkout(weekNum));
-    days.push(dailyDriverWorkout(weekNum));
-    days.push(dailyDriverWorkout(weekNum));
-    days.push(dailyDriverWorkout(weekNum));
+    // Weeks 7-10: 7 workouts (daily), alternating Daily Driver and Coordination
+    days.push(dailyDriverWorkout(weekNum));    // Day 1
+    days.push(alternateDayWorkout(weekNum));   // Day 2
+    days.push(dailyDriverWorkout(weekNum));    // Day 3
+    days.push(dailyDriverWorkout(weekNum));    // Day 4
+    days.push(alternateDayWorkout(weekNum));   // Day 5
+    days.push(dailyDriverWorkout(weekNum));    // Day 6
+    days.push(dailyDriverWorkout(weekNum));    // Day 7
   } else {
-    days.push(dailyDriverWorkout(weekNum));
-    days.push(alternateDayWorkout(weekNum));
-    days.push(dailyDriverWorkout(weekNum));
-    days.push(dailyDriverWorkout(weekNum));
-    days.push(dailyDriverWorkout(weekNum));
+    // Weeks 11-12: 5 workouts, 2 rest days (maintenance)
+    days.push(dailyDriverWorkout(weekNum));    // Day 1
+    days.push(alternateDayWorkout(weekNum));   // Day 2
+    days.push(dailyDriverWorkout(weekNum));    // Day 3
+    days.push(createRestDay(weekNum, 4));      // Day 4
+    days.push(dailyDriverWorkout(weekNum));    // Day 5
+    days.push(dailyDriverWorkout(weekNum));    // Day 6
+    days.push(createRestDay(weekNum, 7));      // Day 7
   }
   
   return {
@@ -458,34 +482,44 @@ export const workoutProgram: WorkoutProgram = {
 export const getTodaysWorkout = (
   completedDates: string[],
   startDate?: string
-): { week: Week; dayIndex: number; workout: DayTemplate } | null => {
+): { week: Week; dayIndex: number; workout: DayTemplate; isRestDay: boolean } | null => {
   const today = new Date();
-  const start = startDate ? new Date(startDate) : new Date(today);
+  today.setHours(0, 0, 0, 0);
   
-  if (!startDate) {
-    start.setDate(start.getDate() - completedDates.length);
+  let start: Date;
+  if (startDate) {
+    start = new Date(startDate);
+  } else {
+    start = new Date(today);
   }
+  start.setHours(0, 0, 0, 0);
   
   const daysSinceStart = Math.floor(
     (today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
   );
   
-  let totalDays = 0;
-  for (const week of workoutProgram.weeks) {
-    for (let i = 0; i < week.days.length; i++) {
-      if (totalDays === daysSinceStart % getTotalProgramDays()) {
-        return { week, dayIndex: i, workout: week.days[i] };
-      }
-      totalDays++;
-    }
-  }
+  // Each week is exactly 7 days, total program is 12 weeks = 84 days
+  const totalProgramDays = 12 * 7; // 84 days
+  const dayInProgram = daysSinceStart % totalProgramDays;
   
-  const firstWeek = workoutProgram.weeks[0];
-  return { week: firstWeek, dayIndex: 0, workout: firstWeek.days[0] };
+  // Calculate which week (0-indexed) and which day within the week (0-indexed)
+  const weekIndex = Math.floor(dayInProgram / 7);
+  const dayIndex = dayInProgram % 7;
+  
+  const week = workoutProgram.weeks[weekIndex];
+  const workout = week.days[dayIndex];
+  
+  return { 
+    week, 
+    dayIndex, 
+    workout,
+    isRestDay: workout.isRestDay === true
+  };
 };
 
 export const getTotalProgramDays = (): number => {
-  return workoutProgram.weeks.reduce((acc, week) => acc + week.days.length, 0);
+  // Each week is 7 days, 12 weeks total
+  return 12 * 7; // 84 days
 };
 
 export const getWorkoutForRecoveryMode = (workout: DayTemplate): DayTemplate => {
