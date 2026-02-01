@@ -265,13 +265,46 @@ export function getAboutPageHtml(): string {
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF00FF" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
-                    <h3 class="feature-title">One-Time Purchase</h3>
-                    <p class="feature-desc">No subscriptions. No hidden fees. Just honest value</p>
+                    <h3 class="feature-title">Intro Offer</h3>
+                    <p class="feature-desc">$4.99 for 12 months. No hidden fees. Just honest value</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></div>
                     <h3 class="feature-title">Weekly AI Analysis</h3>
                     <p class="feature-desc">Personalized progress reviews and health tips each week, tailored just for you</p>
+                </div>
+            </div>
+        </section>
+        <section class="roadmap-section" style="padding: 3rem 1.5rem;">
+            <h2 style="text-align: center; font-size: 1.75rem; font-weight: 700; margin-bottom: 1.5rem; background: linear-gradient(135deg, #00FF88, #00FFFF); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">More Updates Planned</h2>
+            <div style="max-width: 600px; margin: 0 auto;">
+                <div style="display: flex; align-items: flex-start; margin-bottom: 1rem; padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 12px; border-left: 3px solid #00FF88;">
+                    <div style="margin-right: 1rem; color: #00FF88;">&#10003;</div>
+                    <div>
+                        <strong style="color: #fff;">AI-Recommended Follow-On Maintenance Plan</strong>
+                        <p style="color: rgba(255,255,255,0.6); margin: 0.25rem 0 0 0; font-size: 0.9rem;">Personalized workout recommendations based on your progress and goals</p>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: flex-start; margin-bottom: 1rem; padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 12px; border-left: 3px solid #00FFFF;">
+                    <div style="margin-right: 1rem; color: #00FFFF;">&#10003;</div>
+                    <div>
+                        <strong style="color: #fff;">Advanced Progress Analytics</strong>
+                        <p style="color: rgba(255,255,255,0.6); margin: 0.25rem 0 0 0; font-size: 0.9rem;">Detailed charts and insights to track your improvement over time</p>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: flex-start; margin-bottom: 1rem; padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 12px; border-left: 3px solid #FF00FF;">
+                    <div style="margin-right: 1rem; color: #FF00FF;">&#10003;</div>
+                    <div>
+                        <strong style="color: #fff;">Custom Workout Builder</strong>
+                        <p style="color: rgba(255,255,255,0.6); margin: 0.25rem 0 0 0; font-size: 0.9rem;">Create and save your own exercise routines</p>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: flex-start; padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 12px; border-left: 3px solid #8B5CF6;">
+                    <div style="margin-right: 1rem; color: #8B5CF6;">&#10003;</div>
+                    <div>
+                        <strong style="color: #fff;">Apple Watch Integration</strong>
+                        <p style="color: rgba(255,255,255,0.6); margin: 0.25rem 0 0 0; font-size: 0.9rem;">Discreet workout guidance right on your wrist</p>
+                    </div>
                 </div>
             </div>
         </section>
