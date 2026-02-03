@@ -19,6 +19,11 @@ import { Spacing, BorderRadius } from '@/constants/theme';
 import { storage, UserSettings, defaultSettings } from '@/lib/storage';
 import { hapticsManager } from '@/lib/hapticsManager';
 import { useAccessibility } from '@/contexts/AccessibilityContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '@/navigation/RootStackNavigator';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const NEON_GREEN = '#00FF88';
 const NEON_CYAN = '#00FFFF';
@@ -29,8 +34,10 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const { refresh: refreshAccessibility, fontScale, colors } = useAccessibility();
+  const { isSubscribed, isTrialActive, trialDaysRemaining, restorePurchases, hasAccess } = useSubscription();
+  const [isRestoring, setIsRestoring] = useState(false);
 
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -113,6 +120,24 @@ export default function SettingsScreen() {
     setShowDeleteModal(false);
     await storage.clearAllData();
     await reloadAppAsync();
+  };
+
+  const handleRestorePurchases = async () => {
+    setIsRestoring(true);
+    try {
+      const success = await restorePurchases();
+      if (success) {
+        Alert.alert('Success', 'Your purchases have been restored!', [{ text: 'OK' }]);
+      } else {
+        Alert.alert('No Purchases Found', 'We could not find any previous purchases to restore.', [{ text: 'OK' }]);
+      }
+    } finally {
+      setIsRestoring(false);
+    }
+  };
+
+  const handleManageSubscription = () => {
+    navigation.navigate('Paywall');
   };
 
 
@@ -317,6 +342,52 @@ export default function SettingsScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(400).delay(500)}>
+          <Text style={styles.sectionTitle}>SUBSCRIPTION</Text>
+          <View style={styles.card}>
+            <View style={styles.subscriptionStatus}>
+              <Feather 
+                name={isSubscribed ? "check-circle" : (isTrialActive ? "clock" : "lock")} 
+                size={24} 
+                color={isSubscribed ? NEON_GREEN : (isTrialActive ? NEON_CYAN : NEON_PINK)} 
+              />
+              <View style={styles.subscriptionInfo}>
+                <Text style={styles.subscriptionTitle}>
+                  {isSubscribed ? 'Premium Active' : (isTrialActive ? `Free Trial - ${trialDaysRemaining} days left` : 'Trial Expired')}
+                </Text>
+                <Text style={styles.subscriptionDesc}>
+                  {isSubscribed ? 'Thank you for supporting PulseKegel!' : (isTrialActive ? 'Enjoying full access during your trial' : 'Subscribe to continue your training')}
+                </Text>
+              </View>
+            </View>
+            
+            {!isSubscribed && (
+              <>
+                <View style={styles.divider} />
+                <Pressable onPress={handleManageSubscription} style={styles.subscriptionButton}>
+                  <Feather name="unlock" size={20} color={NEON_GREEN} />
+                  <Text style={[styles.subscriptionButtonText, { color: NEON_GREEN }]}>
+                    {isTrialActive ? 'View Plans' : 'Subscribe Now'}
+                  </Text>
+                </Pressable>
+              </>
+            )}
+            
+            <View style={styles.divider} />
+            
+            <Pressable 
+              onPress={handleRestorePurchases} 
+              style={styles.subscriptionButton}
+              disabled={isRestoring}
+            >
+              <Feather name="refresh-cw" size={20} color={NEON_CYAN} />
+              <Text style={[styles.subscriptionButtonText, { color: NEON_CYAN }]}>
+                {isRestoring ? 'Restoring...' : 'Restore Purchases'}
+              </Text>
+            </Pressable>
+          </View>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.duration(400).delay(600)}>
           <Text style={styles.sectionTitle}>DATA</Text>
           <View style={styles.card}>
             <Pressable onPress={handleResetProgress} style={styles.dangerButton}>
@@ -619,5 +690,34 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '700',
+  },
+  subscriptionStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+  },
+  subscriptionInfo: {
+    marginLeft: Spacing.md,
+    flex: 1,
+  },
+  subscriptionTitle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  subscriptionDesc: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 13,
+  },
+  subscriptionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+  },
+  subscriptionButtonText: {
+    marginLeft: Spacing.md,
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
