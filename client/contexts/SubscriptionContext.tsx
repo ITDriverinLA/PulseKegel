@@ -11,7 +11,7 @@ const STORAGE_KEYS = {
 const TRIAL_DURATION_DAYS = 7;
 
 // SET TO true TO TEST PAYWALL (simulates expired trial)
-const TEST_PAYWALL_MODE = true;
+const TEST_PAYWALL_MODE = false;
 
 interface SubscriptionContextType {
   isSubscribed: boolean;
