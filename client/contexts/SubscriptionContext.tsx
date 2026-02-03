@@ -10,6 +10,9 @@ const STORAGE_KEYS = {
 
 const TRIAL_DURATION_DAYS = 7;
 
+// SET TO true TO TEST PAYWALL (simulates expired trial)
+const TEST_PAYWALL_MODE = true;
+
 interface SubscriptionContextType {
   isSubscribed: boolean;
   isTrialActive: boolean;
@@ -90,6 +93,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       const now = new Date();
       const daysSinceInstall = Math.floor((now.getTime() - install.getTime()) / (1000 * 60 * 60 * 24));
       const remaining = Math.max(0, TRIAL_DURATION_DAYS - daysSinceInstall);
+      
+      // If TEST_PAYWALL_MODE is enabled, simulate expired trial
+      if (TEST_PAYWALL_MODE) {
+        setTrialDaysRemaining(0);
+        setIsTrialActive(false);
+        return false;
+      }
       
       setTrialDaysRemaining(remaining);
       setIsTrialActive(remaining > 0);
