@@ -129,9 +129,16 @@ export default function HomeScreen() {
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
     
-    if (dateStr === today.toISOString().split('T')[0]) {
+    const formatLocalDate = (d: Date) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+    
+    if (dateStr === formatLocalDate(today)) {
       return 'Today';
-    } else if (dateStr === yesterday.toISOString().split('T')[0]) {
+    } else if (dateStr === formatLocalDate(yesterday)) {
       return 'Yesterday';
     }
     
