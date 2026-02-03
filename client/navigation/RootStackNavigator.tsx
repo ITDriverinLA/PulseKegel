@@ -5,6 +5,7 @@ import MainTabNavigator from '@/navigation/MainTabNavigator';
 import WorkoutPlayerScreen from '@/screens/WorkoutPlayerScreen';
 import WorkoutPickerScreen from '@/screens/WorkoutPickerScreen';
 import OnboardingScreen from '@/screens/OnboardingScreen';
+import PaywallScreen from '@/screens/PaywallScreen';
 import { useScreenOptions } from '@/hooks/useScreenOptions';
 import { storage } from '@/lib/storage';
 import { DayTemplate } from '@/data/workoutProgram';
@@ -18,6 +19,7 @@ export type RootStackParamList = {
   };
   WorkoutPicker: undefined;
   Onboarding: undefined;
+  Paywall: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -69,6 +71,14 @@ export default function RootStackNavigator() {
       <Stack.Screen
         name="WorkoutPicker"
         component={WorkoutPickerScreen}
+        options={{
+          presentation: 'modal',
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="Paywall"
+        component={PaywallScreen}
         options={{
           presentation: 'modal',
           headerShown: false,

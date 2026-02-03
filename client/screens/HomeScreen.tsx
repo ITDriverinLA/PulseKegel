@@ -14,6 +14,7 @@ import { WeeklyReviewModal } from '@/components/WeeklyReviewModal';
 import { Spacing, BorderRadius } from '@/constants/theme';
 import { storage, UserSettings, UserProgress, defaultSettings } from '@/lib/storage';
 import { useAccessibility } from '@/contexts/AccessibilityContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import {
   getTodaysWorkout,
   getWorkoutForRecoveryMode,
@@ -36,6 +37,7 @@ export default function HomeScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const navigation = useNavigation<NavigationProp>();
   const { fontScale, colors, highContrast } = useAccessibility();
+  const { hasAccess, isTrialActive, trialDaysRemaining } = useSubscription();
 
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
@@ -98,6 +100,11 @@ export default function HomeScreen() {
   const handleStartWorkout = () => {
     if (!todaysWorkout) return;
     
+    if (!hasAccess) {
+      navigation.navigate('Paywall');
+      return;
+    }
+    
     const workout = settings.recoveryMode
       ? getWorkoutForRecoveryMode(todaysWorkout.workout)
       : todaysWorkout.workout;
@@ -110,6 +117,10 @@ export default function HomeScreen() {
   };
 
   const handleQuickWorkout = () => {
+    if (!hasAccess) {
+      navigation.navigate('Paywall');
+      return;
+    }
     navigation.navigate('WorkoutPicker');
   };
 
