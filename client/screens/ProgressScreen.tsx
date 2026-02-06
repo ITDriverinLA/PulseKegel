@@ -29,6 +29,8 @@ export default function ProgressScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const loadData = useCallback(async () => {
+    const startDate = await storage.getProgramStartDate();
+    await storage.backfillRestDays(startDate);
     const userProgress = await storage.getProgress();
     setProgress(userProgress);
   }, []);

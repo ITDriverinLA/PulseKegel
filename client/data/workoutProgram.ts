@@ -517,6 +517,29 @@ export const getTodaysWorkout = (
   };
 };
 
+export const isRestDayForDate = (date: Date, startDate: string): boolean => {
+  const start = new Date(startDate);
+  start.setHours(0, 0, 0, 0);
+  const target = new Date(date);
+  target.setHours(0, 0, 0, 0);
+
+  const daysSinceStart = Math.floor(
+    (target.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  if (daysSinceStart < 0) return false;
+
+  const totalProgramDays = 12 * 7;
+  const dayInProgram = daysSinceStart % totalProgramDays;
+  const weekIndex = Math.floor(dayInProgram / 7);
+  const dayIndex = dayInProgram % 7;
+
+  const week = workoutProgram.weeks[weekIndex];
+  if (!week) return false;
+  const workout = week.days[dayIndex];
+  return workout?.isRestDay === true;
+};
+
 export const getTotalProgramDays = (): number => {
   // Each week is 7 days, 12 weeks total
   return 12 * 7; // 84 days

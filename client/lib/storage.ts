@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { isRestDayForDate } from '@/data/workoutProgram';
 
 const STORAGE_KEYS = {
   COMPLETED_DATES: 'pulsekegel_completed_dates',
@@ -173,6 +174,53 @@ export const storage = {
       longestStreak,
       lastCompletedDate: sortedDates[0] || null,
     };
+  },
+
+  async markRestDay(date: string): Promise<void> {
+    try {
+      const dates = await this.getCompletedDates();
+      if (!dates.includes(date)) {
+        dates.push(date);
+        await AsyncStorage.setItem(
+          STORAGE_KEYS.COMPLETED_DATES,
+          JSON.stringify(dates)
+        );
+      }
+    } catch (error) {
+      console.error('Error marking rest day:', error);
+    }
+  },
+
+  async backfillRestDays(programStartDate: string | null): Promise<boolean> {
+    if (!programStartDate) return false;
+
+    const completedDates = await this.getCompletedDates();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const start = new Date(programStartDate);
+    start.setHours(0, 0, 0, 0);
+
+    let changed = false;
+    const current = new Date(start);
+
+    while (current <= today) {
+      const dateStr = formatDate(current);
+      if (!completedDates.includes(dateStr) && isRestDayForDate(current, programStartDate)) {
+        completedDates.push(dateStr);
+        changed = true;
+      }
+      current.setDate(current.getDate() + 1);
+    }
+
+    if (changed) {
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.COMPLETED_DATES,
+        JSON.stringify(completedDates)
+      );
+    }
+
+    return changed;
   },
 
   async getSettings(): Promise<UserSettings> {

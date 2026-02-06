@@ -55,10 +55,13 @@ export default function HomeScreen() {
   } | null>(null);
 
   const loadData = useCallback(async () => {
-    const [userProgress, userSettings, startDate] = await Promise.all([
+    const startDate = await storage.getProgramStartDate();
+
+    await storage.backfillRestDays(startDate);
+
+    const [userProgress, userSettings] = await Promise.all([
       storage.getProgress(),
       storage.getSettings(),
-      storage.getProgramStartDate(),
     ]);
     
     setProgress(userProgress);
