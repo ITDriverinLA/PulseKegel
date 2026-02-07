@@ -23,7 +23,6 @@ interface SubscriptionContextType {
   restorePurchases: () => Promise<boolean>;
   checkSubscription: () => Promise<void>;
   hasAccess: boolean;
-  debugInfo: string;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType>({
@@ -36,7 +35,6 @@ const SubscriptionContext = createContext<SubscriptionContextType>({
   restorePurchases: async () => false,
   checkSubscription: async () => {},
   hasAccess: true,
-  debugInfo: '',
 });
 
 const REVENUECAT_API_KEY_IOS = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || '';
@@ -49,52 +47,35 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
   const [isRevenueCatConfigured, setIsRevenueCatConfigured] = useState(false);
-  const [debugInfo, setDebugInfo] = useState('Initializing...');
 
   const initializeRevenueCat = useCallback(async () => {
     const apiKey = Platform.OS === 'ios' ? REVENUECAT_API_KEY_IOS : REVENUECAT_API_KEY_ANDROID;
     
     if (!apiKey) {
-      setDebugInfo('No API key found for ' + Platform.OS);
+      console.log('RevenueCat API key not configured, running in trial-only mode');
       return false;
     }
 
     try {
-      setDebugInfo('Configuring RC with key: ' + apiKey.substring(0, 8) + '...');
       await Purchases.configure({ apiKey });
       setIsRevenueCatConfigured(true);
-      setDebugInfo('RC configured OK');
       return true;
-    } catch (error: any) {
-      setDebugInfo('RC config failed: ' + (error?.message || String(error)));
+    } catch (error) {
+      console.error('Failed to configure RevenueCat:', error);
       return false;
     }
   }, []);
 
   const loadPackages = useCallback(async () => {
-    if (!isRevenueCatConfigured) {
-      setDebugInfo(prev => prev + ' | Packages skip: RC not configured');
-      return;
-    }
+    if (!isRevenueCatConfigured) return;
     
     try {
-      setDebugInfo(prev => prev + ' | Fetching offerings...');
       const offerings = await Purchases.getOfferings();
-      const allOfferingKeys = Object.keys(offerings.all);
-      const currentId = offerings.current?.identifier || 'none';
-      const pkgCount = offerings.current?.availablePackages?.length || 0;
-      
-      setDebugInfo(
-        `RC OK | Offerings: [${allOfferingKeys.join(',')}] | Current: ${currentId} | Pkgs: ${pkgCount}`
-      );
-      
       if (offerings.current?.availablePackages) {
         setPackages(offerings.current.availablePackages);
-      } else {
-        setDebugInfo(prev => prev + ' | No packages in current offering');
       }
-    } catch (error: any) {
-      setDebugInfo(prev => prev + ' | Offerings error: ' + (error?.message || String(error)));
+    } catch (error) {
+      console.error('Failed to load packages:', error);
     }
   }, [isRevenueCatConfigured]);
 
@@ -223,7 +204,6 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         restorePurchases,
         checkSubscription,
         hasAccess,
-        debugInfo,
       }}
     >
       {children}
