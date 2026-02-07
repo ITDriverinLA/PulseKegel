@@ -33,7 +33,7 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { fontScale, colors } = useAccessibility();
-  const { packages, purchasePackage, restorePurchases, isLoading, trialDaysRemaining } = useSubscription();
+  const { packages, purchasePackage, restorePurchases, isLoading, trialDaysRemaining, debugInfo } = useSubscription();
   
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
@@ -196,6 +196,11 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
             )}
           </Pressable>
         </Animated.View>
+
+        <View style={styles.debugSection}>
+          <Text style={styles.debugText}>DEBUG: {debugInfo}</Text>
+          <Text style={styles.debugText}>Packages: {packages.length}</Text>
+        </View>
 
         <View style={styles.legalSection}>
           <Text style={[styles.legalText, { fontSize: 11 * fontScale }]}>
@@ -390,5 +395,19 @@ const styles = StyleSheet.create({
   legalDivider: {
     color: 'rgba(255,255,255,0.3)',
     fontSize: 12,
+  },
+  debugSection: {
+    backgroundColor: 'rgba(255, 0, 0, 0.15)',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 0, 0, 0.3)',
+  },
+  debugText: {
+    color: '#FF6666',
+    fontSize: 11,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    marginBottom: 4,
   },
 });
