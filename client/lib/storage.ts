@@ -3,6 +3,7 @@ import { isRestDayForDate } from '@/data/workoutProgram';
 
 const STORAGE_KEYS = {
   COMPLETED_DATES: 'pulsekegel_completed_dates',
+  REST_DATES: 'pulsekegel_rest_dates',
   TOTAL_SESSIONS: 'pulsekegel_total_sessions',
   TOTAL_MINUTES: 'pulsekegel_total_minutes',
   SETTINGS: 'pulsekegel_settings',
@@ -176,6 +177,15 @@ export const storage = {
     };
   },
 
+  async getRestDates(): Promise<string[]> {
+    try {
+      const data = await AsyncStorage.getItem(STORAGE_KEYS.REST_DATES);
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  },
+
   async markRestDay(date: string): Promise<void> {
     try {
       const dates = await this.getCompletedDates();
@@ -184,6 +194,14 @@ export const storage = {
         await AsyncStorage.setItem(
           STORAGE_KEYS.COMPLETED_DATES,
           JSON.stringify(dates)
+        );
+      }
+      const restDates = await this.getRestDates();
+      if (!restDates.includes(date)) {
+        restDates.push(date);
+        await AsyncStorage.setItem(
+          STORAGE_KEYS.REST_DATES,
+          JSON.stringify(restDates)
         );
       }
     } catch (error) {
@@ -195,6 +213,7 @@ export const storage = {
     if (!programStartDate) return false;
 
     const completedDates = await this.getCompletedDates();
+    const restDates = await this.getRestDates();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -206,9 +225,15 @@ export const storage = {
 
     while (current <= today) {
       const dateStr = formatDate(current);
-      if (!completedDates.includes(dateStr) && isRestDayForDate(current, programStartDate)) {
-        completedDates.push(dateStr);
-        changed = true;
+      if (isRestDayForDate(current, programStartDate)) {
+        if (!completedDates.includes(dateStr)) {
+          completedDates.push(dateStr);
+          changed = true;
+        }
+        if (!restDates.includes(dateStr)) {
+          restDates.push(dateStr);
+          changed = true;
+        }
       }
       current.setDate(current.getDate() + 1);
     }
@@ -217,6 +242,10 @@ export const storage = {
       await AsyncStorage.setItem(
         STORAGE_KEYS.COMPLETED_DATES,
         JSON.stringify(completedDates)
+      );
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.REST_DATES,
+        JSON.stringify(restDates)
       );
     }
 
