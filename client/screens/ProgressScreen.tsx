@@ -25,14 +25,19 @@ export default function ProgressScreen() {
   const { fontScale, colors, highContrast } = useAccessibility();
 
   const [progress, setProgress] = useState<UserProgress | null>(null);
+  const [restDates, setRestDates] = useState<string[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [refreshing, setRefreshing] = useState(false);
 
   const loadData = useCallback(async () => {
     const startDate = await storage.getProgramStartDate();
     await storage.backfillRestDays(startDate);
-    const userProgress = await storage.getProgress();
+    const [userProgress, userRestDates] = await Promise.all([
+      storage.getProgress(),
+      storage.getRestDates(),
+    ]);
     setProgress(userProgress);
+    setRestDates(userRestDates);
   }, []);
 
   useEffect(() => {
@@ -109,6 +114,7 @@ export default function ProgressScreen() {
             <Animated.View entering={FadeInDown.duration(400).delay(200)}>
               <CalendarGrid
                 completedDates={progress.completedDates}
+                restDates={restDates}
                 currentMonth={currentMonth}
                 onMonthChange={setCurrentMonth}
                 darkMode
