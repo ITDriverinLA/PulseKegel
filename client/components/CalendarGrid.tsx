@@ -11,6 +11,7 @@ const NEON_CYAN = '#00FFFF';
 
 interface CalendarGridProps {
   completedDates: string[];
+  restDates?: string[];
   currentMonth: Date;
   onMonthChange: (date: Date) => void;
   darkMode?: boolean;
@@ -20,6 +21,7 @@ const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 export function CalendarGrid({
   completedDates,
+  restDates = [],
   currentMonth,
   onMonthChange,
   darkMode,
@@ -58,10 +60,18 @@ export function CalendarGrid({
   }, [currentMonth]);
 
   const completedSet = useMemo(() => new Set(completedDates), [completedDates]);
+  const restSet = useMemo(() => new Set(restDates), [restDates]);
+
+  const getDateStr = (day: number): string => {
+    return `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  };
 
   const isCompleted = (day: number): boolean => {
-    const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    return completedSet.has(dateStr);
+    return completedSet.has(getDateStr(day));
+  };
+
+  const isRestDay = (day: number): boolean => {
+    return restSet.has(getDateStr(day));
   };
 
   const isToday = (day: number): boolean => {
@@ -83,6 +93,80 @@ export function CalendarGrid({
     const newDate = new Date(currentMonth);
     newDate.setMonth(newDate.getMonth() + 1);
     onMonthChange(newDate);
+  };
+
+  const getDayStyle = (day: number) => {
+    const rest = isRestDay(day);
+    const completed = isCompleted(day);
+    const today = isToday(day);
+
+    if (darkMode) {
+      if (rest) {
+        return {
+          circle: styles.darkRestCircle,
+          text: styles.restDayText,
+        };
+      }
+      if (completed) {
+        return {
+          circle: styles.darkCompletedCircle,
+          text: styles.completedText,
+        };
+      }
+      if (today) {
+        return {
+          circle: styles.darkTodayCircle,
+          text: styles.darkDayText,
+        };
+      }
+      return {
+        circle: undefined,
+        text: styles.darkDayText,
+      };
+    }
+
+    if (rest) {
+      return {
+        circle: [styles.restCircle, { backgroundColor: NEON_CYAN + '30', borderColor: NEON_CYAN + '60' }],
+        text: [styles.dayText, { color: NEON_CYAN }],
+      };
+    }
+    if (completed) {
+      return {
+        circle: [styles.completedCircle, { backgroundColor: theme.success }],
+        text: styles.completedText,
+      };
+    }
+    if (today) {
+      return {
+        circle: [styles.todayCircle, { borderColor: theme.primary }],
+        text: styles.dayText,
+      };
+    }
+    return {
+      circle: undefined,
+      text: styles.dayText,
+    };
+  };
+
+  const renderLegend = () => {
+    if (!darkMode) return null;
+    return (
+      <View style={styles.legendContainer}>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendDot, { backgroundColor: NEON_GREEN }]} />
+          <Text style={styles.legendText}>Workout</Text>
+        </View>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendDot, { backgroundColor: NEON_CYAN, opacity: 0.6 }]} />
+          <Text style={styles.legendText}>Rest Day</Text>
+        </View>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendDotOutline, { borderColor: NEON_CYAN }]} />
+          <Text style={styles.legendText}>Today</Text>
+        </View>
+      </View>
+    );
   };
 
   if (darkMode) {
@@ -109,29 +193,24 @@ export function CalendarGrid({
         </View>
 
         <View style={styles.grid}>
-          {days.map((day, index) => (
-            <View key={index} style={styles.dayCell}>
-              {day !== null ? (
-                <View
-                  style={[
-                    styles.dayContent,
-                    isToday(day) && styles.darkTodayCircle,
-                    isCompleted(day) && styles.darkCompletedCircle,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.darkDayText,
-                      isCompleted(day) && styles.completedText,
-                    ]}
-                  >
+          {days.map((day, index) => {
+            if (day === null) {
+              return <View key={index} style={styles.dayCell} />;
+            }
+            const dayStyle = getDayStyle(day);
+            return (
+              <View key={index} style={styles.dayCell}>
+                <View style={[styles.dayContent, dayStyle.circle]}>
+                  <Text style={dayStyle.text}>
                     {day}
                   </Text>
                 </View>
-              ) : null}
-            </View>
-          ))}
+              </View>
+            );
+          })}
         </View>
+
+        {renderLegend()}
       </View>
     );
   }
@@ -162,29 +241,21 @@ export function CalendarGrid({
       </View>
 
       <View style={styles.grid}>
-        {days.map((day, index) => (
-          <View key={index} style={styles.dayCell}>
-            {day !== null ? (
-              <View
-                style={[
-                  styles.dayContent,
-                  isToday(day) && [styles.todayCircle, { borderColor: theme.primary }],
-                  isCompleted(day) && [styles.completedCircle, { backgroundColor: theme.success }],
-                ]}
-              >
-                <ThemedText
-                  type="small"
-                  style={[
-                    styles.dayText,
-                    isCompleted(day) && styles.completedText,
-                  ]}
-                >
+        {days.map((day, index) => {
+          if (day === null) {
+            return <View key={index} style={styles.dayCell} />;
+          }
+          const dayStyle = getDayStyle(day);
+          return (
+            <View key={index} style={styles.dayCell}>
+              <View style={[styles.dayContent, dayStyle.circle]}>
+                <ThemedText type="small" style={dayStyle.text}>
                   {day}
                 </ThemedText>
               </View>
-            ) : null}
-          </View>
-        ))}
+            </View>
+          );
+        })}
       </View>
     </View>
   );
@@ -268,6 +339,14 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
+  restCircle: {
+    borderWidth: 1,
+  },
+  darkRestCircle: {
+    backgroundColor: 'rgba(0, 255, 255, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 255, 255, 0.35)',
+  },
   dayText: {
     textAlign: 'center',
   },
@@ -279,5 +358,42 @@ const styles = StyleSheet.create({
   completedText: {
     color: '#FFFFFF',
     fontWeight: '600',
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  restDayText: {
+    color: NEON_CYAN,
+    fontWeight: '500',
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  legendContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: Spacing.lg,
+    marginTop: Spacing.md,
+    paddingTop: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.08)',
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  legendDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  legendDotOutline: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 1.5,
+  },
+  legendText: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 11,
   },
 });
