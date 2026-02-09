@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isRestDayForDate } from '@/data/workoutProgram';
+import type { EarnedBadge } from '@/data/badges';
 
 const STORAGE_KEYS = {
   COMPLETED_DATES: 'pulsekegel_completed_dates',
@@ -11,6 +12,7 @@ const STORAGE_KEYS = {
   PROGRAM_START_DATE: 'pulsekegel_program_start_date',
   LAST_WEEKLY_REVIEW: 'pulsekegel_last_weekly_review',
   REVIEW_HISTORY: 'pulsekegel_review_history',
+  EARNED_BADGES: 'pulsekegel_earned_badges',
 };
 
 export interface WeeklyReviewEntry {
@@ -439,5 +441,122 @@ export const storage = {
     } catch {
       return [];
     }
+  },
+
+  async getEarnedBadges(): Promise<EarnedBadge[]> {
+    try {
+      const data = await AsyncStorage.getItem(STORAGE_KEYS.EARNED_BADGES);
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  async earnBadge(badgeId: string): Promise<void> {
+    try {
+      const badges = await this.getEarnedBadges();
+      if (badges.some(b => b.badgeId === badgeId)) return;
+      const now = new Date();
+      const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      badges.push({ badgeId, earnedDate: date });
+      await AsyncStorage.setItem(STORAGE_KEYS.EARNED_BADGES, JSON.stringify(badges));
+    } catch (error) {
+      console.error('Error earning badge:', error);
+    }
+  },
+
+  async checkAndAwardBadges(): Promise<string[]> {
+    const [progress, earnedBadges, programStartDate] = await Promise.all([
+      this.getProgress(),
+      this.getEarnedBadges(),
+      this.getProgramStartDate(),
+    ]);
+
+    const earnedIds = new Set(earnedBadges.map(b => b.badgeId));
+    const newBadgeIds: string[] = [];
+
+    const { BADGE_DEFINITIONS } = require('@/data/badges');
+
+    for (const badge of BADGE_DEFINITIONS) {
+      if (earnedIds.has(badge.id)) continue;
+
+      let earned = false;
+
+      switch (badge.criteria.type) {
+        case 'sessions':
+          earned = progress.totalSessions >= badge.criteria.value;
+          break;
+        case 'streak':
+          earned = progress.currentStreak >= badge.criteria.value ||
+                   progress.longestStreak >= badge.criteria.value;
+          break;
+        case 'minutes':
+          earned = progress.totalMinutes >= badge.criteria.value;
+          break;
+        case 'phase': {
+          if (programStartDate) {
+            const startParts = programStartDate.split('-').map(Number);
+            const start = new Date(startParts[0], startParts[1] - 1, startParts[2]);
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const daysSinceStart = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+            const completedWeeks = Math.floor(daysSinceStart / 7);
+            earned = completedWeeks >= badge.criteria.value && progress.completedDates.length > 0;
+          }
+          break;
+        }
+        case 'program_complete': {
+          if (programStartDate) {
+            const startParts = programStartDate.split('-').map(Number);
+            const start = new Date(startParts[0], startParts[1] - 1, startParts[2]);
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const daysSinceStart = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+            const completedWeeks = Math.floor(daysSinceStart / 7);
+            earned = completedWeeks >= 12 && progress.completedDates.length > 0;
+          }
+          break;
+        }
+        case 'perfect_week': {
+          if (programStartDate && progress.completedDates.length > 0) {
+            const startParts = programStartDate.split('-').map(Number);
+            const start = new Date(startParts[0], startParts[1] - 1, startParts[2]);
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const daysSinceStart = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+            const completedWeeks = Math.floor(daysSinceStart / 7);
+
+            for (let w = 0; w < completedWeeks; w++) {
+              let scheduledDays = 0;
+              let completedScheduled = 0;
+              for (let d = 0; d < 7; d++) {
+                const dayDate = new Date(start);
+                dayDate.setDate(dayDate.getDate() + w * 7 + d);
+                const dateStr = formatDate(dayDate);
+                const isRest = isRestDayForDate(dayDate, programStartDate);
+                if (!isRest) {
+                  scheduledDays++;
+                  if (progress.completedDates.includes(dateStr)) {
+                    completedScheduled++;
+                  }
+                }
+              }
+              if (scheduledDays > 0 && completedScheduled === scheduledDays) {
+                earned = true;
+                break;
+              }
+            }
+          }
+          break;
+        }
+      }
+
+      if (earned) {
+        await this.earnBadge(badge.id);
+        newBadgeIds.push(badge.id);
+      }
+    }
+
+    return newBadgeIds;
   },
 };
