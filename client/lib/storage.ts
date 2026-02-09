@@ -334,29 +334,76 @@ export const storage = {
       return { show: false, weekNumber: 0, daysWorkedOut: 0 };
     }
 
-    const startDate = new Date(programStartDate);
-    const today = new Date();
+    const toDateStr = (d: Date) => d.toISOString().split('T')[0];
+    const startParts = programStartDate.split('-').map(Number);
+    const startDate = new Date(startParts[0], startParts[1] - 1, startParts[2]);
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const daysSinceStart = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    const currentWeek = Math.floor(daysSinceStart / 7) + 1;
-    
+    const completedWeeks = Math.floor(daysSinceStart / 7);
+
     const lastReviewedWeek = await this.getLastWeeklyReview();
-    
-    if (daysSinceStart >= 7 && (lastReviewedWeek === null || currentWeek > lastReviewedWeek)) {
+
+    if (completedWeeks >= 1 && (lastReviewedWeek === null || completedWeeks > (lastReviewedWeek))) {
       const weekToReview = lastReviewedWeek === null ? 1 : lastReviewedWeek + 1;
-      
-      const weekStartDate = new Date(startDate);
-      weekStartDate.setDate(weekStartDate.getDate() + (weekToReview - 1) * 7);
-      const weekEndDate = new Date(weekStartDate);
-      weekEndDate.setDate(weekEndDate.getDate() + 6);
-      
+
+      const weekStart = new Date(startDate);
+      weekStart.setDate(weekStart.getDate() + (weekToReview - 1) * 7);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+
+      const weekStartStr = toDateStr(weekStart);
+      const weekEndStr = toDateStr(weekEnd);
+
       const daysWorkedOut = completedDates.filter(dateStr => {
-        const date = new Date(dateStr);
-        return date >= weekStartDate && date <= weekEndDate;
+        return dateStr >= weekStartStr && dateStr <= weekEndStr;
       }).length;
-      
+
       return { show: true, weekNumber: weekToReview, daysWorkedOut };
     }
-    
+
+    const currentWeek = completedWeeks + 1;
     return { show: false, weekNumber: currentWeek, daysWorkedOut: 0 };
+  },
+
+  async getWeeklyReviewDataForWeek(weekNumber: number, completedDates: string[], programStartDate: string): Promise<{ daysWorkedOut: number; totalMinutes: number }> {
+    const startParts = programStartDate.split('-').map(Number);
+    const startDate = new Date(startParts[0], startParts[1] - 1, startParts[2]);
+    const toDateStr = (d: Date) => d.toISOString().split('T')[0];
+
+    const weekStart = new Date(startDate);
+    weekStart.setDate(weekStart.getDate() + (weekNumber - 1) * 7);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+
+    const weekStartStr = toDateStr(weekStart);
+    const weekEndStr = toDateStr(weekEnd);
+
+    const daysWorkedOut = completedDates.filter(dateStr => {
+      return dateStr >= weekStartStr && dateStr <= weekEndStr;
+    }).length;
+
+    return { daysWorkedOut, totalMinutes: 0 };
+  },
+
+  async getMissedWeeklyReviews(completedDates: string[], programStartDate: string | null): Promise<number[]> {
+    if (!programStartDate || completedDates.length === 0) return [];
+
+    const startParts = programStartDate.split('-').map(Number);
+    const startDate = new Date(startParts[0], startParts[1] - 1, startParts[2]);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const daysSinceStart = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const completedWeeks = Math.floor(daysSinceStart / 7);
+
+    const lastReviewedWeek = await this.getLastWeeklyReview();
+    const startFrom = (lastReviewedWeek || 0) + 1;
+
+    const missed: number[] = [];
+    for (let w = startFrom; w <= completedWeeks; w++) {
+      missed.push(w);
+    }
+    return missed;
   },
 };
