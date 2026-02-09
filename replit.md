@@ -9,6 +9,8 @@ PulseKegel is a mobile app for daily pelvic floor (Kegel) workouts with real-tim
 - Real-time workout player with SQUEEZE/REST/BREATHE visual cues and haptic feedback
 - Vertical LED-style power bar with exercise-specific animations (fills to 100%, slower 600ms return animation)
 - Progress tracking with streak counter, calendar view (with distinct workout/rest day/today indicators and legend), and statistics
+- **Badge/Achievement System** - 18 badges across 5 categories (Streaks, Milestones, Program Phases, Mastery, Special) with locked/unlocked states, detail modals, and toast notifications on earn
+- **AI Review History** - Save and reread all past weekly AI progress insights
 - Recovery mode for reduced intensity workouts
 - Customizable haptic intensity and rest cue styles
 - One-time onboarding with safety disclaimers
