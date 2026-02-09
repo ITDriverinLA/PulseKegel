@@ -12,6 +12,7 @@ import { ProgressStackParamList } from '@/navigation/ProgressStackNavigator';
 
 import { StatCard } from '@/components/StatCard';
 import { CalendarGrid } from '@/components/CalendarGrid';
+import { WeeklyReviewModal } from '@/components/WeeklyReviewModal';
 import { Spacing, BorderRadius } from '@/constants/theme';
 import { storage, UserProgress } from '@/lib/storage';
 import { useAccessibility } from '@/contexts/AccessibilityContext';
@@ -19,6 +20,7 @@ import { useAccessibility } from '@/contexts/AccessibilityContext';
 const NEON_GREEN = '#00FF88';
 const NEON_CYAN = '#00FFFF';
 const NEON_PINK = '#FF3366';
+const NEON_PURPLE = '#a855f7';
 
 export default function ProgressScreen() {
   const insets = useSafeAreaInsets();
@@ -31,16 +33,26 @@ export default function ProgressScreen() {
   const [restDates, setRestDates] = useState<string[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [refreshing, setRefreshing] = useState(false);
+  const [missedWeeks, setMissedWeeks] = useState<number[]>([]);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewWeekNumber, setReviewWeekNumber] = useState(1);
+  const [reviewDaysWorkedOut, setReviewDaysWorkedOut] = useState(0);
+  const [settings, setSettings] = useState<{ anatomyType: 'male' | 'female' | null; userName: string }>({ anatomyType: null, userName: '' });
 
   const loadData = useCallback(async () => {
     const startDate = await storage.getProgramStartDate();
     await storage.backfillRestDays(startDate);
-    const [userProgress, userRestDates] = await Promise.all([
+    const [userProgress, userRestDates, userSettings] = await Promise.all([
       storage.getProgress(),
       storage.getRestDates(),
+      storage.getSettings(),
     ]);
     setProgress(userProgress);
     setRestDates(userRestDates);
+    setSettings({ anatomyType: userSettings.anatomyType, userName: userSettings.userName });
+
+    const missed = await storage.getMissedWeeklyReviews(userProgress.completedDates, startDate);
+    setMissedWeeks(missed);
   }, []);
 
   useEffect(() => {
@@ -57,6 +69,26 @@ export default function ProgressScreen() {
     await loadData();
     setRefreshing(false);
   }, [loadData]);
+
+  const handleViewReview = async (weekNumber: number) => {
+    const startDate = await storage.getProgramStartDate();
+    if (!startDate || !progress) return;
+    const data = await storage.getWeeklyReviewDataForWeek(weekNumber, progress.completedDates, startDate);
+    setReviewWeekNumber(weekNumber);
+    setReviewDaysWorkedOut(data.daysWorkedOut);
+    setShowReviewModal(true);
+  };
+
+  const handleReviewClose = async () => {
+    const remaining = missedWeeks.filter(w => w !== reviewWeekNumber).sort((a, b) => a - b);
+    const highestConsecutive = remaining.length > 0 ? Math.min(reviewWeekNumber, remaining[0] - 1) : reviewWeekNumber;
+    const lastReviewed = await storage.getLastWeeklyReview();
+    if (lastReviewed === null || highestConsecutive > lastReviewed) {
+      await storage.setLastWeeklyReview(highestConsecutive);
+    }
+    setShowReviewModal(false);
+    setMissedWeeks(remaining);
+  };
 
   const hasProgress = progress && progress.completedDates.length > 0;
 
@@ -150,6 +182,42 @@ export default function ProgressScreen() {
               </Pressable>
             </Animated.View>
 
+            {missedWeeks.length > 0 ? (
+              <Animated.View
+                entering={FadeInDown.duration(400).delay(350)}
+                style={styles.missedReviewsContainer}
+              >
+                <Text style={[styles.missedReviewsTitle, { fontSize: 13 * fontScale }]}>
+                  Missed AI Reviews
+                </Text>
+                {missedWeeks.map((week) => (
+                  <Pressable
+                    key={week}
+                    style={styles.missedReviewButton}
+                    onPress={() => handleViewReview(week)}
+                    testID={`button-missed-review-week-${week}`}
+                  >
+                    <View style={styles.programButtonLeft}>
+                      <View style={[styles.programButtonIcon, { backgroundColor: 'rgba(168, 85, 247, 0.15)' }]}>
+                        <Feather name="message-circle" size={16} color={NEON_PURPLE} />
+                      </View>
+                      <View>
+                        <Text style={[styles.programButtonTitle, { fontSize: 13 * fontScale }]}>
+                          Week {week} Review
+                        </Text>
+                        <Text style={styles.programButtonSubtitle}>
+                          Tap to view your AI progress update
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.missedBadge}>
+                      <Text style={styles.missedBadgeText}>NEW</Text>
+                    </View>
+                  </Pressable>
+                ))}
+              </Animated.View>
+            ) : null}
+
             <Animated.View
               entering={FadeInDown.duration(400).delay(400)}
               style={styles.longestStreakContainer}
@@ -204,6 +272,16 @@ export default function ProgressScreen() {
           </Animated.View>
         )}
       </ScrollView>
+
+      <WeeklyReviewModal
+        visible={showReviewModal}
+        onClose={handleReviewClose}
+        weekNumber={reviewWeekNumber}
+        daysWorkedOut={reviewDaysWorkedOut}
+        totalMinutes={progress?.totalMinutes || 0}
+        anatomyType={settings.anatomyType}
+        userName={settings.userName}
+      />
     </View>
   );
 }
@@ -239,6 +317,37 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: NEON_GREEN,
     marginTop: Spacing.xs,
+  },
+  missedReviewsContainer: {
+    marginTop: Spacing.lg,
+    gap: Spacing.sm,
+  },
+  missedReviewsTitle: {
+    color: NEON_PURPLE,
+    fontWeight: '600',
+    marginBottom: Spacing.xs,
+  },
+  missedReviewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: 'rgba(168, 85, 247, 0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(168, 85, 247, 0.2)',
+  },
+  missedBadge: {
+    backgroundColor: NEON_PURPLE,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  missedBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   programButtonContainer: {
     marginTop: Spacing.lg,

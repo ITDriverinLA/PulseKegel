@@ -129,7 +129,7 @@ export function WeeklyReviewModal({
 
             <Animated.View entering={FadeIn.delay(300)}>
               <ThemedText type="h2" style={[styles.title, { color: accentColor }]}>
-                Starting Week {weekNumber}
+                Week {weekNumber} Complete
               </ThemedText>
             </Animated.View>
 
