@@ -320,6 +320,8 @@ export default function ProgressScreen() {
               </View>
               <Feather name="chevron-right" size={20} color="rgba(255,255,255,0.4)" />
             </Pressable>
+
+            <BadgesSection />
           </Animated.View>
         )}
       </ScrollView>
