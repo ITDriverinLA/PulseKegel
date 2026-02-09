@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, Image, RefreshControl, ScrollView, Text } from 'react-native';
+import { StyleSheet, View, Image, RefreshControl, ScrollView, Text, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Feather } from '@expo/vector-icons';
+import { ProgressStackParamList } from '@/navigation/ProgressStackNavigator';
 
 import { StatCard } from '@/components/StatCard';
 import { CalendarGrid } from '@/components/CalendarGrid';
@@ -21,7 +24,7 @@ export default function ProgressScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<ProgressStackParamList>>();
   const { fontScale, colors, highContrast } = useAccessibility();
 
   const [progress, setProgress] = useState<UserProgress | null>(null);
@@ -123,6 +126,32 @@ export default function ProgressScreen() {
 
             <Animated.View
               entering={FadeInDown.duration(400).delay(300)}
+              style={styles.programButtonContainer}
+            >
+              <Pressable
+                style={styles.programButton}
+                onPress={() => navigation.navigate('ProgramOverview')}
+                testID="button-view-program"
+              >
+                <View style={styles.programButtonLeft}>
+                  <View style={styles.programButtonIcon}>
+                    <Feather name="layers" size={18} color={NEON_CYAN} />
+                  </View>
+                  <View>
+                    <Text style={[styles.programButtonTitle, { fontSize: 14 * fontScale }]}>
+                      12-Week Program
+                    </Text>
+                    <Text style={styles.programButtonSubtitle}>
+                      Preview schedule & track progress
+                    </Text>
+                  </View>
+                </View>
+                <Feather name="chevron-right" size={20} color="rgba(255,255,255,0.4)" />
+              </Pressable>
+            </Animated.View>
+
+            <Animated.View
+              entering={FadeInDown.duration(400).delay(400)}
               style={styles.longestStreakContainer}
             >
               <View style={[styles.longestStreakCard, highContrast && { borderColor: colors.border }]}>
@@ -151,6 +180,27 @@ export default function ProgressScreen() {
             <Text style={styles.emptyDescription}>
               Complete your first workout to begin tracking your progress here.
             </Text>
+
+            <Pressable
+              style={[styles.programButton, { marginTop: Spacing.xl }]}
+              onPress={() => navigation.navigate('ProgramOverview')}
+              testID="button-view-program-empty"
+            >
+              <View style={styles.programButtonLeft}>
+                <View style={styles.programButtonIcon}>
+                  <Feather name="layers" size={18} color={NEON_CYAN} />
+                </View>
+                <View>
+                  <Text style={[styles.programButtonTitle, { fontSize: 14 * fontScale }]}>
+                    Preview 12-Week Program
+                  </Text>
+                  <Text style={styles.programButtonSubtitle}>
+                    See what's ahead
+                  </Text>
+                </View>
+              </View>
+              <Feather name="chevron-right" size={20} color="rgba(255,255,255,0.4)" />
+            </Pressable>
           </Animated.View>
         )}
       </ScrollView>
@@ -189,6 +239,41 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: NEON_GREEN,
     marginTop: Spacing.xs,
+  },
+  programButtonContainer: {
+    marginTop: Spacing.lg,
+  },
+  programButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 255, 255, 0.15)',
+  },
+  programButtonLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  programButtonIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  programButtonTitle: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  programButtonSubtitle: {
+    color: 'rgba(255,255,255,0.4)',
+    fontSize: 11,
+    marginTop: 1,
   },
   emptyContainer: {
     flex: 1,
