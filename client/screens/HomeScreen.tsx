@@ -53,6 +53,7 @@ export default function HomeScreen() {
     weekNumber: number;
     daysWorkedOut: number;
   } | null>(null);
+  const [pendingReviewMessage, setPendingReviewMessage] = useState<string>('');
 
   const loadData = useCallback(async () => {
     const startDate = await storage.getProgramStartDate();
@@ -128,11 +129,19 @@ export default function HomeScreen() {
   };
 
   const handleWeeklyReviewClose = async () => {
-    if (weeklyReviewData) {
+    if (weeklyReviewData && pendingReviewMessage) {
+      await storage.saveWeeklyReviewToHistory({
+        weekNumber: weeklyReviewData.weekNumber,
+        daysWorkedOut: weeklyReviewData.daysWorkedOut,
+        totalMinutes: progress?.totalMinutes || 0,
+        message: pendingReviewMessage,
+        date: new Date().toISOString().split('T')[0],
+      });
       await storage.setLastWeeklyReview(weeklyReviewData.weekNumber);
     }
     setShowWeeklyReview(false);
     setWeeklyReviewData(null);
+    setPendingReviewMessage('');
   };
 
   const formatLastCompleted = (dateStr: string | null): string => {
@@ -379,6 +388,7 @@ export default function HomeScreen() {
         totalMinutes={progress?.totalMinutes || 0}
         anatomyType={settings.anatomyType}
         userName={settings.userName}
+        onMessageReady={setPendingReviewMessage}
       />
     </LinearGradient>
   );

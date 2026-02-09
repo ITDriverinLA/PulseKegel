@@ -22,6 +22,7 @@ interface WeeklyReviewModalProps {
   totalMinutes: number;
   anatomyType: AnatomyType;
   userName: string;
+  onMessageReady?: (message: string) => void;
 }
 
 export function WeeklyReviewModal({
@@ -32,6 +33,7 @@ export function WeeklyReviewModal({
   totalMinutes,
   anatomyType,
   userName,
+  onMessageReady,
 }: WeeklyReviewModalProps) {
   const [message, setMessage] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -45,7 +47,7 @@ export function WeeklyReviewModal({
   const fetchReviewMessage = async () => {
     setLoading(true);
     try {
-      const apiUrl = getApiUrl().replace(/\/$/, ''); // Remove trailing slash
+      const apiUrl = getApiUrl().replace(/\/$/, '');
       const response = await fetch(`${apiUrl}/api/weekly-review`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -58,11 +60,13 @@ export function WeeklyReviewModal({
       
       const data = await response.json();
       setMessage(data.message);
+      onMessageReady?.(data.message);
     } catch (error) {
       const fallback = weekNumber === 1 
         ? "You completed your first week! Your pelvic floor is already getting stronger."
         : `${weekNumber} weeks down! Your consistency is building real strength.`;
       setMessage(fallback);
+      onMessageReady?.(fallback);
     } finally {
       setLoading(false);
     }

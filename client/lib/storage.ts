@@ -10,7 +10,16 @@ const STORAGE_KEYS = {
   ONBOARDING_COMPLETE: 'pulsekegel_onboarding_complete',
   PROGRAM_START_DATE: 'pulsekegel_program_start_date',
   LAST_WEEKLY_REVIEW: 'pulsekegel_last_weekly_review',
+  REVIEW_HISTORY: 'pulsekegel_review_history',
 };
+
+export interface WeeklyReviewEntry {
+  weekNumber: number;
+  daysWorkedOut: number;
+  totalMinutes: number;
+  message: string;
+  date: string;
+}
 
 export type AnatomyType = 'male' | 'female' | null;
 
@@ -405,5 +414,30 @@ export const storage = {
       missed.push(w);
     }
     return missed;
+  },
+
+  async saveWeeklyReviewToHistory(entry: WeeklyReviewEntry): Promise<void> {
+    try {
+      const history = await this.getReviewHistory();
+      const existingIndex = history.findIndex(h => h.weekNumber === entry.weekNumber);
+      if (existingIndex >= 0) {
+        history[existingIndex] = entry;
+      } else {
+        history.push(entry);
+      }
+      history.sort((a, b) => a.weekNumber - b.weekNumber);
+      await AsyncStorage.setItem(STORAGE_KEYS.REVIEW_HISTORY, JSON.stringify(history));
+    } catch (error) {
+      console.error('Error saving review history:', error);
+    }
+  },
+
+  async getReviewHistory(): Promise<WeeklyReviewEntry[]> {
+    try {
+      const data = await AsyncStorage.getItem(STORAGE_KEYS.REVIEW_HISTORY);
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
   },
 };

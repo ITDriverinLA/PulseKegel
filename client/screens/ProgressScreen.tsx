@@ -37,6 +37,9 @@ export default function ProgressScreen() {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewWeekNumber, setReviewWeekNumber] = useState(1);
   const [reviewDaysWorkedOut, setReviewDaysWorkedOut] = useState(0);
+  const [reviewTotalMinutes, setReviewTotalMinutes] = useState(0);
+  const [pendingReviewMessage, setPendingReviewMessage] = useState('');
+  const [hasReviewHistory, setHasReviewHistory] = useState(false);
   const [settings, setSettings] = useState<{ anatomyType: 'male' | 'female' | null; userName: string }>({ anatomyType: null, userName: '' });
 
   const loadData = useCallback(async () => {
@@ -53,6 +56,9 @@ export default function ProgressScreen() {
 
     const missed = await storage.getMissedWeeklyReviews(userProgress.completedDates, startDate);
     setMissedWeeks(missed);
+
+    const history = await storage.getReviewHistory();
+    setHasReviewHistory(history.length > 0);
   }, []);
 
   useEffect(() => {
@@ -76,10 +82,21 @@ export default function ProgressScreen() {
     const data = await storage.getWeeklyReviewDataForWeek(weekNumber, progress.completedDates, startDate);
     setReviewWeekNumber(weekNumber);
     setReviewDaysWorkedOut(data.daysWorkedOut);
+    setReviewTotalMinutes(progress.totalMinutes);
     setShowReviewModal(true);
   };
 
   const handleReviewClose = async () => {
+    if (pendingReviewMessage) {
+      await storage.saveWeeklyReviewToHistory({
+        weekNumber: reviewWeekNumber,
+        daysWorkedOut: reviewDaysWorkedOut,
+        totalMinutes: reviewTotalMinutes,
+        message: pendingReviewMessage,
+        date: new Date().toISOString().split('T')[0],
+      });
+      setHasReviewHistory(true);
+    }
     const remaining = missedWeeks.filter(w => w !== reviewWeekNumber).sort((a, b) => a - b);
     const highestConsecutive = remaining.length > 0 ? Math.min(reviewWeekNumber, remaining[0] - 1) : reviewWeekNumber;
     const lastReviewed = await storage.getLastWeeklyReview();
@@ -88,6 +105,7 @@ export default function ProgressScreen() {
     }
     setShowReviewModal(false);
     setMissedWeeks(remaining);
+    setPendingReviewMessage('');
   };
 
   const hasProgress = progress && progress.completedDates.length > 0;
@@ -181,6 +199,34 @@ export default function ProgressScreen() {
                 <Feather name="chevron-right" size={20} color="rgba(255,255,255,0.4)" />
               </Pressable>
             </Animated.View>
+
+            {hasReviewHistory ? (
+              <Animated.View
+                entering={FadeInDown.duration(400).delay(320)}
+                style={{ marginTop: Spacing.sm }}
+              >
+                <Pressable
+                  style={styles.programButton}
+                  onPress={() => navigation.navigate('ReviewHistory')}
+                  testID="button-review-history"
+                >
+                  <View style={styles.programButtonLeft}>
+                    <View style={[styles.programButtonIcon, { backgroundColor: 'rgba(168, 85, 247, 0.1)' }]}>
+                      <Feather name="book-open" size={18} color={NEON_PURPLE} />
+                    </View>
+                    <View>
+                      <Text style={[styles.programButtonTitle, { fontSize: 14 * fontScale }]}>
+                        AI Review History
+                      </Text>
+                      <Text style={styles.programButtonSubtitle}>
+                        Reread past tips & insights
+                      </Text>
+                    </View>
+                  </View>
+                  <Feather name="chevron-right" size={20} color="rgba(255,255,255,0.4)" />
+                </Pressable>
+              </Animated.View>
+            ) : null}
 
             {missedWeeks.length > 0 ? (
               <Animated.View
@@ -281,6 +327,7 @@ export default function ProgressScreen() {
         totalMinutes={progress?.totalMinutes || 0}
         anatomyType={settings.anatomyType}
         userName={settings.userName}
+        onMessageReady={setPendingReviewMessage}
       />
     </View>
   );
