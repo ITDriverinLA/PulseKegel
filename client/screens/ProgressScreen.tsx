@@ -13,6 +13,7 @@ import { ProgressStackParamList } from '@/navigation/ProgressStackNavigator';
 import { StatCard } from '@/components/StatCard';
 import { CalendarGrid } from '@/components/CalendarGrid';
 import { WeeklyReviewModal } from '@/components/WeeklyReviewModal';
+import { BadgesSection } from '@/components/BadgesSection';
 import { Spacing, BorderRadius } from '@/constants/theme';
 import { storage, UserProgress } from '@/lib/storage';
 import { useAccessibility } from '@/contexts/AccessibilityContext';
@@ -264,8 +265,12 @@ export default function ProgressScreen() {
               </Animated.View>
             ) : null}
 
+            <Animated.View entering={FadeInDown.duration(400).delay(400)}>
+              <BadgesSection />
+            </Animated.View>
+
             <Animated.View
-              entering={FadeInDown.duration(400).delay(400)}
+              entering={FadeInDown.duration(400).delay(450)}
               style={styles.longestStreakContainer}
             >
               <View style={[styles.longestStreakCard, highContrast && { borderColor: colors.border }]}>

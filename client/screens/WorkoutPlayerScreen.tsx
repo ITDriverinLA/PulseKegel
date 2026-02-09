@@ -20,6 +20,7 @@ import Animated, {
 import { ThemedText } from '@/components/ThemedText';
 import { PowerBar } from '@/components/PowerBar';
 import { FormTipsSheet } from '@/components/FormTipsSheet';
+import { BadgeToast } from '@/components/BadgeToast';
 import { useTheme } from '@/hooks/useTheme';
 import { Spacing, BorderRadius, Typography } from '@/constants/theme';
 import { DayTemplate, Segment } from '@/data/workoutProgram';
@@ -57,6 +58,7 @@ export default function WorkoutPlayerScreen() {
   const [isComplete, setIsComplete] = useState(false);
   const [totalSeconds, setTotalSeconds] = useState(0);
   const [phaseDuration, setPhaseDuration] = useState(3);
+  const [newBadgeIds, setNewBadgeIds] = useState<string[]>([]);
 
   const engineRef = useRef<WorkoutEngine | null>(null);
   const hapticPulseRef = useRef<HapticPulseController>(new HapticPulseController());
@@ -163,6 +165,11 @@ export default function WorkoutPlayerScreen() {
         const startDate = await storage.getProgramStartDate();
         if (!startDate) {
           await storage.setProgramStartDate(today);
+        }
+
+        const awarded = await storage.checkAndAwardBadges();
+        if (awarded.length > 0) {
+          setNewBadgeIds(awarded);
         }
       },
       onTick: () => {},
@@ -398,6 +405,13 @@ export default function WorkoutPlayerScreen() {
             </ThemedText>
           </Pressable>
         </View>
+
+        {newBadgeIds.length > 0 ? (
+          <BadgeToast
+            badgeIds={newBadgeIds}
+            onDismiss={() => setNewBadgeIds([])}
+          />
+        ) : null}
       </View>
     );
   }
