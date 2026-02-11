@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "node:http";
+import { join } from "node:path";
 import OpenAI from "openai";
 import { privacyPolicyHtml, getAboutPageHtml } from "./staticContent";
 
@@ -75,6 +76,11 @@ No quotes in response.`;
           : `${weekNumber} weeks down! Your consistency is building real strength.`;
       res.json({ message: fallback });
     }
+  });
+
+  app.get("/favicon.png", (_req, res) => {
+    const faviconPath = join(__dirname, 'public', 'favicon.png');
+    res.sendFile(faviconPath);
   });
 
   app.get("/robots.txt", (_req, res) => {
