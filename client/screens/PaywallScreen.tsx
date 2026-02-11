@@ -8,7 +8,6 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
-  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -34,7 +33,7 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { fontScale, colors } = useAccessibility();
-  const { packages, purchasePackage, restorePurchases, isLoading, trialDaysRemaining, debugInfo } = useSubscription();
+  const { packages, purchasePackage, restorePurchases, isLoading, trialDaysRemaining } = useSubscription();
   
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
@@ -226,20 +225,6 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
             )}
           </Pressable>
         </Animated.View>
-
-        <View style={styles.debugSection}>
-          <Text style={styles.debugTitle}>Debug Info (temporary)</Text>
-          <Text style={styles.debugText}>Platform: {debugInfo.platform}</Text>
-          <Text style={styles.debugText}>API Key Present: {String(debugInfo.apiKeyPresent)}</Text>
-          <Text style={styles.debugText}>API Key Length: {debugInfo.apiKeyLength}</Text>
-          <Text style={styles.debugText}>RC Configured: {String(debugInfo.configured)}</Text>
-          {debugInfo.configError ? <Text style={styles.debugError}>Config Error: {debugInfo.configError}</Text> : null}
-          <Text style={styles.debugText}>Offerings: {debugInfo.offeringsResult}</Text>
-          {debugInfo.offeringsError ? <Text style={styles.debugError}>Offerings Error: {debugInfo.offeringsError}</Text> : null}
-          <Text style={styles.debugText}>Package Count: {debugInfo.packageCount}</Text>
-          <Text style={styles.debugText}>Init Complete: {String(debugInfo.initComplete)}</Text>
-          <Text style={styles.debugText}>Context Packages: {packages.length}</Text>
-        </View>
 
         <View style={styles.legalSection}>
           <Text style={[styles.legalText, { fontSize: 11 * fontScale }]}>
@@ -434,31 +419,5 @@ const styles = StyleSheet.create({
   legalDivider: {
     color: 'rgba(255,255,255,0.3)',
     fontSize: 12,
-  },
-  debugSection: {
-    backgroundColor: 'rgba(255, 165, 0, 0.15)',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 165, 0, 0.4)',
-  },
-  debugTitle: {
-    color: '#FFA500',
-    fontWeight: '700',
-    fontSize: 13,
-    marginBottom: 6,
-  },
-  debugText: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 11,
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    marginBottom: 2,
-  },
-  debugError: {
-    color: '#FF4444',
-    fontSize: 11,
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    marginBottom: 2,
   },
 });

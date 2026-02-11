@@ -12,18 +12,6 @@ const TRIAL_DURATION_DAYS = 7;
 
 const TEST_PAYWALL_MODE = false;
 
-interface DebugInfo {
-  platform: string;
-  apiKeyPresent: boolean;
-  apiKeyLength: number;
-  configured: boolean;
-  configError: string | null;
-  offeringsResult: string;
-  offeringsError: string | null;
-  packageCount: number;
-  initComplete: boolean;
-}
-
 interface SubscriptionContextType {
   isSubscribed: boolean;
   isTrialActive: boolean;
@@ -34,20 +22,7 @@ interface SubscriptionContextType {
   restorePurchases: () => Promise<boolean>;
   checkSubscription: () => Promise<void>;
   hasAccess: boolean;
-  debugInfo: DebugInfo;
 }
-
-const defaultDebugInfo: DebugInfo = {
-  platform: '',
-  apiKeyPresent: false,
-  apiKeyLength: 0,
-  configured: false,
-  configError: null,
-  offeringsResult: 'pending',
-  offeringsError: null,
-  packageCount: 0,
-  initComplete: false,
-};
 
 const SubscriptionContext = createContext<SubscriptionContextType>({
   isSubscribed: false,
@@ -59,7 +34,6 @@ const SubscriptionContext = createContext<SubscriptionContextType>({
   restorePurchases: async () => false,
   checkSubscription: async () => {},
   hasAccess: true,
-  debugInfo: defaultDebugInfo,
 });
 
 import { GENERATED_ENV } from '@/lib/env-config.generated';
@@ -73,7 +47,6 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [trialDaysRemaining, setTrialDaysRemaining] = useState(TRIAL_DURATION_DAYS);
   const [isLoading, setIsLoading] = useState(true);
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
-  const [debugInfo, setDebugInfo] = useState<DebugInfo>(defaultDebugInfo);
   const configuredRef = useRef(false);
 
   const checkTrialStatus = useCallback(async () => {
@@ -175,48 +148,20 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const init = async () => {
-      const debug: DebugInfo = {
-        platform: Platform.OS,
-        apiKeyPresent: false,
-        apiKeyLength: 0,
-        configured: false,
-        configError: null,
-        offeringsResult: 'not started',
-        offeringsError: null,
-        packageCount: 0,
-        initComplete: false,
-      };
-
       try {
-        console.log('[PulseKegel] === Subscription Init Starting ===');
-        console.log('[PulseKegel] Platform:', Platform.OS);
-
         const apiKey = Platform.OS === 'ios' ? REVENUECAT_API_KEY_IOS : REVENUECAT_API_KEY_ANDROID;
-        debug.apiKeyPresent = !!apiKey;
-        debug.apiKeyLength = apiKey.length;
-        console.log('[PulseKegel] API key present:', !!apiKey, '| Key length:', apiKey.length);
 
         if (!apiKey) {
-          console.log('[PulseKegel] No API key - running in trial-only mode');
-          debug.offeringsResult = 'skipped (no key)';
-          debug.initComplete = true;
-          setDebugInfo(debug);
           await checkTrialStatus();
           setIsLoading(false);
           return;
         }
 
         try {
-          console.log('[PulseKegel] Configuring RevenueCat...');
           await Purchases.configure({ apiKey });
           configuredRef.current = true;
-          debug.configured = true;
-          console.log('[PulseKegel] RevenueCat configured successfully');
         } catch (error: any) {
           console.error('[PulseKegel] Failed to configure RevenueCat:', error);
-          debug.configError = error?.message || String(error);
-          debug.initComplete = true;
-          setDebugInfo(debug);
           await checkTrialStatus();
           setIsLoading(false);
           return;
@@ -224,10 +169,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
         let subscribed = false;
         try {
-          console.log('[PulseKegel] Checking customer info...');
           const customerInfo: CustomerInfo = await Purchases.getCustomerInfo();
           subscribed = Object.keys(customerInfo.entitlements.active).length > 0;
-          console.log('[PulseKegel] Active entitlements:', Object.keys(customerInfo.entitlements.active));
           setIsSubscribed(subscribed);
         } catch (error) {
           console.error('[PulseKegel] Failed to get customer info:', error);
@@ -238,39 +181,26 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         }
 
         try {
-          console.log('[PulseKegel] Loading offerings...');
           const offerings = await Purchases.getOfferings();
-          const currentId = offerings.current?.identifier || 'NONE';
-          const allKeys = Object.keys(offerings.all);
-          const pkgCount = offerings.current?.availablePackages?.length || 0;
-
-          debug.offeringsResult = `current=${currentId}, all=[${allKeys.join(',')}], pkgs=${pkgCount}`;
 
           if (offerings.current?.availablePackages) {
-            const pkgs = offerings.current.availablePackages;
-            debug.packageCount = pkgs.length;
-            setPackages(pkgs);
-          } else if (allKeys.length > 0) {
-            const firstOffering = Object.values(offerings.all)[0];
-            if (firstOffering?.availablePackages?.length > 0) {
-              debug.packageCount = firstOffering.availablePackages.length;
-              setPackages(firstOffering.availablePackages);
+            setPackages(offerings.current.availablePackages);
+          } else {
+            const allKeys = Object.keys(offerings.all);
+            if (allKeys.length > 0) {
+              const firstOffering = Object.values(offerings.all)[0];
+              if (firstOffering?.availablePackages?.length > 0) {
+                setPackages(firstOffering.availablePackages);
+              }
             }
           }
         } catch (error: any) {
           console.error('[PulseKegel] Failed to load offerings:', error);
-          debug.offeringsError = error?.message || String(error);
         }
 
-        debug.initComplete = true;
-        setDebugInfo(debug);
         setIsLoading(false);
-        console.log('[PulseKegel] === Subscription Init Complete ===');
       } catch (outerError: any) {
         console.error('[PulseKegel] Critical error in subscription init:', outerError);
-        debug.configError = `Critical: ${outerError?.message || String(outerError)}`;
-        debug.initComplete = true;
-        setDebugInfo(debug);
         await checkTrialStatus().catch(() => {});
         setIsLoading(false);
       }
@@ -293,7 +223,6 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         restorePurchases,
         checkSubscription,
         hasAccess,
-        debugInfo,
       }}
     >
       {children}
