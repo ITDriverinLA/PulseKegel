@@ -12,6 +12,18 @@ const TRIAL_DURATION_DAYS = 7;
 
 const TEST_PAYWALL_MODE = false;
 
+interface DebugInfo {
+  platform: string;
+  apiKeyPresent: boolean;
+  apiKeyLength: number;
+  configured: boolean;
+  configError: string | null;
+  offeringsResult: string;
+  offeringsError: string | null;
+  packageCount: number;
+  initComplete: boolean;
+}
+
 interface SubscriptionContextType {
   isSubscribed: boolean;
   isTrialActive: boolean;
@@ -22,7 +34,20 @@ interface SubscriptionContextType {
   restorePurchases: () => Promise<boolean>;
   checkSubscription: () => Promise<void>;
   hasAccess: boolean;
+  debugInfo: DebugInfo;
 }
+
+const defaultDebugInfo: DebugInfo = {
+  platform: '',
+  apiKeyPresent: false,
+  apiKeyLength: 0,
+  configured: false,
+  configError: null,
+  offeringsResult: 'pending',
+  offeringsError: null,
+  packageCount: 0,
+  initComplete: false,
+};
 
 const SubscriptionContext = createContext<SubscriptionContextType>({
   isSubscribed: false,
@@ -34,6 +59,7 @@ const SubscriptionContext = createContext<SubscriptionContextType>({
   restorePurchases: async () => false,
   checkSubscription: async () => {},
   hasAccess: true,
+  debugInfo: defaultDebugInfo,
 });
 
 const REVENUECAT_API_KEY_IOS = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || '';
@@ -45,6 +71,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [trialDaysRemaining, setTrialDaysRemaining] = useState(TRIAL_DURATION_DAYS);
   const [isLoading, setIsLoading] = useState(true);
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
+  const [debugInfo, setDebugInfo] = useState<DebugInfo>(defaultDebugInfo);
   const configuredRef = useRef(false);
 
   const checkTrialStatus = useCallback(async () => {
@@ -152,8 +179,23 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       const apiKey = Platform.OS === 'ios' ? REVENUECAT_API_KEY_IOS : REVENUECAT_API_KEY_ANDROID;
       console.log('[PulseKegel] API key present:', !!apiKey, '| Key length:', apiKey.length);
 
+      const debug: DebugInfo = {
+        platform: Platform.OS,
+        apiKeyPresent: !!apiKey,
+        apiKeyLength: apiKey.length,
+        configured: false,
+        configError: null,
+        offeringsResult: 'not started',
+        offeringsError: null,
+        packageCount: 0,
+        initComplete: false,
+      };
+
       if (!apiKey) {
         console.log('[PulseKegel] No API key - running in trial-only mode');
+        debug.offeringsResult = 'skipped (no key)';
+        debug.initComplete = true;
+        setDebugInfo(debug);
         await checkTrialStatus();
         setIsLoading(false);
         return;
@@ -163,9 +205,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         console.log('[PulseKegel] Configuring RevenueCat...');
         await Purchases.configure({ apiKey });
         configuredRef.current = true;
+        debug.configured = true;
         console.log('[PulseKegel] RevenueCat configured successfully');
-      } catch (error) {
+      } catch (error: any) {
         console.error('[PulseKegel] Failed to configure RevenueCat:', error);
+        debug.configError = error?.message || String(error);
+        debug.initComplete = true;
+        setDebugInfo(debug);
         await checkTrialStatus();
         setIsLoading(false);
         return;
@@ -190,14 +236,21 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       try {
         console.log('[PulseKegel] Loading offerings...');
         const offerings = await Purchases.getOfferings();
+        const currentId = offerings.current?.identifier || 'NONE';
+        const allKeys = Object.keys(offerings.all);
+        const pkgCount = offerings.current?.availablePackages?.length || 0;
+
+        debug.offeringsResult = `current=${currentId}, all=[${allKeys.join(',')}], pkgs=${pkgCount}`;
+
         console.log('[PulseKegel] Offerings response:', {
-          currentOffering: offerings.current?.identifier || 'NONE',
-          allOfferingKeys: Object.keys(offerings.all),
-          availablePackages: offerings.current?.availablePackages?.length || 0,
+          currentOffering: currentId,
+          allOfferingKeys: allKeys,
+          availablePackages: pkgCount,
         });
 
         if (offerings.current?.availablePackages) {
           const pkgs = offerings.current.availablePackages;
+          debug.packageCount = pkgs.length;
           console.log('[PulseKegel] Packages loaded:', pkgs.map(p => ({
             id: p.identifier,
             productId: p.product.identifier,
@@ -206,19 +259,23 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           setPackages(pkgs);
         } else {
           console.warn('[PulseKegel] No current offering or no packages available');
-          if (Object.keys(offerings.all).length > 0) {
-            console.log('[PulseKegel] Available offerings (not current):', Object.keys(offerings.all));
+          if (allKeys.length > 0) {
+            console.log('[PulseKegel] Available offerings (not current):', allKeys);
             const firstOffering = Object.values(offerings.all)[0];
             if (firstOffering?.availablePackages?.length > 0) {
               console.log('[PulseKegel] Using first available offering:', firstOffering.identifier);
+              debug.packageCount = firstOffering.availablePackages.length;
               setPackages(firstOffering.availablePackages);
             }
           }
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('[PulseKegel] Failed to load offerings:', error);
+        debug.offeringsError = error?.message || String(error);
       }
 
+      debug.initComplete = true;
+      setDebugInfo(debug);
       setIsLoading(false);
       console.log('[PulseKegel] === Subscription Init Complete ===');
     };
@@ -240,6 +297,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         restorePurchases,
         checkSubscription,
         hasAccess,
+        debugInfo,
       }}
     >
       {children}
