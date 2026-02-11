@@ -1,8 +1,13 @@
 import type { Express } from "express";
 import { createServer, type Server } from "node:http";
-import { join } from "node:path";
+import { existsSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import OpenAI from "openai";
 import { privacyPolicyHtml, getAboutPageHtml } from "./staticContent";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
@@ -79,8 +84,17 @@ No quotes in response.`;
   });
 
   app.get("/favicon.png", (_req, res) => {
-    const faviconPath = join(__dirname, 'public', 'favicon.png');
-    res.sendFile(faviconPath);
+    const paths = [
+      join(__dirname, 'public', 'favicon.png'),
+      join(__dirname, '..', 'server', 'public', 'favicon.png'),
+      join(process.cwd(), 'server', 'public', 'favicon.png'),
+    ];
+    for (const p of paths) {
+      if (existsSync(p)) {
+        return res.sendFile(p);
+      }
+    }
+    res.status(404).send('Not found');
   });
 
   app.get("/robots.txt", (_req, res) => {
