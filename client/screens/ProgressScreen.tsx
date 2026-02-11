@@ -278,7 +278,7 @@ export default function ProgressScreen() {
                   Longest Streak
                 </Text>
                 <Text style={[styles.longestStreakValue, { fontSize: 20 * fontScale, color: colors.accent }]}>
-                  {progress.longestStreak} days
+                  {progress.longestStreak} {progress.longestStreak === 1 ? 'day' : 'days'}
                 </Text>
               </View>
             </Animated.View>
