@@ -62,8 +62,10 @@ const SubscriptionContext = createContext<SubscriptionContextType>({
   debugInfo: defaultDebugInfo,
 });
 
-const REVENUECAT_API_KEY_IOS = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || '';
-const REVENUECAT_API_KEY_ANDROID = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY || '';
+import { GENERATED_ENV } from '@/lib/env-config.generated';
+
+const REVENUECAT_API_KEY_IOS = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || GENERATED_ENV.REVENUECAT_IOS_KEY || '';
+const REVENUECAT_API_KEY_ANDROID = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY || GENERATED_ENV.REVENUECAT_ANDROID_KEY || '';
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [isSubscribed, setIsSubscribed] = useState(false);
