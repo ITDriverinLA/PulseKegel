@@ -16,6 +16,7 @@ import { Feather } from '@expo/vector-icons';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 
+import Purchases from 'react-native-purchases';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useAccessibility } from '@/contexts/AccessibilityContext';
 import { Spacing, BorderRadius } from '@/constants/theme';
@@ -37,12 +38,41 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
   
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
+  const [localPackages, setLocalPackages] = useState(packages);
+
+  React.useEffect(() => {
+    setLocalPackages(packages);
+  }, [packages]);
 
   const handlePurchase = async () => {
-    if (packages.length === 0) {
+    let pkgs = localPackages;
+
+    if (pkgs.length === 0) {
+      setIsPurchasing(true);
+      try {
+        console.log('[PulseKegel] Paywall: No packages cached, retrying offerings fetch...');
+        const offerings = await Purchases.getOfferings();
+        if (offerings.current?.availablePackages?.length) {
+          pkgs = offerings.current.availablePackages;
+          setLocalPackages(pkgs);
+          console.log('[PulseKegel] Paywall: Retry succeeded, got', pkgs.length, 'packages');
+        } else if (Object.keys(offerings.all).length > 0) {
+          const firstOffering = Object.values(offerings.all)[0];
+          if (firstOffering?.availablePackages?.length) {
+            pkgs = firstOffering.availablePackages;
+            setLocalPackages(pkgs);
+          }
+        }
+      } catch (error) {
+        console.error('[PulseKegel] Paywall: Retry failed:', error);
+      }
+      setIsPurchasing(false);
+    }
+
+    if (pkgs.length === 0) {
       Alert.alert(
         'Not Available',
-        'Subscriptions are not available at this time. Please try again later.',
+        'Subscriptions are not available right now. Please check your internet connection and try again.',
         [{ text: 'OK' }]
       );
       return;
@@ -50,7 +80,7 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
 
     setIsPurchasing(true);
     try {
-      const success = await purchasePackage(packages[0]);
+      const success = await purchasePackage(pkgs[0]);
       if (success) {
         onClose?.();
         navigation.goBack();
