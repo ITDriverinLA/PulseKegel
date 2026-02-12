@@ -1,0 +1,106 @@
+{
+  "id": "1c0d071c-aa08-4cf5-9795-08e535a328fa",
+  "createdAt": "2026-02-12T01:59:13.820Z",
+  "runtimeVersion": "exposdk:54.0.0",
+  "launchAsset": {
+    "key": "bundle-1770861553820-10198",
+    "contentType": "application/javascript",
+    "url": "https://e263d5aa-5c81-4dbd-a2b2-ea30124aec86-00-3gni8zxpzb2h4.janeway.replit.dev/1770861553820-10198/_expo/static/js/android/bundle.js"
+  },
+  "assets": [],
+  "metadata": {},
+  "extra": {
+    "eas": {},
+    "expoClient": {
+      "name": "PulseKegel",
+      "slug": "pulsekegel",
+      "version": "1.1.0",
+      "orientation": "portrait",
+      "icon": "./assets/images/icon.png",
+      "scheme": "pulsekegel",
+      "userInterfaceStyle": "automatic",
+      "newArchEnabled": true,
+      "ios": {
+        "supportsTablet": true,
+        "bundleIdentifier": "com.pulsekegel.app",
+        "buildNumber": "2"
+      },
+      "android": {
+        "adaptiveIcon": {
+          "backgroundColor": "#F7F9FC",
+          "foregroundImage": "./assets/images/android-icon-foreground.png",
+          "backgroundImage": "./assets/images/android-icon-background.png",
+          "monochromeImage": "./assets/images/android-icon-monochrome.png",
+          "foregroundImageUrl": "https://e263d5aa-5c81-4dbd-a2b2-ea30124aec86-00-3gni8zxpzb2h4.janeway.replit.dev/assets/./assets/images/android-icon-foreground.png",
+          "monochromeImageUrl": "https://e263d5aa-5c81-4dbd-a2b2-ea30124aec86-00-3gni8zxpzb2h4.janeway.replit.dev/assets/./assets/images/android-icon-monochrome.png",
+          "backgroundImageUrl": "https://e263d5aa-5c81-4dbd-a2b2-ea30124aec86-00-3gni8zxpzb2h4.janeway.replit.dev/assets/./assets/images/android-icon-background.png"
+        },
+        "edgeToEdgeEnabled": true,
+        "predictiveBackGestureEnabled": false,
+        "package": "com.pulsekegel.app"
+      },
+      "web": {
+        "output": "single",
+        "favicon": "./assets/images/favicon.png"
+      },
+      "plugins": [
+        [
+          "expo-splash-screen",
+          {
+            "image": "./assets/images/splash-icon.png",
+            "imageWidth": 200,
+            "resizeMode": "contain",
+            "backgroundColor": "#ffffff",
+            "dark": {
+              "backgroundColor": "#1A1A1A"
+            }
+          }
+        ],
+        "expo-web-browser"
+      ],
+      "experiments": {
+        "reactCompiler": true
+      },
+      "_internal": {
+        "isDebug": false,
+        "projectRoot": "/home/runner/workspace",
+        "dynamicConfigPath": {},
+        "staticConfigPath": "/home/runner/workspace/app.json",
+        "packageJsonPath": "/home/runner/workspace/package.json",
+        "pluginHistory": {
+          "expo-splash-screen": {
+            "name": "expo-splash-screen",
+            "version": "31.0.13"
+          },
+          "expo-web-browser": {
+            "name": "expo-web-browser",
+            "version": "15.0.10"
+          }
+        }
+      },
+      "sdkVersion": "54.0.0",
+      "platforms": [
+        "ios",
+        "android",
+        "web"
+      ],
+      "androidStatusBar": {
+        "backgroundColor": "#ffffff"
+      },
+      "iconUrl": "https://e263d5aa-5c81-4dbd-a2b2-ea30124aec86-00-3gni8zxpzb2h4.janeway.replit.dev/assets/./assets/images/icon.png",
+      "hostUri": "e263d5aa-5c81-4dbd-a2b2-ea30124aec86-00-3gni8zxpzb2h4.janeway.replit.dev/android"
+    },
+    "expoGo": {
+      "debuggerHost": "e263d5aa-5c81-4dbd-a2b2-ea30124aec86-00-3gni8zxpzb2h4.janeway.replit.dev/android",
+      "developer": {
+        "tool": "expo-cli",
+        "projectRoot": "/home/runner/workspace"
+      },
+      "packagerOpts": {
+        "dev": false
+      },
+      "mainModuleName": "client/index"
+    },
+    "scopeKey": "@anonymous/pulsekegel-7c81727b-0852-4de7-9963-d3fd437669f0"
+  }
+}
