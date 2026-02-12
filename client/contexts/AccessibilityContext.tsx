@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { storage } from '../lib/storage';
+import { useThemePreference } from './ThemePreferenceContext';
 
 interface AccessibilityContextType {
   highContrast: boolean;
@@ -17,7 +18,7 @@ interface AccessibilityContextType {
   refresh: () => Promise<void>;
 }
 
-const defaultColors = {
+const darkDefaultColors = {
   text: 'rgba(255,255,255,0.9)',
   textSecondary: 'rgba(255,255,255,0.6)',
   accent: '#00FF88',
@@ -27,7 +28,7 @@ const defaultColors = {
   border: 'rgba(0, 255, 136, 0.2)',
 };
 
-const highContrastColors = {
+const darkHighContrastColors = {
   text: '#FFFFFF',
   textSecondary: 'rgba(255,255,255,0.85)',
   accent: '#00FF88',
@@ -37,17 +38,38 @@ const highContrastColors = {
   border: 'rgba(0, 255, 136, 0.5)',
 };
 
+const lightDefaultColors = {
+  text: '#1a1a2e',
+  textSecondary: 'rgba(0,0,0,0.55)',
+  accent: '#00B86B',
+  accentSecondary: '#0099CC',
+  background: '#f0f2f7',
+  cardBackground: 'rgba(255, 255, 255, 0.85)',
+  border: 'rgba(0, 184, 107, 0.2)',
+};
+
+const lightHighContrastColors = {
+  text: '#000000',
+  textSecondary: 'rgba(0,0,0,0.75)',
+  accent: '#008A50',
+  accentSecondary: '#006699',
+  background: '#ffffff',
+  cardBackground: 'rgba(240, 240, 245, 0.95)',
+  border: 'rgba(0, 138, 80, 0.5)',
+};
+
 const AccessibilityContext = createContext<AccessibilityContextType>({
   highContrast: false,
   largeText: false,
   fontScale: 1,
-  colors: defaultColors,
+  colors: darkDefaultColors,
   refresh: async () => {},
 });
 
 export function AccessibilityProvider({ children }: { children: ReactNode }) {
   const [highContrast, setHighContrast] = useState(false);
   const [largeText, setLargeText] = useState(false);
+  const { isDarkMode } = useThemePreference();
 
   const loadSettings = async () => {
     const settings = await storage.getSettings();
@@ -60,7 +82,13 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const fontScale = largeText ? 1.25 : 1;
-  const colors = highContrast ? highContrastColors : defaultColors;
+
+  let colors;
+  if (isDarkMode) {
+    colors = highContrast ? darkHighContrastColors : darkDefaultColors;
+  } else {
+    colors = highContrast ? lightHighContrastColors : lightDefaultColors;
+  }
 
   return (
     <AccessibilityContext.Provider

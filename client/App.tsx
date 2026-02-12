@@ -13,24 +13,34 @@ import RootStackNavigator from "@/navigation/RootStackNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
+import { ThemePreferenceProvider, useThemePreference } from "@/contexts/ThemePreferenceContext";
+
+function AppContent() {
+  const { cp } = useThemePreference();
+  return (
+    <SafeAreaProvider>
+      <GestureHandlerRootView style={styles.root}>
+        <KeyboardProvider>
+          <NavigationContainer>
+            <RootStackNavigator />
+          </NavigationContainer>
+          <StatusBar style={cp.statusBarStyle === 'light' ? 'light' : 'dark'} />
+        </KeyboardProvider>
+      </GestureHandlerRootView>
+    </SafeAreaProvider>
+  );
+}
 
 export default function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <SubscriptionProvider>
-          <AccessibilityProvider>
-            <SafeAreaProvider>
-              <GestureHandlerRootView style={styles.root}>
-                <KeyboardProvider>
-                  <NavigationContainer>
-                    <RootStackNavigator />
-                  </NavigationContainer>
-                  <StatusBar style="auto" />
-                </KeyboardProvider>
-              </GestureHandlerRootView>
-            </SafeAreaProvider>
-          </AccessibilityProvider>
+          <ThemePreferenceProvider>
+            <AccessibilityProvider>
+              <AppContent />
+            </AccessibilityProvider>
+          </ThemePreferenceProvider>
         </SubscriptionProvider>
       </QueryClientProvider>
     </ErrorBoundary>

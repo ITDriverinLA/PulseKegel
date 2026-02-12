@@ -37,6 +37,7 @@ export interface UserSettings {
   cooldownEnabled: boolean;
   anatomyType: AnatomyType;
   userName: string;
+  darkMode: boolean;
 }
 
 export const defaultSettings: UserSettings = {
@@ -51,6 +52,7 @@ export const defaultSettings: UserSettings = {
   cooldownEnabled: true,
   anatomyType: null,
   userName: '',
+  darkMode: true,
 };
 
 export interface UserProgress {
