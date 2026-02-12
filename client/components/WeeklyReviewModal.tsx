@@ -8,11 +8,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { Spacing } from '@/constants/theme';
 import { getApiUrl } from '@/lib/query-client';
 import { AnatomyType } from '@/lib/storage';
-
-const NEON_GREEN = '#00ff88';
-const NEON_CYAN = '#00d4ff';
-const NEON_PURPLE = '#a855f7';
-const NEON_PINK = '#ff6b9d';
+import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 
 interface WeeklyReviewModalProps {
   visible: boolean;
@@ -35,6 +31,7 @@ export function WeeklyReviewModal({
   userName,
   onMessageReady,
 }: WeeklyReviewModalProps) {
+  const { cp, isDarkMode } = useThemePreference();
   const [message, setMessage] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
@@ -73,9 +70,9 @@ export function WeeklyReviewModal({
   };
 
   const getAccentColor = () => {
-    if (daysWorkedOut >= 5) return NEON_GREEN;
-    if (daysWorkedOut >= 3) return NEON_CYAN;
-    return NEON_PURPLE;
+    if (daysWorkedOut >= 5) return cp.neonGreen;
+    if (daysWorkedOut >= 3) return cp.neonCyan;
+    return cp.neonPurple;
   };
 
   const getIcon = () => {
@@ -116,23 +113,23 @@ export function WeeklyReviewModal({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
+      <View style={[styles.overlay, { backgroundColor: cp.overlay }]}>
         <Animated.View entering={ZoomIn.duration(300)} style={styles.container}>
           <LinearGradient
-            colors={['#1a1a2e', '#16213e', '#0f0f23']}
+            colors={isDarkMode ? ['#1a1a2e', '#16213e', '#0f0f23'] : ['#ffffff', '#f5f7fc', '#eef1f8']}
             style={styles.gradient}
           >
             <Animated.View entering={FadeIn.delay(200)} style={styles.iconContainer}>
               <LinearGradient
-                colors={[accentColor, NEON_PINK]}
+                colors={[accentColor, cp.neonPink]}
                 style={styles.iconGradient}
               >
-                <Feather name={getIcon()} size={48} color="#fff" />
+                <Feather name={getIcon()} size={48} color={cp.text} />
               </LinearGradient>
             </Animated.View>
 
             <Animated.View entering={FadeIn.delay(300)}>
-              <ThemedText type="h2" style={[styles.title, { color: accentColor }]}>
+              <ThemedText type="h2" style={[styles.title, { color: accentColor, textShadowColor: isDarkMode ? accentColor : 'transparent' }]}>
                 Week {weekNumber} Complete
               </ThemedText>
             </Animated.View>
@@ -142,16 +139,16 @@ export function WeeklyReviewModal({
                 <ThemedText type="h3" style={[styles.statValue, { color: accentColor }]}>
                   {daysWorkedOut}
                 </ThemedText>
-                <ThemedText type="small" style={styles.statLabel}>
+                <ThemedText type="small" style={[styles.statLabel, { color: cp.textSecondary }]}>
                   Days Active
                 </ThemedText>
               </View>
-              <View style={styles.statDivider} />
+              <View style={[styles.statDivider, { backgroundColor: cp.cardBorder }]} />
               <View style={styles.statItem}>
                 <ThemedText type="h3" style={[styles.statValue, { color: accentColor }]}>
                   {totalMinutes}
                 </ThemedText>
-                <ThemedText type="small" style={styles.statLabel}>
+                <ThemedText type="small" style={[styles.statLabel, { color: cp.textSecondary }]}>
                   Minutes
                 </ThemedText>
               </View>
@@ -163,7 +160,7 @@ export function WeeklyReviewModal({
                   Analysing Progress...
                 </RNAnimated.Text>
               ) : (
-                <ThemedText type="body" style={styles.message}>
+                <ThemedText type="body" style={[styles.message, { color: cp.textSecondary }]}>
                   {message}
                 </ThemedText>
               )}
@@ -172,7 +169,7 @@ export function WeeklyReviewModal({
             <Animated.View entering={FadeIn.delay(600)}>
               <Pressable onPress={onClose} style={styles.button}>
                 <LinearGradient
-                  colors={[accentColor, NEON_CYAN]}
+                  colors={[accentColor, cp.neonCyan]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.buttonGradient}
@@ -193,7 +190,6 @@ export function WeeklyReviewModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: Spacing.xl,
@@ -236,13 +232,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   statLabel: {
-    color: 'rgba(255, 255, 255, 0.6)',
     marginTop: Spacing.xs,
   },
   statDivider: {
     width: 1,
     height: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   messageContainer: {
     minHeight: 60,
@@ -251,7 +245,6 @@ const styles = StyleSheet.create({
   },
   message: {
     textAlign: 'center',
-    color: 'rgba(255, 255, 255, 0.9)',
     lineHeight: 24,
   },
   loadingText: {
