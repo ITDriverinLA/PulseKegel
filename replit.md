@@ -14,7 +14,8 @@ PulseKegel is a mobile app for daily pelvic floor (Kegel) workouts with real-tim
 - Recovery mode for reduced intensity workouts
 - Customizable haptic intensity and rest cue styles
 - One-time onboarding with safety disclaimers
-- Futuristic cyberpunk UI with dark gradients and neon accents
+- **Light/Dark Theme System** - Toggle between dark cyberpunk theme and light theme via Settings
+- Futuristic cyberpunk UI with dark gradients and neon accents (dark mode) or soft grays with toned-down accents (light mode)
 
 ## Workout Program Structure
 
