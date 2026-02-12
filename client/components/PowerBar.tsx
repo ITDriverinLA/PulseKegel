@@ -13,6 +13,7 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { SegmentType } from '@/data/workoutProgram';
+import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 
 interface PowerBarProps {
   phase: 'squeeze' | 'rest';
@@ -63,25 +64,25 @@ const SEGMENT_GLOW_COLORS = [
   'rgba(255, 0, 85, 0.6)',
 ];
 
-const SEGMENT_INACTIVE = 'rgba(20, 20, 30, 0.9)';
-
 function PowerBarSegment({ 
   index, 
   progress, 
   segmentHeight,
   width,
+  inactiveColor,
 }: { 
   index: number; 
   progress: { value: number };
   segmentHeight: number;
   width: number;
+  inactiveColor: string;
 }) {
   const threshold = (index + 0.5) / SEGMENT_COUNT;
   
   const animatedStyle = useAnimatedStyle(() => {
     const isLit = progress.value >= threshold;
     return {
-      backgroundColor: isLit ? SEGMENT_COLORS[index] : SEGMENT_INACTIVE,
+      backgroundColor: isLit ? SEGMENT_COLORS[index] : inactiveColor,
       shadowColor: isLit ? SEGMENT_GLOW_COLORS[index] : 'transparent',
       shadowOpacity: isLit ? 1 : 0,
       shadowRadius: isLit ? 12 : 0,
@@ -114,9 +115,22 @@ export function PowerBar({
   width = 140,
   rampSteps,
 }: PowerBarProps) {
+  const { isDarkMode } = useThemePreference();
   const progress = useSharedValue(0);
   const segmentHeight = (height - (SEGMENT_COUNT - 1) * SEGMENT_GAP - 32) / SEGMENT_COUNT;
   const phaseKeyRef = useRef(0);
+
+  const inactiveColor = isDarkMode ? 'rgba(20, 20, 30, 0.9)' : 'rgba(200, 205, 218, 0.6)';
+  const outerBezelColors = isDarkMode
+    ? ['#1a1a2e', '#16213e', '#0f0f23'] as const
+    : ['#d8dce6', '#cdd2de', '#c4c9d6'] as const;
+  const innerBezelColors = isDarkMode
+    ? ['#0a0a14', '#0d0d1a', '#050510'] as const
+    : ['#e8ecf2', '#e2e6ee', '#dde1ea'] as const;
+  const outerBorderColor = isDarkMode ? '#2a2a4a' : '#b8bdd0';
+  const bezelRingBorderColor = isDarkMode ? '#3a3a5a' : '#c8cdd8';
+  const bezelRingBg = isDarkMode ? '#1a1a2e' : '#d4d8e2';
+  const innerBorderColor = isDarkMode ? '#1a1a2e' : '#cdd2de';
 
   useEffect(() => {
     if (!isActive) {
@@ -207,6 +221,7 @@ export function PowerBar({
         progress={progress}
         segmentHeight={segmentHeight}
         width={width}
+        inactiveColor={inactiveColor}
       />
     );
   }
@@ -214,13 +229,13 @@ export function PowerBar({
   return (
     <View style={[styles.container, { height, width }]}>
       <LinearGradient
-        colors={['#1a1a2e', '#16213e', '#0f0f23']}
-        style={styles.outerBezel}
+        colors={outerBezelColors as unknown as [string, string, ...string[]]}
+        style={[styles.outerBezel, { borderColor: outerBorderColor }]}
       >
-        <View style={styles.bezelRing}>
+        <View style={[styles.bezelRing, { borderColor: bezelRingBorderColor, backgroundColor: bezelRingBg }]}>
           <LinearGradient
-            colors={['#0a0a14', '#0d0d1a', '#050510']}
-            style={styles.innerBezel}
+            colors={innerBezelColors as unknown as [string, string, ...string[]]}
+            style={[styles.innerBezel, { borderColor: innerBorderColor }]}
           >
             <View style={styles.segmentsContainer}>
               {segments}
@@ -243,22 +258,18 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 4,
     borderWidth: 2,
-    borderColor: '#2a2a4a',
   },
   bezelRing: {
     flex: 1,
     borderRadius: 12,
     padding: 3,
     borderWidth: 1,
-    borderColor: '#3a3a5a',
-    backgroundColor: '#1a1a2e',
   },
   innerBezel: {
     flex: 1,
     borderRadius: 10,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#1a1a2e',
     overflow: 'hidden',
   },
   segmentsContainer: {
