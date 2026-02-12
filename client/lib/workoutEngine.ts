@@ -206,11 +206,20 @@ export class WorkoutEngine {
     this.callbacks.onStateChange(this.getState());
   }
 
+  private pendingAdvance: boolean = false;
+
   private startTicking(): void {
     this.stopTicking();
     
     this.tickInterval = setInterval(() => {
       if (this.state.isPaused || !this.state.isRunning) return;
+
+      if (this.pendingAdvance) {
+        this.pendingAdvance = false;
+        this.advancePhase();
+        this.callbacks.onStateChange(this.getState());
+        return;
+      }
       
       this.state.secondsRemaining--;
       this.state.totalElapsedSeconds++;
@@ -218,7 +227,7 @@ export class WorkoutEngine {
       this.callbacks.onTick(this.state.secondsRemaining);
       
       if (this.state.secondsRemaining <= 0) {
-        this.advancePhase();
+        this.pendingAdvance = true;
       }
       
       this.callbacks.onStateChange(this.getState());
@@ -240,6 +249,12 @@ export class WorkoutEngine {
     }
 
     if (this.state.phase === 'squeeze') {
+      // Block rest segments should never have a rest phase after them - go straight to next segment
+      if (segment.type === 'blockRest') {
+        this.advanceRep();
+        return;
+      }
+
       // Check if this is the last rep of the last set - skip rest if next is block rest or cooldown
       const isLastRep = this.state.repIndex === segment.repsPerSet - 1;
       const isLastSet = this.state.setIndex === segment.sets - 1;
