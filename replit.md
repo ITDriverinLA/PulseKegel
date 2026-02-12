@@ -7,7 +7,7 @@ PulseKegel is a mobile app for daily pelvic floor (Kegel) workouts with real-tim
 - 12-week progressive workout program with 7 exercise types (slow holds, quick flicks, elevator, reverse, breathing, block rest, contract-relax)
 - **Quick Workout Selection** - Choose individual workouts outside the 12-week program (Quick Flicks, Slow Holds, Endurance, Elevator, Reverse Kegels, Contract-Relax, Full Daily, Coordination)
 - Real-time workout player with SQUEEZE/REST/BREATHE visual cues and haptic feedback
-- Vertical LED-style power bar with exercise-specific animations (fills to 100%, slower 600ms return animation)
+- **Dual workout visualizations**: Vertical LED-style power bar in dark mode; circular progress ring in light mode — both with exercise-specific animations (fills to 100%, slower 600ms return)
 - Progress tracking with streak counter, calendar view (with distinct workout/rest day/today indicators and legend), and statistics
 - **Badge/Achievement System** - 18 badges across 5 categories (Streaks, Milestones, Program Phases, Mastery, Special) with locked/unlocked states, detail modals, and toast notifications on earn
 - **AI Review History** - Save and reread all past weekly AI progress insights
