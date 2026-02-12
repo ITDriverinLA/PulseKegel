@@ -11,15 +11,14 @@ import { ThemedText } from '@/components/ThemedText';
 import { Spacing, BorderRadius } from '@/constants/theme';
 import { standaloneWorkouts, StandaloneWorkout } from '@/data/standaloneWorkouts';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
+import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-
-const NEON_GREEN = '#00FF88';
-const NEON_CYAN = '#00FFFF';
 
 export default function WorkoutPickerScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
+  const { cp, isDarkMode } = useThemePreference();
 
   const handleSelectWorkout = (workout: StandaloneWorkout) => {
     navigation.navigate('WorkoutPlayer', {
@@ -36,21 +35,21 @@ export default function WorkoutPickerScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={['#0a0a1a', '#1a0a2e', '#0a1a2e', '#0a0a1a']}
+        colors={cp.gradient as unknown as [string, string, ...string[]]}
         style={StyleSheet.absoluteFill}
       />
       
       <View style={[styles.header, { paddingTop: insets.top + Spacing.md }]}>
-        <Pressable onPress={handleClose} style={styles.closeButton}>
-          <Feather name="x" size={24} color="#fff" />
+        <Pressable onPress={handleClose} style={[styles.closeButton, { backgroundColor: cp.cardBorder }]}>
+          <Feather name="x" size={24} color={cp.text} />
         </Pressable>
-        <ThemedText type="h2" style={styles.title}>
+        <ThemedText type="h2" style={[styles.title, { color: cp.text, textShadowColor: isDarkMode ? cp.neonGreen : 'transparent' }]}>
           Quick Workout
         </ThemedText>
         <View style={styles.placeholder} />
       </View>
 
-      <ThemedText type="body" style={styles.subtitle}>
+      <ThemedText type="body" style={[styles.subtitle, { color: cp.textSecondary }]}>
         Choose a workout to start right now
       </ThemedText>
 
@@ -70,7 +69,8 @@ export default function WorkoutPickerScreen() {
             <Pressable
               style={({ pressed }) => [
                 styles.workoutCard,
-                pressed && styles.workoutCardPressed,
+                { backgroundColor: cp.cardBg, borderColor: cp.cardBorder },
+                pressed && { backgroundColor: cp.cardBorder, borderColor: cp.neonCyan },
               ]}
               onPress={() => handleSelectWorkout(workout)}
             >
@@ -88,22 +88,22 @@ export default function WorkoutPickerScreen() {
               </View>
               
               <View style={styles.workoutInfo}>
-                <ThemedText type="body" style={styles.workoutName}>
+                <ThemedText type="body" style={[styles.workoutName, { color: cp.text }]}>
                   {workout.name}
                 </ThemedText>
-                <ThemedText type="small" style={styles.workoutDescription}>
+                <ThemedText type="small" style={[styles.workoutDescription, { color: cp.textMuted }]}>
                   {workout.description}
                 </ThemedText>
               </View>
 
-              <View style={styles.durationBadge}>
-                <Feather name="clock" size={12} color="rgba(255,255,255,0.6)" />
-                <ThemedText type="small" style={styles.durationText}>
+              <View style={[styles.durationBadge, { backgroundColor: cp.inputBg }]}>
+                <Feather name="clock" size={12} color={cp.textSecondary} />
+                <ThemedText type="small" style={[styles.durationText, { color: cp.textSecondary }]}>
                   {workout.estimatedMinutes}m
                 </ThemedText>
               </View>
 
-              <Feather name="chevron-right" size={20} color="rgba(255,255,255,0.4)" />
+              <Feather name="chevron-right" size={20} color={cp.textMuted} />
             </Pressable>
           </Animated.View>
         ))}
@@ -127,13 +127,10 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
-    color: '#fff',
-    textShadowColor: NEON_GREEN,
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 10,
   },
@@ -141,7 +138,6 @@ const styles = StyleSheet.create({
     width: 40,
   },
   subtitle: {
-    color: 'rgba(255,255,255,0.6)',
     textAlign: 'center',
     marginBottom: Spacing.xl,
     paddingHorizontal: Spacing.lg,
@@ -156,15 +152,9 @@ const styles = StyleSheet.create({
   workoutCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  workoutCardPressed: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderColor: NEON_CYAN,
   },
   iconContainer: {
     width: 48,
@@ -178,18 +168,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   workoutName: {
-    color: '#fff',
     fontWeight: '600',
     marginBottom: 2,
   },
   workoutDescription: {
-    color: 'rgba(255,255,255,0.5)',
     fontSize: 12,
   },
   durationBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
     paddingHorizontal: Spacing.sm,
     paddingVertical: 4,
     borderRadius: BorderRadius.full,
@@ -197,7 +184,6 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   durationText: {
-    color: 'rgba(255,255,255,0.6)',
     fontSize: 11,
   },
 });

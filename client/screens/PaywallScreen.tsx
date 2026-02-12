@@ -19,11 +19,7 @@ import Purchases from 'react-native-purchases';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useAccessibility } from '@/contexts/AccessibilityContext';
 import { Spacing, BorderRadius } from '@/constants/theme';
-
-const NEON_GREEN = '#00FF88';
-const NEON_CYAN = '#00FFFF';
-const NEON_PINK = '#FF3366';
-const DARK_GRADIENT = ['#0a0a1a', '#1a0a2e', '#0a1a2e', '#0a0a1a'] as const;
+import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 
 interface PaywallScreenProps {
   onClose?: () => void;
@@ -34,6 +30,7 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
   const navigation = useNavigation();
   const { fontScale, colors } = useAccessibility();
   const { packages, purchasePackage, restorePurchases, isLoading, trialDaysRemaining } = useSubscription();
+  const { cp, isDarkMode } = useThemePreference();
   
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
@@ -127,7 +124,7 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
     : '$4.99 / year';
 
   return (
-    <LinearGradient colors={DARK_GRADIENT} style={styles.container}>
+    <LinearGradient colors={cp.gradient as unknown as [string, string, ...string[]]} style={styles.container}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
@@ -137,42 +134,42 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
         showsVerticalScrollIndicator={false}
       >
         <Pressable
-          style={[styles.closeButton, { top: insets.top + Spacing.sm }]}
+          style={[styles.closeButton, { top: insets.top + Spacing.sm, backgroundColor: cp.cardBorder }]}
           onPress={handleClose}
           testID="button-close-paywall"
         >
-          <Feather name="x" size={24} color="rgba(255,255,255,0.6)" />
+          <Feather name="x" size={24} color={cp.textSecondary} />
         </Pressable>
 
         <Animated.View entering={FadeInDown.delay(100)} style={styles.header}>
-          <View style={styles.iconContainer}>
-            <Feather name="lock" size={32} color={NEON_GREEN} />
+          <View style={[styles.iconContainer, { backgroundColor: `${cp.neonGreen}26`, borderColor: `${cp.neonGreen}4D` }]}>
+            <Feather name="lock" size={32} color={cp.neonGreen} />
           </View>
-          <Text style={[styles.title, { fontSize: 28 * fontScale }]}>
+          <Text style={[styles.title, { fontSize: 28 * fontScale, color: cp.text }]}>
             Unlock Full Access
           </Text>
           {trialDaysRemaining > 0 ? (
-            <Text style={[styles.subtitle, { fontSize: 16 * fontScale }]}>
+            <Text style={[styles.subtitle, { fontSize: 16 * fontScale, color: cp.textSecondary }]}>
               Your free trial ends in {trialDaysRemaining} day{trialDaysRemaining !== 1 ? 's' : ''}
             </Text>
           ) : (
-            <Text style={[styles.subtitle, { fontSize: 16 * fontScale }]}>
+            <Text style={[styles.subtitle, { fontSize: 16 * fontScale, color: cp.textSecondary }]}>
               Your free trial has ended
             </Text>
           )}
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(200)} style={styles.featuresGrid}>
+        <Animated.View entering={FadeInDown.delay(200)} style={[styles.featuresGrid, { backgroundColor: isDarkMode ? 'rgba(26, 26, 46, 0.6)' : 'rgba(255, 255, 255, 0.7)', borderColor: `${cp.neonCyan}26` }]}>
           {features.map((feature, index) => (
             <View key={feature.title} style={styles.featureItem}>
-              <View style={styles.featureIcon}>
-                <Feather name={feature.icon as any} size={20} color={NEON_CYAN} />
+              <View style={[styles.featureIcon, { backgroundColor: `${cp.neonCyan}1A` }]}>
+                <Feather name={feature.icon as any} size={20} color={cp.neonCyan} />
               </View>
               <View style={styles.featureText}>
-                <Text style={[styles.featureTitle, { fontSize: 14 * fontScale }]}>
+                <Text style={[styles.featureTitle, { fontSize: 14 * fontScale, color: cp.text }]}>
                   {feature.title}
                 </Text>
-                <Text style={[styles.featureDesc, { fontSize: 12 * fontScale }]}>
+                <Text style={[styles.featureDesc, { fontSize: 12 * fontScale, color: cp.textSecondary }]}>
                   {feature.desc}
                 </Text>
               </View>
@@ -180,32 +177,32 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
           ))}
         </Animated.View>
 
-        <Animated.View entering={FadeInUp.delay(300)} style={styles.pricingCard}>
-          <View style={styles.priceBadge}>
-            <Text style={styles.priceBadgeText}>INTRO OFFER</Text>
+        <Animated.View entering={FadeInUp.delay(300)} style={[styles.pricingCard, { backgroundColor: `${cp.neonGreen}1A`, borderColor: `${cp.neonGreen}4D` }]}>
+          <View style={[styles.priceBadge, { backgroundColor: cp.neonPink }]}>
+            <Text style={[styles.priceBadgeText, { color: cp.text }]}>INTRO OFFER</Text>
           </View>
-          <Text style={[styles.price, { fontSize: 36 * fontScale }]}>$4.99</Text>
-          <Text style={[styles.priceSubtext, { fontSize: 16 * fontScale }]}>
+          <Text style={[styles.price, { fontSize: 36 * fontScale, color: cp.neonGreen, textShadowColor: `${cp.neonGreen}80` }]}>$4.99</Text>
+          <Text style={[styles.priceSubtext, { fontSize: 16 * fontScale, color: cp.text }]}>
             for 12 months
           </Text>
-          <Text style={[styles.priceNote, { fontSize: 12 * fontScale }]}>
+          <Text style={[styles.priceNote, { fontSize: 12 * fontScale, color: cp.textMuted }]}>
             That's just $0.42 per month
           </Text>
         </Animated.View>
 
         <Animated.View entering={FadeInUp.delay(400)} style={styles.ctaSection}>
           <Pressable
-            style={[styles.subscribeButton, (isPurchasing || isLoading) && styles.buttonDisabled]}
+            style={[styles.subscribeButton, { backgroundColor: cp.neonGreen, shadowColor: cp.neonGreen }, (isPurchasing || isLoading) && styles.buttonDisabled]}
             onPress={handlePurchase}
             disabled={isPurchasing || isLoading}
             testID="button-subscribe"
           >
             {isPurchasing ? (
-              <ActivityIndicator color="#0a0a1a" />
+              <ActivityIndicator color={cp.bg} />
             ) : (
               <>
-                <Feather name="unlock" size={20} color="#0a0a1a" />
-                <Text style={styles.subscribeButtonText}>Subscribe Now</Text>
+                <Feather name="unlock" size={20} color={cp.bg} />
+                <Text style={[styles.subscribeButtonText, { color: cp.bg }]}>Subscribe Now</Text>
               </>
             )}
           </Pressable>
@@ -217,9 +214,9 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
             testID="button-restore"
           >
             {isRestoring ? (
-              <ActivityIndicator color={NEON_CYAN} size="small" />
+              <ActivityIndicator color={cp.neonCyan} size="small" />
             ) : (
-              <Text style={[styles.restoreButtonText, { fontSize: 14 * fontScale }]}>
+              <Text style={[styles.restoreButtonText, { fontSize: 14 * fontScale, color: cp.neonCyan }]}>
                 Restore Purchases
               </Text>
             )}
@@ -227,16 +224,16 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
         </Animated.View>
 
         <View style={styles.legalSection}>
-          <Text style={[styles.legalText, { fontSize: 11 * fontScale }]}>
+          <Text style={[styles.legalText, { fontSize: 11 * fontScale, color: cp.textMuted }]}>
             Subscription automatically renews unless auto-renew is turned off at least 24-hours before the end of the current period. Your account will be charged for renewal within 24-hours prior to the end of the current period.
           </Text>
           <View style={styles.legalLinks}>
             <Pressable onPress={() => Linking.openURL('https://pulsekegel.com/privacy')}>
-              <Text style={styles.legalLink}>Privacy Policy</Text>
+              <Text style={[styles.legalLink, { color: cp.textMuted }]}>Privacy Policy</Text>
             </Pressable>
-            <Text style={styles.legalDivider}>|</Text>
+            <Text style={[styles.legalDivider, { color: cp.textMuted }]}>|</Text>
             <Pressable onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}>
-              <Text style={styles.legalLink}>Terms of Use</Text>
+              <Text style={[styles.legalLink, { color: cp.textMuted }]}>Terms of Use</Text>
             </Pressable>
           </View>
         </View>
@@ -262,7 +259,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -275,30 +271,24 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: 'rgba(0, 255, 136, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.lg,
     borderWidth: 2,
-    borderColor: 'rgba(0, 255, 136, 0.3)',
   },
   title: {
     fontWeight: '700',
-    color: '#fff',
     textAlign: 'center',
     marginBottom: Spacing.sm,
   },
   subtitle: {
-    color: 'rgba(255,255,255,0.7)',
     textAlign: 'center',
   },
   featuresGrid: {
-    backgroundColor: 'rgba(26, 26, 46, 0.6)',
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
     marginBottom: Spacing.xl,
     borderWidth: 1,
-    borderColor: 'rgba(0, 255, 255, 0.15)',
   },
   featureItem: {
     flexDirection: 'row',
@@ -309,7 +299,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 10,
-    backgroundColor: 'rgba(0, 255, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: Spacing.md,
@@ -319,47 +308,37 @@ const styles = StyleSheet.create({
   },
   featureTitle: {
     fontWeight: '600',
-    color: '#fff',
     marginBottom: 2,
   },
   featureDesc: {
-    color: 'rgba(255,255,255,0.6)',
   },
   pricingCard: {
-    backgroundColor: 'rgba(0, 255, 136, 0.1)',
     borderRadius: BorderRadius.lg,
     padding: Spacing.xl,
     alignItems: 'center',
     marginBottom: Spacing.xl,
     borderWidth: 2,
-    borderColor: 'rgba(0, 255, 136, 0.3)',
   },
   priceBadge: {
-    backgroundColor: NEON_PINK,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.full,
     marginBottom: Spacing.md,
   },
   priceBadgeText: {
-    color: '#fff',
     fontWeight: '700',
     fontSize: 12,
     letterSpacing: 1,
   },
   price: {
     fontWeight: '800',
-    color: NEON_GREEN,
-    textShadowColor: 'rgba(0, 255, 136, 0.5)',
     textShadowRadius: 20,
   },
   priceSubtext: {
-    color: '#fff',
     fontWeight: '500',
     marginTop: Spacing.xs,
   },
   priceNote: {
-    color: 'rgba(255,255,255,0.5)',
     marginTop: Spacing.sm,
   },
   ctaSection: {
@@ -370,11 +349,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.sm,
-    backgroundColor: NEON_GREEN,
     paddingVertical: Spacing.md + 4,
     borderRadius: BorderRadius.full,
     marginBottom: Spacing.md,
-    shadowColor: NEON_GREEN,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.5,
     shadowRadius: 20,
@@ -384,7 +361,6 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   subscribeButtonText: {
-    color: '#0a0a1a',
     fontWeight: '700',
     fontSize: 18,
   },
@@ -393,7 +369,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
   },
   restoreButtonText: {
-    color: NEON_CYAN,
     fontWeight: '500',
   },
   legalSection: {
@@ -401,7 +376,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
   },
   legalText: {
-    color: 'rgba(255,255,255,0.4)',
     textAlign: 'center',
     lineHeight: 16,
     marginBottom: Spacing.md,
@@ -412,12 +386,10 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   legalLink: {
-    color: 'rgba(255,255,255,0.5)',
     fontSize: 12,
     textDecorationLine: 'underline',
   },
   legalDivider: {
-    color: 'rgba(255,255,255,0.3)',
     fontSize: 12,
   },
 });

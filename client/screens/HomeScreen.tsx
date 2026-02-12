@@ -15,6 +15,7 @@ import { Spacing, BorderRadius } from '@/constants/theme';
 import { storage, UserSettings, UserProgress, defaultSettings } from '@/lib/storage';
 import { useAccessibility } from '@/contexts/AccessibilityContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 import {
   getTodaysWorkout,
   getWorkoutForRecoveryMode,
@@ -22,12 +23,6 @@ import {
   Week,
 } from '@/data/workoutProgram';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
-
-const NEON_GREEN = '#00FF88';
-const NEON_CYAN = '#00FFFF';
-const NEON_PINK = '#FF3366';
-const NEON_PURPLE = '#9D4EDD';
-const DARK_GRADIENT = ['#0a0a1a', '#1a0a2e', '#0a1a2e', '#0a0a1a'] as const;
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -38,6 +33,7 @@ export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { fontScale, colors, highContrast } = useAccessibility();
   const { hasAccess, isTrialActive, trialDaysRemaining } = useSubscription();
+  const { cp, isDarkMode } = useThemePreference();
 
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
@@ -173,7 +169,7 @@ export default function HomeScreen() {
 
   return (
     <LinearGradient
-      colors={DARK_GRADIENT}
+      colors={cp.gradient as unknown as [string, string, ...string[]]}
       style={styles.gradientContainer}
     >
       <ScrollView
@@ -188,18 +184,18 @@ export default function HomeScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={NEON_GREEN}
+            tintColor={cp.neonGreen}
           />
         }
       >
         <Animated.View entering={FadeInDown.duration(400).delay(100)}>
           <View style={styles.streakContainer}>
-            <View style={[styles.streakBadge, highContrast && { borderColor: colors.border }]}>
+            <View style={[styles.streakBadge, { backgroundColor: `${cp.neonGreen}1A`, borderColor: `${cp.neonGreen}4D` }, highContrast && { borderColor: colors.border }]}>
               <Feather name="zap" size={24 * fontScale} color={colors.accent} />
-              <Text style={[styles.streakNumber, { fontSize: 48 * fontScale, color: colors.text }]}>
+              <Text style={[styles.streakNumber, { fontSize: 48 * fontScale, color: cp.neonGreen, textShadowColor: isDarkMode ? cp.neonGreen : 'transparent' }]}>
                 {progress?.currentStreak || 0}
               </Text>
-              <Text style={[styles.streakLabel, { fontSize: 14 * fontScale, color: colors.textSecondary }]}>
+              <Text style={[styles.streakLabel, { fontSize: 14 * fontScale, color: cp.textSecondary }]}>
                 Day Streak
               </Text>
             </View>
@@ -207,36 +203,36 @@ export default function HomeScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(400).delay(200)}>
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
             {todaysWorkout ? (
               todaysWorkout.isRestDay ? (
                 <>
                   <View style={styles.workoutHeader}>
                     <View>
-                      <Text style={[styles.phaseLabel, { fontSize: 14 * fontScale, color: colors.accentSecondary }]}>
+                      <Text style={[styles.phaseLabel, { fontSize: 14 * fontScale, color: colors.accentSecondary, textShadowColor: isDarkMode ? cp.neonCyan : 'transparent' }]}>
                         Week {todaysWorkout.week.weekNumber} - {todaysWorkout.week.phase}
                       </Text>
-                      <Text style={[styles.workoutTitle, { fontSize: 24 * fontScale, color: colors.text }]}>
+                      <Text style={[styles.workoutTitle, { fontSize: 24 * fontScale, color: cp.text }]}>
                         Rest Day
                       </Text>
                     </View>
                     <View style={[styles.durationBadge, { backgroundColor: 'rgba(139, 92, 246, 0.2)' }]}>
-                      <Feather name="moon" size={14} color={NEON_PURPLE} />
-                      <Text style={[styles.durationText, { color: NEON_PURPLE }]}>
+                      <Feather name="moon" size={14} color={cp.neonPurple} />
+                      <Text style={[styles.durationText, { color: cp.neonPurple }]}>
                         Recovery
                       </Text>
                     </View>
                   </View>
 
-                  <Text style={styles.phaseDescription}>
+                  <Text style={[styles.phaseDescription, { color: cp.textSecondary }]}>
                     Take today to recover. Your muscles grow stronger during rest!
                   </Text>
 
                   <View style={styles.restDayContent}>
                     <View style={styles.restDayIcon}>
-                      <Feather name="battery-charging" size={32} color={NEON_PURPLE} />
+                      <Feather name="battery-charging" size={32} color={cp.neonPurple} />
                     </View>
-                    <Text style={styles.restDayMessage}>
+                    <Text style={[styles.restDayMessage, { color: cp.textSecondary }]}>
                       Rest days are essential for muscle recovery and preventing overtraining. 
                       Your pelvic floor is building strength from your previous workouts.
                     </Text>
@@ -245,7 +241,7 @@ export default function HomeScreen() {
                   <View style={styles.buttonsRow}>
                     <Pressable onPress={handleQuickWorkout} style={styles.startButtonContainer}>
                       <LinearGradient
-                        colors={[NEON_PURPLE, NEON_PINK]}
+                        colors={[cp.neonPurple, cp.neonPink]}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                         style={styles.startButton}
@@ -259,16 +255,16 @@ export default function HomeScreen() {
                 <>
                   <View style={styles.workoutHeader}>
                     <View>
-                      <Text style={[styles.phaseLabel, { fontSize: 14 * fontScale, color: colors.accentSecondary }]}>
+                      <Text style={[styles.phaseLabel, { fontSize: 14 * fontScale, color: colors.accentSecondary, textShadowColor: isDarkMode ? cp.neonCyan : 'transparent' }]}>
                         Week {todaysWorkout.week.weekNumber} - {todaysWorkout.week.phase}
                       </Text>
-                      <Text style={[styles.workoutTitle, { fontSize: 24 * fontScale, color: colors.text }]}>
+                      <Text style={[styles.workoutTitle, { fontSize: 24 * fontScale, color: cp.text }]}>
                         {todaysWorkout.workout.name}
                       </Text>
                     </View>
-                    <View style={styles.durationBadge}>
-                      <Feather name="clock" size={14} color="rgba(255,255,255,0.6)" />
-                      <Text style={styles.durationText}>
+                    <View style={[styles.durationBadge, { backgroundColor: cp.cardBorder }]}>
+                      <Feather name="clock" size={14} color={cp.textSecondary} />
+                      <Text style={[styles.durationText, { color: cp.textSecondary }]}>
                         {settings.recoveryMode
                           ? getWorkoutForRecoveryMode(todaysWorkout.workout).estimatedMinutes
                           : todaysWorkout.workout.estimatedMinutes}{' '}
@@ -277,7 +273,7 @@ export default function HomeScreen() {
                     </View>
                   </View>
 
-                  <Text style={styles.phaseDescription}>
+                  <Text style={[styles.phaseDescription, { color: cp.textSecondary }]}>
                     {todaysWorkout.week.phaseDescription}
                   </Text>
 
@@ -287,8 +283,8 @@ export default function HomeScreen() {
                       : todaysWorkout.workout
                     ).segments.map((segment) => (
                       <View key={segment.id} style={styles.segmentItem}>
-                        <View style={styles.segmentDot} />
-                        <Text style={styles.segmentText}>
+                        <View style={[styles.segmentDot, { backgroundColor: cp.neonGreen }]} />
+                        <Text style={[styles.segmentText, { color: cp.textSecondary }]}>
                           {segment.name} ({segment.sets}x{segment.repsPerSet})
                         </Text>
                       </View>
@@ -296,9 +292,9 @@ export default function HomeScreen() {
                   </View>
 
                   <View style={styles.buttonsRow}>
-                    <Pressable onPress={handleStartWorkout} style={styles.startButtonContainer}>
+                    <Pressable onPress={handleStartWorkout} style={[styles.startButtonContainer, { shadowColor: isDarkMode ? cp.neonGreen : 'transparent' }]}>
                       <LinearGradient
-                        colors={[NEON_GREEN, NEON_CYAN]}
+                        colors={[cp.neonGreen, cp.neonCyan]}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                         style={styles.startButton}
@@ -306,33 +302,33 @@ export default function HomeScreen() {
                         <Text style={[styles.startButtonText, { fontSize: 16 * fontScale }]}>Start Program</Text>
                       </LinearGradient>
                     </Pressable>
-                    <Pressable onPress={handleQuickWorkout} style={styles.quickWorkoutButton}>
-                      <Feather name="zap" size={18} color={NEON_CYAN} />
-                      <Text style={styles.quickWorkoutText}>Quick</Text>
+                    <Pressable onPress={handleQuickWorkout} style={[styles.quickWorkoutButton, { backgroundColor: `${cp.neonCyan}1A`, borderColor: `${cp.neonCyan}4D` }]}>
+                      <Feather name="zap" size={18} color={cp.neonCyan} />
+                      <Text style={[styles.quickWorkoutText, { color: cp.neonCyan }]}>Quick</Text>
                     </Pressable>
                   </View>
                 </>
               )
             ) : (
               <View style={styles.loadingContainer}>
-                <Text style={styles.loadingText}>Loading workout...</Text>
+                <Text style={[styles.loadingText, { color: cp.textSecondary }]}>Loading workout...</Text>
               </View>
             )}
           </View>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(400).delay(300)}>
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
             <View style={styles.recoveryHeader}>
               <View style={styles.recoveryInfo}>
-                <View style={styles.recoveryIcon}>
-                  <Feather name="heart" size={20} color={NEON_PURPLE} />
+                <View style={[styles.recoveryIcon, { backgroundColor: `${cp.neonPurple}26` }]}>
+                  <Feather name="heart" size={20} color={cp.neonPurple} />
                 </View>
                 <View style={styles.recoveryText}>
-                  <Text style={styles.recoveryTitle}>
+                  <Text style={[styles.recoveryTitle, { color: cp.text }]}>
                     Recovery Mode
                   </Text>
-                  <Text style={styles.recoverySubtitle}>
+                  <Text style={[styles.recoverySubtitle, { color: cp.textSecondary }]}>
                     Reduced intensity with relaxation
                   </Text>
                 </View>
@@ -347,32 +343,32 @@ export default function HomeScreen() {
 
         <Animated.View entering={FadeInDown.duration(400).delay(400)}>
           <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Feather name="check-circle" size={18} color={NEON_GREEN} />
-              <Text style={styles.statValue}>
+            <View style={[styles.statItem, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
+              <Feather name="check-circle" size={18} color={cp.neonGreen} />
+              <Text style={[styles.statValue, { color: cp.text }]}>
                 {progress?.totalSessions || 0}
               </Text>
-              <Text style={styles.statLabel}>
+              <Text style={[styles.statLabel, { color: cp.textSecondary }]}>
                 Sessions
               </Text>
             </View>
             
-            <View style={styles.statItem}>
-              <Feather name="clock" size={18} color={NEON_CYAN} />
-              <Text style={styles.statValue}>
+            <View style={[styles.statItem, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
+              <Feather name="clock" size={18} color={cp.neonCyan} />
+              <Text style={[styles.statValue, { color: cp.text }]}>
                 {progress?.totalMinutes || 0}
               </Text>
-              <Text style={styles.statLabel}>
+              <Text style={[styles.statLabel, { color: cp.textSecondary }]}>
                 Minutes
               </Text>
             </View>
             
-            <View style={styles.statItem}>
-              <Feather name="calendar" size={18} color={NEON_CYAN} />
-              <Text style={styles.statValue}>
+            <View style={[styles.statItem, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
+              <Feather name="calendar" size={18} color={cp.neonCyan} />
+              <Text style={[styles.statValue, { color: cp.text }]}>
                 {formatLastCompleted(progress?.lastCompletedDate || null)}
               </Text>
-              <Text style={styles.statLabel}>
+              <Text style={[styles.statLabel, { color: cp.textSecondary }]}>
                 Last Done
               </Text>
             </View>
@@ -410,31 +406,24 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xl,
     paddingHorizontal: Spacing['3xl'],
     borderRadius: BorderRadius['2xl'],
-    backgroundColor: 'rgba(0, 255, 136, 0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(0, 255, 136, 0.3)',
   },
   streakNumber: {
     fontSize: 48,
     lineHeight: 56,
     fontWeight: '700',
     marginTop: Spacing.sm,
-    color: NEON_GREEN,
-    textShadowColor: NEON_GREEN,
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 20,
   },
   streakLabel: {
     marginTop: Spacing.xs,
     fontSize: 14,
-    color: 'rgba(255,255,255,0.6)',
   },
   card: {
     marginBottom: Spacing.lg,
-    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
     padding: Spacing.lg,
   },
   workoutHeader: {
@@ -447,8 +436,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: Spacing.xs,
     fontSize: 14,
-    color: NEON_CYAN,
-    textShadowColor: NEON_CYAN,
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 10,
   },
@@ -456,7 +443,6 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs,
     fontSize: 24,
     fontWeight: '600',
-    color: '#fff',
   },
   durationBadge: {
     flexDirection: 'row',
@@ -464,17 +450,14 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.sm,
     borderRadius: BorderRadius.full,
-    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   durationText: {
-    color: 'rgba(255,255,255,0.6)',
     marginLeft: Spacing.xs,
     fontSize: 14,
   },
   phaseDescription: {
     marginBottom: Spacing.lg,
     fontSize: 14,
-    color: 'rgba(255,255,255,0.6)',
   },
   restDayContent: {
     alignItems: 'center',
@@ -494,7 +477,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 14,
     lineHeight: 22,
-    color: 'rgba(255,255,255,0.7)',
     paddingHorizontal: Spacing.md,
   },
   segmentsList: {
@@ -510,10 +492,8 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
     marginRight: Spacing.sm,
-    backgroundColor: NEON_GREEN,
   },
   segmentText: {
-    color: 'rgba(255,255,255,0.6)',
     fontSize: 14,
   },
   buttonsRow: {
@@ -525,7 +505,6 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: BorderRadius.md,
     overflow: 'hidden',
-    shadowColor: NEON_GREEN,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.5,
     shadowRadius: 15,
@@ -551,12 +530,9 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.lg,
     borderRadius: BorderRadius.md,
-    backgroundColor: 'rgba(0, 255, 255, 0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(0, 255, 255, 0.3)',
   },
   quickWorkoutText: {
-    color: NEON_CYAN,
     fontSize: 14,
     fontWeight: '600',
   },
@@ -565,7 +541,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    color: 'rgba(255,255,255,0.6)',
     fontSize: 16,
   },
   recoveryHeader: {
@@ -585,7 +560,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: Spacing.md,
-    backgroundColor: 'rgba(157, 78, 221, 0.15)',
   },
   recoveryText: {
     flex: 1,
@@ -593,10 +567,8 @@ const styles = StyleSheet.create({
   recoveryTitle: {
     fontWeight: '600',
     fontSize: 16,
-    color: '#fff',
   },
   recoverySubtitle: {
-    color: 'rgba(255,255,255,0.6)',
     fontSize: 14,
   },
   statsRow: {
@@ -608,19 +580,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: Spacing.lg,
     borderRadius: BorderRadius.md,
-    backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
   },
   statValue: {
     fontWeight: '600',
     marginTop: Spacing.xs,
     marginBottom: Spacing.xs,
     fontSize: 16,
-    color: '#fff',
   },
   statLabel: {
-    color: 'rgba(255,255,255,0.6)',
     fontSize: 14,
   },
 });

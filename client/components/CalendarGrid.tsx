@@ -2,19 +2,14 @@ import React, { useMemo } from 'react';
 import { StyleSheet, View, Pressable, Text } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
-import { ThemedText } from '@/components/ThemedText';
-import { useTheme } from '@/hooks/useTheme';
+import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 import { Spacing, BorderRadius } from '@/constants/theme';
-
-const NEON_GREEN = '#00FF88';
-const NEON_CYAN = '#00FFFF';
 
 interface CalendarGridProps {
   completedDates: string[];
   restDates?: string[];
   currentMonth: Date;
   onMonthChange: (date: Date) => void;
-  darkMode?: boolean;
 }
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -24,9 +19,8 @@ export function CalendarGrid({
   restDates = [],
   currentMonth,
   onMonthChange,
-  darkMode,
 }: CalendarGridProps) {
-  const { theme } = useTheme();
+  const { cp, isDarkMode } = useThemePreference();
 
   const { days, monthLabel } = useMemo(() => {
     const year = currentMonth.getFullYear();
@@ -100,142 +94,78 @@ export function CalendarGrid({
     const completed = isCompleted(day);
     const today = isToday(day);
 
-    if (darkMode) {
-      if (rest) {
-        return {
-          circle: styles.darkRestCircle,
-          text: styles.restDayText,
-        };
-      }
-      if (completed) {
-        return {
-          circle: styles.darkCompletedCircle,
-          text: styles.completedText,
-        };
-      }
-      if (today) {
-        return {
-          circle: styles.darkTodayCircle,
-          text: styles.darkDayText,
-        };
-      }
-      return {
-        circle: undefined,
-        text: styles.darkDayText,
-      };
-    }
-
     if (rest) {
       return {
-        circle: [styles.restCircle, { backgroundColor: NEON_CYAN + '30', borderColor: NEON_CYAN + '60' }],
-        text: [styles.dayText, { color: NEON_CYAN }],
+        circle: {
+          backgroundColor: cp.neonCyan + '30',
+          borderWidth: 1,
+          borderColor: cp.neonCyan + '60',
+        },
+        text: { color: cp.neonCyan, fontWeight: '500' as const, fontSize: 12, textAlign: 'center' as const },
       };
     }
     if (completed) {
       return {
-        circle: [styles.completedCircle, { backgroundColor: theme.success }],
-        text: styles.completedText,
+        circle: {
+          backgroundColor: cp.neonGreen,
+          shadowColor: cp.neonGreen,
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: 0.8,
+          shadowRadius: 8,
+          elevation: 8,
+        },
+        text: { color: '#FFFFFF', fontWeight: '600' as const, fontSize: 12, textAlign: 'center' as const },
       };
     }
     if (today) {
       return {
-        circle: [styles.todayCircle, { borderColor: theme.primary }],
-        text: styles.dayText,
+        circle: { borderWidth: 2, borderColor: cp.neonCyan },
+        text: { color: cp.text, fontSize: 12, textAlign: 'center' as const },
       };
     }
     return {
       circle: undefined,
-      text: styles.dayText,
+      text: { color: isDarkMode ? 'rgba(255,255,255,0.8)' : cp.text, fontSize: 12, textAlign: 'center' as const },
     };
   };
 
   const renderLegend = () => {
-    if (!darkMode) return null;
     return (
-      <View style={styles.legendContainer}>
+      <View style={[styles.legendContainer, { borderTopColor: cp.cardBorder }]}>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: NEON_GREEN }]} />
-          <Text style={styles.legendText}>Workout</Text>
+          <View style={[styles.legendDot, { backgroundColor: cp.neonGreen }]} />
+          <Text style={[styles.legendText, { color: cp.textMuted }]}>Workout</Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: NEON_CYAN, opacity: 0.6 }]} />
-          <Text style={styles.legendText}>Rest Day</Text>
+          <View style={[styles.legendDot, { backgroundColor: cp.neonCyan, opacity: 0.6 }]} />
+          <Text style={[styles.legendText, { color: cp.textMuted }]}>Rest Day</Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDotOutline, { borderColor: NEON_CYAN }]} />
-          <Text style={styles.legendText}>Today</Text>
+          <View style={[styles.legendDotOutline, { borderColor: cp.neonCyan }]} />
+          <Text style={[styles.legendText, { color: cp.textMuted }]}>Today</Text>
         </View>
       </View>
     );
   };
 
-  if (darkMode) {
-    return (
-      <View style={styles.darkContainer}>
-        <View style={styles.header}>
-          <Pressable onPress={goToPrevMonth} style={styles.navButton}>
-            <Feather name="chevron-left" size={24} color="#fff" />
-          </Pressable>
-          <Text style={styles.darkMonthLabel}>{monthLabel}</Text>
-          <Pressable onPress={goToNextMonth} style={styles.navButton}>
-            <Feather name="chevron-right" size={24} color="#fff" />
-          </Pressable>
-        </View>
-
-        <View style={styles.weekdayRow}>
-          {WEEKDAYS.map((day, index) => (
-            <View key={index} style={styles.weekdayCell}>
-              <Text style={styles.darkWeekdayText}>
-                {day}
-              </Text>
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.grid}>
-          {days.map((day, index) => {
-            if (day === null) {
-              return <View key={index} style={styles.dayCell} />;
-            }
-            const dayStyle = getDayStyle(day);
-            return (
-              <View key={index} style={styles.dayCell}>
-                <View style={[styles.dayContent, dayStyle.circle]}>
-                  <Text style={dayStyle.text}>
-                    {day}
-                  </Text>
-                </View>
-              </View>
-            );
-          })}
-        </View>
-
-        {renderLegend()}
-      </View>
-    );
-  }
-
   return (
-    <View style={[styles.container, { backgroundColor: theme.backgroundDefault }]}>
+    <View style={[styles.container, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
       <View style={styles.header}>
         <Pressable onPress={goToPrevMonth} style={styles.navButton}>
-          <Feather name="chevron-left" size={24} color={theme.text} />
+          <Feather name="chevron-left" size={24} color={cp.text} />
         </Pressable>
-        <ThemedText type="h4">{monthLabel}</ThemedText>
+        <Text style={[styles.monthLabel, { color: cp.text }]}>{monthLabel}</Text>
         <Pressable onPress={goToNextMonth} style={styles.navButton}>
-          <Feather name="chevron-right" size={24} color={theme.text} />
+          <Feather name="chevron-right" size={24} color={cp.text} />
         </Pressable>
       </View>
 
       <View style={styles.weekdayRow}>
         {WEEKDAYS.map((day, index) => (
           <View key={index} style={styles.weekdayCell}>
-            <ThemedText
-              type="caption"
-              style={[styles.weekdayText, { color: theme.textSecondary }]}
-            >
+            <Text style={[styles.weekdayText, { color: cp.textSecondary }]}>
               {day}
-            </ThemedText>
+            </Text>
           </View>
         ))}
       </View>
@@ -249,14 +179,16 @@ export function CalendarGrid({
           return (
             <View key={index} style={styles.dayCell}>
               <View style={[styles.dayContent, dayStyle.circle]}>
-                <ThemedText type="small" style={dayStyle.text}>
+                <Text style={dayStyle.text}>
                   {day}
-                </ThemedText>
+                </Text>
               </View>
             </View>
           );
         })}
       </View>
+
+      {renderLegend()}
     </View>
   );
 }
@@ -265,13 +197,7 @@ const styles = StyleSheet.create({
   container: {
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
-  },
-  darkContainer: {
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
-    backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
   },
   header: {
     flexDirection: 'row',
@@ -282,10 +208,9 @@ const styles = StyleSheet.create({
   navButton: {
     padding: Spacing.xs,
   },
-  darkMonthLabel: {
+  monthLabel: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#fff',
   },
   weekdayRow: {
     flexDirection: 'row',
@@ -297,11 +222,7 @@ const styles = StyleSheet.create({
   },
   weekdayText: {
     fontWeight: '600',
-  },
-  darkWeekdayText: {
-    fontWeight: '600',
     fontSize: 14,
-    color: 'rgba(255,255,255,0.6)',
   },
   grid: {
     flexDirection: 'row',
@@ -321,52 +242,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  todayCircle: {
-    borderWidth: 2,
-  },
-  darkTodayCircle: {
-    borderWidth: 2,
-    borderColor: NEON_CYAN,
-  },
-  completedCircle: {
-    borderWidth: 0,
-  },
-  darkCompletedCircle: {
-    backgroundColor: NEON_GREEN,
-    shadowColor: NEON_GREEN,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  restCircle: {
-    borderWidth: 1,
-  },
-  darkRestCircle: {
-    backgroundColor: 'rgba(0, 255, 255, 0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 255, 255, 0.35)',
-  },
-  dayText: {
-    textAlign: 'center',
-  },
-  darkDayText: {
-    textAlign: 'center',
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.8)',
-  },
-  completedText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 12,
-    textAlign: 'center',
-  },
-  restDayText: {
-    color: NEON_CYAN,
-    fontWeight: '500',
-    fontSize: 12,
-    textAlign: 'center',
-  },
   legendContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -374,7 +249,6 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
     paddingTop: Spacing.md,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.08)',
   },
   legendItem: {
     flexDirection: 'row',
@@ -393,7 +267,6 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   legendText: {
-    color: 'rgba(255,255,255,0.5)',
     fontSize: 11,
   },
 });

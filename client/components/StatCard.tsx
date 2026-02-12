@@ -2,8 +2,7 @@ import React from 'react';
 import { StyleSheet, View, Text } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
-import { ThemedText } from '@/components/ThemedText';
-import { useTheme } from '@/hooks/useTheme';
+import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 import { useAccessibility } from '@/contexts/AccessibilityContext';
 import { Spacing, BorderRadius } from '@/constants/theme';
 
@@ -12,44 +11,24 @@ interface StatCardProps {
   label: string;
   value: string | number;
   color?: string;
-  darkMode?: boolean;
 }
 
-export function StatCard({ icon, label, value, color, darkMode }: StatCardProps) {
-  const { theme } = useTheme();
-  const { fontScale, colors } = useAccessibility();
-  const iconColor = color || theme.primary;
-
-  if (darkMode) {
-    return (
-      <View style={styles.darkCard}>
-        <View style={[styles.iconContainer, { backgroundColor: `${iconColor}20` }]}>
-          <Feather name={icon} size={20 * fontScale} color={iconColor} />
-        </View>
-        <Text style={[styles.darkValue, { fontSize: 24 * fontScale }]}>
-          {value}
-        </Text>
-        <Text style={[styles.darkLabel, { fontSize: 11 * fontScale }]}>
-          {label}
-        </Text>
-      </View>
-    );
-  }
+export function StatCard({ icon, label, value, color }: StatCardProps) {
+  const { cp } = useThemePreference();
+  const { fontScale } = useAccessibility();
+  const iconColor = color || cp.neonGreen;
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
-      <View style={[styles.iconContainer, { backgroundColor: `${iconColor}15` }]}>
+    <View style={[styles.card, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
+      <View style={[styles.iconContainer, { backgroundColor: `${iconColor}20` }]}>
         <Feather name={icon} size={20 * fontScale} color={iconColor} />
       </View>
-      <ThemedText type="h3" style={[styles.value, { fontSize: 24 * fontScale }]}>
+      <Text style={[styles.value, { fontSize: 24 * fontScale, color: cp.text }]}>
         {value}
-      </ThemedText>
-      <ThemedText
-        type="small"
-        style={[styles.label, { color: theme.textSecondary, fontSize: 11 * fontScale }]}
-      >
+      </Text>
+      <Text style={[styles.label, { color: cp.textSecondary, fontSize: 11 * fontScale }]}>
         {label}
-      </ThemedText>
+      </Text>
     </View>
   );
 }
@@ -60,15 +39,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
     alignItems: 'center',
-  },
-  darkCard: {
-    flex: 1,
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.lg,
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
   },
   iconContainer: {
     width: 40,
@@ -80,19 +51,9 @@ const styles = StyleSheet.create({
   },
   value: {
     marginBottom: Spacing.xs,
-  },
-  darkValue: {
-    marginBottom: Spacing.xs,
-    fontSize: 20,
     fontWeight: '600',
-    color: '#fff',
   },
   label: {
     textAlign: 'center',
-  },
-  darkLabel: {
-    textAlign: 'center',
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.6)',
   },
 });

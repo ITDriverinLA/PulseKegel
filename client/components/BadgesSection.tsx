@@ -8,6 +8,7 @@ import { BADGE_DEFINITIONS, BadgeDefinition, EarnedBadge, getBadgeById } from '@
 import { storage } from '@/lib/storage';
 import { Spacing, BorderRadius } from '@/constants/theme';
 import { useAccessibility } from '@/contexts/AccessibilityContext';
+import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 
 const CATEGORY_ORDER: BadgeDefinition['category'][] = ['streak', 'milestone', 'phase', 'mastery', 'special'];
 const CATEGORY_LABELS: Record<BadgeDefinition['category'], string> = {
@@ -20,6 +21,7 @@ const CATEGORY_LABELS: Record<BadgeDefinition['category'], string> = {
 
 export function BadgesSection() {
   const { fontScale, highContrast, colors } = useAccessibility();
+  const { cp, isDarkMode } = useThemePreference();
   const [earnedBadges, setEarnedBadges] = useState<EarnedBadge[]>([]);
   const [selectedBadge, setSelectedBadge] = useState<BadgeDefinition | null>(null);
   const [selectedEarned, setSelectedEarned] = useState<EarnedBadge | null>(null);
@@ -51,6 +53,7 @@ export function BadgesSection() {
         key={badge.id}
         style={[
           styles.badgeItem,
+          { borderColor: cp.cardBg, backgroundColor: isDarkMode ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' },
           isEarned && { borderColor: `${badge.color}30` },
           highContrast && isEarned && { borderColor: colors.border },
         ]}
@@ -62,20 +65,20 @@ export function BadgesSection() {
             styles.badgeIcon,
             isEarned
               ? { backgroundColor: `${badge.color}15` }
-              : { backgroundColor: 'rgba(255,255,255,0.03)' },
+              : { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)' },
           ]}
         >
           <Feather
             name={badge.icon as any}
             size={20}
-            color={isEarned ? badge.color : 'rgba(255,255,255,0.15)'}
+            color={isEarned ? badge.color : cp.textMuted}
           />
         </View>
         <Text
           style={[
             styles.badgeName,
             { fontSize: 10 * fontScale },
-            isEarned ? { color: 'rgba(255,255,255,0.9)' } : { color: 'rgba(255,255,255,0.25)' },
+            isEarned ? { color: cp.text } : { color: cp.textMuted },
           ]}
           numberOfLines={1}
         >
@@ -86,22 +89,22 @@ export function BadgesSection() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Feather name="award" size={16} color="#fbbf24" />
-          <Text style={[styles.headerTitle, { fontSize: 15 * fontScale }]}>
+          <Text style={[styles.headerTitle, { fontSize: 15 * fontScale, color: cp.text }]}>
             Badges
           </Text>
         </View>
         <View style={styles.headerRight}>
-          <Text style={[styles.progressText, { fontSize: 12 * fontScale }]}>
+          <Text style={[styles.progressText, { fontSize: 12 * fontScale, color: cp.textMuted }]}>
             {earnedCount}/{totalCount}
           </Text>
         </View>
       </View>
 
-      <View style={styles.progressBar}>
+      <View style={[styles.progressBar, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' }]}>
         <View
           style={[
             styles.progressFill,
@@ -116,7 +119,7 @@ export function BadgesSection() {
 
         return (
           <View key={category} style={styles.categorySection}>
-            <Text style={[styles.categoryLabel, { fontSize: 11 * fontScale }]}>
+            <Text style={[styles.categoryLabel, { fontSize: 11 * fontScale, color: cp.textMuted }]}>
               {CATEGORY_LABELS[category]}
             </Text>
             <View style={styles.badgeGrid}>
@@ -133,13 +136,13 @@ export function BadgesSection() {
         onRequestClose={() => setSelectedBadge(null)}
       >
         <Pressable
-          style={styles.modalOverlay}
+          style={[styles.modalOverlay, { backgroundColor: cp.overlay }]}
           onPress={() => setSelectedBadge(null)}
         >
           <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
             <LinearGradient
-              colors={['rgba(20, 10, 40, 0.98)', 'rgba(10, 20, 40, 0.98)']}
-              style={styles.modalGradient}
+              colors={isDarkMode ? ['rgba(20, 10, 40, 0.98)', 'rgba(10, 20, 40, 0.98)'] : ['rgba(255, 255, 255, 0.98)', 'rgba(245, 247, 252, 0.98)']}
+              style={[styles.modalGradient, { borderColor: cp.cardBorder }]}
             >
               {selectedBadge ? (
                 <>
@@ -149,7 +152,7 @@ export function BadgesSection() {
                       {
                         borderColor: selectedEarned
                           ? `${selectedBadge.color}40`
-                          : 'rgba(255,255,255,0.08)',
+                          : cp.cardBorder,
                       },
                     ]}
                   >
@@ -159,7 +162,7 @@ export function BadgesSection() {
                         {
                           backgroundColor: selectedEarned
                             ? `${selectedBadge.color}15`
-                            : 'rgba(255,255,255,0.03)',
+                            : isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
                         },
                       ]}
                     >
@@ -169,7 +172,7 @@ export function BadgesSection() {
                         color={
                           selectedEarned
                             ? selectedBadge.color
-                            : 'rgba(255,255,255,0.15)'
+                            : cp.textMuted
                         }
                       />
                     </View>
@@ -182,14 +185,14 @@ export function BadgesSection() {
                         fontSize: 20 * fontScale,
                         color: selectedEarned
                           ? selectedBadge.color
-                          : 'rgba(255,255,255,0.3)',
+                          : cp.textMuted,
                       },
                     ]}
                   >
                     {selectedBadge.name}
                   </Text>
 
-                  <Text style={[styles.modalDescription, { fontSize: 14 * fontScale }]}>
+                  <Text style={[styles.modalDescription, { fontSize: 14 * fontScale, color: cp.textSecondary }]}>
                     {selectedBadge.description}
                   </Text>
 
@@ -201,20 +204,20 @@ export function BadgesSection() {
                       </Text>
                     </View>
                   ) : (
-                    <View style={styles.lockedTag}>
-                      <Feather name="lock" size={14} color="rgba(255,255,255,0.3)" />
-                      <Text style={[styles.lockedTagText, { fontSize: 12 * fontScale }]}>
+                    <View style={[styles.lockedTag, { borderColor: cp.cardBorder }]}>
+                      <Feather name="lock" size={14} color={cp.textMuted} />
+                      <Text style={[styles.lockedTagText, { fontSize: 12 * fontScale, color: cp.textMuted }]}>
                         Not yet earned
                       </Text>
                     </View>
                   )}
 
                   <Pressable
-                    style={styles.modalDismiss}
+                    style={[styles.modalDismiss, { backgroundColor: cp.cardBorder }]}
                     onPress={() => setSelectedBadge(null)}
                     testID="button-dismiss-badge-detail"
                   >
-                    <Text style={styles.modalDismissText}>Close</Text>
+                    <Text style={[styles.modalDismissText, { color: cp.textSecondary }]}>Close</Text>
                   </Pressable>
                 </>
               ) : null}
@@ -229,11 +232,9 @@ export function BadgesSection() {
 const styles = StyleSheet.create({
   container: {
     marginTop: Spacing.lg,
-    backgroundColor: 'rgba(255,255,255,0.04)',
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
   },
   header: {
     flexDirection: 'row',
@@ -247,17 +248,14 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   headerTitle: {
-    color: '#fff',
     fontWeight: '700',
   },
   headerRight: {},
   progressText: {
-    color: 'rgba(255,255,255,0.5)',
     fontWeight: '600',
   },
   progressBar: {
     height: 3,
-    backgroundColor: 'rgba(255,255,255,0.06)',
     borderRadius: 2,
     marginBottom: Spacing.md,
     overflow: 'hidden',
@@ -271,7 +269,6 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   categoryLabel: {
-    color: 'rgba(255,255,255,0.4)',
     fontWeight: '600',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
@@ -288,8 +285,6 @@ const styles = StyleSheet.create({
     padding: Spacing.sm,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
-    backgroundColor: 'rgba(255,255,255,0.02)',
   },
   badgeIcon: {
     width: 40,
@@ -305,7 +300,6 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: Spacing.xl,
@@ -321,7 +315,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
   },
   modalIconOuter: {
     width: 88,
@@ -344,7 +337,6 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   modalDescription: {
-    color: 'rgba(255,255,255,0.6)',
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: Spacing.lg,
@@ -370,21 +362,17 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
     marginBottom: Spacing.lg,
   },
   lockedTagText: {
-    color: 'rgba(255,255,255,0.3)',
     fontWeight: '600',
   },
   modalDismiss: {
     paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.sm,
     borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.08)',
   },
   modalDismissText: {
-    color: 'rgba(255,255,255,0.6)',
     fontWeight: '600',
     fontSize: 14,
   },

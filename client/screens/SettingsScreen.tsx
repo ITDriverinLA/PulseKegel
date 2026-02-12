@@ -20,15 +20,11 @@ import { storage, UserSettings, defaultSettings } from '@/lib/storage';
 import { hapticsManager } from '@/lib/hapticsManager';
 import { useAccessibility } from '@/contexts/AccessibilityContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-
-const NEON_GREEN = '#00FF88';
-const NEON_CYAN = '#00FFFF';
-const NEON_PINK = '#FF3366';
-const NEON_PURPLE = '#9D4EDD';
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -37,6 +33,7 @@ export default function SettingsScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { refresh: refreshAccessibility, fontScale, colors } = useAccessibility();
   const { isSubscribed, isTrialActive, trialDaysRemaining, restorePurchases, hasAccess } = useSubscription();
+  const { cp, isDarkMode, toggleDarkMode } = useThemePreference();
   const [isRestoring, setIsRestoring] = useState(false);
 
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
@@ -144,7 +141,7 @@ export default function SettingsScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={['#0a0a1a', '#1a0a2e', '#0a1a2e', '#0a0a1a']}
+        colors={cp.gradient as unknown as [string, string, ...string[]]}
         style={StyleSheet.absoluteFill}
       />
       <ScrollView
@@ -156,18 +153,31 @@ export default function SettingsScreen() {
         }}
         scrollIndicatorInsets={{ bottom: insets.bottom }}
       >
+        <Animated.View entering={FadeInDown.duration(400).delay(50)}>
+          <Text style={[styles.sectionTitle, { color: cp.neonCyan, textShadowColor: isDarkMode ? cp.neonCyan : 'transparent' }]}>APPEARANCE</Text>
+          <View style={[styles.card, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
+            <Toggle
+              label="Dark Mode"
+              value={isDarkMode}
+              onValueChange={toggleDarkMode}
+              activeColor={cp.neonGreen}
+              labelColor={cp.text}
+            />
+          </View>
+        </Animated.View>
+
         <Animated.View entering={FadeInDown.duration(400).delay(100)}>
-          <Text style={styles.sectionTitle}>HAPTIC FEEDBACK</Text>
-          <View style={styles.card}>
+          <Text style={[styles.sectionTitle, { color: cp.neonCyan, textShadowColor: isDarkMode ? cp.neonCyan : 'transparent' }]}>HAPTIC FEEDBACK</Text>
+          <View style={[styles.card, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
             <Toggle
               label="Enable Haptics"
               value={settings.hapticsEnabled}
               onValueChange={(value) => updateSetting('hapticsEnabled', value)}
-              activeColor={NEON_GREEN}
-              labelColor="#fff"
+              activeColor={cp.neonGreen}
+              labelColor={cp.text}
             />
 
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: cp.divider }]} />
 
             <SegmentedControl
               label="Haptic Intensity"
@@ -178,13 +188,13 @@ export default function SettingsScreen() {
               ]}
               value={settings.hapticIntensity}
               onChange={(value) => updateSetting('hapticIntensity', value)}
-              labelColor="#fff"
-              trackColor="rgba(255,255,255,0.1)"
-              indicatorColor="rgba(255,255,255,0.2)"
-              textColor="#fff"
+              labelColor={cp.text}
+              trackColor={cp.inputBg}
+              indicatorColor={isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'}
+              textColor={cp.text}
             />
 
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: cp.divider }]} />
 
             <SegmentedControl
               label="Rest Cue Style"
@@ -195,58 +205,58 @@ export default function SettingsScreen() {
               ]}
               value={settings.restCueStyle}
               onChange={(value) => updateSetting('restCueStyle', value)}
-              labelColor="#fff"
-              trackColor="rgba(255,255,255,0.1)"
-              indicatorColor="rgba(255,255,255,0.2)"
-              textColor="#fff"
+              labelColor={cp.text}
+              trackColor={cp.inputBg}
+              indicatorColor={isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'}
+              textColor={cp.text}
             />
           </View>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(400).delay(200)}>
-          <Text style={styles.sectionTitle}>ACCESSIBILITY</Text>
-          <View style={styles.card}>
+          <Text style={[styles.sectionTitle, { color: cp.neonCyan, textShadowColor: isDarkMode ? cp.neonCyan : 'transparent' }]}>ACCESSIBILITY</Text>
+          <View style={[styles.card, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
             <Toggle
               label="High Contrast Mode"
               value={settings.highContrastMode}
               onValueChange={(value) => updateSetting('highContrastMode', value)}
-              activeColor={NEON_GREEN}
-              labelColor="#fff"
+              activeColor={cp.neonGreen}
+              labelColor={cp.text}
             />
 
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: cp.divider }]} />
 
             <Toggle
               label="Large Text"
               value={settings.largeTextMode}
               onValueChange={(value) => updateSetting('largeTextMode', value)}
-              activeColor={NEON_GREEN}
-              labelColor="#fff"
+              activeColor={cp.neonGreen}
+              labelColor={cp.text}
             />
           </View>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(400).delay(300)}>
-          <Text style={styles.sectionTitle}>WORKOUT MODE</Text>
-          <View style={styles.card}>
+          <Text style={[styles.sectionTitle, { color: cp.neonCyan, textShadowColor: isDarkMode ? cp.neonCyan : 'transparent' }]}>WORKOUT MODE</Text>
+          <View style={[styles.card, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
             <Toggle
               label="Recovery Mode"
               value={settings.recoveryMode}
               onValueChange={(value) => updateSetting('recoveryMode', value)}
-              activeColor={NEON_GREEN}
-              labelColor="#fff"
+              activeColor={cp.neonGreen}
+              labelColor={cp.text}
             />
-            <Text style={styles.settingDescription}>
+            <Text style={[styles.settingDescription, { color: cp.textSecondary }]}>
               Reduces intensity by 50% and adds a relaxation segment at the end of
               each workout.
             </Text>
 
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: cp.divider }]} />
 
             <View style={styles.sliderContainer}>
               <View style={styles.sliderHeader}>
-                <Text style={styles.sliderLabel}>Rest Duration</Text>
-                <Text style={styles.sliderValue}>{settings.restDuration}s</Text>
+                <Text style={[styles.sliderLabel, { color: cp.text }]}>Rest Duration</Text>
+                <Text style={[styles.sliderValue, { color: cp.neonGreen }]}>{settings.restDuration}s</Text>
               </View>
               <Slider
                 style={styles.slider}
@@ -255,21 +265,21 @@ export default function SettingsScreen() {
                 step={1}
                 value={settings.restDuration}
                 onSlidingComplete={(value: number) => updateSetting('restDuration', value)}
-                minimumTrackTintColor={NEON_GREEN}
-                maximumTrackTintColor="rgba(255,255,255,0.2)"
-                thumbTintColor={NEON_GREEN}
+                minimumTrackTintColor={cp.neonGreen}
+                maximumTrackTintColor={cp.inputBg}
+                thumbTintColor={cp.neonGreen}
               />
-              <Text style={styles.settingDescription}>
+              <Text style={[styles.settingDescription, { color: cp.textSecondary }]}>
                 Time between reps (2-10 seconds)
               </Text>
             </View>
 
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: cp.divider }]} />
 
             <View style={styles.sliderContainer}>
               <View style={styles.sliderHeader}>
-                <Text style={styles.sliderLabel}>Block Rest Duration</Text>
-                <Text style={styles.sliderValue}>{settings.blockRestDuration}s</Text>
+                <Text style={[styles.sliderLabel, { color: cp.text }]}>Block Rest Duration</Text>
+                <Text style={[styles.sliderValue, { color: cp.neonCyan }]}>{settings.blockRestDuration}s</Text>
               </View>
               <Slider
                 style={styles.slider}
@@ -278,49 +288,49 @@ export default function SettingsScreen() {
                 step={5}
                 value={settings.blockRestDuration}
                 onSlidingComplete={(value: number) => updateSetting('blockRestDuration', value)}
-                minimumTrackTintColor={NEON_CYAN}
-                maximumTrackTintColor="rgba(255,255,255,0.2)"
-                thumbTintColor={NEON_CYAN}
+                minimumTrackTintColor={cp.neonCyan}
+                maximumTrackTintColor={cp.inputBg}
+                thumbTintColor={cp.neonCyan}
               />
-              <Text style={styles.settingDescription}>
+              <Text style={[styles.settingDescription, { color: cp.textSecondary }]}>
                 Breathing break between exercise blocks (10-45 seconds)
               </Text>
             </View>
 
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: cp.divider }]} />
 
             <Toggle
               label="Cooldown Enabled"
               value={settings.cooldownEnabled}
               onValueChange={(value) => updateSetting('cooldownEnabled', value)}
-              activeColor={NEON_GREEN}
-              labelColor="#fff"
+              activeColor={cp.neonGreen}
+              labelColor={cp.text}
             />
-            <Text style={styles.settingDescription}>
+            <Text style={[styles.settingDescription, { color: cp.textSecondary }]}>
               Skip the cooldown segment at the end of workouts when disabled.
             </Text>
           </View>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(400).delay(400)}>
-          <Text style={styles.sectionTitle}>PERSONALIZATION</Text>
-          <View style={styles.card}>
+          <Text style={[styles.sectionTitle, { color: cp.neonCyan, textShadowColor: isDarkMode ? cp.neonCyan : 'transparent' }]}>PERSONALIZATION</Text>
+          <View style={[styles.card, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
             <View style={styles.settingRow}>
-              <Text style={styles.settingLabel}>Your Name</Text>
+              <Text style={[styles.settingLabel, { color: cp.text }]}>Your Name</Text>
               <TextInput
-                style={styles.nameInput}
+                style={[styles.nameInput, { backgroundColor: cp.inputBg, color: cp.text, borderColor: `${cp.neonGreen}4D` }]}
                 value={settings.userName}
                 onChangeText={(text) => updateSetting('userName', text)}
                 placeholder="Enter your name"
-                placeholderTextColor="rgba(255,255,255,0.4)"
+                placeholderTextColor={cp.textMuted}
                 autoCapitalize="words"
               />
             </View>
-            <Text style={styles.settingDescription}>
+            <Text style={[styles.settingDescription, { color: cp.textSecondary }]}>
               Used to personalize your weekly progress messages.
             </Text>
             
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: cp.divider }]} />
             
             <SegmentedControl
               label="Anatomy Type"
@@ -330,31 +340,31 @@ export default function SettingsScreen() {
               ]}
               value={settings.anatomyType || 'female'}
               onChange={(value) => updateSetting('anatomyType', value as 'male' | 'female')}
-              labelColor="#fff"
-              trackColor="rgba(255,255,255,0.1)"
-              indicatorColor="rgba(255,255,255,0.2)"
-              textColor="#fff"
+              labelColor={cp.text}
+              trackColor={cp.inputBg}
+              indicatorColor={isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'}
+              textColor={cp.text}
             />
-            <Text style={styles.settingDescription}>
+            <Text style={[styles.settingDescription, { color: cp.textSecondary }]}>
               Used to personalize weekly progress insights and health benefits.
             </Text>
           </View>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(400).delay(500)}>
-          <Text style={styles.sectionTitle}>SUBSCRIPTION</Text>
-          <View style={styles.card}>
+          <Text style={[styles.sectionTitle, { color: cp.neonCyan, textShadowColor: isDarkMode ? cp.neonCyan : 'transparent' }]}>SUBSCRIPTION</Text>
+          <View style={[styles.card, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
             <View style={styles.subscriptionStatus}>
               <Feather 
                 name={isSubscribed ? "check-circle" : (isTrialActive ? "clock" : "lock")} 
                 size={24} 
-                color={isSubscribed ? NEON_GREEN : (isTrialActive ? NEON_CYAN : NEON_PINK)} 
+                color={isSubscribed ? cp.neonGreen : (isTrialActive ? cp.neonCyan : cp.neonPink)} 
               />
               <View style={styles.subscriptionInfo}>
-                <Text style={styles.subscriptionTitle}>
+                <Text style={[styles.subscriptionTitle, { color: cp.text }]}>
                   {isSubscribed ? 'Premium Active' : (isTrialActive ? `Free Trial - ${trialDaysRemaining} days left` : 'Trial Expired')}
                 </Text>
-                <Text style={styles.subscriptionDesc}>
+                <Text style={[styles.subscriptionDesc, { color: cp.textSecondary }]}>
                   {isSubscribed ? 'Thank you for supporting PulseKegel!' : (isTrialActive ? 'Enjoying full access during your trial' : 'Subscribe to continue your training')}
                 </Text>
               </View>
@@ -362,25 +372,25 @@ export default function SettingsScreen() {
             
             {!isSubscribed && (
               <>
-                <View style={styles.divider} />
+                <View style={[styles.divider, { backgroundColor: cp.divider }]} />
                 <Pressable onPress={handleManageSubscription} style={styles.subscriptionButton}>
-                  <Feather name="unlock" size={20} color={NEON_GREEN} />
-                  <Text style={[styles.subscriptionButtonText, { color: NEON_GREEN }]}>
+                  <Feather name="unlock" size={20} color={cp.neonGreen} />
+                  <Text style={[styles.subscriptionButtonText, { color: cp.neonGreen }]}>
                     {isTrialActive ? 'View Plans' : 'Subscribe Now'}
                   </Text>
                 </Pressable>
               </>
             )}
             
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: cp.divider }]} />
             
             <Pressable 
               onPress={handleRestorePurchases} 
               style={styles.subscriptionButton}
               disabled={isRestoring}
             >
-              <Feather name="refresh-cw" size={20} color={NEON_CYAN} />
-              <Text style={[styles.subscriptionButtonText, { color: NEON_CYAN }]}>
+              <Feather name="refresh-cw" size={20} color={cp.neonCyan} />
+              <Text style={[styles.subscriptionButtonText, { color: cp.neonCyan }]}>
                 {isRestoring ? 'Restoring...' : 'Restore Purchases'}
               </Text>
             </Pressable>
@@ -388,26 +398,26 @@ export default function SettingsScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(400).delay(600)}>
-          <Text style={styles.sectionTitle}>DATA</Text>
-          <View style={styles.card}>
+          <Text style={[styles.sectionTitle, { color: cp.neonCyan, textShadowColor: isDarkMode ? cp.neonCyan : 'transparent' }]}>DATA</Text>
+          <View style={[styles.card, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
             <Pressable onPress={handleResetProgress} style={styles.dangerButton}>
-              <Feather name="trash-2" size={20} color={NEON_PINK} />
-              <Text style={styles.dangerText}>Reset All Progress</Text>
+              <Feather name="trash-2" size={20} color={cp.neonPink} />
+              <Text style={[styles.dangerText, { color: cp.neonPink }]}>Reset All Progress</Text>
             </Pressable>
             
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: cp.divider }]} />
             
             <Pressable onPress={handleDeleteAllData} style={styles.dangerButton}>
-              <Feather name="user-x" size={20} color={NEON_PINK} />
-              <Text style={styles.dangerText}>Delete All My Data</Text>
+              <Feather name="user-x" size={20} color={cp.neonPink} />
+              <Text style={[styles.dangerText, { color: cp.neonPink }]}>Delete All My Data</Text>
             </Pressable>
           </View>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(400).delay(600)}>
           <View style={styles.footer}>
-            <Text style={styles.footerText}>PulseKegel v1.0.0</Text>
-            <Text style={styles.footerText}>
+            <Text style={[styles.footerText, { color: cp.textMuted }]}>PulseKegel v1.0.0</Text>
+            <Text style={[styles.footerText, { color: cp.textMuted }]}>
               Not medical advice. Consult a healthcare provider for pelvic health concerns.
             </Text>
             <View style={styles.footerLinks}>
@@ -418,9 +428,9 @@ export default function SettingsScreen() {
                 }}
                 style={styles.privacyLink}
               >
-                <Text style={styles.privacyLinkText}>About</Text>
+                <Text style={[styles.privacyLinkText, { color: cp.neonCyan }]}>About</Text>
               </Pressable>
-              <Text style={styles.footerDivider}>|</Text>
+              <Text style={[styles.footerDivider, { color: cp.textMuted }]}>|</Text>
               <Pressable 
                 onPress={() => {
                   const apiUrl = getApiUrl().replace(/\/$/, '');
@@ -428,7 +438,7 @@ export default function SettingsScreen() {
                 }}
                 style={styles.privacyLink}
               >
-                <Text style={styles.privacyLinkText}>Privacy Policy</Text>
+                <Text style={[styles.privacyLinkText, { color: cp.neonCyan }]}>Privacy Policy</Text>
               </Pressable>
             </View>
           </View>
@@ -442,33 +452,33 @@ export default function SettingsScreen() {
         onRequestClose={() => setShowDeleteModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
+          <View style={[styles.modalContainer, { borderColor: `${cp.neonPink}4D` }]}>
             <LinearGradient
-              colors={['#1a1a2e', '#16213e', '#0f0f23']}
+              colors={isDarkMode ? ['#1a1a2e', '#16213e', '#0f0f23'] : ['#fff', '#f8f9fb', '#f0f2f7']}
               style={styles.modalGradient}
             >
-              <View style={styles.modalIconContainer}>
-                <Feather name="alert-triangle" size={48} color={NEON_PINK} />
+              <View style={[styles.modalIconContainer, { backgroundColor: `${cp.neonPink}26` }]}>
+                <Feather name="alert-triangle" size={48} color={cp.neonPink} />
               </View>
               
-              <Text style={styles.modalTitle}>Delete All My Data</Text>
+              <Text style={[styles.modalTitle, { color: cp.text }]}>Delete All My Data</Text>
               
-              <Text style={styles.modalMessage}>
+              <Text style={[styles.modalMessage, { color: isDarkMode ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.7)' }]}>
                 This will permanently delete all your personal information, settings, and workout history.
               </Text>
-              <Text style={styles.modalMessage}>
+              <Text style={[styles.modalMessage, { color: isDarkMode ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.7)' }]}>
                 The app will restart and you will need to set up again.
               </Text>
-              <Text style={[styles.modalMessage, { color: NEON_PINK, marginTop: Spacing.md }]}>
+              <Text style={[styles.modalMessage, { color: cp.neonPink, marginTop: Spacing.md }]}>
                 This action cannot be undone.
               </Text>
               
               <View style={styles.modalButtons}>
                 <Pressable
                   onPress={() => setShowDeleteModal(false)}
-                  style={styles.modalCancelButton}
+                  style={[styles.modalCancelButton, { backgroundColor: cp.inputBg }]}
                 >
-                  <Text style={styles.modalCancelText}>Cancel</Text>
+                  <Text style={[styles.modalCancelText, { color: cp.textSecondary }]}>Cancel</Text>
                 </Pressable>
                 
                 <Pressable
@@ -476,7 +486,7 @@ export default function SettingsScreen() {
                   style={styles.modalDeleteButton}
                 >
                   <LinearGradient
-                    colors={[NEON_PINK, '#cc2952']}
+                    colors={[cp.neonPink, '#cc2952']}
                     style={styles.modalDeleteGradient}
                   >
                     <Text style={styles.modalDeleteText}>Delete Everything</Text>
@@ -504,29 +514,23 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
     marginLeft: Spacing.xs,
     marginTop: Spacing.lg,
-    color: NEON_CYAN,
-    textShadowColor: NEON_CYAN,
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 10,
   },
   card: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: BorderRadius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
     padding: Spacing.md,
     marginBottom: Spacing.sm,
   },
   divider: {
     height: 1,
     marginVertical: Spacing.xs,
-    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   settingDescription: {
     marginTop: Spacing.sm,
     lineHeight: 20,
     fontSize: 12,
-    color: 'rgba(255,255,255,0.5)',
   },
   sliderContainer: {
     paddingVertical: Spacing.sm,
@@ -539,12 +543,10 @@ const styles = StyleSheet.create({
   },
   sliderLabel: {
     fontSize: 16,
-    color: '#fff',
   },
   sliderValue: {
     fontSize: 16,
     fontWeight: '600',
-    color: NEON_GREEN,
   },
   slider: {
     width: '100%',
@@ -556,7 +558,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
   },
   dangerText: {
-    color: NEON_PINK,
     marginLeft: Spacing.md,
     fontSize: 16,
   },
@@ -569,7 +570,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: Spacing.sm,
     fontSize: 12,
-    color: 'rgba(255,255,255,0.4)',
   },
   footerLinks: {
     flexDirection: 'row',
@@ -579,7 +579,6 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   footerDivider: {
-    color: 'rgba(255,255,255,0.3)',
     fontSize: 14,
   },
   privacyLink: {
@@ -588,7 +587,6 @@ const styles = StyleSheet.create({
   privacyLinkText: {
     textAlign: 'center',
     fontSize: 14,
-    color: '#00FFFF',
     textDecorationLine: 'underline',
   },
   settingRow: {
@@ -598,20 +596,16 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs,
   },
   settingLabel: {
-    color: '#fff',
     fontSize: 16,
     marginRight: Spacing.md,
   },
   nameInput: {
     flex: 1,
     height: 40,
-    backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: BorderRadius.md,
     paddingHorizontal: Spacing.md,
-    color: '#fff',
     fontSize: 16,
     borderWidth: 1,
-    borderColor: 'rgba(0,255,136,0.3)',
   },
   modalOverlay: {
     flex: 1,
@@ -626,7 +620,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255, 51, 102, 0.3)',
   },
   modalGradient: {
     padding: Spacing['2xl'],
@@ -636,7 +629,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(255, 51, 102, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: Spacing.lg,
@@ -644,13 +636,11 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#fff',
     marginBottom: Spacing.lg,
     textAlign: 'center',
   },
   modalMessage: {
     fontSize: 15,
-    color: 'rgba(255, 255, 255, 0.8)',
     textAlign: 'center',
     lineHeight: 22,
   },
@@ -665,13 +655,10 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.lg,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   modalCancelText: {
-    color: '#fff',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -701,13 +688,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   subscriptionTitle: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 4,
   },
   subscriptionDesc: {
-    color: 'rgba(255,255,255,0.6)',
     fontSize: 13,
   },
   subscriptionButton: {

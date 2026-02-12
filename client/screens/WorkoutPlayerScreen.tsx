@@ -22,6 +22,7 @@ import { PowerBar } from '@/components/PowerBar';
 import { FormTipsSheet } from '@/components/FormTipsSheet';
 import { BadgeToast } from '@/components/BadgeToast';
 import { useTheme } from '@/hooks/useTheme';
+import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 import { Spacing, BorderRadius, Typography } from '@/constants/theme';
 import { DayTemplate, Segment } from '@/data/workoutProgram';
 import { WorkoutEngine, WorkoutState, WorkoutPhase } from '@/lib/workoutEngine';
@@ -32,17 +33,12 @@ import { RootStackParamList } from '@/navigation/RootStackNavigator';
 type RouteProps = RouteProp<RootStackParamList, 'WorkoutPlayer'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-const NEON_GREEN = '#00FF88';
-const NEON_CYAN = '#00FFFF';
-const NEON_PINK = '#FF3366';
-const NEON_PURPLE = '#9D4EDD';
-
 export default function WorkoutPlayerScreen() {
-  // Keep screen awake during workout
   useKeepAwake();
   
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const { cp, isDarkMode } = useThemePreference();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const { workout, weekNumber, phase } = route.params;
@@ -240,7 +236,6 @@ export default function WorkoutPlayerScreen() {
     if (!engineRef.current) return;
     await hapticsManager.triggerWarning();
     hapticPulseRef.current.stop();
-    // Just stop and exit without recording completion - user must finish to earn streak
     navigation.goBack();
   };
 
@@ -258,7 +253,7 @@ export default function WorkoutPlayerScreen() {
     const color = interpolateColor(
       phaseColorValue.value,
       [0, 1],
-      [NEON_CYAN, NEON_GREEN]
+      [cp.neonCyan, cp.neonGreen]
     );
     return {
       color,
@@ -273,7 +268,7 @@ export default function WorkoutPlayerScreen() {
     const color = interpolateColor(
       phaseColorValue.value,
       [0, 1],
-      [NEON_CYAN, NEON_GREEN]
+      [cp.neonCyan, cp.neonGreen]
     );
     return {
       color,
@@ -298,9 +293,9 @@ export default function WorkoutPlayerScreen() {
   };
 
   const getPhaseLabelColor = () => {
-    if (currentSegment?.type === 'getReady') return NEON_CYAN;
-    if (currentSegment?.type === 'blockRest') return NEON_PURPLE;
-    return currentPhase === 'squeeze' ? NEON_GREEN : NEON_CYAN;
+    if (currentSegment?.type === 'getReady') return cp.neonCyan;
+    if (currentSegment?.type === 'blockRest') return cp.neonPurple;
+    return currentPhase === 'squeeze' ? cp.neonGreen : cp.neonCyan;
   };
 
   const getExerciseDescription = () => {
@@ -329,9 +324,9 @@ export default function WorkoutPlayerScreen() {
 
   if (isComplete) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: cp.bg }]}>
         <LinearGradient
-          colors={['#0a0a1a', '#1a0a2e', '#0a1a2e', '#0a0a1a']}
+          colors={cp.gradient as unknown as [string, string, ...string[]]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFill}
@@ -347,49 +342,49 @@ export default function WorkoutPlayerScreen() {
         >
           <View style={styles.header}>
             <View style={{ width: 40 }} />
-            <ThemedText type="h4" style={{ color: '#fff' }}>Complete</ThemedText>
+            <ThemedText type="h4" style={{ color: cp.text }}>Complete</ThemedText>
             <Pressable onPress={handleClose} style={styles.headerButton}>
-              <Feather name="x" size={24} color="#fff" />
+              <Feather name="x" size={24} color={cp.text} />
             </Pressable>
           </View>
 
           <View style={styles.completeContent}>
             <Animated.View
               entering={ZoomIn.duration(400)}
-              style={[styles.completeIcon, { backgroundColor: `${NEON_GREEN}20` }]}
+              style={[styles.completeIcon, { backgroundColor: `${cp.neonGreen}20` }]}
             >
-              <Feather name="check-circle" size={80} color={NEON_GREEN} />
+              <Feather name="check-circle" size={80} color={cp.neonGreen} />
             </Animated.View>
 
             <Animated.View entering={FadeIn.delay(200)}>
-              <ThemedText type="h1" style={[styles.completeTitle, { color: '#fff' }]}>
+              <ThemedText type="h1" style={[styles.completeTitle, { color: cp.text }]}>
                 Great Job!
               </ThemedText>
               <ThemedText
                 type="body"
-                style={[styles.completeSubtitle, { color: 'rgba(255,255,255,0.6)' }]}
+                style={[styles.completeSubtitle, { color: cp.textSecondary }]}
               >
                 You completed today's workout
               </ThemedText>
             </Animated.View>
 
             <Animated.View entering={FadeIn.delay(400)} style={styles.completeStats}>
-              <View style={[styles.completeStat, { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1 }]}>
-                <Feather name="clock" size={24} color={NEON_CYAN} />
-                <ThemedText type="h3" style={{ marginTop: Spacing.sm, color: '#fff' }}>
+              <View style={[styles.completeStat, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder, borderWidth: 1 }]}>
+                <Feather name="clock" size={24} color={cp.neonCyan} />
+                <ThemedText type="h3" style={{ marginTop: Spacing.sm, color: cp.text }}>
                   {Math.ceil(totalSeconds / 60)}
                 </ThemedText>
-                <ThemedText type="small" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                <ThemedText type="small" style={{ color: cp.textSecondary }}>
                   Minutes
                 </ThemedText>
               </View>
               
-              <View style={[styles.completeStat, { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1 }]}>
-                <Feather name="target" size={24} color={NEON_PINK} />
-                <ThemedText type="h3" style={{ marginTop: Spacing.sm, color: '#fff' }}>
+              <View style={[styles.completeStat, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder, borderWidth: 1 }]}>
+                <Feather name="target" size={24} color={cp.neonPink} />
+                <ThemedText type="h3" style={{ marginTop: Spacing.sm, color: cp.text }}>
                   {workout.segments.reduce((acc, s) => acc + s.sets * s.repsPerSet, 0)}
                 </ThemedText>
-                <ThemedText type="small" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                <ThemedText type="small" style={{ color: cp.textSecondary }}>
                   Reps
                 </ThemedText>
               </View>
@@ -398,7 +393,7 @@ export default function WorkoutPlayerScreen() {
 
           <Pressable
             onPress={handleClose}
-            style={[styles.doneButton, { backgroundColor: NEON_GREEN }]}
+            style={[styles.doneButton, { backgroundColor: cp.neonGreen }]}
           >
             <ThemedText type="body" style={{ color: '#000', fontWeight: '700' }}>
               Done
@@ -417,9 +412,9 @@ export default function WorkoutPlayerScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: cp.bg }]}>
       <LinearGradient
-        colors={['#0a0a1a', '#1a0a2e', '#0a1a2e', '#0a0a1a']}
+        colors={cp.gradient as unknown as [string, string, ...string[]]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
@@ -435,13 +430,13 @@ export default function WorkoutPlayerScreen() {
       >
         <View style={styles.header}>
           <Pressable onPress={handleClose} style={styles.headerButton}>
-            <Feather name="x" size={24} color="rgba(255,255,255,0.8)" />
+            <Feather name="x" size={24} color={cp.text} />
           </Pressable>
-          <ThemedText type="small" style={{ color: 'rgba(255,255,255,0.5)' }}>
+          <ThemedText type="small" style={{ color: cp.textMuted }}>
             Week {weekNumber} - {phase}
           </ThemedText>
           <Pressable onPress={() => setShowTips(true)} style={styles.headerButton}>
-            <Feather name="help-circle" size={24} color="rgba(255,255,255,0.8)" />
+            <Feather name="help-circle" size={24} color={cp.text} />
           </Pressable>
         </View>
 
@@ -451,9 +446,9 @@ export default function WorkoutPlayerScreen() {
               style={[
                 styles.phaseLabel,
                 currentSegment?.type === 'getReady'
-                  ? { color: NEON_CYAN, textShadowColor: NEON_CYAN, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 20, fontSize: 36 }
+                  ? { color: cp.neonCyan, textShadowColor: cp.neonCyan, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 20, fontSize: 36 }
                   : currentSegment?.type === 'blockRest' 
-                    ? { color: NEON_PURPLE, textShadowColor: NEON_PURPLE, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 20 }
+                    ? { color: cp.neonPurple, textShadowColor: cp.neonPurple, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 20 }
                     : phaseLabelStyle,
               ]}
             >
@@ -476,7 +471,7 @@ export default function WorkoutPlayerScreen() {
                 <Animated.Text style={[styles.countdown, countdownStyle]}>
                   {workoutState?.secondsRemaining || 0}
                 </Animated.Text>
-                <ThemedText type="small" style={styles.countdownLabel}>
+                <ThemedText type="small" style={[styles.countdownLabel, { color: cp.textMuted }]}>
                   {(workoutState?.secondsRemaining || 0) === 1 ? 'second' : 'seconds'}
                 </ThemedText>
               </View>
@@ -484,16 +479,16 @@ export default function WorkoutPlayerScreen() {
           </View>
 
           <View style={styles.segmentInfo}>
-            <ThemedText type="h4" style={[styles.segmentName, { color: '#fff' }]}>
+            <ThemedText type="h4" style={[styles.segmentName, { color: cp.text }]}>
               {currentSegment?.type === 'getReady' ? 'Get Ready' : currentSegment?.name || ''}
             </ThemedText>
-            <Text style={styles.exerciseDescription}>
+            <Text style={[styles.exerciseDescription, { color: cp.textMuted }]}>
               {getExerciseDescription()}
             </Text>
             {currentSegment?.type !== 'getReady' ? (
               <ThemedText
                 type="body"
-                style={[styles.segmentDetail, { color: 'rgba(255,255,255,0.5)' }]}
+                style={[styles.segmentDetail, { color: cp.textMuted }]}
               >
                 Set {setInfo.current} of {setInfo.total} • Rep {repInfo.current} of{' '}
                 {repInfo.total}
@@ -501,7 +496,7 @@ export default function WorkoutPlayerScreen() {
             ) : (
               <ThemedText
                 type="body"
-                style={[styles.segmentDetail, { color: 'rgba(255,255,255,0.5)' }]}
+                style={[styles.segmentDetail, { color: cp.textMuted }]}
               >
                 Prepare for your workout
               </ThemedText>
@@ -509,15 +504,15 @@ export default function WorkoutPlayerScreen() {
           </View>
 
           <View style={styles.progressBarContainer}>
-            <View style={styles.progressBar}>
+            <View style={[styles.progressBar, { backgroundColor: cp.cardBorder }]}>
               <LinearGradient
-                colors={[NEON_GREEN, NEON_CYAN]}
+                colors={[cp.neonGreen, cp.neonCyan]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={[styles.progressFill, { width: `${ringProgress * 100}%` }]}
               />
             </View>
-            <ThemedText type="small" style={styles.progressText}>
+            <ThemedText type="small" style={[styles.progressText, { color: cp.textMuted }]}>
               {Math.round(ringProgress * 100)}%
             </ThemedText>
           </View>
@@ -526,10 +521,10 @@ export default function WorkoutPlayerScreen() {
         <View style={styles.controls}>
           <Pressable
             onPress={handlePauseResume}
-            style={styles.mainButton}
+            style={[styles.mainButton, { shadowColor: cp.neonGreen }]}
           >
             <LinearGradient
-              colors={[NEON_GREEN, '#00CC66']}
+              colors={[cp.neonGreen, isDarkMode ? '#00CC66' : '#00994D']}
               style={styles.mainButtonGradient}
             >
               <Feather
@@ -543,16 +538,16 @@ export default function WorkoutPlayerScreen() {
           <View style={styles.secondaryControls}>
             <Pressable
               onPress={handleSkip}
-              style={styles.secondaryButton}
+              style={[styles.secondaryButton, { backgroundColor: cp.cardBorder, borderColor: cp.cardBorder }]}
             >
-              <Feather name="skip-forward" size={20} color="rgba(255,255,255,0.8)" />
-              <ThemedText type="small" style={{ marginLeft: Spacing.xs, color: 'rgba(255,255,255,0.8)' }}>
+              <Feather name="skip-forward" size={20} color={cp.text} />
+              <ThemedText type="small" style={{ marginLeft: Spacing.xs, color: cp.text }}>
                 Skip
               </ThemedText>
             </Pressable>
 
             <Pressable onPress={handleEnd}>
-              <ThemedText type="small" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              <ThemedText type="small" style={{ color: cp.textMuted }}>
                 End Workout
               </ThemedText>
             </Pressable>
@@ -568,7 +563,6 @@ export default function WorkoutPlayerScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a1a',
   },
   content: {
     flex: 1,
@@ -600,7 +594,6 @@ const styles = StyleSheet.create({
   },
   exerciseDescription: {
     fontSize: 13,
-    color: 'rgba(255,255,255,0.5)',
     textAlign: 'center',
     marginBottom: Spacing.xs,
     fontStyle: 'italic',
@@ -622,7 +615,6 @@ const styles = StyleSheet.create({
     letterSpacing: -2,
   },
   countdownLabel: {
-    color: 'rgba(255,255,255,0.4)',
     marginTop: Spacing.xs,
     textTransform: 'uppercase',
     letterSpacing: 2,
@@ -646,7 +638,6 @@ const styles = StyleSheet.create({
   progressBar: {
     flex: 1,
     height: 6,
-    backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: 3,
     overflow: 'hidden',
   },
@@ -655,7 +646,6 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   progressText: {
-    color: 'rgba(255,255,255,0.5)',
     width: 40,
     textAlign: 'right',
   },
@@ -666,7 +656,6 @@ const styles = StyleSheet.create({
   mainButton: {
     marginBottom: Spacing.xl,
     borderRadius: 40,
-    shadowColor: NEON_GREEN,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.5,
     shadowRadius: 20,
@@ -690,9 +679,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     paddingHorizontal: Spacing.lg,
     borderRadius: BorderRadius.full,
-    backgroundColor: 'rgba(255,255,255,0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
   },
   completeContent: {
     flex: 1,

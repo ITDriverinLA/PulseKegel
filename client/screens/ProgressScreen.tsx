@@ -17,11 +17,7 @@ import { BadgesSection } from '@/components/BadgesSection';
 import { Spacing, BorderRadius } from '@/constants/theme';
 import { storage, UserProgress } from '@/lib/storage';
 import { useAccessibility } from '@/contexts/AccessibilityContext';
-
-const NEON_GREEN = '#00FF88';
-const NEON_CYAN = '#00FFFF';
-const NEON_PINK = '#FF3366';
-const NEON_PURPLE = '#a855f7';
+import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 
 export default function ProgressScreen() {
   const insets = useSafeAreaInsets();
@@ -29,6 +25,7 @@ export default function ProgressScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const navigation = useNavigation<NativeStackNavigationProp<ProgressStackParamList>>();
   const { fontScale, colors, highContrast } = useAccessibility();
+  const { cp, isDarkMode } = useThemePreference();
 
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [restDates, setRestDates] = useState<string[]>([]);
@@ -114,7 +111,7 @@ export default function ProgressScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={['#0a0a1a', '#1a0a2e', '#0a1a2e', '#0a0a1a']}
+        colors={cp.gradient as unknown as [string, string, ...string[]]}
         style={StyleSheet.absoluteFill}
       />
       <ScrollView
@@ -130,7 +127,7 @@ export default function ProgressScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={NEON_CYAN}
+            tintColor={cp.neonCyan}
           />
         }
       >
@@ -144,24 +141,21 @@ export default function ProgressScreen() {
                 icon="zap"
                 label="Current Streak"
                 value={progress.currentStreak}
-                color={NEON_GREEN}
-                darkMode
+                color={cp.neonGreen}
               />
               <View style={{ width: Spacing.sm }} />
               <StatCard
                 icon="check-circle"
                 label="Total Sessions"
                 value={progress.totalSessions}
-                color={NEON_CYAN}
-                darkMode
+                color={cp.neonCyan}
               />
               <View style={{ width: Spacing.sm }} />
               <StatCard
                 icon="clock"
                 label="Total Minutes"
                 value={progress.totalMinutes}
-                color={NEON_PINK}
-                darkMode
+                color={cp.neonPink}
               />
             </Animated.View>
 
@@ -171,7 +165,6 @@ export default function ProgressScreen() {
                 restDates={restDates}
                 currentMonth={currentMonth}
                 onMonthChange={setCurrentMonth}
-                darkMode
               />
             </Animated.View>
 
@@ -180,24 +173,24 @@ export default function ProgressScreen() {
               style={styles.programButtonContainer}
             >
               <Pressable
-                style={styles.programButton}
+                style={[styles.programButton, { backgroundColor: cp.cardBg, borderColor: `${cp.neonCyan}26` }]}
                 onPress={() => navigation.navigate('ProgramOverview')}
                 testID="button-view-program"
               >
                 <View style={styles.programButtonLeft}>
-                  <View style={styles.programButtonIcon}>
-                    <Feather name="layers" size={18} color={NEON_CYAN} />
+                  <View style={[styles.programButtonIcon, { backgroundColor: cp.cardBorder }]}>
+                    <Feather name="layers" size={18} color={cp.neonCyan} />
                   </View>
                   <View>
-                    <Text style={[styles.programButtonTitle, { fontSize: 14 * fontScale }]}>
+                    <Text style={[styles.programButtonTitle, { fontSize: 14 * fontScale, color: cp.text }]}>
                       12-Week Program
                     </Text>
-                    <Text style={styles.programButtonSubtitle}>
+                    <Text style={[styles.programButtonSubtitle, { color: cp.textMuted }]}>
                       Preview schedule & track progress
                     </Text>
                   </View>
                 </View>
-                <Feather name="chevron-right" size={20} color="rgba(255,255,255,0.4)" />
+                <Feather name="chevron-right" size={20} color={cp.textMuted} />
               </Pressable>
             </Animated.View>
 
@@ -207,24 +200,24 @@ export default function ProgressScreen() {
                 style={{ marginTop: Spacing.sm }}
               >
                 <Pressable
-                  style={styles.programButton}
+                  style={[styles.programButton, { backgroundColor: cp.cardBg, borderColor: `${cp.neonCyan}26` }]}
                   onPress={() => navigation.navigate('ReviewHistory')}
                   testID="button-review-history"
                 >
                   <View style={styles.programButtonLeft}>
-                    <View style={[styles.programButtonIcon, { backgroundColor: 'rgba(168, 85, 247, 0.1)' }]}>
-                      <Feather name="book-open" size={18} color={NEON_PURPLE} />
+                    <View style={[styles.programButtonIcon, { backgroundColor: `${cp.neonPurple}1A` }]}>
+                      <Feather name="book-open" size={18} color={cp.neonPurple} />
                     </View>
                     <View>
-                      <Text style={[styles.programButtonTitle, { fontSize: 14 * fontScale }]}>
+                      <Text style={[styles.programButtonTitle, { fontSize: 14 * fontScale, color: cp.text }]}>
                         AI Review History
                       </Text>
-                      <Text style={styles.programButtonSubtitle}>
+                      <Text style={[styles.programButtonSubtitle, { color: cp.textMuted }]}>
                         Reread past tips & insights
                       </Text>
                     </View>
                   </View>
-                  <Feather name="chevron-right" size={20} color="rgba(255,255,255,0.4)" />
+                  <Feather name="chevron-right" size={20} color={cp.textMuted} />
                 </Pressable>
               </Animated.View>
             ) : null}
@@ -234,31 +227,31 @@ export default function ProgressScreen() {
                 entering={FadeInDown.duration(400).delay(350)}
                 style={styles.missedReviewsContainer}
               >
-                <Text style={[styles.missedReviewsTitle, { fontSize: 13 * fontScale }]}>
+                <Text style={[styles.missedReviewsTitle, { fontSize: 13 * fontScale, color: cp.neonPurple }]}>
                   Missed AI Reviews
                 </Text>
                 {missedWeeks.map((week) => (
                   <Pressable
                     key={week}
-                    style={styles.missedReviewButton}
+                    style={[styles.missedReviewButton, { backgroundColor: `${cp.neonPurple}0F`, borderColor: `${cp.neonPurple}33` }]}
                     onPress={() => handleViewReview(week)}
                     testID={`button-missed-review-week-${week}`}
                   >
                     <View style={styles.programButtonLeft}>
-                      <View style={[styles.programButtonIcon, { backgroundColor: 'rgba(168, 85, 247, 0.15)' }]}>
-                        <Feather name="message-circle" size={16} color={NEON_PURPLE} />
+                      <View style={[styles.programButtonIcon, { backgroundColor: `${cp.neonPurple}26` }]}>
+                        <Feather name="message-circle" size={16} color={cp.neonPurple} />
                       </View>
                       <View>
-                        <Text style={[styles.programButtonTitle, { fontSize: 13 * fontScale }]}>
+                        <Text style={[styles.programButtonTitle, { fontSize: 13 * fontScale, color: cp.text }]}>
                           Week {week} Review
                         </Text>
-                        <Text style={styles.programButtonSubtitle}>
+                        <Text style={[styles.programButtonSubtitle, { color: cp.textMuted }]}>
                           Tap to view your AI progress update
                         </Text>
                       </View>
                     </View>
-                    <View style={styles.missedBadge}>
-                      <Text style={styles.missedBadgeText}>NEW</Text>
+                    <View style={[styles.missedBadge, { backgroundColor: cp.neonPurple }]}>
+                      <Text style={[styles.missedBadgeText, { color: cp.text }]}>NEW</Text>
                     </View>
                   </Pressable>
                 ))}
@@ -273,7 +266,7 @@ export default function ProgressScreen() {
               entering={FadeInDown.duration(400).delay(450)}
               style={styles.longestStreakContainer}
             >
-              <View style={[styles.longestStreakCard, highContrast && { borderColor: colors.border }]}>
+              <View style={[styles.longestStreakCard, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }, highContrast && { borderColor: colors.border }]}>
                 <Text style={[styles.longestStreakLabel, { fontSize: 12 * fontScale, color: colors.textSecondary }]}>
                   Longest Streak
                 </Text>
@@ -293,32 +286,32 @@ export default function ProgressScreen() {
               style={styles.emptyImage}
               resizeMode="contain"
             />
-            <Text style={styles.emptyTitle}>
+            <Text style={[styles.emptyTitle, { color: cp.text }]}>
               Start Your Journey
             </Text>
-            <Text style={styles.emptyDescription}>
+            <Text style={[styles.emptyDescription, { color: cp.textSecondary }]}>
               Complete your first workout to begin tracking your progress here.
             </Text>
 
             <Pressable
-              style={[styles.programButton, { marginTop: Spacing.xl }]}
+              style={[styles.programButton, { marginTop: Spacing.xl, backgroundColor: cp.cardBg, borderColor: `${cp.neonCyan}26` }]}
               onPress={() => navigation.navigate('ProgramOverview')}
               testID="button-view-program-empty"
             >
               <View style={styles.programButtonLeft}>
-                <View style={styles.programButtonIcon}>
-                  <Feather name="layers" size={18} color={NEON_CYAN} />
+                <View style={[styles.programButtonIcon, { backgroundColor: cp.cardBorder }]}>
+                  <Feather name="layers" size={18} color={cp.neonCyan} />
                 </View>
                 <View>
-                  <Text style={[styles.programButtonTitle, { fontSize: 14 * fontScale }]}>
+                  <Text style={[styles.programButtonTitle, { fontSize: 14 * fontScale, color: cp.text }]}>
                     Preview 12-Week Program
                   </Text>
-                  <Text style={styles.programButtonSubtitle}>
+                  <Text style={[styles.programButtonSubtitle, { color: cp.textMuted }]}>
                     See what's ahead
                   </Text>
                 </View>
               </View>
-              <Feather name="chevron-right" size={20} color="rgba(255,255,255,0.4)" />
+              <Feather name="chevron-right" size={20} color={cp.textMuted} />
             </Pressable>
 
             <BadgesSection />
@@ -358,18 +351,14 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
   },
   longestStreakLabel: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.6)',
   },
   longestStreakValue: {
     fontSize: 20,
     fontWeight: '600',
-    color: NEON_GREEN,
     marginTop: Spacing.xs,
   },
   missedReviewsContainer: {
@@ -377,7 +366,6 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   missedReviewsTitle: {
-    color: NEON_PURPLE,
     fontWeight: '600',
     marginBottom: Spacing.xs,
   },
@@ -387,18 +375,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: Spacing.md,
     borderRadius: BorderRadius.lg,
-    backgroundColor: 'rgba(168, 85, 247, 0.06)',
     borderWidth: 1,
-    borderColor: 'rgba(168, 85, 247, 0.2)',
   },
   missedBadge: {
-    backgroundColor: NEON_PURPLE,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
   },
   missedBadgeText: {
-    color: '#fff',
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 0.5,
@@ -412,9 +396,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: Spacing.md,
     borderRadius: BorderRadius.lg,
-    backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
-    borderColor: 'rgba(0, 255, 255, 0.15)',
   },
   programButtonLeft: {
     flexDirection: 'row',
@@ -425,16 +407,13 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: 'rgba(0, 255, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   programButtonTitle: {
-    color: '#fff',
     fontWeight: '600',
   },
   programButtonSubtitle: {
-    color: 'rgba(255,255,255,0.4)',
     fontSize: 11,
     marginTop: 1,
   },
@@ -454,12 +433,10 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
     fontSize: 20,
     fontWeight: '600',
-    color: '#fff',
   },
   emptyDescription: {
     textAlign: 'center',
     lineHeight: 24,
     fontSize: 16,
-    color: 'rgba(255,255,255,0.6)',
   },
 });

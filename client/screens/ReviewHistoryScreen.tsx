@@ -10,30 +10,27 @@ import { Feather } from '@expo/vector-icons';
 import { Spacing, BorderRadius } from '@/constants/theme';
 import { storage, WeeklyReviewEntry } from '@/lib/storage';
 import { useAccessibility } from '@/contexts/AccessibilityContext';
-
-const NEON_GREEN = '#00ff88';
-const NEON_CYAN = '#00d4ff';
-const NEON_PURPLE = '#a855f7';
-const NEON_PINK = '#ff6b9d';
-
-function getPhaseForWeek(week: number): { name: string; color: string } {
-  if (week <= 2) return { name: 'Control Phase', color: NEON_CYAN };
-  if (week <= 6) return { name: 'Strength Phase', color: NEON_GREEN };
-  if (week <= 10) return { name: 'Power Phase', color: NEON_PINK };
-  return { name: 'Maintenance Phase', color: NEON_PURPLE };
-}
-
-function getAccentForDays(days: number): string {
-  if (days >= 5) return NEON_GREEN;
-  if (days >= 3) return NEON_CYAN;
-  return NEON_PURPLE;
-}
+import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 
 export default function ReviewHistoryScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const navigation = useNavigation();
   const { fontScale, colors, highContrast } = useAccessibility();
+  const { cp, isDarkMode } = useThemePreference();
+
+  function getPhaseForWeek(week: number): { name: string; color: string } {
+    if (week <= 2) return { name: 'Control Phase', color: cp.neonCyan };
+    if (week <= 6) return { name: 'Strength Phase', color: cp.neonGreen };
+    if (week <= 10) return { name: 'Power Phase', color: cp.neonPink };
+    return { name: 'Maintenance Phase', color: cp.neonPurple };
+  }
+
+  function getAccentForDays(days: number): string {
+    if (days >= 5) return cp.neonGreen;
+    if (days >= 3) return cp.neonCyan;
+    return cp.neonPurple;
+  }
 
   const [reviews, setReviews] = useState<WeeklyReviewEntry[]>([]);
   const [expandedWeek, setExpandedWeek] = useState<number | null>(null);
@@ -61,7 +58,7 @@ export default function ReviewHistoryScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={['#0a0a1a', '#1a0a2e', '#0a1a2e', '#0a0a1a']}
+        colors={cp.gradient as unknown as [string, string, ...string[]]}
         style={StyleSheet.absoluteFill}
       />
       <ScrollView
@@ -77,14 +74,14 @@ export default function ReviewHistoryScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={NEON_CYAN}
+            tintColor={cp.neonCyan}
           />
         }
       >
         {reviews.length > 0 ? (
           <>
             <Animated.View entering={FadeInDown.duration(300)}>
-              <Text style={[styles.headerSubtitle, { fontSize: 13 * fontScale }]}>
+              <Text style={[styles.headerSubtitle, { color: cp.textMuted, fontSize: 13 * fontScale }]}>
                 Your personalized AI insights from each completed week
               </Text>
             </Animated.View>
@@ -102,7 +99,8 @@ export default function ReviewHistoryScreen() {
                   <Pressable
                     style={[
                       styles.reviewCard,
-                      isExpanded && styles.reviewCardExpanded,
+                      { backgroundColor: cp.cardBg, borderColor: cp.inputBg },
+                      isExpanded && { borderColor: cp.neonPurple + '25', backgroundColor: cp.neonPurple + '04' },
                       highContrast && { borderColor: colors.border },
                     ]}
                     onPress={() => toggleExpanded(review.weekNumber)}
@@ -116,7 +114,7 @@ export default function ReviewHistoryScreen() {
                           </Text>
                         </View>
                         <View>
-                          <Text style={[styles.cardTitle, { fontSize: 15 * fontScale }]}>
+                          <Text style={[styles.cardTitle, { color: cp.text, fontSize: 15 * fontScale }]}>
                             Week {review.weekNumber}
                           </Text>
                           <Text style={[styles.phaseLabel, { color: phase.color, fontSize: 11 * fontScale }]}>
@@ -136,36 +134,36 @@ export default function ReviewHistoryScreen() {
                         <Feather
                           name={isExpanded ? 'chevron-up' : 'chevron-down'}
                           size={18}
-                          color="rgba(255,255,255,0.4)"
+                          color={cp.textMuted}
                         />
                       </View>
                     </View>
 
                     {isExpanded ? (
-                      <View style={styles.expandedContent}>
+                      <View style={[styles.expandedContent, { borderTopColor: cp.divider }]}>
                         <View style={styles.statsRow}>
                           <View style={[styles.statPill, { borderColor: `${accent}30` }]}>
                             <Feather name="calendar" size={14} color={accent} />
-                            <Text style={[styles.statPillText, { fontSize: 12 * fontScale }]}>
+                            <Text style={[styles.statPillText, { color: cp.textSecondary, fontSize: 12 * fontScale }]}>
                               {review.daysWorkedOut} days active
                             </Text>
                           </View>
-                          <View style={[styles.statPill, { borderColor: 'rgba(255,255,255,0.15)' }]}>
-                            <Feather name="clock" size={14} color="rgba(255,255,255,0.6)" />
-                            <Text style={[styles.statPillText, { fontSize: 12 * fontScale }]}>
+                          <View style={[styles.statPill, { borderColor: cp.cardBorder }]}>
+                            <Feather name="clock" size={14} color={cp.textSecondary} />
+                            <Text style={[styles.statPillText, { color: cp.textSecondary, fontSize: 12 * fontScale }]}>
                               {review.date}
                             </Text>
                           </View>
                         </View>
 
-                        <View style={styles.messageContainer}>
+                        <View style={[styles.messageContainer, { backgroundColor: cp.neonPurple + '06', borderColor: cp.neonPurple + '12' }]}>
                           <View style={styles.messageHeader}>
-                            <Feather name="cpu" size={14} color={NEON_PURPLE} />
-                            <Text style={[styles.messageHeaderText, { fontSize: 11 * fontScale }]}>
+                            <Feather name="cpu" size={14} color={cp.neonPurple} />
+                            <Text style={[styles.messageHeaderText, { color: cp.neonPurple, fontSize: 11 * fontScale }]}>
                               AI Insight
                             </Text>
                           </View>
-                          <Text style={[styles.messageText, { fontSize: 14 * fontScale, lineHeight: 22 * fontScale }]}>
+                          <Text style={[styles.messageText, { color: cp.textSecondary, fontSize: 14 * fontScale, lineHeight: 22 * fontScale }]}>
                             {review.message}
                           </Text>
                         </View>
@@ -178,11 +176,11 @@ export default function ReviewHistoryScreen() {
           </>
         ) : (
           <View style={styles.emptyContainer}>
-            <Feather name="book-open" size={48} color="rgba(255,255,255,0.2)" />
-            <Text style={[styles.emptyTitle, { fontSize: 18 * fontScale }]}>
+            <Feather name="book-open" size={48} color={cp.textMuted} />
+            <Text style={[styles.emptyTitle, { color: cp.text, fontSize: 18 * fontScale }]}>
               No Reviews Yet
             </Text>
-            <Text style={[styles.emptyDescription, { fontSize: 14 * fontScale }]}>
+            <Text style={[styles.emptyDescription, { color: cp.textMuted, fontSize: 14 * fontScale }]}>
               Complete a full week of your program to receive your first AI progress review.
             </Text>
           </View>
@@ -200,20 +198,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerSubtitle: {
-    color: 'rgba(255,255,255,0.5)',
     marginBottom: Spacing.lg,
   },
   reviewCard: {
-    backgroundColor: 'rgba(255,255,255,0.04)',
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
     padding: Spacing.md,
     marginBottom: Spacing.sm,
-  },
-  reviewCardExpanded: {
-    borderColor: 'rgba(168, 85, 247, 0.25)',
-    backgroundColor: 'rgba(168, 85, 247, 0.04)',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -241,7 +232,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   cardTitle: {
-    color: '#fff',
     fontWeight: '600',
   },
   phaseLabel: {
@@ -265,7 +255,6 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
     paddingTop: Spacing.md,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
   },
   statsRow: {
     flexDirection: 'row',
@@ -282,14 +271,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   statPillText: {
-    color: 'rgba(255,255,255,0.7)',
   },
   messageContainer: {
-    backgroundColor: 'rgba(168, 85, 247, 0.06)',
     borderRadius: 12,
     padding: Spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(168, 85, 247, 0.12)',
   },
   messageHeader: {
     flexDirection: 'row',
@@ -298,13 +284,11 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   messageHeaderText: {
-    color: NEON_PURPLE,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   messageText: {
-    color: 'rgba(255,255,255,0.85)',
   },
   emptyContainer: {
     flex: 1,
@@ -314,11 +298,9 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   emptyTitle: {
-    color: '#fff',
     fontWeight: '600',
   },
   emptyDescription: {
-    color: 'rgba(255,255,255,0.5)',
     textAlign: 'center',
     lineHeight: 22,
   },

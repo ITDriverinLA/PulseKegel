@@ -15,16 +15,13 @@ import { Feather } from '@expo/vector-icons';
 import { ThemedText } from '@/components/ThemedText';
 import { Spacing, BorderRadius } from '@/constants/theme';
 import { storage, AnatomyType } from '@/lib/storage';
+import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 
 interface OnboardingScreenProps {
   onComplete: () => void;
 }
 
 const { width } = Dimensions.get('window');
-
-const NEON_GREEN = '#00FF88';
-const NEON_CYAN = '#00FFFF';
-const NEON_PINK = '#FF3366';
 
 const pages = [
   {
@@ -74,6 +71,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   const [selectedAnatomy, setSelectedAnatomy] = useState<AnatomyType>(null);
   const [userName, setUserName] = useState('');
   const insets = useSafeAreaInsets();
+  const { cp, isDarkMode } = useThemePreference();
 
   const isLastPage = currentPage === pages.length - 1;
   const isAnatomyPage = pages[currentPage].type === 'anatomy';
@@ -103,7 +101,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={['#0a0a1a', '#1a0a2e', '#0a1a2e', '#0a0a1a']}
+        colors={cp.gradient as unknown as [string, string, ...string[]]}
         style={StyleSheet.absoluteFill}
       />
       <View
@@ -122,18 +120,18 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
               entering={FadeIn.duration(300)}
               style={styles.nameContainer}
             >
-              <Feather name="user" size={64} color={NEON_GREEN} style={styles.nameIcon} />
-              <ThemedText type="h1" style={styles.title}>
+              <Feather name="user" size={64} color={cp.neonGreen} style={styles.nameIcon} />
+              <ThemedText type="h1" style={[styles.title, { color: cp.text }]}>
                 {pages[currentPage].title}
               </ThemedText>
-              <ThemedText type="body" style={styles.description}>
+              <ThemedText type="body" style={[styles.description, { color: cp.textSecondary }]}>
                 {pages[currentPage].description}
               </ThemedText>
               
               <TextInput
-                style={styles.nameInput}
+                style={[styles.nameInput, { backgroundColor: cp.cardBorder, color: cp.text, borderColor: `${cp.neonGreen}4D` }]}
                 placeholder="Enter your name"
-                placeholderTextColor="rgba(255,255,255,0.4)"
+                placeholderTextColor={cp.textMuted}
                 value={userName}
                 onChangeText={setUserName}
                 autoCapitalize="words"
@@ -144,7 +142,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
               
               <Pressable style={styles.nameButton} onPress={handleNameSubmit}>
                 <LinearGradient
-                  colors={[NEON_GREEN, NEON_CYAN]}
+                  colors={[cp.neonGreen, cp.neonCyan]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.nameButtonGradient}
@@ -161,10 +159,10 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
               entering={FadeIn.duration(300)}
               style={styles.anatomyContainer}
             >
-              <ThemedText type="h1" style={styles.title}>
+              <ThemedText type="h1" style={[styles.title, { color: cp.text }]}>
                 {pages[currentPage].title}
               </ThemedText>
-              <ThemedText type="body" style={styles.description}>
+              <ThemedText type="body" style={[styles.description, { color: cp.textSecondary }]}>
                 {pages[currentPage].description}
               </ThemedText>
               
@@ -174,11 +172,11 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                   onPress={() => handleAnatomySelect('female')}
                 >
                   <LinearGradient
-                    colors={[NEON_PINK, '#FF6699']}
+                    colors={[cp.neonPink, '#FF6699']}
                     style={styles.anatomyButtonGradient}
                   >
-                    <Feather name="heart" size={32} color="#fff" />
-                    <ThemedText style={styles.anatomyButtonText}>Female</ThemedText>
+                    <Feather name="heart" size={32} color={cp.text} />
+                    <ThemedText style={[styles.anatomyButtonText, { color: cp.text }]}>Female</ThemedText>
                   </LinearGradient>
                 </Pressable>
                 
@@ -187,11 +185,11 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                   onPress={() => handleAnatomySelect('male')}
                 >
                   <LinearGradient
-                    colors={[NEON_CYAN, '#00CCFF']}
+                    colors={[cp.neonCyan, '#00CCFF']}
                     style={styles.anatomyButtonGradient}
                   >
-                    <Feather name="shield" size={32} color="#fff" />
-                    <ThemedText style={styles.anatomyButtonText}>Male</ThemedText>
+                    <Feather name="shield" size={32} color={cp.text} />
+                    <ThemedText style={[styles.anatomyButtonText, { color: cp.text }]}>Male</ThemedText>
                   </LinearGradient>
                 </Pressable>
               </View>
@@ -216,12 +214,12 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                 entering={FadeIn.duration(300).delay(100)}
                 style={styles.textContainer}
               >
-                <ThemedText type="h1" style={styles.title}>
+                <ThemedText type="h1" style={[styles.title, { color: cp.text }]}>
                   {pages[currentPage].title}
                 </ThemedText>
                 <ThemedText
                   type="body"
-                  style={styles.description}
+                  style={[styles.description, { color: cp.textSecondary }]}
                 >
                   {pages[currentPage].description}
                 </ThemedText>
@@ -236,12 +234,13 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
               <PageDot
                 key={index}
                 active={index === currentPage}
+                color={cp.neonGreen}
               />
             ))}
           </View>
 
           {!isAnatomyPage && !isNamePage ? (
-            <NeonButton onPress={handleNext}>
+            <NeonButton onPress={handleNext} cp={cp}>
               {isLastPage ? 'Get Started' : 'Continue'}
             </NeonButton>
           ) : null}
@@ -251,18 +250,18 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   );
 }
 
-function PageDot({ active }: { active: boolean }) {
+function PageDot({ active, color }: { active: boolean; color: string }) {
   const animatedStyle = useAnimatedStyle(() => ({
     width: withSpring(active ? 24 : 8, { damping: 15, stiffness: 150 }),
     opacity: withSpring(active ? 1 : 0.4, { damping: 15, stiffness: 150 }),
   }));
 
   return (
-    <View style={active ? styles.dotGlow : undefined}>
+    <View style={active ? [styles.dotGlow, { shadowColor: color }] : undefined}>
       <Animated.View
         style={[
           styles.dot,
-          { backgroundColor: NEON_GREEN },
+          { backgroundColor: color },
           animatedStyle,
         ]}
       />
@@ -270,7 +269,7 @@ function PageDot({ active }: { active: boolean }) {
   );
 }
 
-function NeonButton({ onPress, children }: { onPress: () => void; children: React.ReactNode }) {
+function NeonButton({ onPress, children, cp }: { onPress: () => void; children: React.ReactNode; cp: { neonGreen: string; neonCyan: string } }) {
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -292,9 +291,9 @@ function NeonButton({ onPress, children }: { onPress: () => void; children: Reac
       onPressOut={handlePressOut}
       style={[styles.buttonWrapper, animatedStyle]}
     >
-      <View style={styles.buttonGlow}>
+      <View style={[styles.buttonGlow, { shadowColor: cp.neonGreen }]}>
         <LinearGradient
-          colors={[NEON_GREEN, NEON_CYAN, NEON_GREEN]}
+          colors={[cp.neonGreen, cp.neonCyan, cp.neonGreen]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.button}
@@ -335,13 +334,11 @@ const styles = StyleSheet.create({
   title: {
     textAlign: 'center',
     marginBottom: Spacing.lg,
-    color: '#fff',
   },
   description: {
     textAlign: 'center',
     lineHeight: 24,
     paddingHorizontal: Spacing.lg,
-    color: 'rgba(255,255,255,0.6)',
   },
   footer: {
     paddingBottom: Spacing.lg,
@@ -358,7 +355,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   dotGlow: {
-    shadowColor: NEON_GREEN,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.8,
     shadowRadius: 8,
@@ -368,7 +364,6 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   buttonGlow: {
-    shadowColor: NEON_GREEN,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.6,
     shadowRadius: 16,
@@ -406,7 +401,6 @@ const styles = StyleSheet.create({
     minWidth: 120,
   },
   anatomyButtonText: {
-    color: '#fff',
     fontWeight: '600',
     fontSize: 16,
   },
@@ -421,14 +415,11 @@ const styles = StyleSheet.create({
   nameInput: {
     width: '100%',
     height: 56,
-    backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: BorderRadius.lg,
     paddingHorizontal: Spacing.lg,
     marginTop: Spacing['2xl'],
-    color: '#fff',
     fontSize: 18,
     borderWidth: 1,
-    borderColor: 'rgba(0,255,136,0.3)',
   },
   nameButton: {
     width: '100%',

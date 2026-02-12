@@ -16,19 +16,7 @@ import { workoutProgram, Week, DayTemplate } from '@/data/workoutProgram';
 import { storage } from '@/lib/storage';
 import { useAccessibility } from '@/contexts/AccessibilityContext';
 import { Spacing, BorderRadius } from '@/constants/theme';
-
-const NEON_GREEN = '#00FF88';
-const NEON_CYAN = '#00FFFF';
-const NEON_PINK = '#FF3366';
-const NEON_PURPLE = '#BB86FC';
-const NEON_ORANGE = '#FF9500';
-
-const PHASE_COLORS: Record<string, string> = {
-  Control: NEON_CYAN,
-  Strength: NEON_GREEN,
-  Power: NEON_ORANGE,
-  Maintenance: NEON_PURPLE,
-};
+import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 
 const DAY_TYPE_LABELS: Record<string, string> = {
   strength: 'STR',
@@ -37,15 +25,6 @@ const DAY_TYPE_LABELS: Record<string, string> = {
   rest: 'REST',
   daily: 'DLY',
   alternate: 'ALT',
-};
-
-const DAY_TYPE_COLORS: Record<string, string> = {
-  strength: NEON_GREEN,
-  speed: NEON_CYAN,
-  coordination: NEON_PURPLE,
-  rest: 'rgba(255,255,255,0.3)',
-  daily: NEON_GREEN,
-  alternate: NEON_CYAN,
 };
 
 const DAY_TYPE_NAMES: Record<string, string> = {
@@ -61,6 +40,23 @@ export default function ProgramOverviewScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const { fontScale, colors } = useAccessibility();
+  const { cp, isDarkMode } = useThemePreference();
+
+  const PHASE_COLORS: Record<string, string> = {
+    Control: cp.neonCyan,
+    Strength: cp.neonGreen,
+    Power: cp.neonOrange,
+    Maintenance: cp.neonPurple,
+  };
+
+  const DAY_TYPE_COLORS: Record<string, string> = {
+    strength: cp.neonGreen,
+    speed: cp.neonCyan,
+    coordination: cp.neonPurple,
+    rest: cp.textMuted,
+    daily: cp.neonGreen,
+    alternate: cp.neonCyan,
+  };
 
   const [completedDates, setCompletedDates] = useState<string[]>([]);
   const [restDates, setRestDates] = useState<string[]>([]);
@@ -151,45 +147,46 @@ export default function ProgramOverviewScreen() {
     const rest = day.isRestDay;
     const current = isCurrentDay(weekNum, dayIndex);
     const past = isDayInPast(weekNum, dayIndex);
-    const color = DAY_TYPE_COLORS[day.dayType] || NEON_GREEN;
+    const color = DAY_TYPE_COLORS[day.dayType] || cp.neonGreen;
 
     return (
       <View key={dayIndex} style={styles.dayPillContainer}>
         <View
           style={[
             styles.dayPill,
-            rest ? styles.dayPillRest : { borderColor: color + '50' },
+            { borderColor: cp.cardBorder, backgroundColor: 'rgba(255,255,255,0.03)' },
+            rest ? [styles.dayPillRest, { borderColor: cp.divider }] : { borderColor: color + '50' },
             completed && !rest && { backgroundColor: color, borderColor: color },
-            completed && rest && styles.dayPillRestCompleted,
-            current && styles.dayPillCurrent,
+            completed && rest && { backgroundColor: cp.neonCyan + '08', borderColor: cp.neonCyan + '20' },
+            current && { borderWidth: 2, borderColor: cp.neonGreen, shadowColor: isDarkMode ? cp.neonGreen : 'transparent', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.4, shadowRadius: 6, elevation: 4 },
           ]}
         >
           {completed && !rest ? (
-            <Feather name="check" size={12} color="#0a0a1a" />
+            <Feather name="check" size={12} color={cp.bg} />
           ) : (
             <Text
               style={[
                 styles.dayPillText,
-                { color: completed ? NEON_CYAN : rest ? 'rgba(255,255,255,0.3)' : past ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.6)' },
+                { color: completed ? cp.neonCyan : rest ? cp.textMuted : past ? cp.textMuted : cp.textSecondary },
               ]}
             >
               {DAY_TYPE_LABELS[day.dayType]}
             </Text>
           )}
         </View>
-        <Text style={styles.dayLabel}>D{dayIndex + 1}</Text>
+        <Text style={[styles.dayLabel, { color: cp.textMuted }]}>D{dayIndex + 1}</Text>
       </View>
     );
   };
 
   const renderWeekExpanded = (week: Week) => {
     return (
-      <View style={styles.expandedContent}>
+      <View style={[styles.expandedContent, { borderTopColor: cp.divider }]}>
         {week.days.map((day, index) => {
           const completed = isDayCompleted(week.weekNumber, index);
           const rest = day.isRestDay;
           const current = isCurrentDay(week.weekNumber, index);
-          const color = DAY_TYPE_COLORS[day.dayType] || NEON_GREEN;
+          const color = DAY_TYPE_COLORS[day.dayType] || cp.neonGreen;
           const dateStr = getDayDateStr(week.weekNumber, index);
           const dateLabel = dateStr
             ? new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
@@ -200,38 +197,38 @@ export default function ProgramOverviewScreen() {
               key={index}
               style={[
                 styles.expandedDayRow,
-                current && styles.expandedDayCurrent,
+                current && { backgroundColor: cp.neonGreen + '08' },
               ]}
             >
               <View style={styles.expandedDayLeft}>
                 <View
                   style={[
                     styles.expandedDayDot,
-                    { backgroundColor: rest ? 'rgba(255,255,255,0.2)' : color },
+                    { backgroundColor: rest ? cp.textMuted : color },
                     completed && !rest && { backgroundColor: color },
-                    completed && rest && { backgroundColor: NEON_CYAN + '40' },
+                    completed && rest && { backgroundColor: cp.neonCyan + '40' },
                   ]}
                 >
                   {completed && !rest ? (
-                    <Feather name="check" size={10} color="#0a0a1a" />
+                    <Feather name="check" size={10} color={cp.bg} />
                   ) : null}
                 </View>
                 <View>
-                  <Text style={[styles.expandedDayName, { fontSize: 13 * fontScale }]}>
+                  <Text style={[styles.expandedDayName, { color: cp.text, fontSize: 13 * fontScale }]}>
                     {rest ? 'Rest Day' : DAY_TYPE_NAMES[day.dayType]}
                   </Text>
-                  <Text style={styles.expandedDayDate}>{dateLabel}</Text>
+                  <Text style={[styles.expandedDayDate, { color: cp.textMuted }]}>{dateLabel}</Text>
                 </View>
               </View>
               <View style={styles.expandedDayRight}>
                 {rest ? (
-                  <Text style={styles.expandedDayMeta}>Recovery</Text>
+                  <Text style={[styles.expandedDayMeta, { color: cp.textMuted }]}>Recovery</Text>
                 ) : (
-                  <Text style={styles.expandedDayMeta}>{day.estimatedMinutes} min</Text>
+                  <Text style={[styles.expandedDayMeta, { color: cp.textMuted }]}>{day.estimatedMinutes} min</Text>
                 )}
                 {current ? (
-                  <View style={styles.currentBadge}>
-                    <Text style={styles.currentBadgeText}>TODAY</Text>
+                  <View style={[styles.currentBadge, { backgroundColor: cp.neonGreen + '20', borderColor: cp.neonGreen + '40' }]}>
+                    <Text style={[styles.currentBadgeText, { color: cp.neonGreen }]}>TODAY</Text>
                   </View>
                 ) : null}
               </View>
@@ -243,7 +240,7 @@ export default function ProgramOverviewScreen() {
   };
 
   const renderWeekCard = (week: Week, index: number) => {
-    const phaseColor = PHASE_COLORS[week.phase] || NEON_GREEN;
+    const phaseColor = PHASE_COLORS[week.phase] || cp.neonGreen;
     const progress = getWeekProgress(week);
     const isExpanded = expandedWeek === week.weekNumber;
     const isCurrent = week.weekNumber === currentWeek;
@@ -259,6 +256,7 @@ export default function ProgramOverviewScreen() {
           onPress={() => setExpandedWeek(isExpanded ? null : week.weekNumber)}
           style={[
             styles.weekCard,
+            { backgroundColor: cp.cardBg, borderColor: cp.inputBg },
             isCurrent && { borderColor: phaseColor + '60' },
           ]}
           testID={`week-card-${week.weekNumber}`}
@@ -269,10 +267,10 @@ export default function ProgramOverviewScreen() {
                 <Text style={[styles.weekBadgeText, { color: phaseColor }]}>W{week.weekNumber}</Text>
               </View>
               <View>
-                <Text style={[styles.weekTitle, { fontSize: 15 * fontScale }]}>
+                <Text style={[styles.weekTitle, { color: cp.text, fontSize: 15 * fontScale }]}>
                   {week.phase} Phase
                 </Text>
-                <Text style={styles.weekSubtitle}>{week.phaseDescription}</Text>
+                <Text style={[styles.weekSubtitle, { color: cp.textMuted }]}>{week.phaseDescription}</Text>
               </View>
             </View>
             <View style={styles.weekHeaderRight}>
@@ -281,7 +279,7 @@ export default function ProgramOverviewScreen() {
                   <Text style={[styles.progressText, { color: phaseColor }]}>
                     {progress.completed}/{progress.total}
                   </Text>
-                  <View style={styles.progressBarBg}>
+                  <View style={[styles.progressBarBg, { backgroundColor: cp.cardBorder }]}>
                     <View
                       style={[
                         styles.progressBarFill,
@@ -294,7 +292,7 @@ export default function ProgramOverviewScreen() {
               <Feather
                 name={isExpanded ? 'chevron-up' : 'chevron-down'}
                 size={18}
-                color="rgba(255,255,255,0.5)"
+                color={cp.textMuted}
               />
             </View>
           </View>
@@ -312,7 +310,7 @@ export default function ProgramOverviewScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={['#0a0a1a', '#1a0a2e', '#0a1a2e', '#0a0a1a']}
+        colors={cp.gradient as unknown as [string, string, ...string[]]}
         style={StyleSheet.absoluteFill}
       />
       <ScrollView
@@ -325,15 +323,15 @@ export default function ProgramOverviewScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.summarySection}>
-          <Text style={[styles.sectionTitle, { fontSize: 18 * fontScale }]}>
+          <Text style={[styles.sectionTitle, { color: cp.text, fontSize: 18 * fontScale }]}>
             12-Week Program
           </Text>
           {programStartDate ? (
-            <Text style={styles.summaryText}>
+            <Text style={[styles.summaryText, { color: cp.textSecondary }]}>
               Week {Math.min(currentWeek, 12)} of 12
             </Text>
           ) : (
-            <Text style={styles.summaryText}>
+            <Text style={[styles.summaryText, { color: cp.textSecondary }]}>
               Not started yet
             </Text>
           )}
@@ -343,31 +341,31 @@ export default function ProgramOverviewScreen() {
           {Object.entries(PHASE_COLORS).map(([phase, color]) => (
             <View key={phase} style={styles.phaseLegendItem}>
               <View style={[styles.phaseLegendDot, { backgroundColor: color }]} />
-              <Text style={styles.phaseLegendText}>{phase}</Text>
+              <Text style={[styles.phaseLegendText, { color: cp.textMuted }]}>{phase}</Text>
             </View>
           ))}
         </View>
 
-        <View style={styles.dayTypeLegend}>
+        <View style={[styles.dayTypeLegend, { borderBottomColor: cp.divider }]}>
           <View style={styles.dayTypeLegendItem}>
-            <Text style={[styles.dayTypeLegendCode, { color: NEON_GREEN }]}>STR</Text>
-            <Text style={styles.dayTypeLegendLabel}>Strength</Text>
+            <Text style={[styles.dayTypeLegendCode, { color: cp.neonGreen }]}>STR</Text>
+            <Text style={[styles.dayTypeLegendLabel, { color: cp.textMuted }]}>Strength</Text>
           </View>
           <View style={styles.dayTypeLegendItem}>
-            <Text style={[styles.dayTypeLegendCode, { color: NEON_CYAN }]}>SPD</Text>
-            <Text style={styles.dayTypeLegendLabel}>Speed</Text>
+            <Text style={[styles.dayTypeLegendCode, { color: cp.neonCyan }]}>SPD</Text>
+            <Text style={[styles.dayTypeLegendLabel, { color: cp.textMuted }]}>Speed</Text>
           </View>
           <View style={styles.dayTypeLegendItem}>
-            <Text style={[styles.dayTypeLegendCode, { color: NEON_PURPLE }]}>CRD</Text>
-            <Text style={styles.dayTypeLegendLabel}>Coordination</Text>
+            <Text style={[styles.dayTypeLegendCode, { color: cp.neonPurple }]}>CRD</Text>
+            <Text style={[styles.dayTypeLegendLabel, { color: cp.textMuted }]}>Coordination</Text>
           </View>
           <View style={styles.dayTypeLegendItem}>
-            <Text style={[styles.dayTypeLegendCode, { color: NEON_GREEN }]}>DLY</Text>
-            <Text style={styles.dayTypeLegendLabel}>Daily Driver</Text>
+            <Text style={[styles.dayTypeLegendCode, { color: cp.neonGreen }]}>DLY</Text>
+            <Text style={[styles.dayTypeLegendLabel, { color: cp.textMuted }]}>Daily Driver</Text>
           </View>
           <View style={styles.dayTypeLegendItem}>
-            <Text style={[styles.dayTypeLegendCode, { color: NEON_CYAN }]}>ALT</Text>
-            <Text style={styles.dayTypeLegendLabel}>Alternating</Text>
+            <Text style={[styles.dayTypeLegendCode, { color: cp.neonCyan }]}>ALT</Text>
+            <Text style={[styles.dayTypeLegendLabel, { color: cp.textMuted }]}>Alternating</Text>
           </View>
         </View>
 
@@ -391,11 +389,9 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   sectionTitle: {
-    color: '#fff',
     fontWeight: '700',
   },
   summaryText: {
-    color: 'rgba(255,255,255,0.6)',
     fontSize: 13,
   },
   phaseLegend: {
@@ -415,7 +411,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   phaseLegendText: {
-    color: 'rgba(255,255,255,0.5)',
     fontSize: 11,
   },
   dayTypeLegend: {
@@ -425,7 +420,6 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
     paddingBottom: Spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
   },
   dayTypeLegendItem: {
     flexDirection: 'row',
@@ -438,16 +432,13 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   dayTypeLegendLabel: {
-    color: 'rgba(255,255,255,0.4)',
     fontSize: 10,
   },
   weekCard: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
     marginBottom: Spacing.sm,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
   },
   weekHeader: {
     flexDirection: 'row',
@@ -474,11 +465,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   weekTitle: {
-    color: '#fff',
     fontWeight: '600',
   },
   weekSubtitle: {
-    color: 'rgba(255,255,255,0.4)',
     fontSize: 11,
     marginTop: 1,
   },
@@ -498,7 +487,6 @@ const styles = StyleSheet.create({
   progressBarBg: {
     width: 40,
     height: 3,
-    backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: 2,
     overflow: 'hidden',
   },
@@ -522,26 +510,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    backgroundColor: 'rgba(255,255,255,0.03)',
   },
   dayPillRest: {
-    borderColor: 'rgba(255,255,255,0.06)',
     backgroundColor: 'transparent',
     borderStyle: 'dashed',
-  },
-  dayPillRestCompleted: {
-    backgroundColor: 'rgba(0, 255, 255, 0.08)',
-    borderColor: 'rgba(0, 255, 255, 0.2)',
-  },
-  dayPillCurrent: {
-    borderWidth: 2,
-    borderColor: NEON_GREEN,
-    shadowColor: NEON_GREEN,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 6,
-    elevation: 4,
   },
   dayPillText: {
     fontSize: 9,
@@ -549,14 +521,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   dayLabel: {
-    color: 'rgba(255,255,255,0.3)',
     fontSize: 9,
   },
   expandedContent: {
     marginTop: Spacing.sm,
     paddingTop: Spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
   },
   expandedDayRow: {
     flexDirection: 'row',
@@ -565,9 +535,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: Spacing.xs,
     borderRadius: 8,
-  },
-  expandedDayCurrent: {
-    backgroundColor: 'rgba(0, 255, 136, 0.08)',
   },
   expandedDayLeft: {
     flexDirection: 'row',
@@ -582,11 +549,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   expandedDayName: {
-    color: '#fff',
     fontWeight: '500',
   },
   expandedDayDate: {
-    color: 'rgba(255,255,255,0.4)',
     fontSize: 11,
     marginTop: 1,
   },
@@ -596,19 +561,15 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   expandedDayMeta: {
-    color: 'rgba(255,255,255,0.4)',
     fontSize: 12,
   },
   currentBadge: {
-    backgroundColor: NEON_GREEN + '20',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: NEON_GREEN + '40',
   },
   currentBadgeText: {
-    color: NEON_GREEN,
     fontSize: 9,
     fontWeight: '700',
     letterSpacing: 0.5,
