@@ -256,11 +256,18 @@ export default function WorkoutPlayerScreen() {
       [0, 1],
       [cp.neonCyan, cp.neonGreen]
     );
+    if (isDarkMode) {
+      return {
+        color,
+        textShadowColor: color,
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: 20,
+      };
+    }
     return {
       color,
-      textShadowColor: color,
-      textShadowOffset: { width: 0, height: 0 },
-      textShadowRadius: 20,
+      textShadowColor: 'transparent',
+      textShadowRadius: 0,
     };
   });
 
@@ -271,11 +278,18 @@ export default function WorkoutPlayerScreen() {
       [0, 1],
       [cp.neonCyan, cp.neonGreen]
     );
+    if (isDarkMode) {
+      return {
+        color,
+        textShadowColor: color,
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: 30 * glowIntensity,
+      };
+    }
     return {
       color,
-      textShadowColor: color,
-      textShadowOffset: { width: 0, height: 0 },
-      textShadowRadius: 30 * glowIntensity,
+      textShadowColor: 'transparent',
+      textShadowRadius: 0,
     };
   });
 
@@ -447,9 +461,9 @@ export default function WorkoutPlayerScreen() {
               style={[
                 styles.phaseLabel,
                 currentSegment?.type === 'getReady'
-                  ? { color: cp.neonCyan, textShadowColor: cp.neonCyan, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 20, fontSize: 36 }
+                  ? { color: cp.neonCyan, fontSize: 36, ...(isDarkMode ? { textShadowColor: cp.neonCyan, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 20 } : {}) }
                   : currentSegment?.type === 'blockRest' 
-                    ? { color: cp.neonPurple, textShadowColor: cp.neonPurple, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 20 }
+                    ? { color: cp.neonPurple, ...(isDarkMode ? { textShadowColor: cp.neonPurple, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 20 } : {}) }
                     : phaseLabelStyle,
               ]}
             >
