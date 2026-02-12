@@ -19,6 +19,7 @@ import Animated, {
 
 import { ThemedText } from '@/components/ThemedText';
 import { PowerBar } from '@/components/PowerBar';
+import { CircularProgressRing } from '@/components/CircularProgressRing';
 import { FormTipsSheet } from '@/components/FormTipsSheet';
 import { BadgeToast } from '@/components/BadgeToast';
 import { useTheme } from '@/hooks/useTheme';
@@ -456,27 +457,52 @@ export default function WorkoutPlayerScreen() {
             </Animated.Text>
           </Animated.View>
 
-          <View style={styles.powerBarContainer}>
-            <PowerBar
-              phase={currentPhase}
-              segmentType={currentSegment?.type || 'slowHolds'}
-              durationSeconds={phaseDuration}
-              isActive={Boolean(workoutState?.isRunning && !workoutState?.isPaused && currentSegment?.type !== 'getReady')}
-              height={300}
-              width={120}
-              rampSteps={currentSegment?.rampSteps}
-            />
-            {currentSegment?.type !== 'getReady' ? (
-              <View style={styles.countdownContainer}>
-                <Animated.Text style={[styles.countdown, countdownStyle]}>
-                  {workoutState?.secondsRemaining || 0}
-                </Animated.Text>
-                <ThemedText type="small" style={[styles.countdownLabel, { color: cp.textMuted }]}>
-                  {(workoutState?.secondsRemaining || 0) === 1 ? 'second' : 'seconds'}
-                </ThemedText>
-              </View>
-            ) : null}
-          </View>
+          {isDarkMode ? (
+            <View style={styles.powerBarContainer}>
+              <PowerBar
+                phase={currentPhase}
+                segmentType={currentSegment?.type || 'slowHolds'}
+                durationSeconds={phaseDuration}
+                isActive={Boolean(workoutState?.isRunning && !workoutState?.isPaused && currentSegment?.type !== 'getReady')}
+                height={300}
+                width={120}
+                rampSteps={currentSegment?.rampSteps}
+              />
+              {currentSegment?.type !== 'getReady' ? (
+                <View style={styles.countdownContainer}>
+                  <Animated.Text style={[styles.countdown, countdownStyle]}>
+                    {workoutState?.secondsRemaining || 0}
+                  </Animated.Text>
+                  <ThemedText type="small" style={[styles.countdownLabel, { color: cp.textMuted }]}>
+                    {(workoutState?.secondsRemaining || 0) === 1 ? 'second' : 'seconds'}
+                  </ThemedText>
+                </View>
+              ) : null}
+            </View>
+          ) : (
+            <View style={styles.circularContainer}>
+              <CircularProgressRing
+                phase={currentPhase}
+                segmentType={currentSegment?.type || 'slowHolds'}
+                durationSeconds={phaseDuration}
+                isActive={Boolean(workoutState?.isRunning && !workoutState?.isPaused && currentSegment?.type !== 'getReady')}
+                size={220}
+                strokeWidth={16}
+                rampSteps={currentSegment?.rampSteps}
+              >
+                {currentSegment?.type !== 'getReady' ? (
+                  <View style={styles.ringCountdownContainer}>
+                    <Animated.Text style={[styles.ringCountdown, { color: cp.text }]}>
+                      {workoutState?.secondsRemaining || 0}
+                    </Animated.Text>
+                    <ThemedText type="small" style={[styles.ringCountdownLabel, { color: cp.textMuted }]}>
+                      {(workoutState?.secondsRemaining || 0) === 1 ? 'second' : 'seconds'}
+                    </ThemedText>
+                  </View>
+                ) : null}
+              </CircularProgressRing>
+            </View>
+          )}
 
           <View style={styles.segmentInfo}>
             <ThemedText type="h4" style={[styles.segmentName, { color: cp.text }]}>
@@ -604,6 +630,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: Spacing['2xl'],
     gap: Spacing['3xl'],
+  },
+  circularContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing['2xl'],
+  },
+  ringCountdownContainer: {
+    alignItems: 'center',
+  },
+  ringCountdown: {
+    fontSize: 56,
+    fontWeight: '200',
+    letterSpacing: -2,
+  },
+  ringCountdownLabel: {
+    marginTop: Spacing.xs,
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+    fontSize: 11,
   },
   countdownContainer: {
     alignItems: 'center',
