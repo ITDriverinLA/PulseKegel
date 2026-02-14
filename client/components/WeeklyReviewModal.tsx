@@ -34,9 +34,13 @@ export function WeeklyReviewModal({
   const { cp, isDarkMode } = useThemePreference();
   const [message, setMessage] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [buttonDisabled, setButtonDisabled] = useState(false);
 
   useEffect(() => {
     if (visible) {
+      setButtonDisabled(false);
+      setMessage('');
+      setLoading(true);
       fetchReviewMessage();
     }
   }, [visible, weekNumber, daysWorkedOut, totalMinutes, anatomyType, userName]);
@@ -66,6 +70,8 @@ export function WeeklyReviewModal({
       onMessageReady?.(fallback);
     } finally {
       setLoading(false);
+      setButtonDisabled(true);
+      setTimeout(() => setButtonDisabled(false), 1500);
     }
   };
 
@@ -167,15 +173,18 @@ export function WeeklyReviewModal({
             </Animated.View>
 
             <Animated.View entering={FadeIn.delay(600)}>
-              <Pressable onPress={onClose} style={styles.button}>
+              <Pressable
+                onPress={buttonDisabled ? undefined : onClose}
+                style={[styles.button, buttonDisabled ? { opacity: 0.5 } : null]}
+              >
                 <LinearGradient
-                  colors={[accentColor, cp.neonCyan]}
+                  colors={loading ? [cp.cardBorder, cp.cardBorder] : [accentColor, cp.neonCyan]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.buttonGradient}
                 >
                   <ThemedText type="body" style={styles.buttonText}>
-                    Continue
+                    {loading ? 'Skip' : 'Continue'}
                   </ThemedText>
                 </LinearGradient>
               </Pressable>
