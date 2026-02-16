@@ -29,6 +29,7 @@ import { DayTemplate, Segment } from '@/data/workoutProgram';
 import { WorkoutEngine, WorkoutState, WorkoutPhase } from '@/lib/workoutEngine';
 import { hapticsManager, HapticPulseController } from '@/lib/hapticsManager';
 import { storage, UserSettings, defaultSettings } from '@/lib/storage';
+import { useAudio } from '@/contexts/AudioContext';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
 type RouteProps = RouteProp<RootStackParamList, 'WorkoutPlayer'>;
@@ -40,6 +41,7 @@ export default function WorkoutPlayerScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const { cp, isDarkMode } = useThemePreference();
+  const { playSfx, startAmbient, stopAmbient } = useAudio();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const { workout, weekNumber, phase } = route.params;
@@ -128,8 +130,14 @@ export default function WorkoutPlayerScreen() {
         phaseOpacity.value = withTiming(1, { duration: 200 });
         
         if (newPhase === 'squeeze') {
+          playSfx('squeeze');
           hapticPulseRef.current.start(segment.type, settings, segment.squeezeSeconds, segment.rampSteps);
+        } else if (newPhase === 'breathe') {
+          playSfx('breathe');
+          hapticPulseRef.current.triggerTransitionCue();
+          hapticPulseRef.current.stop();
         } else {
+          playSfx('rest');
           hapticPulseRef.current.triggerTransitionCue();
           hapticPulseRef.current.stop();
         }
@@ -150,6 +158,8 @@ export default function WorkoutPlayerScreen() {
       },
       onComplete: async (seconds) => {
         hapticPulseRef.current.stop();
+        stopAmbient();
+        playSfx('complete');
         setTotalSeconds(seconds);
         setIsComplete(true);
         await hapticsManager.triggerComplete(settings);
@@ -181,9 +191,11 @@ export default function WorkoutPlayerScreen() {
     }
     
     engine.start();
+    startAmbient();
 
     return () => {
       hapticPulseRef.current.stop();
+      stopAmbient();
       engine.destroy();
     };
   }, [workout, settings, phaseScale, phaseOpacity, phaseColorValue]);

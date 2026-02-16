@@ -21,6 +21,7 @@ import { hapticsManager } from '@/lib/hapticsManager';
 import { useAccessibility } from '@/contexts/AccessibilityContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
+import { useAudio } from '@/contexts/AudioContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
@@ -34,6 +35,7 @@ export default function SettingsScreen() {
   const { refresh: refreshAccessibility, fontScale, colors } = useAccessibility();
   const { isSubscribed, isTrialActive, trialDaysRemaining, restorePurchases, hasAccess } = useSubscription();
   const { cp, isDarkMode, toggleDarkMode } = useThemePreference();
+  const { audioSettings, updateAudioSettings, playSfx } = useAudio();
   const [isRestoring, setIsRestoring] = useState(false);
 
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
@@ -210,6 +212,91 @@ export default function SettingsScreen() {
               indicatorColor={isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'}
               textColor={cp.text}
             />
+          </View>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.duration(400).delay(150)}>
+          <Text style={[styles.sectionTitle, { color: cp.neonCyan, textShadowColor: isDarkMode ? cp.neonCyan : 'transparent' }]}>SOUND</Text>
+          <View style={[styles.card, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
+            <Toggle
+              label="Sound Effects"
+              value={audioSettings.sfxEnabled}
+              onValueChange={(value) => updateAudioSettings({ sfxEnabled: value })}
+              activeColor={cp.neonGreen}
+              labelColor={cp.text}
+            />
+            <Text style={[styles.settingDescription, { color: cp.textSecondary }]}>
+              Play sounds during workout phase transitions and countdowns.
+            </Text>
+
+            {audioSettings.sfxEnabled ? (
+              <>
+                <View style={[styles.divider, { backgroundColor: cp.divider }]} />
+                <View style={styles.sliderContainer}>
+                  <View style={styles.sliderHeader}>
+                    <Text style={[styles.sliderLabel, { color: cp.text }]}>SFX Volume</Text>
+                    <Text style={[styles.sliderValue, { color: cp.neonGreen }]}>{Math.round(audioSettings.sfxVolume * 100)}%</Text>
+                  </View>
+                  <Slider
+                    style={styles.slider}
+                    minimumValue={0}
+                    maximumValue={1}
+                    step={0.05}
+                    value={audioSettings.sfxVolume}
+                    onSlidingComplete={(value: number) => {
+                      updateAudioSettings({ sfxVolume: value });
+                      playSfx('squeeze');
+                    }}
+                    minimumTrackTintColor={cp.neonGreen}
+                    maximumTrackTintColor={cp.inputBg}
+                    thumbTintColor={cp.neonGreen}
+                  />
+                </View>
+              </>
+            ) : null}
+
+            <View style={[styles.divider, { backgroundColor: cp.divider }]} />
+
+            <SegmentedControl
+              label="Ambient Sound"
+              options={[
+                { value: 'none', label: 'Off' },
+                { value: 'calm', label: 'Calm' },
+                { value: 'focused', label: 'Focused' },
+              ]}
+              value={audioSettings.ambientTrack}
+              onChange={(value) => updateAudioSettings({ ambientTrack: value as 'none' | 'calm' | 'focused' })}
+              labelColor={cp.text}
+              trackColor={cp.inputBg}
+              indicatorColor={isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'}
+              textColor={cp.text}
+            />
+            <Text style={[styles.settingDescription, { color: cp.textSecondary }]}>
+              Background audio that plays during workouts.
+            </Text>
+
+            {audioSettings.ambientTrack !== 'none' ? (
+              <>
+                <View style={[styles.divider, { backgroundColor: cp.divider }]} />
+                <View style={styles.sliderContainer}>
+                  <View style={styles.sliderHeader}>
+                    <Text style={[styles.sliderLabel, { color: cp.text }]}>Ambient Volume</Text>
+                    <Text style={[styles.sliderValue, { color: cp.neonCyan }]}>{Math.round(audioSettings.ambientVolume * 100)}%</Text>
+                  </View>
+                  <Slider
+                    style={styles.slider}
+                    minimumValue={0}
+                    maximumValue={1}
+                    step={0.05}
+                    value={audioSettings.ambientVolume}
+                    onSlidingComplete={(value: number) => updateAudioSettings({ ambientVolume: value })}
+                    minimumTrackTintColor={cp.neonCyan}
+                    maximumTrackTintColor={cp.inputBg}
+                    thumbTintColor={cp.neonCyan}
+                  />
+                </View>
+              </>
+            ) : null}
           </View>
         </Animated.View>
 

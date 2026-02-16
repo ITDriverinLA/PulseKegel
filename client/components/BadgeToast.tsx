@@ -15,6 +15,7 @@ import { Feather } from '@expo/vector-icons';
 
 import { getBadgeById } from '@/data/badges';
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
+import { useAudio } from '@/contexts/AudioContext';
 import { Spacing, BorderRadius } from '@/constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -26,6 +27,7 @@ interface BadgeToastProps {
 
 export function BadgeToast({ badgeIds, onDismiss }: BadgeToastProps) {
   const { cp, isDarkMode } = useThemePreference();
+  const { playSfx } = useAudio();
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const iconScale = useSharedValue(0);
@@ -39,6 +41,8 @@ export function BadgeToast({ badgeIds, onDismiss }: BadgeToastProps) {
 
   useEffect(() => {
     if (!currentBadge) return;
+
+    playSfx('badge');
 
     iconScale.value = 0;
     iconRotate.value = 0;

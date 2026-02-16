@@ -12,6 +12,7 @@ import { queryClient } from "@/lib/query-client";
 import RootStackNavigator from "@/navigation/RootStackNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
+import { AudioProvider } from "@/contexts/AudioContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { ThemePreferenceProvider, useThemePreference } from "@/contexts/ThemePreferenceContext";
 
@@ -38,7 +39,9 @@ export default function App() {
         <SubscriptionProvider>
           <ThemePreferenceProvider>
             <AccessibilityProvider>
-              <AppContent />
+              <AudioProvider>
+                <AppContent />
+              </AudioProvider>
             </AccessibilityProvider>
           </ThemePreferenceProvider>
         </SubscriptionProvider>
