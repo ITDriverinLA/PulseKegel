@@ -13,6 +13,7 @@ const STORAGE_KEYS = {
   LAST_WEEKLY_REVIEW: 'pulsekegel_last_weekly_review',
   REVIEW_HISTORY: 'pulsekegel_review_history',
   EARNED_BADGES: 'pulsekegel_earned_badges',
+  AUDIO_SETTINGS: 'pulsekegel_audio_settings',
 };
 
 export interface WeeklyReviewEntry {
@@ -560,5 +561,23 @@ export const storage = {
     }
 
     return newBadgeIds;
+  },
+
+  async getAudioSettings(): Promise<{ sfxEnabled: boolean; sfxVolume: number; ambientTrack: string; ambientVolume: number }> {
+    try {
+      const data = await AsyncStorage.getItem(STORAGE_KEYS.AUDIO_SETTINGS);
+      const defaults = { sfxEnabled: true, sfxVolume: 0.7, ambientTrack: 'none', ambientVolume: 0.3 };
+      return data ? { ...defaults, ...JSON.parse(data) } : defaults;
+    } catch {
+      return { sfxEnabled: true, sfxVolume: 0.7, ambientTrack: 'none', ambientVolume: 0.3 };
+    }
+  },
+
+  async saveAudioSettings(settings: { sfxEnabled: boolean; sfxVolume: number; ambientTrack: string; ambientVolume: number }): Promise<void> {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.AUDIO_SETTINGS, JSON.stringify(settings));
+    } catch (error) {
+      console.error('Error saving audio settings:', error);
+    }
   },
 };

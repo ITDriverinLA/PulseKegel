@@ -29,6 +29,7 @@
     "drizzle-orm": "^0.39.3",
     "drizzle-zod": "^0.7.1",
     "expo": "~54.0.32",
+    "expo-audio": "^1.1.1",
     "expo-blur": "~15.0.8",
     "expo-constants": "~18.0.13",
     "expo-font": "~14.0.11",
