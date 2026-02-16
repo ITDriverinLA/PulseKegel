@@ -1,11 +1,10 @@
 import React from 'react';
-import { StyleSheet, View, Modal, Pressable, ScrollView } from 'react-native';
+import { StyleSheet, View, Modal, Pressable, ScrollView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { useTheme } from '@/hooks/useTheme';
+import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 import { Spacing, BorderRadius } from '@/constants/theme';
 
 interface FormTipsSheetProps {
@@ -42,8 +41,14 @@ const tips = [
 ];
 
 export function FormTipsSheet({ visible, onClose }: FormTipsSheetProps) {
-  const { theme } = useTheme();
+  const { cp, isDarkMode } = useThemePreference();
   const insets = useSafeAreaInsets();
+
+  const sheetBg = isDarkMode ? '#1a1a2e' : '#ffffff';
+  const cardBg = isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)';
+  const iconBg = isDarkMode ? `${cp.neonGreen}20` : `${cp.neonGreen}15`;
+  const accentColor = cp.neonGreen;
+  const handleColor = isDarkMode ? 'rgba(255,255,255,0.2)' : '#D1D5DB';
 
   return (
     <Modal
@@ -54,48 +59,43 @@ export function FormTipsSheet({ visible, onClose }: FormTipsSheetProps) {
     >
       <View style={styles.overlay}>
         <Pressable style={styles.backdrop} onPress={onClose} />
-        <ThemedView
+        <View
           style={[
             styles.sheet,
-            { paddingBottom: insets.bottom + Spacing.xl },
+            {
+              backgroundColor: sheetBg,
+              paddingBottom: insets.bottom + Spacing.xl,
+            },
           ]}
         >
-          <View style={styles.handle} />
-          
+          <View style={[styles.handle, { backgroundColor: handleColor }]} />
+
           <View style={styles.header}>
-            <ThemedText type="h3">Form Tips</ThemedText>
+            <ThemedText type="h3" style={{ color: cp.text }}>Form Tips</ThemedText>
             <Pressable onPress={onClose} style={styles.closeButton}>
-              <Feather name="x" size={24} color={theme.text} />
+              <Feather name="x" size={24} color={cp.text} />
             </Pressable>
           </View>
 
           <ScrollView
-            style={styles.content}
             showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
           >
             {tips.map((tip, index) => (
               <View
                 key={index}
-                style={[
-                  styles.tipCard,
-                  { backgroundColor: theme.backgroundDefault },
-                ]}
+                style={[styles.tipCard, { backgroundColor: cardBg }]}
               >
-                <View
-                  style={[
-                    styles.tipIcon,
-                    { backgroundColor: `${theme.primary}15` },
-                  ]}
-                >
-                  <Feather name={tip.icon} size={20} color={theme.primary} />
+                <View style={[styles.tipIcon, { backgroundColor: iconBg }]}>
+                  <Feather name={tip.icon} size={20} color={accentColor} />
                 </View>
                 <View style={styles.tipContent}>
-                  <ThemedText type="body" style={styles.tipTitle}>
+                  <ThemedText type="body" style={[styles.tipTitle, { color: cp.text }]}>
                     {tip.title}
                   </ThemedText>
                   <ThemedText
                     type="small"
-                    style={[styles.tipDescription, { color: theme.textSecondary }]}
+                    style={[styles.tipDescription, { color: cp.textSecondary }]}
                   >
                     {tip.description}
                   </ThemedText>
@@ -103,7 +103,7 @@ export function FormTipsSheet({ visible, onClose }: FormTipsSheetProps) {
               </View>
             ))}
           </ScrollView>
-        </ThemedView>
+        </View>
       </View>
     </Modal>
   );
@@ -128,7 +128,6 @@ const styles = StyleSheet.create({
   handle: {
     width: 40,
     height: 4,
-    backgroundColor: '#D1D5DB',
     borderRadius: 2,
     alignSelf: 'center',
     marginBottom: Spacing.lg,
@@ -142,8 +141,8 @@ const styles = StyleSheet.create({
   closeButton: {
     padding: Spacing.xs,
   },
-  content: {
-    flex: 1,
+  scrollContent: {
+    paddingBottom: Spacing.md,
   },
   tipCard: {
     flexDirection: 'row',
