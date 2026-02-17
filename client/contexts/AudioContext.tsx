@@ -36,8 +36,10 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const countdownPlayer = useAudioPlayer(SOUND_SOURCES.countdown);
   const completePlayer = useAudioPlayer(SOUND_SOURCES.complete);
   const badgePlayer = useAudioPlayer(SOUND_SOURCES.badge);
-  const ambientCalmPlayer = useAudioPlayer(AMBIENT_SOURCES.calm);
-  const ambientFocusedPlayer = useAudioPlayer(AMBIENT_SOURCES.focused);
+  const ageWeapon1Player = useAudioPlayer(AMBIENT_SOURCES.age_weapon_1);
+  const ageWeapon2Player = useAudioPlayer(AMBIENT_SOURCES.age_weapon_2);
+  const trainingBeatsPlayer = useAudioPlayer(AMBIENT_SOURCES.training_beats);
+  const trainingKegelPlayer = useAudioPlayer(AMBIENT_SOURCES.training_kegel);
 
   const sfxPlayers: Record<SoundEffect, typeof squeezePlayer> = {
     squeeze: squeezePlayer,
@@ -48,9 +50,11 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     badge: badgePlayer,
   };
 
-  const ambientPlayers: Record<Exclude<AmbientTrack, 'none'>, typeof ambientCalmPlayer> = {
-    calm: ambientCalmPlayer,
-    focused: ambientFocusedPlayer,
+  const ambientPlayers: Record<Exclude<AmbientTrack, 'none'>, typeof ageWeapon1Player> = {
+    age_weapon_1: ageWeapon1Player,
+    age_weapon_2: ageWeapon2Player,
+    training_beats: trainingBeatsPlayer,
+    training_kegel: trainingKegelPlayer,
   };
 
   useEffect(() => {

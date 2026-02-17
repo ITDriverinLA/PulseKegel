@@ -22,6 +22,7 @@ import { useAccessibility } from '@/contexts/AccessibilityContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 import { useAudio } from '@/contexts/AudioContext';
+import { AmbientTrack, AMBIENT_TRACK_LABELS } from '@/lib/audioManager';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
@@ -257,22 +258,31 @@ export default function SettingsScreen() {
 
             <View style={[styles.divider, { backgroundColor: cp.divider }]} />
 
-            <SegmentedControl
-              label="Ambient Sound"
-              options={[
-                { value: 'none', label: 'Off' },
-                { value: 'calm', label: 'Calm' },
-                { value: 'focused', label: 'Focused' },
-              ]}
-              value={audioSettings.ambientTrack}
-              onChange={(value) => updateAudioSettings({ ambientTrack: value as 'none' | 'calm' | 'focused' })}
-              labelColor={cp.text}
-              trackColor={cp.inputBg}
-              indicatorColor={isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'}
-              textColor={cp.text}
-            />
+            <Text style={[styles.sliderLabel, { color: cp.text, marginBottom: Spacing.sm }]}>Ambient Music</Text>
+            {(Object.keys(AMBIENT_TRACK_LABELS) as AmbientTrack[]).map((track) => (
+              <Pressable
+                key={track}
+                onPress={() => updateAudioSettings({ ambientTrack: track })}
+                style={[
+                  styles.radioRow,
+                  audioSettings.ambientTrack === track && { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' },
+                ]}
+              >
+                <View style={[
+                  styles.radioCircle,
+                  { borderColor: audioSettings.ambientTrack === track ? cp.neonCyan : cp.textMuted },
+                ]}>
+                  {audioSettings.ambientTrack === track ? (
+                    <View style={[styles.radioFill, { backgroundColor: cp.neonCyan }]} />
+                  ) : null}
+                </View>
+                <Text style={[styles.radioLabel, { color: audioSettings.ambientTrack === track ? cp.text : cp.textSecondary }]}>
+                  {AMBIENT_TRACK_LABELS[track]}
+                </Text>
+              </Pressable>
+            ))}
             <Text style={[styles.settingDescription, { color: cp.textSecondary }]}>
-              Background audio that plays during workouts.
+              Background music that plays during workouts.
             </Text>
 
             {audioSettings.ambientTrack !== 'none' ? (
@@ -638,6 +648,31 @@ const styles = StyleSheet.create({
   slider: {
     width: '100%',
     height: 40,
+  },
+  radioRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.xs,
+    borderRadius: BorderRadius.sm,
+    marginBottom: 2,
+  },
+  radioCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Spacing.sm,
+  },
+  radioFill: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  radioLabel: {
+    fontSize: 14,
   },
   dangerButton: {
     flexDirection: 'row',
