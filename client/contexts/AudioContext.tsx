@@ -16,6 +16,9 @@ interface AudioContextType {
   playSfx: (effect: SoundEffect) => void;
   startAmbient: () => void;
   stopAmbient: () => void;
+  previewTrack: (track: Exclude<AmbientTrack, 'none'>) => void;
+  stopPreview: () => void;
+  previewingTrack: AmbientTrack;
 }
 
 const AudioContext = createContext<AudioContextType>({
@@ -24,11 +27,15 @@ const AudioContext = createContext<AudioContextType>({
   playSfx: () => {},
   startAmbient: () => {},
   stopAmbient: () => {},
+  previewTrack: () => {},
+  stopPreview: () => {},
+  previewingTrack: 'none',
 });
 
 export function AudioProvider({ children }: { children: ReactNode }) {
   const [audioSettings, setAudioSettings] = useState<AudioSettings>(defaultAudioSettings);
   const [currentAmbientTrack, setCurrentAmbientTrack] = useState<AmbientTrack>('none');
+  const [previewingTrack, setPreviewingTrack] = useState<AmbientTrack>('none');
 
   const squeezePlayer = useAudioPlayer(SOUND_SOURCES.squeeze);
   const restPlayer = useAudioPlayer(SOUND_SOURCES.rest);
@@ -139,6 +146,45 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     setCurrentAmbientTrack('none');
   }, []);
 
+  const previewTrack = useCallback((track: Exclude<AmbientTrack, 'none'>) => {
+    for (const [key, player] of Object.entries(ambientPlayers)) {
+      if (player) {
+        try {
+          player.pause();
+          player.seekTo(0);
+        } catch {}
+      }
+    }
+
+    if (previewingTrack === track) {
+      setPreviewingTrack('none');
+      return;
+    }
+
+    const player = ambientPlayers[track];
+    if (player) {
+      try {
+        player.volume = audioSettings.ambientVolume;
+        player.loop = false;
+        player.seekTo(0);
+        player.play();
+        setPreviewingTrack(track);
+      } catch {}
+    }
+  }, [previewingTrack, audioSettings.ambientVolume]);
+
+  const stopPreview = useCallback(() => {
+    for (const player of Object.values(ambientPlayers)) {
+      if (player) {
+        try {
+          player.pause();
+          player.seekTo(0);
+        } catch {}
+      }
+    }
+    setPreviewingTrack('none');
+  }, []);
+
   return (
     <AudioContext.Provider
       value={{
@@ -147,6 +193,9 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         playSfx,
         startAmbient,
         stopAmbient,
+        previewTrack,
+        stopPreview,
+        previewingTrack,
       }}
     >
       {children}

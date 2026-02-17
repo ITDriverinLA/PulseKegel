@@ -36,7 +36,7 @@ export default function SettingsScreen() {
   const { refresh: refreshAccessibility, fontScale, colors } = useAccessibility();
   const { isSubscribed, isTrialActive, trialDaysRemaining, restorePurchases, hasAccess } = useSubscription();
   const { cp, isDarkMode, toggleDarkMode } = useThemePreference();
-  const { audioSettings, updateAudioSettings, playSfx } = useAudio();
+  const { audioSettings, updateAudioSettings, playSfx, previewTrack, stopPreview, previewingTrack } = useAudio();
   const [isRestoring, setIsRestoring] = useState(false);
 
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
@@ -55,6 +55,11 @@ export default function SettingsScreen() {
     const unsubscribe = navigation.addListener('focus', loadSettings);
     return unsubscribe;
   }, [navigation, loadSettings]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('blur', stopPreview);
+    return unsubscribe;
+  }, [navigation, stopPreview]);
 
   const updateSetting = async <K extends keyof UserSettings>(
     key: K,
@@ -262,7 +267,10 @@ export default function SettingsScreen() {
             {(Object.keys(AMBIENT_TRACK_LABELS) as AmbientTrack[]).map((track) => (
               <Pressable
                 key={track}
-                onPress={() => updateAudioSettings({ ambientTrack: track })}
+                onPress={() => {
+                  stopPreview();
+                  updateAudioSettings({ ambientTrack: track });
+                }}
                 style={[
                   styles.radioRow,
                   audioSettings.ambientTrack === track && { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' },
@@ -276,13 +284,33 @@ export default function SettingsScreen() {
                     <View style={[styles.radioFill, { backgroundColor: cp.neonCyan }]} />
                   ) : null}
                 </View>
-                <Text style={[styles.radioLabel, { color: audioSettings.ambientTrack === track ? cp.text : cp.textSecondary }]}>
+                <Text style={[styles.radioLabel, { color: audioSettings.ambientTrack === track ? cp.text : cp.textSecondary, flex: 1 }]}>
                   {AMBIENT_TRACK_LABELS[track]}
                 </Text>
+                {track !== 'none' ? (
+                  <Pressable
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      previewTrack(track as Exclude<AmbientTrack, 'none'>);
+                    }}
+                    hitSlop={8}
+                    style={[
+                      styles.previewButton,
+                      { backgroundColor: previewingTrack === track ? cp.neonCyan : (isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)') },
+                    ]}
+                    testID={`preview-${track}`}
+                  >
+                    <Feather
+                      name={previewingTrack === track ? 'square' : 'play'}
+                      size={14}
+                      color={previewingTrack === track ? (isDarkMode ? '#000' : '#fff') : cp.textSecondary}
+                    />
+                  </Pressable>
+                ) : null}
               </Pressable>
             ))}
             <Text style={[styles.settingDescription, { color: cp.textSecondary }]}>
-              Background music that plays during workouts.
+              Tap play to preview. Background music loops during workouts.
             </Text>
 
             {audioSettings.ambientTrack !== 'none' ? (
@@ -673,6 +701,14 @@ const styles = StyleSheet.create({
   },
   radioLabel: {
     fontSize: 14,
+  },
+  previewButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: Spacing.sm,
   },
   dangerButton: {
     flexDirection: 'row',
