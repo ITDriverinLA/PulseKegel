@@ -132,12 +132,8 @@ export default function WorkoutPlayerScreen() {
         if (newPhase === 'squeeze') {
           playSfx('squeeze');
           hapticPulseRef.current.start(segment.type, settings, segment.squeezeSeconds, segment.rampSteps);
-        } else if (newPhase === 'breathe') {
-          playSfx('breathe');
-          hapticPulseRef.current.triggerTransitionCue();
-          hapticPulseRef.current.stop();
         } else {
-          playSfx('rest');
+          playSfx(segment.type === 'breathing' ? 'breathe' : 'rest');
           hapticPulseRef.current.triggerTransitionCue();
           hapticPulseRef.current.stop();
         }

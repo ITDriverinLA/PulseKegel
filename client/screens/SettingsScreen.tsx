@@ -22,7 +22,7 @@ import { useAccessibility } from '@/contexts/AccessibilityContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 import { useAudio } from '@/contexts/AudioContext';
-import { AmbientTrack, AMBIENT_TRACK_LABELS } from '@/lib/audioManager';
+import { AMBIENT_TRACK_LABELS } from '@/lib/audioManager';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
@@ -36,7 +36,7 @@ export default function SettingsScreen() {
   const { refresh: refreshAccessibility, fontScale, colors } = useAccessibility();
   const { isSubscribed, isTrialActive, trialDaysRemaining, restorePurchases, hasAccess } = useSubscription();
   const { cp, isDarkMode, toggleDarkMode } = useThemePreference();
-  const { audioSettings, updateAudioSettings, playSfx, previewTrack, stopPreview, previewingTrack } = useAudio();
+  const { audioSettings, updateAudioSettings, playSfx } = useAudio();
   const [isRestoring, setIsRestoring] = useState(false);
 
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
@@ -56,10 +56,6 @@ export default function SettingsScreen() {
     return unsubscribe;
   }, [navigation, loadSettings]);
 
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('blur', stopPreview);
-    return unsubscribe;
-  }, [navigation, stopPreview]);
 
   const updateSetting = async <K extends keyof UserSettings>(
     key: K,
@@ -263,78 +259,26 @@ export default function SettingsScreen() {
 
             <View style={[styles.divider, { backgroundColor: cp.divider }]} />
 
-            <Text style={[styles.sliderLabel, { color: cp.text, marginBottom: Spacing.sm }]}>Ambient Music</Text>
-            {(Object.keys(AMBIENT_TRACK_LABELS) as AmbientTrack[]).map((track) => (
-              <Pressable
-                key={track}
-                onPress={() => {
-                  stopPreview();
-                  updateAudioSettings({ ambientTrack: track });
-                }}
-                style={[
-                  styles.radioRow,
-                  audioSettings.ambientTrack === track && { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' },
-                ]}
-              >
-                <View style={[
-                  styles.radioCircle,
-                  { borderColor: audioSettings.ambientTrack === track ? cp.neonCyan : cp.textMuted },
-                ]}>
-                  {audioSettings.ambientTrack === track ? (
-                    <View style={[styles.radioFill, { backgroundColor: cp.neonCyan }]} />
-                  ) : null}
+            <Pressable
+              onPress={() => navigation.navigate('Music')}
+              style={styles.musicNavRow}
+              testID="manage-music-button"
+            >
+              <View style={styles.musicNavLeft}>
+                <Feather name="music" size={18} color={cp.neonCyan} />
+                <View style={styles.musicNavTextContainer}>
+                  <Text style={[styles.settingLabel, { color: cp.text }]}>Ambient Music</Text>
+                  <Text style={[styles.settingDescription, { color: cp.textSecondary, marginBottom: 0 }]}>
+                    {audioSettings.shuffleMode !== 'off'
+                      ? `Shuffle ${audioSettings.shuffleMode === 'all' ? '(All)' : '(Selected)'}`
+                      : (audioSettings.ambientTrack === 'none'
+                          ? 'Off'
+                          : AMBIENT_TRACK_LABELS[audioSettings.ambientTrack])}
+                  </Text>
                 </View>
-                <Text style={[styles.radioLabel, { color: audioSettings.ambientTrack === track ? cp.text : cp.textSecondary, flex: 1 }]}>
-                  {AMBIENT_TRACK_LABELS[track]}
-                </Text>
-                {track !== 'none' ? (
-                  <Pressable
-                    onPress={(e) => {
-                      e.stopPropagation();
-                      previewTrack(track as Exclude<AmbientTrack, 'none'>);
-                    }}
-                    hitSlop={8}
-                    style={[
-                      styles.previewButton,
-                      { backgroundColor: previewingTrack === track ? cp.neonCyan : (isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)') },
-                    ]}
-                    testID={`preview-${track}`}
-                  >
-                    <Feather
-                      name={previewingTrack === track ? 'square' : 'play'}
-                      size={14}
-                      color={previewingTrack === track ? (isDarkMode ? '#000' : '#fff') : cp.textSecondary}
-                    />
-                  </Pressable>
-                ) : null}
-              </Pressable>
-            ))}
-            <Text style={[styles.settingDescription, { color: cp.textSecondary }]}>
-              Tap play to preview. Background music loops during workouts.
-            </Text>
-
-            {audioSettings.ambientTrack !== 'none' ? (
-              <>
-                <View style={[styles.divider, { backgroundColor: cp.divider }]} />
-                <View style={styles.sliderContainer}>
-                  <View style={styles.sliderHeader}>
-                    <Text style={[styles.sliderLabel, { color: cp.text }]}>Ambient Volume</Text>
-                    <Text style={[styles.sliderValue, { color: cp.neonCyan }]}>{Math.round(audioSettings.ambientVolume * 100)}%</Text>
-                  </View>
-                  <Slider
-                    style={styles.slider}
-                    minimumValue={0}
-                    maximumValue={1}
-                    step={0.05}
-                    value={audioSettings.ambientVolume}
-                    onSlidingComplete={(value: number) => updateAudioSettings({ ambientVolume: value })}
-                    minimumTrackTintColor={cp.neonCyan}
-                    maximumTrackTintColor={cp.inputBg}
-                    thumbTintColor={cp.neonCyan}
-                  />
-                </View>
-              </>
-            ) : null}
+              </View>
+              <Feather name="chevron-right" size={20} color={cp.textMuted} />
+            </Pressable>
           </View>
         </Animated.View>
 
@@ -709,6 +653,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: Spacing.sm,
+  },
+  musicNavRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: Spacing.sm,
+  },
+  musicNavLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: Spacing.sm,
+  },
+  musicNavTextContainer: {
+    flex: 1,
   },
   dangerButton: {
     flexDirection: 'row',
