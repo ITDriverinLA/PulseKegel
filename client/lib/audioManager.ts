@@ -1,18 +1,17 @@
 export type SoundEffect = 'squeeze' | 'rest' | 'breathe' | 'countdown' | 'complete' | 'badge';
 export type AmbientTrack = 'none' | 'age_weapon_1' | 'age_weapon_2' | 'training_beats' | 'training_kegel' | 'quiet_power_1' | 'quiet_power_2' | 'quiet_power_f1' | 'quiet_power_f2';
 
-export type ShuffleMode = 'off' | 'all' | 'selected';
+export type TrackKey = Exclude<AmbientTrack, 'none'>;
 
 export interface AudioSettings {
   sfxEnabled: boolean;
   sfxVolume: number;
-  ambientTrack: AmbientTrack;
   ambientVolume: number;
-  shuffleMode: ShuffleMode;
-  shuffleEnabledTracks: Exclude<AmbientTrack, 'none'>[];
+  selectedTracks: TrackKey[];
+  shuffleEnabled: boolean;
 }
 
-export const ALL_AMBIENT_TRACKS: Exclude<AmbientTrack, 'none'>[] = [
+export const ALL_AMBIENT_TRACKS: TrackKey[] = [
   'age_weapon_1',
   'age_weapon_2',
   'training_beats',
@@ -26,10 +25,9 @@ export const ALL_AMBIENT_TRACKS: Exclude<AmbientTrack, 'none'>[] = [
 export const defaultAudioSettings: AudioSettings = {
   sfxEnabled: true,
   sfxVolume: 0.7,
-  ambientTrack: 'none',
   ambientVolume: 0.3,
-  shuffleMode: 'off',
-  shuffleEnabledTracks: [...ALL_AMBIENT_TRACKS],
+  selectedTracks: [],
+  shuffleEnabled: false,
 };
 
 export const AMBIENT_TRACK_LABELS: Record<AmbientTrack, string> = {

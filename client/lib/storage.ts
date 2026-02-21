@@ -563,17 +563,16 @@ export const storage = {
     return newBadgeIds;
   },
 
-  async getAudioSettings(): Promise<{ sfxEnabled: boolean; sfxVolume: number; ambientTrack: string; ambientVolume: number }> {
+  async getAudioSettings(): Promise<Record<string, unknown>> {
     try {
       const data = await AsyncStorage.getItem(STORAGE_KEYS.AUDIO_SETTINGS);
-      const defaults = { sfxEnabled: true, sfxVolume: 0.7, ambientTrack: 'none', ambientVolume: 0.3 };
-      return data ? { ...defaults, ...JSON.parse(data) } : defaults;
+      return data ? JSON.parse(data) : {};
     } catch {
-      return { sfxEnabled: true, sfxVolume: 0.7, ambientTrack: 'none', ambientVolume: 0.3 };
+      return {};
     }
   },
 
-  async saveAudioSettings(settings: { sfxEnabled: boolean; sfxVolume: number; ambientTrack: string; ambientVolume: number }): Promise<void> {
+  async saveAudioSettings(settings: Record<string, unknown>): Promise<void> {
     try {
       await AsyncStorage.setItem(STORAGE_KEYS.AUDIO_SETTINGS, JSON.stringify(settings));
     } catch (error) {

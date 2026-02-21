@@ -10,17 +10,10 @@ import { Spacing, BorderRadius } from '@/constants/theme';
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 import { useAudio } from '@/contexts/AudioContext';
 import {
-  AmbientTrack,
+  TrackKey,
   AMBIENT_TRACK_LABELS,
   ALL_AMBIENT_TRACKS,
-  ShuffleMode,
 } from '@/lib/audioManager';
-
-const SHUFFLE_OPTIONS: { value: ShuffleMode; label: string; description: string }[] = [
-  { value: 'off', label: 'Off', description: 'Play the selected track on repeat' },
-  { value: 'all', label: 'All Tracks', description: 'Shuffle through every track' },
-  { value: 'selected', label: 'Selected Only', description: 'Shuffle through your chosen tracks' },
-];
 
 export default function MusicScreen() {
   const insets = useSafeAreaInsets();
@@ -34,32 +27,23 @@ export default function MusicScreen() {
     previewingTrack,
   } = useAudio();
 
-  const handleTrackSelect = useCallback((track: AmbientTrack) => {
-    stopPreview();
-    updateAudioSettings({ ambientTrack: track });
-  }, [stopPreview, updateAudioSettings]);
-
-  const handleShuffleModeChange = useCallback((mode: ShuffleMode) => {
-    updateAudioSettings({ shuffleMode: mode });
-  }, [updateAudioSettings]);
-
-  const toggleShuffleTrack = useCallback((track: Exclude<AmbientTrack, 'none'>) => {
-    const current = audioSettings.shuffleEnabledTracks || [...ALL_AMBIENT_TRACKS];
-    const isEnabled = current.includes(track);
-    let updated: Exclude<AmbientTrack, 'none'>[];
-    if (isEnabled) {
+  const toggleTrack = useCallback((track: TrackKey) => {
+    const current = audioSettings.selectedTracks || [];
+    const isSelected = current.includes(track);
+    let updated: TrackKey[];
+    if (isSelected) {
       updated = current.filter(t => t !== track);
-      if (updated.length === 0) return;
     } else {
       updated = [...current, track];
     }
-    updateAudioSettings({ shuffleEnabledTracks: updated });
-  }, [audioSettings.shuffleEnabledTracks, updateAudioSettings]);
+    updateAudioSettings({ selectedTracks: updated });
+  }, [audioSettings.selectedTracks, updateAudioSettings]);
 
-  const isTrackInShuffle = useCallback((track: Exclude<AmbientTrack, 'none'>) => {
-    const enabled = audioSettings.shuffleEnabledTracks || [...ALL_AMBIENT_TRACKS];
-    return enabled.includes(track);
-  }, [audioSettings.shuffleEnabledTracks]);
+  const isTrackSelected = useCallback((track: TrackKey) => {
+    return (audioSettings.selectedTracks || []).includes(track);
+  }, [audioSettings.selectedTracks]);
+
+  const selectedCount = (audioSettings.selectedTracks || []).length;
 
   return (
     <View style={[styles.container, { backgroundColor: cp.bg }]}>
@@ -88,149 +72,96 @@ export default function MusicScreen() {
           <View style={[styles.section, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
             <View style={styles.sectionHeader}>
               <Feather name="music" size={18} color={cp.neonCyan} />
-              <Text style={[styles.sectionTitle, { color: cp.text }]}>Now Playing</Text>
+              <Text style={[styles.sectionTitle, { color: cp.text }]}>Tracks</Text>
+              <View style={{ flex: 1 }} />
+              <Text style={[styles.selectedBadge, { color: cp.neonCyan }]}>
+                {selectedCount > 0 ? `${selectedCount} selected` : 'None selected'}
+              </Text>
             </View>
             <Text style={[styles.sectionDesc, { color: cp.textSecondary }]}>
-              Choose a track to play during workouts.
+              Check the tracks you want to play during workouts.
             </Text>
 
-            <Pressable
-              onPress={() => handleTrackSelect('none')}
-              style={[
-                styles.trackRow,
-                audioSettings.ambientTrack === 'none' && { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' },
-              ]}
-              testID="track-none"
-            >
-              <View style={[
-                styles.radioCircle,
-                { borderColor: audioSettings.ambientTrack === 'none' ? cp.neonCyan : cp.textMuted },
-              ]}>
-                {audioSettings.ambientTrack === 'none' ? (
-                  <View style={[styles.radioFill, { backgroundColor: cp.neonCyan }]} />
-                ) : null}
-              </View>
-              <Feather name="volume-x" size={16} color={cp.textMuted} style={{ marginRight: Spacing.sm }} />
-              <Text style={[styles.trackLabel, { color: audioSettings.ambientTrack === 'none' ? cp.text : cp.textSecondary }]}>
-                No Music
-              </Text>
-            </Pressable>
-
-            {ALL_AMBIENT_TRACKS.map((track) => (
-              <Pressable
-                key={track}
-                onPress={() => handleTrackSelect(track)}
-                style={[
-                  styles.trackRow,
-                  audioSettings.ambientTrack === track && { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' },
-                ]}
-                testID={`track-${track}`}
-              >
-                <View style={[
-                  styles.radioCircle,
-                  { borderColor: audioSettings.ambientTrack === track ? cp.neonCyan : cp.textMuted },
-                ]}>
-                  {audioSettings.ambientTrack === track ? (
-                    <View style={[styles.radioFill, { backgroundColor: cp.neonCyan }]} />
-                  ) : null}
-                </View>
-                <Feather name="disc" size={16} color={cp.textMuted} style={{ marginRight: Spacing.sm }} />
-                <Text style={[styles.trackLabel, { color: audioSettings.ambientTrack === track ? cp.text : cp.textSecondary }]}>
-                  {AMBIENT_TRACK_LABELS[track]}
-                </Text>
+            {ALL_AMBIENT_TRACKS.map((track) => {
+              const selected = isTrackSelected(track);
+              return (
                 <Pressable
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    previewTrack(track);
-                  }}
-                  hitSlop={8}
+                  key={track}
+                  onPress={() => toggleTrack(track)}
                   style={[
-                    styles.previewButton,
-                    { backgroundColor: previewingTrack === track ? cp.neonCyan : (isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)') },
+                    styles.trackRow,
+                    selected && { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' },
                   ]}
-                  testID={`preview-${track}`}
+                  testID={`track-${track}`}
                 >
-                  <Feather
-                    name={previewingTrack === track ? 'square' : 'play'}
-                    size={14}
-                    color={previewingTrack === track ? (isDarkMode ? '#000' : '#fff') : cp.textSecondary}
-                  />
+                  <View style={[
+                    styles.checkbox,
+                    { borderColor: selected ? cp.neonCyan : cp.textMuted },
+                    selected && { backgroundColor: cp.neonCyan },
+                  ]}>
+                    {selected ? (
+                      <Feather name="check" size={14} color={isDarkMode ? '#000' : '#fff'} />
+                    ) : null}
+                  </View>
+                  <Feather name="disc" size={16} color={cp.textMuted} style={{ marginRight: Spacing.sm }} />
+                  <Text style={[styles.trackLabel, { color: selected ? cp.text : cp.textSecondary }]}>
+                    {AMBIENT_TRACK_LABELS[track]}
+                  </Text>
+                  <Pressable
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      previewTrack(track);
+                    }}
+                    hitSlop={8}
+                    style={[
+                      styles.previewButton,
+                      { backgroundColor: previewingTrack === track ? cp.neonCyan : (isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)') },
+                    ]}
+                    testID={`preview-${track}`}
+                  >
+                    <Feather
+                      name={previewingTrack === track ? 'square' : 'play'}
+                      size={14}
+                      color={previewingTrack === track ? (isDarkMode ? '#000' : '#fff') : cp.textSecondary}
+                    />
+                  </Pressable>
                 </Pressable>
-              </Pressable>
-            ))}
+              );
+            })}
           </View>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(400).delay(200)}>
           <View style={[styles.section, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
-            <View style={styles.sectionHeader}>
-              <Feather name="shuffle" size={18} color={cp.neonCyan} />
-              <Text style={[styles.sectionTitle, { color: cp.text }]}>Shuffle</Text>
-            </View>
-            <Text style={[styles.sectionDesc, { color: cp.textSecondary }]}>
-              Automatically switch tracks during your workout.
-            </Text>
-
-            {SHUFFLE_OPTIONS.map((option) => (
-              <Pressable
-                key={option.value}
-                onPress={() => handleShuffleModeChange(option.value)}
-                style={[
-                  styles.shuffleRow,
-                  audioSettings.shuffleMode === option.value && { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' },
-                ]}
-                testID={`shuffle-${option.value}`}
-              >
-                <View style={[
-                  styles.radioCircle,
-                  { borderColor: audioSettings.shuffleMode === option.value ? cp.neonCyan : cp.textMuted },
-                ]}>
-                  {audioSettings.shuffleMode === option.value ? (
-                    <View style={[styles.radioFill, { backgroundColor: cp.neonCyan }]} />
-                  ) : null}
-                </View>
-                <View style={styles.shuffleTextContainer}>
-                  <Text style={[styles.shuffleLabel, { color: audioSettings.shuffleMode === option.value ? cp.text : cp.textSecondary }]}>
-                    {option.label}
-                  </Text>
-                  <Text style={[styles.shuffleDesc, { color: cp.textMuted }]}>
-                    {option.description}
-                  </Text>
-                </View>
-              </Pressable>
-            ))}
-
-            {audioSettings.shuffleMode === 'selected' ? (
-              <View style={styles.selectedTracksContainer}>
-                <Text style={[styles.selectedTracksTitle, { color: cp.text }]}>
-                  Include in Shuffle
+            <Pressable
+              onPress={() => updateAudioSettings({ shuffleEnabled: !audioSettings.shuffleEnabled })}
+              style={styles.shuffleRow}
+              testID="shuffle-toggle"
+            >
+              <Feather
+                name="shuffle"
+                size={18}
+                color={audioSettings.shuffleEnabled ? cp.neonCyan : cp.textMuted}
+              />
+              <View style={styles.shuffleTextContainer}>
+                <Text style={[styles.shuffleLabel, { color: cp.text }]}>Shuffle</Text>
+                <Text style={[styles.shuffleDesc, { color: cp.textSecondary }]}>
+                  {audioSettings.shuffleEnabled
+                    ? 'Tracks play in random order'
+                    : 'Tracks play in list order'}
                 </Text>
-                {ALL_AMBIENT_TRACKS.map((track) => {
-                  const enabled = isTrackInShuffle(track);
-                  return (
-                    <Pressable
-                      key={track}
-                      onPress={() => toggleShuffleTrack(track)}
-                      style={styles.checkboxRow}
-                      testID={`shuffle-check-${track}`}
-                    >
-                      <View style={[
-                        styles.checkbox,
-                        { borderColor: enabled ? cp.neonCyan : cp.textMuted },
-                        enabled && { backgroundColor: cp.neonCyan },
-                      ]}>
-                        {enabled ? (
-                          <Feather name="check" size={14} color={isDarkMode ? '#000' : '#fff'} />
-                        ) : null}
-                      </View>
-                      <Text style={[styles.checkboxLabel, { color: enabled ? cp.text : cp.textSecondary }]}>
-                        {AMBIENT_TRACK_LABELS[track]}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
               </View>
-            ) : null}
+              <View style={[
+                styles.toggleTrack,
+                { backgroundColor: audioSettings.shuffleEnabled ? cp.neonCyan : (isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)') },
+              ]}>
+                <View style={[
+                  styles.toggleThumb,
+                  audioSettings.shuffleEnabled && styles.toggleThumbActive,
+                  { backgroundColor: audioSettings.shuffleEnabled ? (isDarkMode ? '#000' : '#fff') : cp.textMuted },
+                ]} />
+              </View>
+            </Pressable>
           </View>
         </Animated.View>
 
@@ -311,6 +242,10 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
   },
+  selectedBadge: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
   sectionDesc: {
     fontSize: 13,
     marginBottom: Spacing.md,
@@ -324,19 +259,14 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.sm,
     marginBottom: 2,
   },
-  radioCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: Spacing.sm,
-  },
-  radioFill: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
   },
   trackLabel: {
     fontSize: 14,
@@ -353,51 +283,33 @@ const styles = StyleSheet.create({
   shuffleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.xs,
-    borderRadius: BorderRadius.sm,
-    marginBottom: 2,
+    gap: Spacing.sm,
   },
   shuffleTextContainer: {
     flex: 1,
   },
   shuffleLabel: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   shuffleDesc: {
     fontSize: 12,
     marginTop: 2,
   },
-  selectedTracksContainer: {
-    marginTop: Spacing.md,
-    paddingTop: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(128,128,128,0.2)',
+  toggleTrack: {
+    width: 44,
+    height: 26,
+    borderRadius: 13,
+    padding: 2,
+    justifyContent: 'center',
   },
-  selectedTracksTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: Spacing.sm,
-  },
-  checkboxRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.xs,
-  },
-  checkbox: {
+  toggleThumb: {
     width: 22,
     height: 22,
-    borderRadius: 6,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: Spacing.sm,
+    borderRadius: 11,
   },
-  checkboxLabel: {
-    fontSize: 14,
-    flex: 1,
+  toggleThumbActive: {
+    alignSelf: 'flex-end',
   },
   sliderContainer: {
     marginTop: Spacing.xs,

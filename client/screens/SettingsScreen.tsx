@@ -22,7 +22,6 @@ import { useAccessibility } from '@/contexts/AccessibilityContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 import { useAudio } from '@/contexts/AudioContext';
-import { AMBIENT_TRACK_LABELS } from '@/lib/audioManager';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
@@ -269,11 +268,9 @@ export default function SettingsScreen() {
                 <View style={styles.musicNavTextContainer}>
                   <Text style={[styles.settingLabel, { color: cp.text }]}>Ambient Music</Text>
                   <Text style={[styles.settingDescription, { color: cp.textSecondary, marginBottom: 0 }]}>
-                    {audioSettings.shuffleMode !== 'off'
-                      ? `Shuffle ${audioSettings.shuffleMode === 'all' ? '(All)' : '(Selected)'}`
-                      : (audioSettings.ambientTrack === 'none'
-                          ? 'Off'
-                          : AMBIENT_TRACK_LABELS[audioSettings.ambientTrack])}
+                    {audioSettings.selectedTracks.length === 0
+                      ? 'Off'
+                      : `${audioSettings.selectedTracks.length} track${audioSettings.selectedTracks.length !== 1 ? 's' : ''}${audioSettings.shuffleEnabled ? ', Shuffle' : ''}`}
                   </Text>
                 </View>
               </View>
