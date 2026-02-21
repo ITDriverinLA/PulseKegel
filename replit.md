@@ -12,7 +12,8 @@ PulseKegel is a mobile app for daily pelvic floor (Kegel) workouts with real-tim
 - **Badge/Achievement System** - 18 badges across 5 categories (Streaks, Milestones, Program Phases, Mastery, Special) with locked/unlocked states, detail modals, and toast notifications on earn
 - **AI Review History** - Save and reread all past weekly AI progress insights
 - Recovery mode for reduced intensity workouts
-- **Sound Effects & Ambient Audio** - Phase transition sounds (squeeze, rest, breathe), countdown beeps, workout completion celebration, badge earned fanfare, plus optional ambient tracks (calm/focused) during workouts with independent volume controls
+- **Sound Effects & Ambient Audio** - Phase transition sounds (squeeze, rest, breathe), countdown beeps, workout completion celebration, badge earned fanfare, plus 8 optional ambient tracks during workouts with independent volume controls
+- **Music Management Screen** - Dedicated screen for track selection, preview, shuffle mode (Off/All/Selected), per-track shuffle inclusion checkboxes, and volume control
 - Customizable haptic intensity and rest cue styles
 - One-time onboarding with safety disclaimers
 - **Light/Dark Theme System** - Toggle between dark cyberpunk theme and light theme via Settings
