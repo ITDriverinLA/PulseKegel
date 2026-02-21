@@ -8,6 +8,7 @@ import {
   defaultAudioSettings,
   SOUND_SOURCES,
   AMBIENT_SOURCES,
+  ALL_AMBIENT_TRACKS,
 } from '@/lib/audioManager';
 
 interface AudioContextType {
@@ -36,6 +37,13 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const [audioSettings, setAudioSettings] = useState<AudioSettings>(defaultAudioSettings);
   const [currentAmbientTrack, setCurrentAmbientTrack] = useState<AmbientTrack>('none');
   const [previewingTrack, setPreviewingTrack] = useState<AmbientTrack>('none');
+  const lastShuffleTrackRef = useRef<AmbientTrack>('none');
+  const isWorkoutActiveRef = useRef(false);
+  const audioSettingsRef = useRef<AudioSettings>(defaultAudioSettings);
+
+  useEffect(() => {
+    audioSettingsRef.current = audioSettings;
+  }, [audioSettings]);
 
   const squeezePlayer = useAudioPlayer(SOUND_SOURCES.squeeze);
   const restPlayer = useAudioPlayer(SOUND_SOURCES.rest);
@@ -47,6 +55,10 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const ageWeapon2Player = useAudioPlayer(AMBIENT_SOURCES.age_weapon_2);
   const trainingBeatsPlayer = useAudioPlayer(AMBIENT_SOURCES.training_beats);
   const trainingKegelPlayer = useAudioPlayer(AMBIENT_SOURCES.training_kegel);
+  const quietPower1Player = useAudioPlayer(AMBIENT_SOURCES.quiet_power_1);
+  const quietPower2Player = useAudioPlayer(AMBIENT_SOURCES.quiet_power_2);
+  const quietPowerF1Player = useAudioPlayer(AMBIENT_SOURCES.quiet_power_f1);
+  const quietPowerF2Player = useAudioPlayer(AMBIENT_SOURCES.quiet_power_f2);
 
   const sfxPlayers: Record<SoundEffect, typeof squeezePlayer> = {
     squeeze: squeezePlayer,
@@ -62,6 +74,10 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     age_weapon_2: ageWeapon2Player,
     training_beats: trainingBeatsPlayer,
     training_kegel: trainingKegelPlayer,
+    quiet_power_1: quietPower1Player,
+    quiet_power_2: quietPower2Player,
+    quiet_power_f1: quietPowerF1Player,
+    quiet_power_f2: quietPowerF2Player,
   };
 
   useEffect(() => {
@@ -70,7 +86,11 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         await setAudioModeAsync({ playsInSilentMode: true, shouldRouteThroughEarpiece: false });
       } catch {}
       const settings = await storage.getAudioSettings();
-      setAudioSettings(settings as AudioSettings);
+      const merged = { ...defaultAudioSettings, ...settings } as AudioSettings;
+      if (!merged.shuffleEnabledTracks) {
+        merged.shuffleEnabledTracks = [...ALL_AMBIENT_TRACKS];
+      }
+      setAudioSettings(merged);
     };
     loadSettings();
   }, []);
@@ -87,10 +107,76 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     for (const player of Object.values(ambientPlayers)) {
       if (player) {
         player.volume = audioSettings.ambientVolume;
-        player.loop = true;
       }
     }
   }, [audioSettings.ambientVolume]);
+
+  const stopAllAmbient = useCallback(() => {
+    for (const player of Object.values(ambientPlayers)) {
+      if (player) {
+        try {
+          player.pause();
+          player.seekTo(0);
+        } catch {}
+      }
+    }
+  }, []);
+
+  const getShufflePool = useCallback((): Exclude<AmbientTrack, 'none'>[] => {
+    const settings = audioSettingsRef.current;
+    if (settings.shuffleMode === 'all') {
+      return [...ALL_AMBIENT_TRACKS];
+    }
+    if (settings.shuffleMode === 'selected') {
+      return settings.shuffleEnabledTracks.length > 0
+        ? [...settings.shuffleEnabledTracks]
+        : [...ALL_AMBIENT_TRACKS];
+    }
+    return [];
+  }, []);
+
+  const pickRandomTrack = useCallback((pool: Exclude<AmbientTrack, 'none'>[], exclude?: AmbientTrack): Exclude<AmbientTrack, 'none'> => {
+    const filtered = pool.filter(t => t !== exclude);
+    const candidates = filtered.length > 0 ? filtered : pool;
+    return candidates[Math.floor(Math.random() * candidates.length)];
+  }, []);
+
+  const playTrack = useCallback((track: Exclude<AmbientTrack, 'none'>, loop: boolean) => {
+    const player = ambientPlayers[track];
+    if (player) {
+      try {
+        player.loop = loop;
+        player.volume = audioSettingsRef.current.ambientVolume;
+        player.seekTo(0);
+        player.play();
+        setCurrentAmbientTrack(track);
+        lastShuffleTrackRef.current = track;
+      } catch {}
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isWorkoutActiveRef.current) return;
+    const settings = audioSettingsRef.current;
+    if (settings.shuffleMode === 'off') return;
+
+    const checkInterval = setInterval(() => {
+      if (!isWorkoutActiveRef.current) return;
+      const current = lastShuffleTrackRef.current;
+      if (current === 'none') return;
+      const player = ambientPlayers[current as Exclude<AmbientTrack, 'none'>];
+      if (player && !player.playing && player.currentTime > 0) {
+        const pool = getShufflePool();
+        if (pool.length > 0) {
+          const next = pickRandomTrack(pool, current);
+          stopAllAmbient();
+          playTrack(next, false);
+        }
+      }
+    }, 1000);
+
+    return () => clearInterval(checkInterval);
+  }, [audioSettings.shuffleMode, currentAmbientTrack]);
 
   const updateAudioSettings = useCallback(async (updates: Partial<AudioSettings>) => {
     const newSettings = { ...audioSettings, ...updates };
@@ -121,40 +207,34 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   }, [audioSettings.sfxEnabled, audioSettings.sfxVolume]);
 
   const startAmbient = useCallback(() => {
-    const track = audioSettings.ambientTrack;
-    if (track === 'none') return;
-    const player = ambientPlayers[track];
-    if (player) {
-      try {
-        player.loop = true;
-        player.volume = audioSettings.ambientVolume;
-        player.play();
-        setCurrentAmbientTrack(track);
-      } catch {}
-    }
-  }, [audioSettings.ambientTrack, audioSettings.ambientVolume]);
+    isWorkoutActiveRef.current = true;
+    const settings = audioSettingsRef.current;
 
-  const stopAmbient = useCallback(() => {
-    for (const player of Object.values(ambientPlayers)) {
-      if (player) {
-        try {
-          player.pause();
-          player.seekTo(0);
-        } catch {}
+    if (settings.shuffleMode !== 'off') {
+      const pool = getShufflePool();
+      if (pool.length > 0) {
+        const track = pickRandomTrack(pool);
+        stopAllAmbient();
+        playTrack(track, false);
+        return;
       }
     }
+
+    const track = settings.ambientTrack;
+    if (track === 'none') return;
+    stopAllAmbient();
+    playTrack(track, true);
+  }, []);
+
+  const stopAmbient = useCallback(() => {
+    isWorkoutActiveRef.current = false;
+    stopAllAmbient();
     setCurrentAmbientTrack('none');
+    lastShuffleTrackRef.current = 'none';
   }, []);
 
   const previewTrack = useCallback((track: Exclude<AmbientTrack, 'none'>) => {
-    for (const [key, player] of Object.entries(ambientPlayers)) {
-      if (player) {
-        try {
-          player.pause();
-          player.seekTo(0);
-        } catch {}
-      }
-    }
+    stopAllAmbient();
 
     if (previewingTrack === track) {
       setPreviewingTrack('none');
@@ -174,14 +254,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   }, [previewingTrack, audioSettings.ambientVolume]);
 
   const stopPreview = useCallback(() => {
-    for (const player of Object.values(ambientPlayers)) {
-      if (player) {
-        try {
-          player.pause();
-          player.seekTo(0);
-        } catch {}
-      }
-    }
+    stopAllAmbient();
     setPreviewingTrack('none');
   }, []);
 
