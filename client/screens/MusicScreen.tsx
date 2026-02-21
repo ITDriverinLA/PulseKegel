@@ -44,6 +44,15 @@ export default function MusicScreen() {
   }, [audioSettings.selectedTracks]);
 
   const selectedCount = (audioSettings.selectedTracks || []).length;
+  const allSelected = selectedCount === ALL_AMBIENT_TRACKS.length;
+
+  const toggleAll = useCallback(() => {
+    if (allSelected) {
+      updateAudioSettings({ selectedTracks: [] });
+    } else {
+      updateAudioSettings({ selectedTracks: [...ALL_AMBIENT_TRACKS] });
+    }
+  }, [allSelected, updateAudioSettings]);
 
   return (
     <View style={[styles.container, { backgroundColor: cp.bg }]}>
@@ -74,9 +83,11 @@ export default function MusicScreen() {
               <Feather name="music" size={18} color={cp.neonCyan} />
               <Text style={[styles.sectionTitle, { color: cp.text }]}>Tracks</Text>
               <View style={{ flex: 1 }} />
-              <Text style={[styles.selectedBadge, { color: cp.neonCyan }]}>
-                {selectedCount > 0 ? `${selectedCount} selected` : 'None selected'}
-              </Text>
+              <Pressable onPress={toggleAll} hitSlop={8} testID="toggle-all-button">
+                <Text style={[styles.selectedBadge, { color: cp.neonCyan }]}>
+                  {allSelected ? 'Deselect All' : 'Select All'}
+                </Text>
+              </Pressable>
             </View>
             <Text style={[styles.sectionDesc, { color: cp.textSecondary }]}>
               Check the tracks you want to play during workouts.
