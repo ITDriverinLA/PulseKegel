@@ -15,33 +15,33 @@ const openai = new OpenAI({
 });
 
 const FEMALE_HEALTH_BENEFITS = [
-  "improved bladder control and reduced urinary incontinence",
-  "stronger pelvic organ support to help prevent prolapse",
-  "enhanced intimate sensation and satisfaction",
-  "better preparation for pregnancy and faster postpartum recovery",
-  "reduced lower back pain through core stabilization",
+  "stronger pelvic floor muscles and endurance",
+  "improved core strength and stability",
+  "enhanced mind-body awareness and control",
+  "reduced lower back tension through core stabilization",
   "improved posture and hip alignment",
-  "better circulation to pelvic organs",
-  "reduced symptoms of pelvic floor dysfunction",
-  "enhanced core strength and stability",
-  "improved bowel function and reduced constipation",
-  "better stress management through mind-body connection",
-  "increased confidence in physical activities",
+  "better circulation and blood flow",
+  "enhanced overall muscle coordination",
+  "greater confidence in physical activities",
+  "better stress management through focused breathing",
+  "improved balance and body awareness",
+  "stronger foundation for everyday movement",
+  "enhanced relaxation and recovery skills",
 ];
 
 const MALE_HEALTH_BENEFITS = [
-  "improved erectile function and stamina",
-  "better bladder control, especially after prostate surgery",
-  "enhanced ejaculatory control",
-  "reduced risk of prostate-related issues",
+  "stronger pelvic floor muscles and endurance",
+  "improved core strength and stability",
+  "enhanced mind-body awareness and control",
   "stronger core support for lower back health",
-  "improved posture and hip stability",
-  "better circulation to pelvic region",
+  "improved posture and hip alignment",
+  "better circulation and blood flow",
   "enhanced athletic performance through core strength",
-  "reduced symptoms of chronic pelvic pain",
-  "improved bowel function and control",
+  "greater confidence in physical activities",
   "better stress management through focused breathing",
-  "increased confidence in physical activities",
+  "improved balance and body awareness",
+  "stronger foundation for everyday movement",
+  "enhanced relaxation and recovery skills",
 ];
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -65,6 +65,7 @@ ${userName ? `Start with "${userName},"` : "No name."}
 Week ${weekNumber}${weekNumber === 1 ? " (first week!)" : ""}, ${daysWorkedOut} days, ${anatomyLabel}.
 Mention this benefit: "${weekBenefit}"
 ${daysWorkedOut >= 5 ? "Celebrate dedication." : daysWorkedOut >= 3 ? "Warm encouragement." : "Supportive tone."}
+Never reference medical conditions, surgeries, diagnoses, or health problems. Keep the message purely about fitness progress and general wellness.
 No quotes in response.`;
 
       const response = await openai.chat.completions.create({
