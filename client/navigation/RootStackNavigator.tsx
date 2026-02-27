@@ -7,9 +7,13 @@ import WorkoutPickerScreen from '@/screens/WorkoutPickerScreen';
 import OnboardingScreen from '@/screens/OnboardingScreen';
 import PaywallScreen from '@/screens/PaywallScreen';
 import MusicScreen from '@/screens/MusicScreen';
+import BreathworkModeSelectorScreen from '@/screens/BreathworkModeSelectorScreen';
+import BreathworkSessionScreen from '@/screens/BreathworkSessionScreen';
+import BreathworkSummaryScreen from '@/screens/BreathworkSummaryScreen';
 import { useScreenOptions } from '@/hooks/useScreenOptions';
 import { storage } from '@/lib/storage';
 import { DayTemplate } from '@/data/workoutProgram';
+import { BreathworkMode } from '@/constants/breathworkModes';
 
 export type RootStackParamList = {
   Main: undefined;
@@ -22,6 +26,9 @@ export type RootStackParamList = {
   Onboarding: undefined;
   Paywall: undefined;
   Music: undefined;
+  BreathworkModeSelector: undefined;
+  BreathworkSession: { mode: BreathworkMode };
+  BreathworkSummary: { mode: BreathworkMode; completed: boolean };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -91,6 +98,32 @@ export default function RootStackNavigator() {
         component={MusicScreen}
         options={{
           headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="BreathworkModeSelector"
+        component={BreathworkModeSelectorScreen}
+        options={{
+          presentation: 'modal',
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="BreathworkSession"
+        component={BreathworkSessionScreen}
+        options={{
+          presentation: 'fullScreenModal',
+          headerShown: false,
+          gestureEnabled: false,
+        }}
+      />
+      <Stack.Screen
+        name="BreathworkSummary"
+        component={BreathworkSummaryScreen}
+        options={{
+          presentation: 'fullScreenModal',
+          headerShown: false,
+          gestureEnabled: false,
         }}
       />
     </Stack.Navigator>

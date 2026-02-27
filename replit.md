@@ -11,6 +11,7 @@ PulseKegel is a mobile app for daily pelvic floor (Kegel) workouts with real-tim
 - Progress tracking with streak counter, calendar view (with distinct workout/rest day/today indicators and legend), and statistics
 - **Badge/Achievement System** - 18 badges across 5 categories (Streaks, Milestones, Program Phases, Mastery, Special) with locked/unlocked states, detail modals, and toast notifications on earn
 - **AI Review History** - Save and reread all past weekly AI progress insights
+- **Breathwork Sessions** - Three 5-minute guided rest-day breathing modes (Calm & Reset box breathing, Energize & Focus physiological sigh + coherence, Pelvic Floor Connect diaphragmatic + PF awareness) with voice-guided Mia MP3 clips, animated breathing circle, haptic feedback, and optional streak logging
 - Recovery mode for reduced intensity workouts
 - **Sound Effects & Ambient Audio** - Phase transition sounds (squeeze, rest, breathe), countdown beeps, workout completion celebration, badge earned fanfare, plus 8 optional ambient tracks during workouts with independent volume controls
 - **Music Management Screen** - Dedicated screen for track selection, preview, shuffle mode (Off/All/Selected), per-track shuffle inclusion checkboxes, and volume control
@@ -95,6 +96,9 @@ client/
 - **SettingsTab** - Haptics, accessibility, workout preferences
 - **WorkoutPlayer** (Modal) - Full-screen workout guidance
 - **WorkoutPicker** (Modal) - Choose individual quick workouts
+- **BreathworkModeSelector** (Modal) - Choose breathwork mode for rest days
+- **BreathworkSession** (Fullscreen Modal) - Guided 5-minute breathing session with animated circle, voice, haptics
+- **BreathworkSummary** (Fullscreen Modal) - Post-session summary with optional streak logging
 
 ## Workout Engine
 The workout engine (`client/lib/workoutEngine.ts`) is a deterministic state machine that:

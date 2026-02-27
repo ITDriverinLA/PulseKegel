@@ -239,6 +239,20 @@ export default function HomeScreen() {
                   </View>
 
                   <View style={styles.buttonsRow}>
+                    <Pressable onPress={() => navigation.navigate('BreathworkModeSelector')} style={styles.startButtonContainer} testID="breathwork-button">
+                      <LinearGradient
+                        colors={['#00B4C5', '#0090A0']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.startButton}
+                      >
+                        <Feather name="wind" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+                        <Text style={[styles.startButtonText, { fontSize: 16 * fontScale }]}>Breathwork Session</Text>
+                      </LinearGradient>
+                    </Pressable>
+                  </View>
+
+                  <View style={styles.buttonsRow}>
                     <Pressable onPress={handleQuickWorkout} style={styles.startButtonContainer}>
                       <LinearGradient
                         colors={[cp.neonPurple, cp.neonPink]}
