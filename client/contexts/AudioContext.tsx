@@ -61,6 +61,12 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const quietPower2Player = useAudioPlayer(AMBIENT_SOURCES.quiet_power_2);
   const quietPowerF1Player = useAudioPlayer(AMBIENT_SOURCES.quiet_power_f1);
   const quietPowerF2Player = useAudioPlayer(AMBIENT_SOURCES.quiet_power_f2);
+  const surrenderPlayer = useAudioPlayer(AMBIENT_SOURCES.surrender);
+  const onMyKneesPlayer = useAudioPlayer(AMBIENT_SOURCES.on_my_knees);
+  const takeMePlayer = useAudioPlayer(AMBIENT_SOURCES.take_me);
+  const velvetTidesPlayer = useAudioPlayer(AMBIENT_SOURCES.velvet_tides);
+  const riversOfSurrenderPlayer = useAudioPlayer(AMBIENT_SOURCES.rivers_of_surrender);
+  const architectOfSurrenderPlayer = useAudioPlayer(AMBIENT_SOURCES.architect_of_surrender);
 
   const sfxPlayers: Record<SoundEffect, typeof squeezePlayer> = {
     squeeze: squeezePlayer,
@@ -80,6 +86,12 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     quiet_power_2: quietPower2Player,
     quiet_power_f1: quietPowerF1Player,
     quiet_power_f2: quietPowerF2Player,
+    surrender: surrenderPlayer,
+    on_my_knees: onMyKneesPlayer,
+    take_me: takeMePlayer,
+    velvet_tides: velvetTidesPlayer,
+    rivers_of_surrender: riversOfSurrenderPlayer,
+    architect_of_surrender: architectOfSurrenderPlayer,
   };
 
   useEffect(() => {
