@@ -308,6 +308,8 @@ export default function BreathworkSessionScreen() {
               <Feather name={config.icon as any} size={48} color={BREATHWORK_COLORS.circle_inhale} />
             </View>
             <Text style={styles.introTitle}>{config.name}</Text>
+            <Text style={styles.introTechnique}>{config.subtitle}</Text>
+            <Text style={styles.introDescription}>{config.description}</Text>
             <Text style={styles.introSubtitle}>Listen and relax...</Text>
           </Animated.View>
         ) : sessionState === 'transition' ? (
@@ -413,9 +415,23 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: BREATHWORK_COLORS.phase_label,
   },
+  introTechnique: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: BREATHWORK_COLORS.circle_inhale,
+    marginTop: -12,
+  },
+  introDescription: {
+    fontSize: 14,
+    color: BREATHWORK_COLORS.timer_text,
+    textAlign: 'center',
+    lineHeight: 20,
+    paddingHorizontal: 24,
+  },
   introSubtitle: {
     fontSize: 16,
     color: BREATHWORK_COLORS.timer_text,
+    marginTop: 4,
   },
   phaseText: {
     fontSize: 22,
