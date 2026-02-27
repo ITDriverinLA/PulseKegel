@@ -321,6 +321,12 @@ export default function HomeScreen() {
                       <Text style={[styles.quickWorkoutText, { color: cp.neonCyan }]}>Quick</Text>
                     </Pressable>
                   </View>
+
+                  <Pressable onPress={() => navigation.navigate('BreathworkModeSelector')} style={styles.breathworkLink} testID="breathwork-button">
+                    <Feather name="wind" size={16} color="#00B4C5" />
+                    <Text style={[styles.breathworkLinkText, { color: '#00B4C5' }]}>Breathwork Session</Text>
+                    <Feather name="chevron-right" size={16} color="#00B4C5" />
+                  </Pressable>
                 </>
               )
             ) : (
@@ -547,6 +553,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   quickWorkoutText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  breathworkLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    marginTop: 4,
+  },
+  breathworkLinkText: {
     fontSize: 14,
     fontWeight: '600',
   },
