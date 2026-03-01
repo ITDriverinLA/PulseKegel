@@ -27,10 +27,10 @@ const ENERGY_MIN = 62;
 const ENERGY_MAX = 165;
 
 const RING_CONFIGS = [
-  { count: 12, speed: 8000, direction: 1, streamLen: 12, streamWidth: 3.2, opacityBase: 0.85, trailCount: 2 },
-  { count: 9, speed: 13000, direction: -1, streamLen: 16, streamWidth: 2.8, opacityBase: 0.65, trailCount: 2 },
-  { count: 6, speed: 19000, direction: 1, streamLen: 20, streamWidth: 2.4, opacityBase: 0.5, trailCount: 1 },
-  { count: 4, speed: 26000, direction: -1, streamLen: 14, streamWidth: 2.0, opacityBase: 0.35, trailCount: 1 },
+  { count: 12, speed: 8000, direction: 1, streamLen: 16, streamWidth: 4.5, opacityBase: 0.95, trailCount: 2 },
+  { count: 9, speed: 13000, direction: -1, streamLen: 20, streamWidth: 4.0, opacityBase: 0.85, trailCount: 2 },
+  { count: 6, speed: 19000, direction: 1, streamLen: 24, streamWidth: 3.5, opacityBase: 0.75, trailCount: 1 },
+  { count: 4, speed: 26000, direction: -1, streamLen: 18, streamWidth: 3.0, opacityBase: 0.65, trailCount: 1 },
 ];
 
 const COLOR_KEYS: Array<{ dim: string; bright: string }> = [
@@ -79,9 +79,9 @@ function PlasmaStream({
     const rxVal = streamLen * (0.5 + spread * 0.9) * (1 - trailIndex * 0.15) * pulseScale;
     const ryVal = streamWidth * (0.4 + spread * 0.7) * (1 - trailIndex * 0.1) * (2 - pulseScale);
 
-    const trailFade = 1 - trailIndex * 0.35;
-    const pulseOpacity = 0.7 + pulseWave * 0.3;
-    const opacity = baseOpacity * (0.2 + spread * 0.8) * trailFade * pulseOpacity;
+    const trailFade = 1 - trailIndex * 0.25;
+    const pulseOpacity = 0.8 + pulseWave * 0.2;
+    const opacity = Math.min(1, baseOpacity * (0.5 + spread * 0.5) * trailFade * pulseOpacity);
 
     const fill = interpolateColor(
       energyProgress.value,
@@ -142,8 +142,8 @@ function PlasmaBolt({
     const y2 = CENTER + Math.sin(angle) * endR;
 
     const spread = (energyRadius.value - ENERGY_MIN) / (ENERGY_MAX - ENERGY_MIN);
-    const pulseOpacity = 0.7 + pulseWave * 0.3;
-    const opacity = (0.15 + spread * 0.55) * pulseOpacity;
+    const pulseOpacity = 0.8 + pulseWave * 0.2;
+    const opacity = Math.min(1, (0.4 + spread * 0.5) * pulseOpacity);
 
     const stroke = interpolateColor(
       energyProgress.value,
@@ -151,7 +151,7 @@ function PlasmaBolt({
       [colorDim, colorBright],
     );
 
-    const strokeWidth = (0.6 + spread * 1.0) * (0.8 + pulseWave * 0.4);
+    const strokeWidth = (1.0 + spread * 1.5) * (0.8 + pulseWave * 0.4);
 
     return { x1, y1, x2, y2, opacity, stroke, strokeWidth };
   });
@@ -404,7 +404,7 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
 
   const coreSheenProps = useAnimatedProps(() => {
     const sheenPulse = Math.sin(pulse.value * Math.PI * 2);
-    const sheenOpacity = (0.25 + sheenPulse * 0.15) * (1 - energyProgress.value * 0.7);
+    const sheenOpacity = (0.4 + sheenPulse * 0.15) * (1 - energyProgress.value * 0.7);
     return {
       cx: CENTER - 12,
       cy: CENTER - 14,
@@ -415,28 +415,29 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
 
   const coreGlowProps = useAnimatedProps(() => {
     const glowPulse = Math.sin(pulse.value * Math.PI * 2 + 1.2);
-    const glowOpacity = (0.4 - energyProgress.value * 0.35) * (0.85 + glowPulse * 0.15);
+    const glowOpacity = (0.55 - energyProgress.value * 0.4) * (0.85 + glowPulse * 0.15);
     const fill = interpolateColor(
       energyProgress.value,
       [0, 1],
       [colors.glowActive, colors.glowRest],
     );
     return {
-      r: coreRadius.value + 12,
+      r: coreRadius.value + 14,
       fill,
       opacity: glowOpacity,
     };
   });
 
   const coreOuterGlowProps = useAnimatedProps(() => {
-    const glowOpacity = 0.2 - energyProgress.value * 0.17;
+    const glowPulse = Math.sin(pulse.value * Math.PI * 2 + 2.4);
+    const glowOpacity = (0.35 - energyProgress.value * 0.25) * (0.9 + glowPulse * 0.1);
     const fill = interpolateColor(
       energyProgress.value,
       [0, 1],
       [colors.glowActive, colors.glowRest],
     );
     return {
-      r: coreRadius.value + 26,
+      r: coreRadius.value + 28,
       fill,
       opacity: glowOpacity,
     };
@@ -444,7 +445,7 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
 
   const coreRimProps = useAnimatedProps(() => {
     const rimPulse = Math.sin(pulse.value * Math.PI * 2 + 0.5);
-    const rimOpacity = (0.6 - energyProgress.value * 0.45) * (0.8 + rimPulse * 0.2);
+    const rimOpacity = (0.75 - energyProgress.value * 0.5) * (0.8 + rimPulse * 0.2);
     const rimStroke = interpolateColor(
       energyProgress.value,
       [0, 1],
@@ -467,7 +468,7 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
           cy={CENTER}
           animatedProps={coreRimProps}
           fill="none"
-          strokeWidth={1.8}
+          strokeWidth={2.5}
         />
         <AnimatedCircle cx={CENTER} cy={CENTER} animatedProps={coreProps} />
         <AnimatedCircle
