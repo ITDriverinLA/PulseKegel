@@ -12,53 +12,58 @@ import Animated, {
   SharedValue,
 } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
-import { BreathPhase, BreathworkThemeColors, getBreathworkColors } from '@/constants/breathworkModes';
+import { BreathPhase, getBreathworkColors } from '@/constants/breathworkModes';
 import { useTheme } from '@/hooks/useTheme';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
-const MIN_RADIUS = 80;
-const MAX_RADIUS = 120;
+const CORE_RADIUS = 55;
 const SVG_SIZE = 340;
 const CENTER = SVG_SIZE / 2;
 
+const ENERGY_MIN = 72;
+const ENERGY_MAX = 155;
+
 const RING_CONFIGS = [
-  { count: 8, orbitScale: 1.14, speed: 11000, direction: 1, dotSize: 3.2, opacityBase: 0.75 },
-  { count: 6, orbitScale: 1.28, speed: 16000, direction: -1, dotSize: 4.0, opacityBase: 0.55 },
-  { count: 4, orbitScale: 1.42, speed: 23000, direction: 1, dotSize: 2.8, opacityBase: 0.38 },
+  { count: 12, speed: 10000, direction: 1, dotSize: 3.0, opacityBase: 0.8 },
+  { count: 9, speed: 15000, direction: -1, dotSize: 3.8, opacityBase: 0.6 },
+  { count: 6, speed: 22000, direction: 1, dotSize: 2.6, opacityBase: 0.4 },
 ];
 
-interface OrbitDotProps {
+interface EnergyDotProps {
   index: number;
   count: number;
   rotation: SharedValue<number>;
-  circleRadius: SharedValue<number>;
-  colorProgress: SharedValue<number>;
-  orbitScale: number;
-  dotRadius: number;
+  energyRadius: SharedValue<number>;
+  energyProgress: SharedValue<number>;
+  baseDotSize: number;
   baseOpacity: number;
-  jitterScale: number;
+  jitterOffset: number;
   colorDim: string;
   colorBright: string;
 }
 
-function OrbitDot({
-  index, count, rotation, circleRadius, colorProgress,
-  orbitScale, dotRadius, baseOpacity, jitterScale,
-  colorDim, colorBright,
-}: OrbitDotProps) {
+function EnergyDot({
+  index, count, rotation, energyRadius, energyProgress,
+  baseDotSize, baseOpacity, jitterOffset, colorDim, colorBright,
+}: EnergyDotProps) {
   const animatedProps = useAnimatedProps(() => {
     const angle = ((index / count) * Math.PI * 2) + (rotation.value * Math.PI / 180);
-    const orbitR = circleRadius.value * orbitScale * jitterScale;
+    const orbitR = energyRadius.value + jitterOffset;
     const cx = CENTER + Math.cos(angle) * orbitR;
     const cy = CENTER + Math.sin(angle) * orbitR;
-    const opacity = baseOpacity * (0.5 + 0.5 * colorProgress.value);
+
+    const spread = (energyRadius.value - ENERGY_MIN) / (ENERGY_MAX - ENERGY_MIN);
+    const dotR = baseDotSize * (1 + spread * 1.2);
+    const opacity = baseOpacity * (0.4 + spread * 0.6);
+
     const fill = interpolateColor(
-      colorProgress.value,
+      energyProgress.value,
       [0, 1],
       [colorDim, colorBright],
     );
-    return { cx, cy, r: dotRadius, opacity, fill };
+
+    return { cx, cy, r: dotR, opacity, fill };
   });
 
   return <AnimatedCircle animatedProps={animatedProps} />;
@@ -74,8 +79,9 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
   const { isDark } = useTheme();
   const colors = getBreathworkColors(isDark);
 
-  const radius = useSharedValue(MIN_RADIUS);
-  const colorProgress = useSharedValue(0);
+  const coreRadius = useSharedValue(CORE_RADIUS);
+  const energyRadius = useSharedValue(ENERGY_MIN);
+  const energyProgress = useSharedValue(0);
 
   const rotation0 = useSharedValue(0);
   const rotation1 = useSharedValue(0);
@@ -96,64 +102,112 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
     });
     return () => {
       rotations.forEach(r => cancelAnimation(r));
+      cancelAnimation(coreRadius);
+      cancelAnimation(energyRadius);
+      cancelAnimation(energyProgress);
     };
   }, []);
 
   useEffect(() => {
-    if (isPaused) return;
+    cancelAnimation(coreRadius);
+    cancelAnimation(energyRadius);
+    cancelAnimation(energyProgress);
 
-    cancelAnimation(radius);
-    cancelAnimation(colorProgress);
+    if (isPaused) {
+      rotations.forEach(r => cancelAnimation(r));
+      return;
+    }
+
+    const dur = phaseDuration * 1000;
 
     switch (phase) {
       case 'inhale':
       case 'sigh_inhale':
-        colorProgress.value = 0;
-        radius.value = withTiming(MAX_RADIUS, {
-          duration: phaseDuration * 1000,
-          easing: Easing.out(Easing.quad),
+        coreRadius.value = CORE_RADIUS;
+        energyRadius.value = withTiming(ENERGY_MIN, {
+          duration: dur,
+          easing: Easing.inOut(Easing.quad),
         });
-        colorProgress.value = withTiming(1, {
-          duration: phaseDuration * 1000,
-          easing: Easing.out(Easing.quad),
+        energyProgress.value = withTiming(0, {
+          duration: dur,
+          easing: Easing.inOut(Easing.quad),
+        });
+        RING_CONFIGS.forEach((ring, i) => {
+          cancelAnimation(rotations[i]);
+          rotations[i].value = withRepeat(
+            withTiming(rotations[i].value + 360 * ring.direction, {
+              duration: ring.speed,
+              easing: Easing.linear,
+            }),
+            -1,
+            false,
+          );
         });
         break;
 
       case 'hold_top':
-        colorProgress.value = 1;
-        radius.value = withRepeat(
+        energyRadius.value = ENERGY_MIN;
+        energyProgress.value = 0;
+        coreRadius.value = withRepeat(
           withSequence(
-            withTiming(MAX_RADIUS + 4, { duration: 800, easing: Easing.inOut(Easing.ease) }),
-            withTiming(MAX_RADIUS - 4, { duration: 800, easing: Easing.inOut(Easing.ease) }),
+            withTiming(CORE_RADIUS + 3, { duration: 900, easing: Easing.inOut(Easing.ease) }),
+            withTiming(CORE_RADIUS - 3, { duration: 900, easing: Easing.inOut(Easing.ease) }),
           ),
           -1,
           true,
         );
+        RING_CONFIGS.forEach((ring, i) => {
+          cancelAnimation(rotations[i]);
+          rotations[i].value = withRepeat(
+            withTiming(rotations[i].value + 360 * ring.direction, {
+              duration: ring.speed * 2.5,
+              easing: Easing.linear,
+            }),
+            -1,
+            false,
+          );
+        });
         break;
 
       case 'exhale':
       case 'sigh_exhale':
-        colorProgress.value = 1;
-        radius.value = withTiming(MIN_RADIUS, {
-          duration: phaseDuration * 1000,
-          easing: Easing.out(Easing.quad),
+        coreRadius.value = CORE_RADIUS;
+        energyRadius.value = withTiming(ENERGY_MAX, {
+          duration: dur,
+          easing: Easing.inOut(Easing.quad),
         });
-        colorProgress.value = withTiming(0, {
-          duration: phaseDuration * 1000,
-          easing: Easing.out(Easing.quad),
+        energyProgress.value = withTiming(1, {
+          duration: dur,
+          easing: Easing.inOut(Easing.quad),
+        });
+        RING_CONFIGS.forEach((ring, i) => {
+          cancelAnimation(rotations[i]);
+          rotations[i].value = withRepeat(
+            withTiming(rotations[i].value + 360 * ring.direction, {
+              duration: ring.speed * 0.7,
+              easing: Easing.linear,
+            }),
+            -1,
+            false,
+          );
         });
         break;
 
       case 'hold_bottom':
-        colorProgress.value = 0;
-        radius.value = withRepeat(
-          withSequence(
-            withTiming(MIN_RADIUS + 2, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
-            withTiming(MIN_RADIUS - 2, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
-          ),
-          -1,
-          true,
-        );
+        energyRadius.value = ENERGY_MAX;
+        energyProgress.value = 1;
+        coreRadius.value = CORE_RADIUS;
+        RING_CONFIGS.forEach((ring, i) => {
+          cancelAnimation(rotations[i]);
+          rotations[i].value = withRepeat(
+            withTiming(rotations[i].value + 360 * ring.direction, {
+              duration: ring.speed * 3,
+              easing: Easing.linear,
+            }),
+            -1,
+            false,
+          );
+        });
         break;
     }
   }, [phase, phaseDuration, isPaused]);
@@ -163,82 +217,79 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
       ringIndex: number;
       dotIndex: number;
       count: number;
-      orbitScale: number;
-      dotRadius: number;
+      baseDotSize: number;
       baseOpacity: number;
-      jitterScale: number;
+      jitterOffset: number;
     }> = [];
 
     RING_CONFIGS.forEach((ring, ri) => {
       for (let di = 0; di < ring.count; di++) {
-        const jitter = 1.0 + Math.sin(di * 2.7 + ri * 1.3) * 0.04;
+        const jitter = Math.sin(di * 2.7 + ri * 1.3) * 8;
         configs.push({
           ringIndex: ri,
           dotIndex: di,
           count: ring.count,
-          orbitScale: ring.orbitScale,
-          dotRadius: ring.dotSize + Math.sin(di * 1.5) * 0.6,
+          baseDotSize: ring.dotSize + Math.sin(di * 1.5) * 0.5,
           baseOpacity: ring.opacityBase + Math.cos(di * 2.1) * 0.08,
-          jitterScale: jitter,
+          jitterOffset: jitter,
         });
       }
     });
     return configs;
   }, []);
 
-  const innerCircleProps = useAnimatedProps(() => {
+  const coreProps = useAnimatedProps(() => {
     const fill = interpolateColor(
-      colorProgress.value,
+      energyProgress.value,
       [0, 1],
-      [colors.circleRest, colors.circleActive],
+      [colors.circleActive, colors.circleRest],
     );
-    return { r: radius.value, fill };
+    return { r: coreRadius.value, fill };
   });
 
-  const glowCircleProps = useAnimatedProps(() => {
+  const coreGlowProps = useAnimatedProps(() => {
     const fill = interpolateColor(
-      colorProgress.value,
+      energyProgress.value,
       [0, 1],
-      [colors.glowRest, colors.glowActive],
+      [colors.glowActive, colors.glowRest],
     );
     return {
-      r: radius.value + 14,
+      r: coreRadius.value + 10,
       fill,
-      opacity: 0.18 + 0.12 * colorProgress.value,
+      opacity: 0.35 - 0.15 * energyProgress.value,
     };
   });
 
-  const outerGlowProps = useAnimatedProps(() => {
+  const coreOuterGlowProps = useAnimatedProps(() => {
     const fill = interpolateColor(
-      colorProgress.value,
+      energyProgress.value,
       [0, 1],
-      [colors.glowRest, colors.glowActive],
+      [colors.glowActive, colors.glowRest],
     );
     return {
-      r: radius.value + 30,
+      r: coreRadius.value + 22,
       fill,
-      opacity: 0.06 + 0.08 * colorProgress.value,
+      opacity: 0.12 - 0.05 * energyProgress.value,
     };
   });
 
   return (
     <View style={styles.container}>
       <Svg width={SVG_SIZE} height={SVG_SIZE} viewBox={`0 0 ${SVG_SIZE} ${SVG_SIZE}`}>
-        <AnimatedCircle cx={CENTER} cy={CENTER} animatedProps={outerGlowProps} />
-        <AnimatedCircle cx={CENTER} cy={CENTER} animatedProps={glowCircleProps} />
-        <AnimatedCircle cx={CENTER} cy={CENTER} opacity={0.9} animatedProps={innerCircleProps} />
+        <AnimatedCircle cx={CENTER} cy={CENTER} animatedProps={coreOuterGlowProps} />
+        <AnimatedCircle cx={CENTER} cy={CENTER} animatedProps={coreGlowProps} />
+        <AnimatedCircle cx={CENTER} cy={CENTER} opacity={0.95} animatedProps={coreProps} />
         {dotConfigs.map((cfg, i) => (
-          <OrbitDot
+          <EnergyDot
             key={i}
             index={cfg.dotIndex}
             count={cfg.count}
             rotation={rotations[cfg.ringIndex]}
-            circleRadius={radius}
-            colorProgress={colorProgress}
-            orbitScale={cfg.orbitScale}
-            dotRadius={cfg.dotRadius}
+            energyRadius={energyRadius}
+            energyProgress={energyProgress}
+            baseDotSize={cfg.baseDotSize}
             baseOpacity={cfg.baseOpacity}
-            jitterScale={cfg.jitterScale}
+            jitterOffset={cfg.jitterOffset}
             colorDim={colors.dotDim}
             colorBright={colors.dotBright}
           />
