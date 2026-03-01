@@ -128,6 +128,16 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     glowColor: 'rgba(251, 191, 36, 0.3)',
     criteria: { type: 'streak', value: 60 },
   },
+  {
+    id: 'streak_90',
+    name: 'Iron Core',
+    description: 'Maintain a 90-day workout streak',
+    icon: 'award',
+    category: 'streak',
+    color: NEON_GOLD,
+    glowColor: 'rgba(251, 191, 36, 0.4)',
+    criteria: { type: 'streak', value: 90 },
+  },
 
   {
     id: 'phase_control',

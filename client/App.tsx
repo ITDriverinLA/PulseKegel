@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { StyleSheet } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -15,9 +15,23 @@ import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
 import { AudioProvider } from "@/contexts/AudioContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { ThemePreferenceProvider, useThemePreference } from "@/contexts/ThemePreferenceContext";
+import { storage } from "@/lib/storage";
+import { scheduleDailyReminder } from "@/lib/notifications";
 
 function AppContent() {
   const { cp } = useThemePreference();
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const settings = await storage.getSettings();
+        if (settings.reminderEnabled) {
+          await scheduleDailyReminder(settings.reminderTime);
+        }
+      } catch {}
+    })();
+  }, []);
+
   return (
     <SafeAreaProvider>
       <GestureHandlerRootView style={styles.root}>

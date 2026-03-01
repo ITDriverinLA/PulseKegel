@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, Pressable, Alert, Platform, ScrollView, Text, TextInput, Modal } from 'react-native';
+import { StyleSheet, View, Pressable, Alert, Platform, ScrollView, Text, TextInput, Modal, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
@@ -8,8 +8,10 @@ import { Feather } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import Slider from '@react-native-community/slider';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { reloadAppAsync } from 'expo';
 import * as WebBrowser from 'expo-web-browser';
+import { requestNotificationPermission, getNotificationPermissionStatus, scheduleDailyReminder, cancelAllReminders } from '@/lib/notifications';
 
 import { ThemedText } from '@/components/ThemedText';
 import { getApiUrl } from '@/lib/query-client';
@@ -40,6 +42,8 @@ export default function SettingsScreen() {
 
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [permissionRevoked, setPermissionRevoked] = useState(false);
 
   const loadSettings = useCallback(async () => {
     const userSettings = await storage.getSettings();
@@ -51,9 +55,79 @@ export default function SettingsScreen() {
   }, [loadSettings]);
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', loadSettings);
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadSettings();
+      checkPermissionStatus();
+    });
     return unsubscribe;
   }, [navigation, loadSettings]);
+
+  const checkPermissionStatus = useCallback(async () => {
+    const currentSettings = await storage.getSettings();
+    if (currentSettings.reminderEnabled) {
+      const status = await getNotificationPermissionStatus();
+      setPermissionRevoked(status !== 'granted');
+    } else {
+      setPermissionRevoked(false);
+    }
+  }, []);
+
+  const handleReminderToggle = async (enabled: boolean) => {
+    if (enabled) {
+      const granted = await requestNotificationPermission();
+      if (!granted) {
+        if (Platform.OS !== 'web') {
+          Alert.alert(
+            'Notifications Disabled',
+            'Please enable notifications in your device Settings to receive daily reminders.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Open Settings',
+                onPress: async () => {
+                  try { await Linking.openSettings(); } catch {}
+                },
+              },
+            ]
+          );
+        }
+        return;
+      }
+      await updateSetting('reminderEnabled', true);
+      await scheduleDailyReminder(settings.reminderTime);
+      setPermissionRevoked(false);
+    } else {
+      await updateSetting('reminderEnabled', false);
+      await cancelAllReminders();
+    }
+  };
+
+  const handleTimeChange = async (_event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android') setShowTimePicker(false);
+    if (selectedDate) {
+      const hours = String(selectedDate.getHours()).padStart(2, '0');
+      const mins = String(selectedDate.getMinutes()).padStart(2, '0');
+      const timeStr = `${hours}:${mins}`;
+      await updateSetting('reminderTime', timeStr);
+      if (settings.reminderEnabled) {
+        await scheduleDailyReminder(timeStr);
+      }
+    }
+  };
+
+  const getReminderTimeDate = (): Date => {
+    const [h, m] = (settings.reminderTime || '08:00').split(':').map(Number);
+    const d = new Date();
+    d.setHours(h, m, 0, 0);
+    return d;
+  };
+
+  const formatTime12h = (timeStr: string): string => {
+    const [h, m] = timeStr.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const hour12 = h % 12 || 12;
+    return `${hour12}:${String(m).padStart(2, '0')} ${ampm}`;
+  };
 
 
   const updateSetting = async <K extends keyof UserSettings>(
@@ -279,7 +353,81 @@ export default function SettingsScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(400).delay(200)}>
+        <Animated.View entering={FadeInDown.duration(400).delay(175)}>
+          <Text style={[styles.sectionTitle, { color: cp.neonCyan, textShadowColor: isDarkMode ? cp.neonCyan : 'transparent' }]}>REMINDERS</Text>
+          <View style={[styles.card, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
+            {permissionRevoked ? (
+              <View style={[styles.permissionBanner, { backgroundColor: isDarkMode ? 'rgba(255, 107, 157, 0.15)' : 'rgba(220, 38, 38, 0.08)' }]}>
+                <Feather name="alert-circle" size={16} color={isDarkMode ? '#FF6B9D' : '#DC2626'} />
+                <Text style={[styles.permissionBannerText, { color: isDarkMode ? '#FF6B9D' : '#DC2626' }]}>
+                  Notifications are disabled in your device Settings.
+                </Text>
+                {Platform.OS !== 'web' ? (
+                  <Pressable
+                    onPress={async () => {
+                      try { await Linking.openSettings(); } catch {}
+                    }}
+                  >
+                    <Text style={[styles.permissionBannerLink, { color: cp.neonCyan }]}>Fix</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            ) : null}
+            <Toggle
+              label="Daily Reminder"
+              value={settings.reminderEnabled}
+              onValueChange={handleReminderToggle}
+              activeColor={cp.neonGreen}
+              labelColor={cp.text}
+            />
+            <Text style={[styles.settingDescription, { color: cp.textSecondary }]}>
+              We'll remind you if you haven't completed your session.
+            </Text>
+
+            {settings.reminderEnabled ? (
+              <>
+                <View style={[styles.divider, { backgroundColor: cp.divider }]} />
+                <View style={styles.timePickerRow}>
+                  <Text style={[styles.settingLabel, { color: cp.text }]}>Reminder Time</Text>
+                  {Platform.OS === 'ios' ? (
+                    <DateTimePicker
+                      value={getReminderTimeDate()}
+                      mode="time"
+                      display="compact"
+                      onChange={handleTimeChange}
+                      themeVariant={isDarkMode ? 'dark' : 'light'}
+                      testID="reminder-time-picker"
+                    />
+                  ) : (
+                    <>
+                      <Pressable
+                        onPress={() => setShowTimePicker(true)}
+                        style={[styles.timeButton, { backgroundColor: cp.inputBg }]}
+                        testID="reminder-time-button"
+                      >
+                        <Feather name="clock" size={16} color={cp.neonCyan} />
+                        <Text style={[styles.timeButtonText, { color: cp.text }]}>
+                          {formatTime12h(settings.reminderTime || '08:00')}
+                        </Text>
+                      </Pressable>
+                      {showTimePicker ? (
+                        <DateTimePicker
+                          value={getReminderTimeDate()}
+                          mode="time"
+                          display="spinner"
+                          onChange={handleTimeChange}
+                          testID="reminder-time-picker"
+                        />
+                      ) : null}
+                    </>
+                  )}
+                </View>
+              </>
+            ) : null}
+          </View>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.duration(400).delay(225)}>
           <Text style={[styles.sectionTitle, { color: cp.neonCyan, textShadowColor: isDarkMode ? cp.neonCyan : 'transparent' }]}>ACCESSIBILITY</Text>
           <View style={[styles.card, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
             <Toggle
@@ -818,5 +966,40 @@ const styles = StyleSheet.create({
     marginLeft: Spacing.md,
     fontSize: 16,
     fontWeight: '500',
+  },
+  timePickerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: Spacing.xs,
+  },
+  timeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  timeButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  permissionBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    padding: Spacing.sm,
+    borderRadius: BorderRadius.sm,
+    marginBottom: Spacing.sm,
+  },
+  permissionBannerText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  permissionBannerLink: {
+    fontSize: 13,
+    fontWeight: '700',
   },
 });

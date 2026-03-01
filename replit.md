@@ -9,13 +9,14 @@ PulseKegel is a mobile app for daily pelvic floor (Kegel) workouts with real-tim
 - Real-time workout player with SQUEEZE/REST/BREATHE visual cues and haptic feedback
 - **Dual workout visualizations**: Vertical LED-style power bar in dark mode; circular progress ring in light mode — both with exercise-specific animations (fills to 100%, slower 600ms return)
 - Progress tracking with streak counter, calendar view (with distinct workout/rest day/today indicators and legend), and statistics
-- **Badge/Achievement System** - 18 badges across 5 categories (Streaks, Milestones, Program Phases, Mastery, Special) with locked/unlocked states, detail modals, and toast notifications on earn
+- **Badge/Achievement System** - 19 badges across 5 categories (Streaks, Milestones, Program Phases, Mastery, Special) with locked/unlocked states, detail modals, and toast notifications on earn (includes streak_90 "Iron Core" badge)
 - **AI Review History** - Save and reread all past weekly AI progress insights
 - **Breathwork Sessions** - Three 5-minute guided rest-day breathing modes (Calm & Reset box breathing, Energize & Focus physiological sigh + coherence, Pelvic Floor Connect diaphragmatic + PF awareness) with voice-guided Mia MP3 clips, animated breathing circle, haptic feedback, and optional streak logging
 - Recovery mode for reduced intensity workouts
 - **Sound Effects & Ambient Audio** - Phase transition sounds (squeeze, rest, breathe), countdown beeps, workout completion celebration, badge earned fanfare, plus 8 optional ambient tracks during workouts with independent volume controls
 - **Music Management Screen** - Dedicated screen for track selection, preview, shuffle mode (Off/All/Selected), per-track shuffle inclusion checkboxes, and volume control
 - Customizable haptic intensity and rest cue styles
+- **Daily Reminder Notifications** - Configurable daily push notifications with streak-aware messaging, badge proximity alerts (1-2 days away), rest day messages, and badge-earned bonus notifications; toggle on/off with time picker in Settings; auto-suppressed after session completion
 - One-time onboarding with safety disclaimers
 - **Light/Dark Theme System** - Toggle between dark cyberpunk theme and light theme via Settings
 - Futuristic cyberpunk UI with dark gradients and neon accents (dark mode) or soft grays with toned-down accents (light mode)

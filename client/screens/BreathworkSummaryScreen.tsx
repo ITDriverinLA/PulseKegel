@@ -8,6 +8,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { BREATHWORK_COLORS, getModeConfig, BreathworkMode } from '@/constants/breathworkModes';
 import { storage } from '@/lib/storage';
+import { cancelTodaysReminderIfCompleted } from '@/lib/notifications';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
 type SummaryRoute = RouteProp<RootStackParamList, 'BreathworkSummary'>;
@@ -25,6 +26,7 @@ export default function BreathworkSummaryScreen() {
     const today = new Date().toISOString().split('T')[0];
     await storage.addCompletedDate(today, 5);
     setLogged(true);
+    await cancelTodaysReminderIfCompleted();
   };
 
   const handleDismiss = () => {

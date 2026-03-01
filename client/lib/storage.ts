@@ -39,6 +39,8 @@ export interface UserSettings {
   anatomyType: AnatomyType;
   userName: string;
   darkMode: boolean;
+  reminderEnabled: boolean;
+  reminderTime: string;
 }
 
 export const defaultSettings: UserSettings = {
@@ -54,6 +56,8 @@ export const defaultSettings: UserSettings = {
   anatomyType: null,
   userName: '',
   darkMode: true,
+  reminderEnabled: false,
+  reminderTime: '08:00',
 };
 
 export interface UserProgress {
