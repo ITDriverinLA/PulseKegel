@@ -13,11 +13,12 @@ import {
   BreathworkMode,
   BreathPhase,
   PhaseStep,
-  BREATHWORK_COLORS,
   BREATHWORK_AUDIO_SOURCES,
+  getBreathworkColors,
   getModeConfig,
   ENERGIZE_SIGH_PHASES,
 } from '@/constants/breathworkModes';
+import { useTheme } from '@/hooks/useTheme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
 type SessionRoute = RouteProp<RootStackParamList, 'BreathworkSession'>;
@@ -32,6 +33,8 @@ export default function BreathworkSessionScreen() {
   const route = useRoute<SessionRoute>();
   const { mode } = route.params;
   const config = getModeConfig(mode);
+  const { isDark } = useTheme();
+  const bwColors = getBreathworkColors(isDark);
 
   const [sessionState, setSessionState] = useState<SessionState>('intro');
   const [currentPhase, setCurrentPhase] = useState<BreathPhase>('inhale');
@@ -321,40 +324,40 @@ export default function BreathworkSessionScreen() {
   const filledDots = Math.min(Math.round((cyclesCompleted / totalCycles) * progressDots), progressDots);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: bwColors.bg_session }]}>
       <View style={styles.topBar}>
         <Pressable onPress={handleExit} style={styles.exitButton} testID="breathwork-exit-button">
-          <Feather name="x" size={24} color={BREATHWORK_COLORS.timer_text} />
+          <Feather name="x" size={24} color={bwColors.timer_text} />
         </Pressable>
-        <Text style={styles.timer} testID="breathwork-timer">{formatTime(totalSecondsLeft)}</Text>
+        <Text style={[styles.timer, { color: bwColors.timer_text }]} testID="breathwork-timer">{formatTime(totalSecondsLeft)}</Text>
       </View>
 
       <View style={styles.centerContent}>
         {sessionState === 'intro' ? (
           <Animated.View entering={FadeIn.duration(600)} style={styles.introContainer}>
-            <View style={styles.introCirclePlaceholder}>
-              <Feather name={config.icon as any} size={48} color={BREATHWORK_COLORS.circle_inhale} />
+            <View style={[styles.introCirclePlaceholder, { backgroundColor: bwColors.accentSoft }]}>
+              <Feather name={config.icon as any} size={48} color={bwColors.accent} />
             </View>
-            <Text style={styles.introTitle}>{config.name}</Text>
-            <Text style={styles.introTechnique}>{config.subtitle}</Text>
-            <Text style={styles.introDescription}>{config.description}</Text>
-            <Text style={styles.introSubtitle}>Listen and relax...</Text>
+            <Text style={[styles.introTitle, { color: bwColors.phase_label }]}>{config.name}</Text>
+            <Text style={[styles.introTechnique, { color: bwColors.accent }]}>{config.subtitle}</Text>
+            <Text style={[styles.introDescription, { color: bwColors.timer_text }]}>{config.description}</Text>
+            <Text style={[styles.introSubtitle, { color: bwColors.timer_text }]}>Listen and relax...</Text>
           </Animated.View>
         ) : sessionState === 'transition' ? (
           <Animated.View entering={FadeIn.duration(400)} style={styles.introContainer}>
             <BreathCircle phase="hold_top" phaseDuration={5} />
-            <Text style={styles.phaseText}>{phaseLabel}</Text>
+            <Text style={[styles.phaseText, { color: bwColors.phase_label }]}>{phaseLabel}</Text>
           </Animated.View>
         ) : sessionState === 'outro' ? (
           <Animated.View entering={FadeIn.duration(400)} style={styles.introContainer}>
             <BreathCircle phase="hold_bottom" phaseDuration={config.outroDuration} />
-            <Text style={styles.outroText}>Session Complete</Text>
+            <Text style={[styles.outroText, { color: bwColors.accent }]}>Session Complete</Text>
           </Animated.View>
         ) : (
           <>
             <BreathCircle phase={currentPhase} phaseDuration={phaseDuration} />
             <Animated.View key={phaseLabel} entering={FadeIn.duration(300)} exiting={FadeOut.duration(200)}>
-              <Text style={styles.phaseText} testID="breathwork-phase-label">{phaseLabel}</Text>
+              <Text style={[styles.phaseText, { color: bwColors.phase_label }]} testID="breathwork-phase-label">{phaseLabel}</Text>
             </Animated.View>
           </>
         )}
@@ -367,24 +370,24 @@ export default function BreathworkSessionScreen() {
               key={i}
               style={[
                 styles.dot,
-                i < filledDots ? styles.dotFilled : styles.dotEmpty,
+                { backgroundColor: i < filledDots ? bwColors.accent : bwColors.accentSoft },
               ]}
             />
           ))}
         </View>
-        <Text style={styles.cycleText}>
+        <Text style={[styles.cycleText, { color: bwColors.timer_text }]}>
           {cyclesCompleted > 0 ? `${cyclesCompleted} / ${totalCycles} cycles` : ''}
         </Text>
       </View>
 
       <Modal visible={showExitModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>End session?</Text>
-            <Text style={styles.modalMessage}>Your progress won't be logged.</Text>
+          <View style={[styles.modalContent, { backgroundColor: bwColors.modalBg }]}>
+            <Text style={[styles.modalTitle, { color: bwColors.phase_label }]}>End session?</Text>
+            <Text style={[styles.modalMessage, { color: bwColors.timer_text }]}>Your progress won't be logged.</Text>
             <View style={styles.modalButtons}>
-              <Pressable onPress={() => setShowExitModal(false)} style={styles.modalButton} testID="breathwork-continue-button">
-                <Text style={styles.modalButtonTextPrimary}>Continue</Text>
+              <Pressable onPress={() => setShowExitModal(false)} style={[styles.modalButton, { backgroundColor: bwColors.accentSoft }]} testID="breathwork-continue-button">
+                <Text style={[styles.modalButtonTextPrimary, { color: bwColors.accent }]}>Continue</Text>
               </Pressable>
               <Pressable onPress={confirmExit} style={[styles.modalButton, styles.modalButtonDanger]} testID="breathwork-end-button">
                 <Text style={styles.modalButtonTextDanger}>End</Text>
@@ -400,7 +403,6 @@ export default function BreathworkSessionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: BREATHWORK_COLORS.bg_session,
   },
   topBar: {
     flexDirection: 'row',
@@ -418,7 +420,6 @@ const styles = StyleSheet.create({
   timer: {
     fontSize: 16,
     fontWeight: '600',
-    color: BREATHWORK_COLORS.timer_text,
     fontVariant: ['tabular-nums'],
   },
   centerContent: {
@@ -434,37 +435,31 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: 'rgba(0, 180, 197, 0.12)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   introTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: BREATHWORK_COLORS.phase_label,
   },
   introTechnique: {
     fontSize: 14,
     fontWeight: '600',
-    color: BREATHWORK_COLORS.circle_inhale,
     marginTop: -12,
   },
   introDescription: {
     fontSize: 14,
-    color: BREATHWORK_COLORS.timer_text,
     textAlign: 'center',
     lineHeight: 20,
     paddingHorizontal: 24,
   },
   introSubtitle: {
     fontSize: 16,
-    color: BREATHWORK_COLORS.timer_text,
     marginTop: 4,
   },
   phaseText: {
     fontSize: 22,
     fontWeight: '700',
-    color: BREATHWORK_COLORS.phase_label,
     textAlign: 'center',
     marginTop: 24,
     letterSpacing: 2,
@@ -472,7 +467,6 @@ const styles = StyleSheet.create({
   outroText: {
     fontSize: 22,
     fontWeight: '700',
-    color: BREATHWORK_COLORS.circle_inhale,
     textAlign: 'center',
     marginTop: 24,
   },
@@ -492,15 +486,8 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
   },
-  dotFilled: {
-    backgroundColor: BREATHWORK_COLORS.circle_inhale,
-  },
-  dotEmpty: {
-    backgroundColor: 'rgba(0, 180, 197, 0.2)',
-  },
   cycleText: {
     fontSize: 12,
-    color: BREATHWORK_COLORS.timer_text,
   },
   modalOverlay: {
     flex: 1,
@@ -509,7 +496,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   modalContent: {
-    backgroundColor: '#1a2e42',
     borderRadius: 16,
     padding: 24,
     width: '80%',
@@ -519,11 +505,9 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: BREATHWORK_COLORS.phase_label,
   },
   modalMessage: {
     fontSize: 14,
-    color: BREATHWORK_COLORS.timer_text,
     textAlign: 'center',
   },
   modalButtons: {
@@ -536,7 +520,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 180, 197, 0.15)',
   },
   modalButtonDanger: {
     backgroundColor: 'rgba(255, 51, 102, 0.15)',
@@ -544,7 +527,6 @@ const styles = StyleSheet.create({
   modalButtonTextPrimary: {
     fontSize: 16,
     fontWeight: '600',
-    color: BREATHWORK_COLORS.circle_inhale,
   },
   modalButtonTextDanger: {
     fontSize: 16,

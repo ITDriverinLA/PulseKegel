@@ -6,7 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { BREATHWORK_COLORS, getModeConfig, BreathworkMode } from '@/constants/breathworkModes';
+import { getModeConfig, BreathworkMode, getBreathworkColors } from '@/constants/breathworkModes';
+import { useTheme } from '@/hooks/useTheme';
 import { storage } from '@/lib/storage';
 import { cancelTodaysReminderIfCompleted } from '@/lib/notifications';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
@@ -21,6 +22,8 @@ export default function BreathworkSummaryScreen() {
   const { mode } = route.params;
   const config = getModeConfig(mode);
   const [logged, setLogged] = useState(false);
+  const { isDark } = useTheme();
+  const bwColors = getBreathworkColors(isDark);
 
   const handleLogSession = async () => {
     const today = new Date().toISOString().split('T')[0];
@@ -34,43 +37,43 @@ export default function BreathworkSummaryScreen() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }]}>
+    <View style={[styles.container, { backgroundColor: bwColors.bg_session, paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }]}>
       <View style={styles.content}>
         <Animated.View entering={FadeInDown.duration(500)} style={styles.iconContainer}>
-          <View style={styles.iconCircle}>
-            <Feather name="check-circle" size={64} color={BREATHWORK_COLORS.circle_inhale} />
+          <View style={[styles.iconCircle, { backgroundColor: bwColors.accentSoft }]}>
+            <Feather name="check-circle" size={64} color={bwColors.accent} />
           </View>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(500).delay(100)}>
-          <Text style={styles.title}>Session Complete</Text>
-          <Text style={styles.modeName}>{config.name}</Text>
+          <Text style={[styles.title, { color: bwColors.phase_label }]}>Session Complete</Text>
+          <Text style={[styles.modeName, { color: bwColors.accent }]}>{config.name}</Text>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(500).delay(200)} style={styles.statsRow}>
+        <Animated.View entering={FadeInDown.duration(500).delay(200)} style={[styles.statsRow, { backgroundColor: bwColors.accentSoft }]}>
           <View style={styles.statItem}>
-            <Feather name="clock" size={20} color={BREATHWORK_COLORS.circle_inhale} />
-            <Text style={styles.statValue}>5:00</Text>
-            <Text style={styles.statLabel}>Duration</Text>
+            <Feather name="clock" size={20} color={bwColors.accent} />
+            <Text style={[styles.statValue, { color: bwColors.phase_label }]}>5:00</Text>
+            <Text style={[styles.statLabel, { color: bwColors.timer_text }]}>Duration</Text>
           </View>
-          <View style={styles.statDivider} />
+          <View style={[styles.statDivider, { backgroundColor: bwColors.accentSoft }]} />
           <View style={styles.statItem}>
-            <Feather name="wind" size={20} color={BREATHWORK_COLORS.circle_inhale} />
-            <Text style={styles.statValue}>{config.subtitle}</Text>
-            <Text style={styles.statLabel}>Technique</Text>
+            <Feather name="wind" size={20} color={bwColors.accent} />
+            <Text style={[styles.statValue, { color: bwColors.phase_label }]}>{config.subtitle}</Text>
+            <Text style={[styles.statLabel, { color: bwColors.timer_text }]}>Technique</Text>
           </View>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(500).delay(300)} style={styles.buttonsContainer}>
           {logged ? (
-            <View style={styles.loggedContainer}>
-              <Feather name="check" size={20} color={BREATHWORK_COLORS.circle_inhale} />
-              <Text style={styles.loggedText}>Session logged to your streak</Text>
+            <View style={[styles.loggedContainer, { backgroundColor: bwColors.accentSoft }]}>
+              <Feather name="check" size={20} color={bwColors.accent} />
+              <Text style={[styles.loggedText, { color: bwColors.accent }]}>Session logged to your streak</Text>
             </View>
           ) : (
             <Pressable onPress={handleLogSession} testID="breathwork-log-button">
               <LinearGradient
-                colors={['#00B4C5', '#0090A0']}
+                colors={isDark ? ['#00B4C5', '#0090A0'] : ['#00ACC1', '#00838F']}
                 style={styles.logButton}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
@@ -82,7 +85,7 @@ export default function BreathworkSummaryScreen() {
           )}
 
           <Pressable onPress={handleDismiss} style={styles.dismissButton} testID="breathwork-dismiss-button">
-            <Text style={styles.dismissText}>{logged ? 'Done' : 'Skip'}</Text>
+            <Text style={[styles.dismissText, { color: bwColors.timer_text }]}>{logged ? 'Done' : 'Skip'}</Text>
           </Pressable>
         </Animated.View>
       </View>
@@ -93,7 +96,6 @@ export default function BreathworkSummaryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: BREATHWORK_COLORS.bg_session,
   },
   content: {
     flex: 1,
@@ -109,19 +111,16 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: 'rgba(0, 180, 197, 0.12)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: BREATHWORK_COLORS.phase_label,
     textAlign: 'center',
   },
   modeName: {
     fontSize: 16,
-    color: BREATHWORK_COLORS.circle_inhale,
     textAlign: 'center',
     marginTop: 4,
     fontWeight: '600',
@@ -129,7 +128,6 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 180, 197, 0.08)',
     borderRadius: 16,
     padding: 20,
     width: '100%',
@@ -142,17 +140,14 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 16,
     fontWeight: '700',
-    color: BREATHWORK_COLORS.phase_label,
     textAlign: 'center',
   },
   statLabel: {
     fontSize: 12,
-    color: BREATHWORK_COLORS.timer_text,
   },
   statDivider: {
     width: 1,
     height: 40,
-    backgroundColor: 'rgba(0, 180, 197, 0.2)',
   },
   buttonsContainer: {
     width: '100%',
@@ -178,12 +173,10 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 16,
     borderRadius: 14,
-    backgroundColor: 'rgba(0, 180, 197, 0.12)',
   },
   loggedText: {
     fontSize: 15,
     fontWeight: '600',
-    color: BREATHWORK_COLORS.circle_inhale,
   },
   dismissButton: {
     paddingVertical: 14,
@@ -191,7 +184,6 @@ const styles = StyleSheet.create({
   },
   dismissText: {
     fontSize: 15,
-    color: BREATHWORK_COLORS.timer_text,
     fontWeight: '500',
   },
 });

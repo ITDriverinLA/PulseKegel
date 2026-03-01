@@ -27,14 +27,41 @@ export interface BreathworkModeConfig {
 }
 
 export const BREATHWORK_COLORS = {
-  circle_inhale: '#00B4C5',
-  circle_hold_top: '#E0F7FA',
-  circle_exhale: '#0D1B2A',
-  circle_hold_bottom: '#1A2E42',
-  phase_label: '#FFFFFF',
-  bg_session: '#0D1B2A',
-  timer_text: '#9CA3AF',
+  dark: {
+    accent: '#00D4E8',
+    accentSoft: 'rgba(0, 212, 232, 0.15)',
+    phase_label: '#FFFFFF',
+    bg_session: '#0D1B2A',
+    timer_text: '#9CA3AF',
+    modalBg: '#1a2e42',
+    circleRest: '#0F3443',
+    circleActive: '#00D4E8',
+    glowRest: '#163B4E',
+    glowActive: '#7EEAF6',
+    dotDim: '#2E8B9A',
+    dotBright: '#00FFEA',
+  },
+  light: {
+    accent: '#0097A7',
+    accentSoft: 'rgba(0, 151, 167, 0.12)',
+    phase_label: '#1a1a2e',
+    bg_session: '#F0F4F8',
+    timer_text: '#5a5a7a',
+    modalBg: '#FFFFFF',
+    circleRest: '#B2EBF2',
+    circleActive: '#00ACC1',
+    glowRest: '#CCF2F6',
+    glowActive: '#4DD0E1',
+    dotDim: '#4DB6AC',
+    dotBright: '#00897B',
+  },
 };
+
+export type BreathworkThemeColors = typeof BREATHWORK_COLORS.dark;
+
+export function getBreathworkColors(isDark: boolean): BreathworkThemeColors {
+  return isDark ? BREATHWORK_COLORS.dark : BREATHWORK_COLORS.light;
+}
 
 export const BREATHWORK_AUDIO_SOURCES = {
   calm_intro: require('@/assets/sounds/breathwork/calm_intro.mp3'),

@@ -12,7 +12,8 @@ import Animated, {
   SharedValue,
 } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
-import { BreathPhase } from '@/constants/breathworkModes';
+import { BreathPhase, BreathworkThemeColors, getBreathworkColors } from '@/constants/breathworkModes';
+import { useTheme } from '@/hooks/useTheme';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -20,15 +21,6 @@ const MIN_RADIUS = 80;
 const MAX_RADIUS = 120;
 const SVG_SIZE = 340;
 const CENTER = SVG_SIZE / 2;
-
-const COLORS = {
-  circleRest: '#0F3443',
-  circleActive: '#00D4E8',
-  glowRest: '#163B4E',
-  glowActive: '#7EEAF6',
-  dotDim: '#2E8B9A',
-  dotBright: '#00FFEA',
-};
 
 const RING_CONFIGS = [
   { count: 8, orbitScale: 1.14, speed: 11000, direction: 1, dotSize: 3.2, opacityBase: 0.75 },
@@ -46,11 +38,14 @@ interface OrbitDotProps {
   dotRadius: number;
   baseOpacity: number;
   jitterScale: number;
+  colorDim: string;
+  colorBright: string;
 }
 
 function OrbitDot({
   index, count, rotation, circleRadius, colorProgress,
   orbitScale, dotRadius, baseOpacity, jitterScale,
+  colorDim, colorBright,
 }: OrbitDotProps) {
   const animatedProps = useAnimatedProps(() => {
     const angle = ((index / count) * Math.PI * 2) + (rotation.value * Math.PI / 180);
@@ -61,7 +56,7 @@ function OrbitDot({
     const fill = interpolateColor(
       colorProgress.value,
       [0, 1],
-      [COLORS.dotDim, COLORS.dotBright],
+      [colorDim, colorBright],
     );
     return { cx, cy, r: dotRadius, opacity, fill };
   });
@@ -76,6 +71,9 @@ interface BreathCircleProps {
 }
 
 export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathCircleProps) {
+  const { isDark } = useTheme();
+  const colors = getBreathworkColors(isDark);
+
   const radius = useSharedValue(MIN_RADIUS);
   const colorProgress = useSharedValue(0);
 
@@ -192,7 +190,7 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
     const fill = interpolateColor(
       colorProgress.value,
       [0, 1],
-      [COLORS.circleRest, COLORS.circleActive],
+      [colors.circleRest, colors.circleActive],
     );
     return { r: radius.value, fill };
   });
@@ -201,7 +199,7 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
     const fill = interpolateColor(
       colorProgress.value,
       [0, 1],
-      [COLORS.glowRest, COLORS.glowActive],
+      [colors.glowRest, colors.glowActive],
     );
     return {
       r: radius.value + 14,
@@ -214,7 +212,7 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
     const fill = interpolateColor(
       colorProgress.value,
       [0, 1],
-      [COLORS.glowRest, COLORS.glowActive],
+      [colors.glowRest, colors.glowActive],
     );
     return {
       r: radius.value + 30,
@@ -241,6 +239,8 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
             dotRadius={cfg.dotRadius}
             baseOpacity={cfg.baseOpacity}
             jitterScale={cfg.jitterScale}
+            colorDim={colors.dotDim}
+            colorBright={colors.dotBright}
           />
         ))}
       </Svg>
