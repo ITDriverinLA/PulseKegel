@@ -126,13 +126,39 @@ export default function BreathworkSessionScreen() {
     pfMidpointPlayer,
   ]);
 
-  const triggerPhaseHaptic = useCallback((phase: BreathPhase) => {
+  const breathHapticTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const clearBreathHaptics = useCallback(() => {
+    breathHapticTimers.current.forEach(t => clearTimeout(t));
+    breathHapticTimers.current = [];
+  }, []);
+
+  const triggerPhaseHaptic = useCallback((phase: BreathPhase, duration: number) => {
+    clearBreathHaptics();
+
     if (phase === 'inhale' || phase === 'exhale' || phase === 'sigh_inhale' || phase === 'sigh_exhale') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      const totalMs = duration * 1000;
+      const pulseCount = 8;
+      let elapsed = 0;
+
+      for (let i = 0; i < pulseCount; i++) {
+        const progress = i / (pulseCount - 1);
+        const interval = 80 + progress * progress * 420;
+        const timer = setTimeout(() => {
+          if (!isRunningRef.current) return;
+          const intensity = progress < 0.5
+            ? Haptics.ImpactFeedbackStyle.Medium
+            : Haptics.ImpactFeedbackStyle.Light;
+          Haptics.impactAsync(intensity);
+        }, elapsed);
+        breathHapticTimers.current.push(timer);
+        elapsed += interval;
+        if (elapsed > totalMs * 0.85) break;
+      }
     } else {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-  }, []);
+  }, [clearBreathHaptics]);
 
   const startPhase = useCallback((phases: PhaseStep[], index: number) => {
     if (!isRunningRef.current) return;
@@ -140,7 +166,7 @@ export default function BreathworkSessionScreen() {
     setCurrentPhase(step.phase);
     setPhaseDuration(step.duration);
     setPhaseLabel(step.label);
-    triggerPhaseHaptic(step.phase);
+    triggerPhaseHaptic(step.phase, step.duration);
     playClip(step.audioClip);
   }, [triggerPhaseHaptic, playClip]);
 
@@ -263,6 +289,7 @@ export default function BreathworkSessionScreen() {
       if (phaseTimerRef.current) clearTimeout(phaseTimerRef.current);
       if (outroTimerRef.current) clearTimeout(outroTimerRef.current);
       if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+      clearBreathHaptics();
       isRunningRef.current = false;
     };
   }, []);
@@ -277,6 +304,7 @@ export default function BreathworkSessionScreen() {
     if (phaseTimerRef.current) clearTimeout(phaseTimerRef.current);
     if (outroTimerRef.current) clearTimeout(outroTimerRef.current);
     if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+    clearBreathHaptics();
     stopAllAudio();
     setShowExitModal(false);
     navigation.goBack();

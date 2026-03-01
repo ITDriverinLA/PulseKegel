@@ -12,7 +12,7 @@ import Animated, {
   SharedValue,
 } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
-import { BreathPhase, BREATHWORK_COLORS } from '@/constants/breathworkModes';
+import { BreathPhase } from '@/constants/breathworkModes';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -21,10 +21,19 @@ const MAX_RADIUS = 120;
 const SVG_SIZE = 340;
 const CENTER = SVG_SIZE / 2;
 
+const COLORS = {
+  circleRest: '#0F3443',
+  circleActive: '#00D4E8',
+  glowRest: '#163B4E',
+  glowActive: '#7EEAF6',
+  dotDim: '#2E8B9A',
+  dotBright: '#00FFEA',
+};
+
 const RING_CONFIGS = [
-  { count: 10, offsetBase: 10, speed: 12000, direction: 1, dotSize: 2.5, opacityBase: 0.6 },
-  { count: 7, offsetBase: 24, speed: 18000, direction: -1, dotSize: 3.5, opacityBase: 0.4 },
-  { count: 5, offsetBase: 40, speed: 26000, direction: 1, dotSize: 2, opacityBase: 0.28 },
+  { count: 8, orbitScale: 1.14, speed: 11000, direction: 1, dotSize: 3.2, opacityBase: 0.75 },
+  { count: 6, orbitScale: 1.28, speed: 16000, direction: -1, dotSize: 4.0, opacityBase: 0.55 },
+  { count: 4, orbitScale: 1.42, speed: 23000, direction: 1, dotSize: 2.8, opacityBase: 0.38 },
 ];
 
 interface OrbitDotProps {
@@ -33,26 +42,26 @@ interface OrbitDotProps {
   rotation: SharedValue<number>;
   circleRadius: SharedValue<number>;
   colorProgress: SharedValue<number>;
-  orbitOffset: number;
+  orbitScale: number;
   dotRadius: number;
   baseOpacity: number;
-  jitterOffset: number;
+  jitterScale: number;
 }
 
-function OrbitDotSimple({
+function OrbitDot({
   index, count, rotation, circleRadius, colorProgress,
-  orbitOffset, dotRadius, baseOpacity, jitterOffset,
+  orbitScale, dotRadius, baseOpacity, jitterScale,
 }: OrbitDotProps) {
   const animatedProps = useAnimatedProps(() => {
     const angle = ((index / count) * Math.PI * 2) + (rotation.value * Math.PI / 180);
-    const orbitR = circleRadius.value + orbitOffset + jitterOffset;
+    const orbitR = circleRadius.value * orbitScale * jitterScale;
     const cx = CENTER + Math.cos(angle) * orbitR;
     const cy = CENTER + Math.sin(angle) * orbitR;
-    const opacity = baseOpacity * (0.4 + 0.6 * colorProgress.value);
+    const opacity = baseOpacity * (0.5 + 0.5 * colorProgress.value);
     const fill = interpolateColor(
       colorProgress.value,
       [0, 1],
-      ['#1A6B75', '#00E5FF'],
+      [COLORS.dotDim, COLORS.dotBright],
     );
     return { cx, cy, r: dotRadius, opacity, fill };
   });
@@ -104,11 +113,11 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
         colorProgress.value = 0;
         radius.value = withTiming(MAX_RADIUS, {
           duration: phaseDuration * 1000,
-          easing: Easing.inOut(Easing.ease),
+          easing: Easing.out(Easing.quad),
         });
         colorProgress.value = withTiming(1, {
           duration: phaseDuration * 1000,
-          easing: Easing.inOut(Easing.ease),
+          easing: Easing.out(Easing.quad),
         });
         break;
 
@@ -116,8 +125,8 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
         colorProgress.value = 1;
         radius.value = withRepeat(
           withSequence(
-            withTiming(MAX_RADIUS + 4, { duration: 800, easing: Easing.linear }),
-            withTiming(MAX_RADIUS - 4, { duration: 800, easing: Easing.linear }),
+            withTiming(MAX_RADIUS + 4, { duration: 800, easing: Easing.inOut(Easing.ease) }),
+            withTiming(MAX_RADIUS - 4, { duration: 800, easing: Easing.inOut(Easing.ease) }),
           ),
           -1,
           true,
@@ -129,11 +138,11 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
         colorProgress.value = 1;
         radius.value = withTiming(MIN_RADIUS, {
           duration: phaseDuration * 1000,
-          easing: Easing.inOut(Easing.ease),
+          easing: Easing.out(Easing.quad),
         });
         colorProgress.value = withTiming(0, {
           duration: phaseDuration * 1000,
-          easing: Easing.inOut(Easing.ease),
+          easing: Easing.out(Easing.quad),
         });
         break;
 
@@ -141,8 +150,8 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
         colorProgress.value = 0;
         radius.value = withRepeat(
           withSequence(
-            withTiming(MIN_RADIUS + 2, { duration: 1000, easing: Easing.linear }),
-            withTiming(MIN_RADIUS - 2, { duration: 1000, easing: Easing.linear }),
+            withTiming(MIN_RADIUS + 2, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+            withTiming(MIN_RADIUS - 2, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
           ),
           -1,
           true,
@@ -156,23 +165,23 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
       ringIndex: number;
       dotIndex: number;
       count: number;
-      orbitOffset: number;
+      orbitScale: number;
       dotRadius: number;
       baseOpacity: number;
-      jitterOffset: number;
+      jitterScale: number;
     }> = [];
 
     RING_CONFIGS.forEach((ring, ri) => {
       for (let di = 0; di < ring.count; di++) {
-        const jitter = Math.sin(di * 2.7 + ri * 1.3) * 6;
+        const jitter = 1.0 + Math.sin(di * 2.7 + ri * 1.3) * 0.04;
         configs.push({
           ringIndex: ri,
           dotIndex: di,
           count: ring.count,
-          orbitOffset: ring.offsetBase,
-          dotRadius: ring.dotSize + Math.sin(di * 1.5) * 0.8,
-          baseOpacity: ring.opacityBase + Math.cos(di * 2.1) * 0.1,
-          jitterOffset: jitter,
+          orbitScale: ring.orbitScale,
+          dotRadius: ring.dotSize + Math.sin(di * 1.5) * 0.6,
+          baseOpacity: ring.opacityBase + Math.cos(di * 2.1) * 0.08,
+          jitterScale: jitter,
         });
       }
     });
@@ -183,23 +192,21 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
     const fill = interpolateColor(
       colorProgress.value,
       [0, 1],
-      [BREATHWORK_COLORS.circle_exhale, BREATHWORK_COLORS.circle_inhale],
+      [COLORS.circleRest, COLORS.circleActive],
     );
-    return {
-      r: radius.value,
-      fill,
-    };
+    return { r: radius.value, fill };
   });
 
   const glowCircleProps = useAnimatedProps(() => {
     const fill = interpolateColor(
       colorProgress.value,
       [0, 1],
-      [BREATHWORK_COLORS.circle_hold_bottom, BREATHWORK_COLORS.circle_hold_top],
+      [COLORS.glowRest, COLORS.glowActive],
     );
     return {
       r: radius.value + 14,
       fill,
+      opacity: 0.18 + 0.12 * colorProgress.value,
     };
   });
 
@@ -207,12 +214,12 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
     const fill = interpolateColor(
       colorProgress.value,
       [0, 1],
-      [BREATHWORK_COLORS.circle_hold_bottom, BREATHWORK_COLORS.circle_hold_top],
+      [COLORS.glowRest, COLORS.glowActive],
     );
     return {
-      r: radius.value + 28,
+      r: radius.value + 30,
       fill,
-      opacity: 0.08 + 0.07 * colorProgress.value,
+      opacity: 0.06 + 0.08 * colorProgress.value,
     };
   });
 
@@ -220,20 +227,20 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
     <View style={styles.container}>
       <Svg width={SVG_SIZE} height={SVG_SIZE} viewBox={`0 0 ${SVG_SIZE} ${SVG_SIZE}`}>
         <AnimatedCircle cx={CENTER} cy={CENTER} animatedProps={outerGlowProps} />
-        <AnimatedCircle cx={CENTER} cy={CENTER} opacity={0.2} animatedProps={glowCircleProps} />
+        <AnimatedCircle cx={CENTER} cy={CENTER} animatedProps={glowCircleProps} />
         <AnimatedCircle cx={CENTER} cy={CENTER} opacity={0.9} animatedProps={innerCircleProps} />
         {dotConfigs.map((cfg, i) => (
-          <OrbitDotSimple
+          <OrbitDot
             key={i}
             index={cfg.dotIndex}
             count={cfg.count}
             rotation={rotations[cfg.ringIndex]}
             circleRadius={radius}
             colorProgress={colorProgress}
-            orbitOffset={cfg.orbitOffset}
+            orbitScale={cfg.orbitScale}
             dotRadius={cfg.dotRadius}
             baseOpacity={cfg.baseOpacity}
-            jitterOffset={cfg.jitterOffset}
+            jitterScale={cfg.jitterScale}
           />
         ))}
       </Svg>
