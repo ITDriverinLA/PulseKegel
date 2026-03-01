@@ -11,51 +11,61 @@ import Animated, {
   interpolateColor,
   SharedValue,
 } from 'react-native-reanimated';
-import Svg, { Circle } from 'react-native-svg';
+import Svg, { Circle, Ellipse } from 'react-native-svg';
 import { BreathPhase, getBreathworkColors } from '@/constants/breathworkModes';
 import { useTheme } from '@/hooks/useTheme';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+const AnimatedEllipse = Animated.createAnimatedComponent(Ellipse);
 
-const CORE_RADIUS = 55;
-const SVG_SIZE = 340;
+const CORE_RADIUS = 50;
+const SVG_SIZE = 360;
 const CENTER = SVG_SIZE / 2;
 
-const ENERGY_MIN = 72;
-const ENERGY_MAX = 155;
+const ENERGY_MIN = 62;
+const ENERGY_MAX = 165;
 
 const RING_CONFIGS = [
-  { count: 12, speed: 10000, direction: 1, dotSize: 3.0, opacityBase: 0.8 },
-  { count: 9, speed: 15000, direction: -1, dotSize: 3.8, opacityBase: 0.6 },
-  { count: 6, speed: 22000, direction: 1, dotSize: 2.6, opacityBase: 0.4 },
+  { count: 14, speed: 8000, direction: 1, streamLen: 14, streamWidth: 3.5, opacityBase: 0.85, trailCount: 3 },
+  { count: 10, speed: 12000, direction: -1, streamLen: 18, streamWidth: 3.0, opacityBase: 0.65, trailCount: 2 },
+  { count: 7, speed: 18000, direction: 1, streamLen: 22, streamWidth: 2.5, opacityBase: 0.5, trailCount: 2 },
+  { count: 5, speed: 25000, direction: -1, streamLen: 16, streamWidth: 2.0, opacityBase: 0.35, trailCount: 1 },
 ];
 
-interface EnergyDotProps {
+interface PlasmaStreamProps {
   index: number;
   count: number;
   rotation: SharedValue<number>;
   energyRadius: SharedValue<number>;
   energyProgress: SharedValue<number>;
-  baseDotSize: number;
+  streamLen: number;
+  streamWidth: number;
   baseOpacity: number;
-  jitterOffset: number;
+  radiusOffset: number;
+  trailIndex: number;
   colorDim: string;
   colorBright: string;
 }
 
-function EnergyDot({
+function PlasmaStream({
   index, count, rotation, energyRadius, energyProgress,
-  baseDotSize, baseOpacity, jitterOffset, colorDim, colorBright,
-}: EnergyDotProps) {
+  streamLen, streamWidth, baseOpacity, radiusOffset, trailIndex,
+  colorDim, colorBright,
+}: PlasmaStreamProps) {
   const animatedProps = useAnimatedProps(() => {
     const angle = ((index / count) * Math.PI * 2) + (rotation.value * Math.PI / 180);
-    const orbitR = energyRadius.value + jitterOffset;
+    const orbitR = energyRadius.value + radiusOffset;
     const cx = CENTER + Math.cos(angle) * orbitR;
     const cy = CENTER + Math.sin(angle) * orbitR;
 
     const spread = (energyRadius.value - ENERGY_MIN) / (ENERGY_MAX - ENERGY_MIN);
-    const dotR = baseDotSize * (1 + spread * 1.2);
-    const opacity = baseOpacity * (0.4 + spread * 0.6);
+
+    const tangentAngle = angle + Math.PI / 2;
+    const rxVal = streamLen * (0.6 + spread * 0.8) * (1 - trailIndex * 0.15);
+    const ryVal = streamWidth * (0.5 + spread * 0.6) * (1 - trailIndex * 0.1);
+
+    const trailFade = 1 - trailIndex * 0.3;
+    const opacity = baseOpacity * (0.25 + spread * 0.75) * trailFade;
 
     const fill = interpolateColor(
       energyProgress.value,
@@ -63,10 +73,21 @@ function EnergyDot({
       [colorDim, colorBright],
     );
 
-    return { cx, cy, r: dotR, opacity, fill };
+    const rotateDeg = (tangentAngle * 180) / Math.PI;
+
+    return {
+      cx, cy,
+      rx: rxVal,
+      ry: ryVal,
+      opacity,
+      fill,
+      rotation: rotateDeg,
+      originX: cx,
+      originY: cy,
+    };
   });
 
-  return <AnimatedCircle animatedProps={animatedProps} />;
+  return <AnimatedEllipse animatedProps={animatedProps} />;
 }
 
 interface BreathCircleProps {
@@ -86,7 +107,8 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
   const rotation0 = useSharedValue(0);
   const rotation1 = useSharedValue(0);
   const rotation2 = useSharedValue(0);
-  const rotations = [rotation0, rotation1, rotation2];
+  const rotation3 = useSharedValue(0);
+  const rotations = [rotation0, rotation1, rotation2, rotation3];
 
   useEffect(() => {
     RING_CONFIGS.forEach((ring, i) => {
@@ -184,7 +206,7 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
           cancelAnimation(rotations[i]);
           rotations[i].value = withRepeat(
             withTiming(rotations[i].value + 360 * ring.direction, {
-              duration: ring.speed * 0.7,
+              duration: ring.speed * 0.6,
               easing: Easing.linear,
             }),
             -1,
@@ -212,64 +234,84 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
     }
   }, [phase, phaseDuration, isPaused]);
 
-  const dotConfigs = useMemo(() => {
+  const streamConfigs = useMemo(() => {
     const configs: Array<{
       ringIndex: number;
-      dotIndex: number;
+      streamIndex: number;
       count: number;
-      baseDotSize: number;
+      streamLen: number;
+      streamWidth: number;
       baseOpacity: number;
-      jitterOffset: number;
+      radiusOffset: number;
+      trailIndex: number;
+      colorLayer: number;
     }> = [];
 
     RING_CONFIGS.forEach((ring, ri) => {
-      for (let di = 0; di < ring.count; di++) {
-        const jitter = Math.sin(di * 2.7 + ri * 1.3) * 8;
-        configs.push({
-          ringIndex: ri,
-          dotIndex: di,
-          count: ring.count,
-          baseDotSize: ring.dotSize + Math.sin(di * 1.5) * 0.5,
-          baseOpacity: ring.opacityBase + Math.cos(di * 2.1) * 0.08,
-          jitterOffset: jitter,
-        });
+      for (let si = 0; si < ring.count; si++) {
+        for (let ti = 0; ti < ring.trailCount; ti++) {
+          const radialJitter = Math.sin(si * 3.1 + ri * 2.3) * 6;
+          const trailOffset = ti * (ring.streamLen * 0.3);
+          configs.push({
+            ringIndex: ri,
+            streamIndex: si,
+            count: ring.count,
+            streamLen: ring.streamLen + Math.sin(si * 1.7) * 3,
+            streamWidth: ring.streamWidth + Math.cos(si * 2.3) * 0.4,
+            baseOpacity: ring.opacityBase + Math.cos(si * 2.1) * 0.06,
+            radiusOffset: radialJitter + trailOffset,
+            trailIndex: ti,
+            colorLayer: ri % 2,
+          });
+        }
       }
     });
     return configs;
   }, []);
 
   const coreProps = useAnimatedProps(() => {
+    const coreOpacity = 0.92 - energyProgress.value * 0.84;
     const fill = interpolateColor(
       energyProgress.value,
-      [0, 1],
-      [colors.circleActive, colors.circleRest],
+      [0, 0.5, 1],
+      [colors.circleActive, colors.circleActive, colors.circleRest],
     );
-    return { r: coreRadius.value, fill };
+    return { r: coreRadius.value, fill, opacity: coreOpacity };
   });
 
   const coreGlowProps = useAnimatedProps(() => {
+    const glowOpacity = (0.4 - energyProgress.value * 0.35);
     const fill = interpolateColor(
       energyProgress.value,
       [0, 1],
       [colors.glowActive, colors.glowRest],
     );
     return {
-      r: coreRadius.value + 10,
+      r: coreRadius.value + 12,
       fill,
-      opacity: 0.35 - 0.15 * energyProgress.value,
+      opacity: glowOpacity,
     };
   });
 
   const coreOuterGlowProps = useAnimatedProps(() => {
+    const glowOpacity = (0.2 - energyProgress.value * 0.17);
     const fill = interpolateColor(
       energyProgress.value,
       [0, 1],
       [colors.glowActive, colors.glowRest],
     );
     return {
-      r: coreRadius.value + 22,
+      r: coreRadius.value + 26,
       fill,
-      opacity: 0.12 - 0.05 * energyProgress.value,
+      opacity: glowOpacity,
+    };
+  });
+
+  const coreRimProps = useAnimatedProps(() => {
+    const rimOpacity = 0.6 - energyProgress.value * 0.45;
+    return {
+      r: coreRadius.value + 2,
+      opacity: rimOpacity,
     };
   });
 
@@ -278,20 +320,30 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
       <Svg width={SVG_SIZE} height={SVG_SIZE} viewBox={`0 0 ${SVG_SIZE} ${SVG_SIZE}`}>
         <AnimatedCircle cx={CENTER} cy={CENTER} animatedProps={coreOuterGlowProps} />
         <AnimatedCircle cx={CENTER} cy={CENTER} animatedProps={coreGlowProps} />
-        <AnimatedCircle cx={CENTER} cy={CENTER} opacity={0.95} animatedProps={coreProps} />
-        {dotConfigs.map((cfg, i) => (
-          <EnergyDot
+        <AnimatedCircle
+          cx={CENTER}
+          cy={CENTER}
+          animatedProps={coreRimProps}
+          fill="none"
+          stroke={colors.streamMid}
+          strokeWidth={1.5}
+        />
+        <AnimatedCircle cx={CENTER} cy={CENTER} animatedProps={coreProps} />
+        {streamConfigs.map((cfg, i) => (
+          <PlasmaStream
             key={i}
-            index={cfg.dotIndex}
+            index={cfg.streamIndex}
             count={cfg.count}
             rotation={rotations[cfg.ringIndex]}
             energyRadius={energyRadius}
             energyProgress={energyProgress}
-            baseDotSize={cfg.baseDotSize}
+            streamLen={cfg.streamLen}
+            streamWidth={cfg.streamWidth}
             baseOpacity={cfg.baseOpacity}
-            jitterOffset={cfg.jitterOffset}
-            colorDim={colors.dotDim}
-            colorBright={colors.dotBright}
+            radiusOffset={cfg.radiusOffset}
+            trailIndex={cfg.trailIndex}
+            colorDim={cfg.colorLayer === 0 ? colors.streamDim : colors.dotDim}
+            colorBright={cfg.colorLayer === 0 ? colors.streamBright : colors.streamMid}
           />
         ))}
       </Svg>
