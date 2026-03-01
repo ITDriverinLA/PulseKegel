@@ -46,34 +46,42 @@ interface PlasmaStreamProps {
   rotation: SharedValue<number>;
   energyRadius: SharedValue<number>;
   energyProgress: SharedValue<number>;
+  pulse: SharedValue<number>;
   streamLen: number;
   streamWidth: number;
   baseOpacity: number;
   radiusOffset: number;
   trailIndex: number;
+  pulseSeed: number;
   colorDim: string;
   colorBright: string;
 }
 
 function PlasmaStream({
-  index, count, rotation, energyRadius, energyProgress,
-  streamLen, streamWidth, baseOpacity, radiusOffset, trailIndex,
+  index, count, rotation, energyRadius, energyProgress, pulse,
+  streamLen, streamWidth, baseOpacity, radiusOffset, trailIndex, pulseSeed,
   colorDim, colorBright,
 }: PlasmaStreamProps) {
   const animatedProps = useAnimatedProps(() => {
     const angle = ((index / count) * Math.PI * 2) + (rotation.value * Math.PI / 180);
-    const orbitR = energyRadius.value + radiusOffset;
+
+    const pulseWave = Math.sin(pulse.value * Math.PI * 2 + pulseSeed);
+    const pulseScale = 1 + pulseWave * 0.18;
+    const pulseRadial = pulseWave * 4;
+
+    const orbitR = energyRadius.value + radiusOffset + pulseRadial;
     const cx = CENTER + Math.cos(angle) * orbitR;
     const cy = CENTER + Math.sin(angle) * orbitR;
 
     const spread = (energyRadius.value - ENERGY_MIN) / (ENERGY_MAX - ENERGY_MIN);
 
     const tangentAngle = angle + Math.PI / 2;
-    const rxVal = streamLen * (0.5 + spread * 0.9) * (1 - trailIndex * 0.15);
-    const ryVal = streamWidth * (0.4 + spread * 0.7) * (1 - trailIndex * 0.1);
+    const rxVal = streamLen * (0.5 + spread * 0.9) * (1 - trailIndex * 0.15) * pulseScale;
+    const ryVal = streamWidth * (0.4 + spread * 0.7) * (1 - trailIndex * 0.1) * (2 - pulseScale);
 
     const trailFade = 1 - trailIndex * 0.35;
-    const opacity = baseOpacity * (0.2 + spread * 0.8) * trailFade;
+    const pulseOpacity = 0.7 + pulseWave * 0.3;
+    const opacity = baseOpacity * (0.2 + spread * 0.8) * trailFade * pulseOpacity;
 
     const fill = interpolateColor(
       energyProgress.value,
@@ -104,27 +112,38 @@ interface PlasmaBoltProps {
   rotation: SharedValue<number>;
   energyRadius: SharedValue<number>;
   energyProgress: SharedValue<number>;
+  pulse: SharedValue<number>;
   jitterSeed: number;
+  writheSeedA: number;
+  writheSeedB: number;
   colorDim: string;
   colorBright: string;
 }
 
 function PlasmaBolt({
-  index, count, rotation, energyRadius, energyProgress,
-  jitterSeed, colorDim, colorBright,
+  index, count, rotation, energyRadius, energyProgress, pulse,
+  jitterSeed, writheSeedA, writheSeedB, colorDim, colorBright,
 }: PlasmaBoltProps) {
   const animatedProps = useAnimatedProps(() => {
-    const angle = ((index / count) * Math.PI * 2) + (rotation.value * Math.PI / 180);
-    const endR = energyRadius.value + jitterSeed;
+    const baseAngle = ((index / count) * Math.PI * 2) + (rotation.value * Math.PI / 180);
+
+    const writheA = Math.sin(pulse.value * Math.PI * 2 * 3.7 + writheSeedA) * 0.12;
+    const writheB = Math.cos(pulse.value * Math.PI * 2 * 2.3 + writheSeedB) * 0.08;
+    const angle = baseAngle + writheA + writheB;
+
+    const pulseWave = Math.sin(pulse.value * Math.PI * 2 + jitterSeed);
+    const endJitter = pulseWave * 8;
+    const endR = energyRadius.value + jitterSeed + endJitter;
     const startR = CORE_RADIUS + 4;
 
-    const x1 = CENTER + Math.cos(angle) * startR;
-    const y1 = CENTER + Math.sin(angle) * startR;
+    const x1 = CENTER + Math.cos(angle + writheB * 0.5) * startR;
+    const y1 = CENTER + Math.sin(angle + writheB * 0.5) * startR;
     const x2 = CENTER + Math.cos(angle) * endR;
     const y2 = CENTER + Math.sin(angle) * endR;
 
     const spread = (energyRadius.value - ENERGY_MIN) / (ENERGY_MAX - ENERGY_MIN);
-    const opacity = 0.15 + spread * 0.45;
+    const pulseOpacity = 0.7 + pulseWave * 0.3;
+    const opacity = (0.15 + spread * 0.55) * pulseOpacity;
 
     const stroke = interpolateColor(
       energyProgress.value,
@@ -132,7 +151,7 @@ function PlasmaBolt({
       [colorDim, colorBright],
     );
 
-    const strokeWidth = 0.6 + spread * 0.8;
+    const strokeWidth = (0.6 + spread * 1.0) * (0.8 + pulseWave * 0.4);
 
     return { x1, y1, x2, y2, opacity, stroke, strokeWidth };
   });
@@ -153,6 +172,7 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
   const coreRadius = useSharedValue(CORE_RADIUS);
   const energyRadius = useSharedValue(ENERGY_MIN);
   const energyProgress = useSharedValue(0);
+  const pulse = useSharedValue(0);
 
   const rotation0 = useSharedValue(0);
   const rotation1 = useSharedValue(0);
@@ -172,11 +192,20 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
         false,
       );
     });
+
+    pulse.value = 0;
+    pulse.value = withRepeat(
+      withTiming(1, { duration: 1800, easing: Easing.linear }),
+      -1,
+      false,
+    );
+
     return () => {
       rotations.forEach(r => cancelAnimation(r));
       cancelAnimation(coreRadius);
       cancelAnimation(energyRadius);
       cancelAnimation(energyProgress);
+      cancelAnimation(pulse);
     };
   }, []);
 
@@ -187,8 +216,15 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
 
     if (isPaused) {
       rotations.forEach(r => cancelAnimation(r));
+      cancelAnimation(pulse);
       return;
     }
+
+    pulse.value = withRepeat(
+      withTiming(pulse.value + 1, { duration: 1800, easing: Easing.linear }),
+      -1,
+      false,
+    );
 
     const dur = phaseDuration * 1000;
 
@@ -295,6 +331,7 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
       radiusOffset: number;
       trailIndex: number;
       colorIndex: number;
+      pulseSeed: number;
     }> = [];
 
     RING_CONFIGS.forEach((ring, ri) => {
@@ -312,6 +349,7 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
             radiusOffset: radialJitter + trailOffset,
             trailIndex: ti,
             colorIndex: (ri + si) % 4,
+            pulseSeed: si * 1.37 + ri * 2.91 + ti * 0.73,
           });
         }
       }
@@ -325,6 +363,8 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
       boltIndex: number;
       count: number;
       jitterSeed: number;
+      writheSeedA: number;
+      writheSeedB: number;
       colorIndex: number;
     }> = [];
 
@@ -336,6 +376,8 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
           boltIndex: bi,
           count: boltCount,
           jitterSeed: Math.sin(bi * 4.7 + ri * 1.9) * 10,
+          writheSeedA: bi * 2.31 + ri * 5.17,
+          writheSeedB: bi * 3.79 + ri * 1.43,
           colorIndex: (ri + bi) % 4,
         });
       }
@@ -360,8 +402,20 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
     return { r: coreRadius.value, fill, opacity: coreOpacity };
   });
 
+  const coreSheenProps = useAnimatedProps(() => {
+    const sheenPulse = Math.sin(pulse.value * Math.PI * 2);
+    const sheenOpacity = (0.25 + sheenPulse * 0.15) * (1 - energyProgress.value * 0.7);
+    return {
+      cx: CENTER - 12,
+      cy: CENTER - 14,
+      r: coreRadius.value * 0.45,
+      opacity: sheenOpacity,
+    };
+  });
+
   const coreGlowProps = useAnimatedProps(() => {
-    const glowOpacity = 0.4 - energyProgress.value * 0.35;
+    const glowPulse = Math.sin(pulse.value * Math.PI * 2 + 1.2);
+    const glowOpacity = (0.4 - energyProgress.value * 0.35) * (0.85 + glowPulse * 0.15);
     const fill = interpolateColor(
       energyProgress.value,
       [0, 1],
@@ -389,10 +443,17 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
   });
 
   const coreRimProps = useAnimatedProps(() => {
-    const rimOpacity = 0.6 - energyProgress.value * 0.45;
+    const rimPulse = Math.sin(pulse.value * Math.PI * 2 + 0.5);
+    const rimOpacity = (0.6 - energyProgress.value * 0.45) * (0.8 + rimPulse * 0.2);
+    const rimStroke = interpolateColor(
+      energyProgress.value,
+      [0, 1],
+      [colors.circleActive, colors.circleRest],
+    );
     return {
       r: coreRadius.value + 2,
       opacity: rimOpacity,
+      stroke: rimStroke,
     };
   });
 
@@ -406,10 +467,13 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
           cy={CENTER}
           animatedProps={coreRimProps}
           fill="none"
-          stroke={colors.streamMid}
-          strokeWidth={1.5}
+          strokeWidth={1.8}
         />
         <AnimatedCircle cx={CENTER} cy={CENTER} animatedProps={coreProps} />
+        <AnimatedCircle
+          animatedProps={coreSheenProps}
+          fill={colors.coreSheenLight}
+        />
 
         {boltConfigs.map((cfg, i) => (
           <PlasmaBolt
@@ -419,7 +483,10 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
             rotation={rotations[cfg.ringIndex]}
             energyRadius={energyRadius}
             energyProgress={energyProgress}
+            pulse={pulse}
             jitterSeed={cfg.jitterSeed}
+            writheSeedA={cfg.writheSeedA}
+            writheSeedB={cfg.writheSeedB}
             colorDim={colors.boltDim}
             colorBright={colors.boltBright}
           />
@@ -433,11 +500,13 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
             rotation={rotations[cfg.ringIndex]}
             energyRadius={energyRadius}
             energyProgress={energyProgress}
+            pulse={pulse}
             streamLen={cfg.streamLen}
             streamWidth={cfg.streamWidth}
             baseOpacity={cfg.baseOpacity}
             radiusOffset={cfg.radiusOffset}
             trailIndex={cfg.trailIndex}
+            pulseSeed={cfg.pulseSeed}
             colorDim={colorPairs[cfg.colorIndex].dim}
             colorBright={colorPairs[cfg.colorIndex].bright}
           />
