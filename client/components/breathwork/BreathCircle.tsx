@@ -11,12 +11,13 @@ import Animated, {
   interpolateColor,
   SharedValue,
 } from 'react-native-reanimated';
-import Svg, { Circle, Ellipse } from 'react-native-svg';
+import Svg, { Circle, Ellipse, Line } from 'react-native-svg';
 import { BreathPhase, getBreathworkColors } from '@/constants/breathworkModes';
 import { useTheme } from '@/hooks/useTheme';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const AnimatedEllipse = Animated.createAnimatedComponent(Ellipse);
+const AnimatedLine = Animated.createAnimatedComponent(Line);
 
 const CORE_RADIUS = 50;
 const SVG_SIZE = 360;
@@ -26,10 +27,17 @@ const ENERGY_MIN = 62;
 const ENERGY_MAX = 165;
 
 const RING_CONFIGS = [
-  { count: 14, speed: 8000, direction: 1, streamLen: 14, streamWidth: 3.5, opacityBase: 0.85, trailCount: 3 },
-  { count: 10, speed: 12000, direction: -1, streamLen: 18, streamWidth: 3.0, opacityBase: 0.65, trailCount: 2 },
-  { count: 7, speed: 18000, direction: 1, streamLen: 22, streamWidth: 2.5, opacityBase: 0.5, trailCount: 2 },
-  { count: 5, speed: 25000, direction: -1, streamLen: 16, streamWidth: 2.0, opacityBase: 0.35, trailCount: 1 },
+  { count: 12, speed: 8000, direction: 1, streamLen: 12, streamWidth: 3.2, opacityBase: 0.85, trailCount: 2 },
+  { count: 9, speed: 13000, direction: -1, streamLen: 16, streamWidth: 2.8, opacityBase: 0.65, trailCount: 2 },
+  { count: 6, speed: 19000, direction: 1, streamLen: 20, streamWidth: 2.4, opacityBase: 0.5, trailCount: 1 },
+  { count: 4, speed: 26000, direction: -1, streamLen: 14, streamWidth: 2.0, opacityBase: 0.35, trailCount: 1 },
+];
+
+const COLOR_KEYS: Array<{ dim: string; bright: string }> = [
+  { dim: 'plasma1Dim', bright: 'plasma1Bright' },
+  { dim: 'plasma2Dim', bright: 'plasma2Bright' },
+  { dim: 'plasma3Dim', bright: 'plasma3Bright' },
+  { dim: 'plasma4Dim', bright: 'plasma4Bright' },
 ];
 
 interface PlasmaStreamProps {
@@ -61,11 +69,11 @@ function PlasmaStream({
     const spread = (energyRadius.value - ENERGY_MIN) / (ENERGY_MAX - ENERGY_MIN);
 
     const tangentAngle = angle + Math.PI / 2;
-    const rxVal = streamLen * (0.6 + spread * 0.8) * (1 - trailIndex * 0.15);
-    const ryVal = streamWidth * (0.5 + spread * 0.6) * (1 - trailIndex * 0.1);
+    const rxVal = streamLen * (0.5 + spread * 0.9) * (1 - trailIndex * 0.15);
+    const ryVal = streamWidth * (0.4 + spread * 0.7) * (1 - trailIndex * 0.1);
 
-    const trailFade = 1 - trailIndex * 0.3;
-    const opacity = baseOpacity * (0.25 + spread * 0.75) * trailFade;
+    const trailFade = 1 - trailIndex * 0.35;
+    const opacity = baseOpacity * (0.2 + spread * 0.8) * trailFade;
 
     const fill = interpolateColor(
       energyProgress.value,
@@ -88,6 +96,48 @@ function PlasmaStream({
   });
 
   return <AnimatedEllipse animatedProps={animatedProps} />;
+}
+
+interface PlasmaBoltProps {
+  index: number;
+  count: number;
+  rotation: SharedValue<number>;
+  energyRadius: SharedValue<number>;
+  energyProgress: SharedValue<number>;
+  jitterSeed: number;
+  colorDim: string;
+  colorBright: string;
+}
+
+function PlasmaBolt({
+  index, count, rotation, energyRadius, energyProgress,
+  jitterSeed, colorDim, colorBright,
+}: PlasmaBoltProps) {
+  const animatedProps = useAnimatedProps(() => {
+    const angle = ((index / count) * Math.PI * 2) + (rotation.value * Math.PI / 180);
+    const endR = energyRadius.value + jitterSeed;
+    const startR = CORE_RADIUS + 4;
+
+    const x1 = CENTER + Math.cos(angle) * startR;
+    const y1 = CENTER + Math.sin(angle) * startR;
+    const x2 = CENTER + Math.cos(angle) * endR;
+    const y2 = CENTER + Math.sin(angle) * endR;
+
+    const spread = (energyRadius.value - ENERGY_MIN) / (ENERGY_MAX - ENERGY_MIN);
+    const opacity = 0.15 + spread * 0.45;
+
+    const stroke = interpolateColor(
+      energyProgress.value,
+      [0, 1],
+      [colorDim, colorBright],
+    );
+
+    const strokeWidth = 0.6 + spread * 0.8;
+
+    return { x1, y1, x2, y2, opacity, stroke, strokeWidth };
+  });
+
+  return <AnimatedLine animatedProps={animatedProps} />;
 }
 
 interface BreathCircleProps {
@@ -244,14 +294,14 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
       baseOpacity: number;
       radiusOffset: number;
       trailIndex: number;
-      colorLayer: number;
+      colorIndex: number;
     }> = [];
 
     RING_CONFIGS.forEach((ring, ri) => {
       for (let si = 0; si < ring.count; si++) {
         for (let ti = 0; ti < ring.trailCount; ti++) {
           const radialJitter = Math.sin(si * 3.1 + ri * 2.3) * 6;
-          const trailOffset = ti * (ring.streamLen * 0.3);
+          const trailOffset = ti * (ring.streamLen * 0.25);
           configs.push({
             ringIndex: ri,
             streamIndex: si,
@@ -261,13 +311,44 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
             baseOpacity: ring.opacityBase + Math.cos(si * 2.1) * 0.06,
             radiusOffset: radialJitter + trailOffset,
             trailIndex: ti,
-            colorLayer: ri % 2,
+            colorIndex: (ri + si) % 4,
           });
         }
       }
     });
     return configs;
   }, []);
+
+  const boltConfigs = useMemo(() => {
+    const configs: Array<{
+      ringIndex: number;
+      boltIndex: number;
+      count: number;
+      jitterSeed: number;
+      colorIndex: number;
+    }> = [];
+
+    RING_CONFIGS.forEach((ring, ri) => {
+      const boltCount = Math.max(3, Math.floor(ring.count * 0.5));
+      for (let bi = 0; bi < boltCount; bi++) {
+        configs.push({
+          ringIndex: ri,
+          boltIndex: bi,
+          count: boltCount,
+          jitterSeed: Math.sin(bi * 4.7 + ri * 1.9) * 10,
+          colorIndex: (ri + bi) % 4,
+        });
+      }
+    });
+    return configs;
+  }, []);
+
+  const colorPairs = useMemo(() => {
+    return COLOR_KEYS.map(ck => ({
+      dim: (colors as any)[ck.dim] as string,
+      bright: (colors as any)[ck.bright] as string,
+    }));
+  }, [colors]);
 
   const coreProps = useAnimatedProps(() => {
     const coreOpacity = 0.92 - energyProgress.value * 0.84;
@@ -280,7 +361,7 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
   });
 
   const coreGlowProps = useAnimatedProps(() => {
-    const glowOpacity = (0.4 - energyProgress.value * 0.35);
+    const glowOpacity = 0.4 - energyProgress.value * 0.35;
     const fill = interpolateColor(
       energyProgress.value,
       [0, 1],
@@ -294,7 +375,7 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
   });
 
   const coreOuterGlowProps = useAnimatedProps(() => {
-    const glowOpacity = (0.2 - energyProgress.value * 0.17);
+    const glowOpacity = 0.2 - energyProgress.value * 0.17;
     const fill = interpolateColor(
       energyProgress.value,
       [0, 1],
@@ -329,9 +410,24 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
           strokeWidth={1.5}
         />
         <AnimatedCircle cx={CENTER} cy={CENTER} animatedProps={coreProps} />
+
+        {boltConfigs.map((cfg, i) => (
+          <PlasmaBolt
+            key={`bolt-${i}`}
+            index={cfg.boltIndex}
+            count={cfg.count}
+            rotation={rotations[cfg.ringIndex]}
+            energyRadius={energyRadius}
+            energyProgress={energyProgress}
+            jitterSeed={cfg.jitterSeed}
+            colorDim={colors.boltDim}
+            colorBright={colors.boltBright}
+          />
+        ))}
+
         {streamConfigs.map((cfg, i) => (
           <PlasmaStream
-            key={i}
+            key={`stream-${i}`}
             index={cfg.streamIndex}
             count={cfg.count}
             rotation={rotations[cfg.ringIndex]}
@@ -342,8 +438,8 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
             baseOpacity={cfg.baseOpacity}
             radiusOffset={cfg.radiusOffset}
             trailIndex={cfg.trailIndex}
-            colorDim={cfg.colorLayer === 0 ? colors.streamDim : colors.dotDim}
-            colorBright={cfg.colorLayer === 0 ? colors.streamBright : colors.streamMid}
+            colorDim={colorPairs[cfg.colorIndex].dim}
+            colorBright={colorPairs[cfg.colorIndex].bright}
           />
         ))}
       </Svg>

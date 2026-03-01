@@ -53,6 +53,7 @@ export default function BreathworkSessionScreen() {
   const isRunningRef = useRef(true);
   const sighCountRef = useRef(0);
   const sessionStateRef = useRef<SessionState>('intro');
+  const clipPlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const introPlayer = useAudioPlayer(BREATHWORK_AUDIO_SOURCES[config.introClip]);
   const outroPlayer = useAudioPlayer(BREATHWORK_AUDIO_SOURCES[config.outroClip]);
@@ -119,8 +120,15 @@ export default function BreathworkSessionScreen() {
     };
     const player = playerMap[clipKey];
     if (player) {
-      player.seekTo(0);
-      player.play();
+      try {
+        if (clipPlayTimerRef.current) clearTimeout(clipPlayTimerRef.current);
+        player.pause();
+        player.seekTo(0);
+        clipPlayTimerRef.current = setTimeout(() => {
+          if (!isRunningRef.current) return;
+          try { player.play(); } catch {}
+        }, 50);
+      } catch {}
     }
   }, [
     calmInhalePlayer, calmHoldTopPlayer, calmExhalePlayer, calmHoldBottomPlayer,
@@ -292,6 +300,7 @@ export default function BreathworkSessionScreen() {
       if (phaseTimerRef.current) clearTimeout(phaseTimerRef.current);
       if (outroTimerRef.current) clearTimeout(outroTimerRef.current);
       if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+      if (clipPlayTimerRef.current) clearTimeout(clipPlayTimerRef.current);
       clearBreathHaptics();
       isRunningRef.current = false;
     };
