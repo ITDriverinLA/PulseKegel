@@ -47,6 +47,7 @@ interface PlasmaStreamProps {
   energyRadius: SharedValue<number>;
   energyProgress: SharedValue<number>;
   pulse: SharedValue<number>;
+  flow: SharedValue<number>;
   streamLen: number;
   streamWidth: number;
   baseOpacity: number;
@@ -58,7 +59,7 @@ interface PlasmaStreamProps {
 }
 
 function PlasmaStream({
-  index, count, rotation, energyRadius, energyProgress, pulse,
+  index, count, rotation, energyRadius, energyProgress, pulse, flow,
   streamLen, streamWidth, baseOpacity, radiusOffset, trailIndex, pulseSeed,
   colorDim, colorBright,
 }: PlasmaStreamProps) {
@@ -69,19 +70,28 @@ function PlasmaStream({
     const pulseScale = 1 + pulseWave * 0.18;
     const pulseRadial = pulseWave * 4;
 
-    const orbitR = energyRadius.value + radiusOffset + pulseRadial;
+    const flowPhase = flow.value * Math.PI * 2;
+    const flowWaveA = Math.sin(flowPhase * 1.3 + pulseSeed * 2.1);
+    const flowWaveB = Math.cos(flowPhase * 0.7 + pulseSeed * 1.4);
+    const flowRadial = flowWaveA * 6;
+    const flowStretch = 1 + flowWaveB * 0.25;
+    const flowSquash = 1 + flowWaveA * 0.3;
+    const flowAngleWobble = flowWaveB * 0.15;
+
+    const orbitR = energyRadius.value + radiusOffset + pulseRadial + flowRadial;
     const cx = CENTER + Math.cos(angle) * orbitR;
     const cy = CENTER + Math.sin(angle) * orbitR;
 
     const spread = (energyRadius.value - ENERGY_MIN) / (ENERGY_MAX - ENERGY_MIN);
 
-    const tangentAngle = angle + Math.PI / 2;
-    const rxVal = streamLen * (0.5 + spread * 0.9) * (1 - trailIndex * 0.15) * pulseScale;
-    const ryVal = streamWidth * (0.4 + spread * 0.7) * (1 - trailIndex * 0.1) * (2 - pulseScale);
+    const tangentAngle = angle + Math.PI / 2 + flowAngleWobble;
+    const rxVal = streamLen * (0.5 + spread * 0.9) * (1 - trailIndex * 0.15) * pulseScale * flowStretch;
+    const ryVal = streamWidth * (0.4 + spread * 0.7) * (1 - trailIndex * 0.1) * (2 - pulseScale) * flowSquash;
 
     const trailFade = 1 - trailIndex * 0.25;
+    const flowOpacityWave = 0.85 + flowWaveA * 0.15;
     const pulseOpacity = 0.8 + pulseWave * 0.2;
-    const opacity = Math.min(1, baseOpacity * (0.5 + spread * 0.5) * trailFade * pulseOpacity);
+    const opacity = Math.min(1, baseOpacity * (0.5 + spread * 0.5) * trailFade * pulseOpacity * flowOpacityWave);
 
     const fill = interpolateColor(
       energyProgress.value,
@@ -113,6 +123,7 @@ interface PlasmaBoltProps {
   energyRadius: SharedValue<number>;
   energyProgress: SharedValue<number>;
   pulse: SharedValue<number>;
+  flow: SharedValue<number>;
   jitterSeed: number;
   writheSeedA: number;
   writheSeedB: number;
@@ -121,20 +132,25 @@ interface PlasmaBoltProps {
 }
 
 function PlasmaBolt({
-  index, count, rotation, energyRadius, energyProgress, pulse,
+  index, count, rotation, energyRadius, energyProgress, pulse, flow,
   jitterSeed, writheSeedA, writheSeedB, colorDim, colorBright,
 }: PlasmaBoltProps) {
   const animatedProps = useAnimatedProps(() => {
     const baseAngle = ((index / count) * Math.PI * 2) + (rotation.value * Math.PI / 180);
 
+    const flowPhase = flow.value * Math.PI * 2;
+    const flowWaveA = Math.sin(flowPhase * 2.1 + writheSeedA * 1.3);
+    const flowWaveB = Math.cos(flowPhase * 1.7 + writheSeedB * 0.9);
+
     const writheA = Math.sin(pulse.value * Math.PI * 2 * 3.7 + writheSeedA) * 0.12;
     const writheB = Math.cos(pulse.value * Math.PI * 2 * 2.3 + writheSeedB) * 0.08;
-    const angle = baseAngle + writheA + writheB;
+    const flowWrithe = flowWaveA * 0.08 + flowWaveB * 0.05;
+    const angle = baseAngle + writheA + writheB + flowWrithe;
 
     const pulseWave = Math.sin(pulse.value * Math.PI * 2 + jitterSeed);
-    const endJitter = pulseWave * 8;
+    const endJitter = pulseWave * 8 + flowWaveB * 5;
     const endR = energyRadius.value + jitterSeed + endJitter;
-    const startR = CORE_RADIUS + 4;
+    const startR = CORE_RADIUS + 4 + flowWaveA * 2;
 
     const x1 = CENTER + Math.cos(angle + writheB * 0.5) * startR;
     const y1 = CENTER + Math.sin(angle + writheB * 0.5) * startR;
@@ -142,8 +158,9 @@ function PlasmaBolt({
     const y2 = CENTER + Math.sin(angle) * endR;
 
     const spread = (energyRadius.value - ENERGY_MIN) / (ENERGY_MAX - ENERGY_MIN);
+    const flowOpacity = 0.85 + flowWaveA * 0.15;
     const pulseOpacity = 0.8 + pulseWave * 0.2;
-    const opacity = Math.min(1, (0.4 + spread * 0.5) * pulseOpacity);
+    const opacity = Math.min(1, (0.4 + spread * 0.5) * pulseOpacity * flowOpacity);
 
     const stroke = interpolateColor(
       energyProgress.value,
@@ -151,7 +168,7 @@ function PlasmaBolt({
       [colorDim, colorBright],
     );
 
-    const strokeWidth = (1.0 + spread * 1.5) * (0.8 + pulseWave * 0.4);
+    const strokeWidth = (1.0 + spread * 1.5) * (0.8 + pulseWave * 0.4) * (0.9 + flowWaveB * 0.2);
 
     return { x1, y1, x2, y2, opacity, stroke, strokeWidth };
   });
@@ -170,9 +187,10 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
   const colors = getBreathworkColors(isDark);
 
   const coreRadius = useSharedValue(CORE_RADIUS);
-  const energyRadius = useSharedValue(ENERGY_MIN);
-  const energyProgress = useSharedValue(0);
+  const energyRadius = useSharedValue(ENERGY_MAX);
+  const energyProgress = useSharedValue(1);
   const pulse = useSharedValue(0);
+  const flow = useSharedValue(0);
 
   const rotation0 = useSharedValue(0);
   const rotation1 = useSharedValue(0);
@@ -200,12 +218,20 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
       false,
     );
 
+    flow.value = 0;
+    flow.value = withRepeat(
+      withTiming(1, { duration: 3200, easing: Easing.linear }),
+      -1,
+      false,
+    );
+
     return () => {
       rotations.forEach(r => cancelAnimation(r));
       cancelAnimation(coreRadius);
       cancelAnimation(energyRadius);
       cancelAnimation(energyProgress);
       cancelAnimation(pulse);
+      cancelAnimation(flow);
     };
   }, []);
 
@@ -217,11 +243,18 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
     if (isPaused) {
       rotations.forEach(r => cancelAnimation(r));
       cancelAnimation(pulse);
+      cancelAnimation(flow);
       return;
     }
 
     pulse.value = withRepeat(
       withTiming(pulse.value + 1, { duration: 1800, easing: Easing.linear }),
+      -1,
+      false,
+    );
+
+    flow.value = withRepeat(
+      withTiming(flow.value + 1, { duration: 3200, easing: Easing.linear }),
       -1,
       false,
     );
@@ -485,6 +518,7 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
             energyRadius={energyRadius}
             energyProgress={energyProgress}
             pulse={pulse}
+            flow={flow}
             jitterSeed={cfg.jitterSeed}
             writheSeedA={cfg.writheSeedA}
             writheSeedB={cfg.writheSeedB}
@@ -502,6 +536,7 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
             energyRadius={energyRadius}
             energyProgress={energyProgress}
             pulse={pulse}
+            flow={flow}
             streamLen={cfg.streamLen}
             streamWidth={cfg.streamWidth}
             baseOpacity={cfg.baseOpacity}
