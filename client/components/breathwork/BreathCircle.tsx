@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -12,7 +12,7 @@ import Animated, {
   SharedValue,
 } from 'react-native-reanimated';
 import Svg, { Rect } from 'react-native-svg';
-import { BreathPhase, getBreathworkColors } from '@/constants/breathworkModes';
+import { BreathPhase } from '@/constants/breathworkModes';
 import { useTheme } from '@/hooks/useTheme';
 
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
@@ -39,6 +39,54 @@ const BAR_PROFILES = Array.from({ length: BAR_COUNT }, (_, i) => {
   const phaseSeed = i * 0.47 + 1.23;
   return { centerFactor, phaseSeed };
 });
+
+const DARK_BAR_BRIGHT = [
+  '#00FFFF', '#00E5FF', '#22D3EE',
+  '#00FF88', '#4ADE80',
+  '#A7F3D0', '#BBFFD0', '#A7F3D0',
+  '#C084FC', '#A855F7',
+  '#E879F9', '#F472B6', '#FF3366',
+];
+
+const DARK_BAR_DIM = [
+  '#0E7490', '#0891B2', '#14B8A6',
+  '#059669', '#34D399',
+  '#6EE7B7', '#86EFAC', '#6EE7B7',
+  '#7C3AED', '#6D28D9',
+  '#A855F7', '#DB2777', '#BE123C',
+];
+
+const DARK_BAR_GLOW = [
+  '#67E8F9', '#22D3EE', '#5EEAD4',
+  '#6EE7B7', '#86EFAC',
+  '#BBFFD0', '#D1FAE5', '#BBFFD0',
+  '#D8B4FE', '#C4B5FD',
+  '#F0ABFC', '#F9A8D4', '#FDA4AF',
+];
+
+const LIGHT_BAR_BRIGHT = [
+  '#0097A7', '#00897B', '#26A69A',
+  '#43A047', '#66BB6A',
+  '#AB47BC', '#CE93D8', '#AB47BC',
+  '#E91E63', '#EC407A',
+  '#F06292', '#F48FB1', '#E91E63',
+];
+
+const LIGHT_BAR_DIM = [
+  '#4DB6AC', '#80CBC4', '#80CBC4',
+  '#81C784', '#A5D6A7',
+  '#CE93D8', '#E1BEE7', '#CE93D8',
+  '#F48FB1', '#F8BBD0',
+  '#F8BBD0', '#FFCDD2', '#F48FB1',
+];
+
+const LIGHT_BAR_GLOW = [
+  '#B2DFDB', '#B2DFDB', '#B2EBF2',
+  '#C8E6C9', '#DCEDC8',
+  '#E1BEE7', '#F3E5F5', '#E1BEE7',
+  '#F8BBD0', '#FCE4EC',
+  '#FCE4EC', '#FFE0E6', '#F8BBD0',
+];
 
 interface BreathBarProps {
   index: number;
@@ -96,7 +144,10 @@ interface BreathCircleProps {
 
 export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathCircleProps) {
   const { isDark } = useTheme();
-  const colors = getBreathworkColors(isDark);
+
+  const brightColors = isDark ? DARK_BAR_BRIGHT : LIGHT_BAR_BRIGHT;
+  const dimColors = isDark ? DARK_BAR_DIM : LIGHT_BAR_DIM;
+  const glowColors = isDark ? DARK_BAR_GLOW : LIGHT_BAR_GLOW;
 
   const progress = useSharedValue(0);
   const pulse = useSharedValue(0);
@@ -167,10 +218,6 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
     }
   }, [phase, phaseDuration, isPaused]);
 
-  const barColorDim = isDark ? colors.streamDim : colors.circleActive;
-  const barColorBright = isDark ? colors.circleActive : colors.circleActive;
-  const glowColor = isDark ? colors.glowActive : colors.glowActive;
-
   return (
     <View style={styles.container}>
       <Svg width={SVG_WIDTH} height={SVG_HEIGHT} viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}>
@@ -182,9 +229,9 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
             pulse={pulse}
             centerFactor={bar.centerFactor}
             phaseSeed={bar.phaseSeed}
-            barColorDim={barColorDim}
-            barColorBright={barColorBright}
-            glowColor={glowColor}
+            barColorDim={dimColors[i]}
+            barColorBright={brightColors[i]}
+            glowColor={glowColors[i]}
             isGlow={true}
           />
         ))}
@@ -196,9 +243,9 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
             pulse={pulse}
             centerFactor={bar.centerFactor}
             phaseSeed={bar.phaseSeed}
-            barColorDim={barColorDim}
-            barColorBright={barColorBright}
-            glowColor={glowColor}
+            barColorDim={dimColors[i]}
+            barColorBright={brightColors[i]}
+            glowColor={glowColors[i]}
             isGlow={false}
           />
         ))}
