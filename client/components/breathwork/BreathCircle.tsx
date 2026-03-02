@@ -25,6 +25,8 @@ const MIN_HEIGHT = 16;
 const CORNER_RADIUS = 5;
 const GLOW_EXTEND = 10;
 
+const COLOR_CYCLE_DURATION = 34000;
+
 const TOTAL_WIDTH = BAR_COUNT * BAR_WIDTH + (BAR_COUNT - 1) * BAR_GAP;
 const SVG_HEIGHT = MAX_HEIGHT + 60;
 const SVG_WIDTH = TOTAL_WIDTH + GLOW_EXTEND * 2 + 20;
@@ -40,74 +42,38 @@ const BAR_PROFILES = Array.from({ length: BAR_COUNT }, (_, i) => {
   return { centerFactor, phaseSeed };
 });
 
-const DARK_BAR_BRIGHT = [
-  '#00FFFF', '#00E5FF', '#22D3EE',
-  '#00FF88', '#4ADE80',
-  '#A7F3D0', '#BBFFD0', '#A7F3D0',
-  '#C084FC', '#A855F7',
-  '#E879F9', '#F472B6', '#FF3366',
-];
+const CYCLE_STOPS = [0, 0.2, 0.4, 0.6, 0.8, 1.0];
 
-const DARK_BAR_DIM = [
-  '#0E7490', '#0891B2', '#14B8A6',
-  '#059669', '#34D399',
-  '#6EE7B7', '#86EFAC', '#6EE7B7',
-  '#7C3AED', '#6D28D9',
-  '#A855F7', '#DB2777', '#BE123C',
-];
+const DARK_BRIGHT = ['#00FFFF', '#00FF88', '#BBFFD0', '#A855F7', '#FF3366', '#00FFFF'];
+const DARK_DIM =    ['#0E7490', '#059669', '#6EE7B7', '#6D28D9', '#BE123C', '#0E7490'];
+const DARK_GLOW =   ['#67E8F9', '#6EE7B7', '#D1FAE5', '#D8B4FE', '#FDA4AF', '#67E8F9'];
 
-const DARK_BAR_GLOW = [
-  '#67E8F9', '#22D3EE', '#5EEAD4',
-  '#6EE7B7', '#86EFAC',
-  '#BBFFD0', '#D1FAE5', '#BBFFD0',
-  '#D8B4FE', '#C4B5FD',
-  '#F0ABFC', '#F9A8D4', '#FDA4AF',
-];
-
-const LIGHT_BAR_BRIGHT = [
-  '#0097A7', '#00897B', '#26A69A',
-  '#43A047', '#66BB6A',
-  '#AB47BC', '#CE93D8', '#AB47BC',
-  '#E91E63', '#EC407A',
-  '#F06292', '#F48FB1', '#E91E63',
-];
-
-const LIGHT_BAR_DIM = [
-  '#4DB6AC', '#80CBC4', '#80CBC4',
-  '#81C784', '#A5D6A7',
-  '#CE93D8', '#E1BEE7', '#CE93D8',
-  '#F48FB1', '#F8BBD0',
-  '#F8BBD0', '#FFCDD2', '#F48FB1',
-];
-
-const LIGHT_BAR_GLOW = [
-  '#B2DFDB', '#B2DFDB', '#B2EBF2',
-  '#C8E6C9', '#DCEDC8',
-  '#E1BEE7', '#F3E5F5', '#E1BEE7',
-  '#F8BBD0', '#FCE4EC',
-  '#FCE4EC', '#FFE0E6', '#F8BBD0',
-];
+const LIGHT_BRIGHT = ['#0097A7', '#43A047', '#AB47BC', '#E91E63', '#F57C00', '#0097A7'];
+const LIGHT_DIM =    ['#4DB6AC', '#81C784', '#CE93D8', '#F48FB1', '#FFB74D', '#4DB6AC'];
+const LIGHT_GLOW =   ['#B2DFDB', '#C8E6C9', '#E1BEE7', '#F8BBD0', '#FFE0B2', '#B2DFDB'];
 
 interface BreathBarProps {
   index: number;
   progress: SharedValue<number>;
   pulse: SharedValue<number>;
+  colorCycle: SharedValue<number>;
   centerFactor: number;
   phaseSeed: number;
-  barColorDim: string;
-  barColorBright: string;
-  glowColor: string;
+  brightPalette: string[];
+  dimPalette: string[];
+  glowPalette: string[];
   isGlow: boolean;
 }
 
 function BreathBar({
-  index, progress, pulse, centerFactor, phaseSeed,
-  barColorDim, barColorBright, glowColor, isGlow,
+  index, progress, pulse, colorCycle, centerFactor, phaseSeed,
+  brightPalette, dimPalette, glowPalette, isGlow,
 }: BreathBarProps) {
   const barX = X_OFFSET + index * (BAR_WIDTH + BAR_GAP);
 
   const animatedProps = useAnimatedProps(() => {
     const p = progress.value;
+    const c = colorCycle.value % 1;
     const pulseWave = Math.sin(pulse.value * Math.PI * 2 + phaseSeed);
     const holdPulse = 1 + pulseWave * 0.04 * (1 - Math.abs(p - 0.5) * 0.4);
 
@@ -126,9 +92,13 @@ function BreathBar({
       : (0.55 + p * 0.45) * (0.65 + centerFactor * 0.35);
     const opacity = Math.min(1, baseOpacity);
 
+    const currentBright = interpolateColor(c, CYCLE_STOPS, brightPalette);
+    const currentDim = interpolateColor(c, CYCLE_STOPS, dimPalette);
+    const currentGlow = interpolateColor(c, CYCLE_STOPS, glowPalette);
+
     const fill = isGlow
-      ? glowColor
-      : interpolateColor(p, [0, 1], [barColorDim, barColorBright]);
+      ? currentGlow
+      : interpolateColor(p, [0, 1], [currentDim, currentBright]);
 
     return { x, y, width: w, height, rx, ry: rx, opacity, fill };
   });
@@ -145,23 +115,26 @@ interface BreathCircleProps {
 export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathCircleProps) {
   const { isDark } = useTheme();
 
-  const brightColors = isDark ? DARK_BAR_BRIGHT : LIGHT_BAR_BRIGHT;
-  const dimColors = isDark ? DARK_BAR_DIM : LIGHT_BAR_DIM;
-  const glowColors = isDark ? DARK_BAR_GLOW : LIGHT_BAR_GLOW;
+  const brightPalette = isDark ? DARK_BRIGHT : LIGHT_BRIGHT;
+  const dimPalette = isDark ? DARK_DIM : LIGHT_DIM;
+  const glowPalette = isDark ? DARK_GLOW : LIGHT_GLOW;
 
   const progress = useSharedValue(0);
   const pulse = useSharedValue(0);
+  const colorCycle = useSharedValue(0);
 
   useEffect(() => {
     return () => {
       cancelAnimation(progress);
       cancelAnimation(pulse);
+      cancelAnimation(colorCycle);
     };
   }, []);
 
   useEffect(() => {
     cancelAnimation(progress);
     cancelAnimation(pulse);
+    cancelAnimation(colorCycle);
 
     if (isPaused) {
       return;
@@ -169,6 +142,13 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
 
     pulse.value = withRepeat(
       withTiming(pulse.value + 1, { duration: 2400, easing: Easing.linear }),
+      -1,
+      false,
+    );
+
+    colorCycle.value = 0;
+    colorCycle.value = withRepeat(
+      withTiming(1, { duration: COLOR_CYCLE_DURATION, easing: Easing.linear }),
       -1,
       false,
     );
@@ -227,11 +207,12 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
             index={i}
             progress={progress}
             pulse={pulse}
+            colorCycle={colorCycle}
             centerFactor={bar.centerFactor}
             phaseSeed={bar.phaseSeed}
-            barColorDim={dimColors[i]}
-            barColorBright={brightColors[i]}
-            glowColor={glowColors[i]}
+            brightPalette={brightPalette}
+            dimPalette={dimPalette}
+            glowPalette={glowPalette}
             isGlow={true}
           />
         ))}
@@ -241,11 +222,12 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
             index={i}
             progress={progress}
             pulse={pulse}
+            colorCycle={colorCycle}
             centerFactor={bar.centerFactor}
             phaseSeed={bar.phaseSeed}
-            barColorDim={dimColors[i]}
-            barColorBright={brightColors[i]}
-            glowColor={glowColors[i]}
+            brightPalette={brightPalette}
+            dimPalette={dimPalette}
+            glowPalette={glowPalette}
             isGlow={false}
           />
         ))}
