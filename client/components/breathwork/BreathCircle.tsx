@@ -23,7 +23,7 @@ const BAR_GAP = 6;
 const MAX_HEIGHT = 160;
 const MIN_HEIGHT = 16;
 const CORNER_RADIUS = 5;
-const GLOW_EXTEND = 6;
+const GLOW_EXTEND = 10;
 
 const TOTAL_WIDTH = BAR_COUNT * BAR_WIDTH + (BAR_COUNT - 1) * BAR_GAP;
 const SVG_HEIGHT = MAX_HEIGHT + 60;
@@ -74,8 +74,8 @@ function BreathBar({
     const rx = isGlow ? CORNER_RADIUS + 2 : CORNER_RADIUS;
 
     const baseOpacity = isGlow
-      ? (0.08 + p * 0.25) * (0.7 + centerFactor * 0.3) * (0.9 + pulseWave * 0.1)
-      : (0.35 + p * 0.65) * (0.6 + centerFactor * 0.4);
+      ? (0.2 + p * 0.45) * (0.75 + centerFactor * 0.25) * (0.9 + pulseWave * 0.1)
+      : (0.55 + p * 0.45) * (0.65 + centerFactor * 0.35);
     const opacity = Math.min(1, baseOpacity);
 
     const fill = isGlow

@@ -34,9 +34,9 @@ export const BREATHWORK_COLORS = {
     bg_session: '#0D1B2A',
     timer_text: '#9CA3AF',
     modalBg: '#1a2e42',
-    circleActive: '#00E676',
-    glowActive: '#A7F3D0',
-    streamDim: '#34D399',
+    circleActive: '#4ADE80',
+    glowActive: '#BBFFD0',
+    streamDim: '#6EE7B7',
   },
   light: {
     accent: '#0097A7',

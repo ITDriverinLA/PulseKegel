@@ -7,7 +7,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
-import { useAudioPlayer } from 'expo-audio';
+import { useAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import BreathCircle from '@/components/breathwork/BreathCircle';
 import {
   BreathworkMode,
@@ -102,7 +102,7 @@ export default function BreathworkSessionScreen() {
     }
   }, [introPlayer, outroPlayer]);
 
-  const playClip = useCallback((clipKey: keyof typeof BREATHWORK_AUDIO_SOURCES | null) => {
+  const playClip = useCallback(async (clipKey: keyof typeof BREATHWORK_AUDIO_SOURCES | null) => {
     if (!clipKey || !isRunningRef.current) return;
     const playerMap: Record<string, ReturnType<typeof useAudioPlayer>> = {
       calm_inhale: calmInhalePlayer,
@@ -126,9 +126,9 @@ export default function BreathworkSessionScreen() {
         player.seekTo(0);
         clipPlayTimerRef.current = setTimeout(() => {
           if (!isRunningRef.current) return;
-          try { player.play(); } catch {}
-        }, 50);
-      } catch {}
+          try { player.play(); } catch (e) { console.warn('[Breathwork] play error:', e); }
+        }, 150);
+      } catch (e) { console.warn('[Breathwork] clip error:', e); }
     }
   }, [
     calmInhalePlayer, calmHoldTopPlayer, calmExhalePlayer, calmHoldBottomPlayer,
