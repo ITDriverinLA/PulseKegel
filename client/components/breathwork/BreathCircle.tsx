@@ -25,7 +25,7 @@ const MIN_HEIGHT = 16;
 const CORNER_RADIUS = 5;
 const GLOW_EXTEND = 10;
 
-const COLOR_CYCLE_DURATION = 34000;
+const COLOR_CYCLE_DURATION = 18000;
 
 const TOTAL_WIDTH = BAR_COUNT * BAR_WIDTH + (BAR_COUNT - 1) * BAR_GAP;
 const SVG_HEIGHT = MAX_HEIGHT + 60;
@@ -44,12 +44,12 @@ const BAR_PROFILES = Array.from({ length: BAR_COUNT }, (_, i) => {
 
 const CYCLE_STOPS = [0, 0.2, 0.4, 0.6, 0.8, 1.0];
 
-const DARK_BRIGHT = ['#00FFFF', '#00FF88', '#BBFFD0', '#A855F7', '#FF3366', '#00FFFF'];
-const DARK_DIM =    ['#0E7490', '#059669', '#6EE7B7', '#6D28D9', '#BE123C', '#0E7490'];
-const DARK_GLOW =   ['#67E8F9', '#6EE7B7', '#D1FAE5', '#D8B4FE', '#FDA4AF', '#67E8F9'];
+const DARK_BRIGHT = ['#00FFFF', '#00FF88', '#C084FC', '#FF3366', '#FCD34D', '#00FFFF'];
+const DARK_DIM =    ['#0891B2', '#10B981', '#7C3AED', '#DB2777', '#D97706', '#0891B2'];
+const DARK_GLOW =   ['#67E8F9', '#6EE7B7', '#D8B4FE', '#FDA4AF', '#FDE68A', '#67E8F9'];
 
 const LIGHT_BRIGHT = ['#0097A7', '#43A047', '#AB47BC', '#E91E63', '#F57C00', '#0097A7'];
-const LIGHT_DIM =    ['#4DB6AC', '#81C784', '#CE93D8', '#F48FB1', '#FFB74D', '#4DB6AC'];
+const LIGHT_DIM =    ['#26A69A', '#66BB6A', '#9C27B0', '#EC407A', '#FB8C00', '#26A69A'];
 const LIGHT_GLOW =   ['#B2DFDB', '#C8E6C9', '#E1BEE7', '#F8BBD0', '#FFE0B2', '#B2DFDB'];
 
 interface BreathBarProps {
