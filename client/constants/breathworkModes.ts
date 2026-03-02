@@ -82,30 +82,30 @@ export const CALM_MODE: BreathworkModeConfig = {
   id: 'calm',
   name: 'Calm & Reset',
   subtitle: 'Box Breathing',
-  description: 'Symmetrical 4-4-4-4 breathing for stress relief and nervous system reset.',
+  description: 'Symmetrical breathing for stress relief and nervous system reset.',
   icon: 'moon',
   totalDuration: 300,
-  introDuration: 15,
-  outroDuration: 15,
+  introDuration: 11,
+  outroDuration: 9,
   introClip: 'calm_intro',
   outroClip: 'calm_outro',
   phases: [
-    { phase: 'inhale', duration: 4, audioClip: 'calm_inhale', label: 'BREATHE IN' },
-    { phase: 'hold_top', duration: 4, audioClip: 'calm_hold_top', label: 'HOLD' },
-    { phase: 'exhale', duration: 4, audioClip: 'calm_exhale', label: 'BREATHE OUT' },
-    { phase: 'hold_bottom', duration: 4, audioClip: 'calm_hold_bottom', label: 'HOLD' },
+    { phase: 'inhale', duration: 8, audioClip: 'calm_inhale', label: 'BREATHE IN' },
+    { phase: 'hold_top', duration: 9, audioClip: 'calm_hold_top', label: 'HOLD' },
+    { phase: 'exhale', duration: 9, audioClip: 'calm_exhale', label: 'BREATHE OUT' },
+    { phase: 'hold_bottom', duration: 8, audioClip: 'calm_hold_bottom', label: 'HOLD' },
   ],
-  cyclesEstimate: 18,
+  cyclesEstimate: 8,
 };
 
 export const ENERGIZE_SIGH_PHASES: PhaseStep[] = [
-  { phase: 'sigh_inhale', duration: 3, audioClip: 'energize_sigh_inhale', label: 'SNIFF IN' },
-  { phase: 'sigh_exhale', duration: 7, audioClip: 'energize_sigh_exhale', label: 'SIGH OUT' },
+  { phase: 'sigh_inhale', duration: 5, audioClip: 'energize_sigh_inhale', label: 'SNIFF IN' },
+  { phase: 'sigh_exhale', duration: 5, audioClip: 'energize_sigh_exhale', label: 'SIGH OUT' },
 ];
 
 export const ENERGIZE_COHERENCE_PHASES: PhaseStep[] = [
-  { phase: 'inhale', duration: 5, audioClip: 'energize_inhale', label: 'BREATHE IN' },
-  { phase: 'exhale', duration: 5, audioClip: 'energize_exhale', label: 'BREATHE OUT' },
+  { phase: 'inhale', duration: 11, audioClip: 'energize_inhale', label: 'BREATHE IN' },
+  { phase: 'exhale', duration: 9, audioClip: 'energize_exhale', label: 'BREATHE OUT' },
 ];
 
 export const ENERGIZE_MODE: BreathworkModeConfig = {
@@ -115,12 +115,12 @@ export const ENERGIZE_MODE: BreathworkModeConfig = {
   description: 'Reset sighs to drop cortisol, then settle into coherence breathing.',
   icon: 'zap',
   totalDuration: 300,
-  introDuration: 10,
-  outroDuration: 15,
+  introDuration: 7,
+  outroDuration: 6,
   introClip: 'energize_intro',
   outroClip: 'energize_outro',
   phases: ENERGIZE_COHERENCE_PHASES,
-  cyclesEstimate: 24,
+  cyclesEstimate: 13,
 };
 
 export const PF_MODE: BreathworkModeConfig = {
@@ -130,17 +130,17 @@ export const PF_MODE: BreathworkModeConfig = {
   description: 'Connect breath to your pelvic floor with mindful inhale-release, exhale-lift.',
   icon: 'heart',
   totalDuration: 300,
-  introDuration: 20,
-  outroDuration: 15,
+  introDuration: 17,
+  outroDuration: 12,
   introClip: 'pf_intro',
   outroClip: 'pf_outro',
   midpointClip: 'pf_midpoint',
   midpointTime: 150,
   phases: [
-    { phase: 'inhale', duration: 5, audioClip: 'pf_inhale', label: 'BREATHE IN' },
-    { phase: 'exhale', duration: 5, audioClip: 'pf_exhale', label: 'BREATHE OUT' },
+    { phase: 'inhale', duration: 11, audioClip: 'pf_inhale', label: 'BREATHE IN' },
+    { phase: 'exhale', duration: 14, audioClip: 'pf_exhale', label: 'BREATHE OUT' },
   ],
-  cyclesEstimate: 30,
+  cyclesEstimate: 11,
 };
 
 export const BREATHWORK_MODES: BreathworkModeConfig[] = [CALM_MODE, ENERGIZE_MODE, PF_MODE];
