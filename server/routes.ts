@@ -127,7 +127,52 @@ Sitemap: https://pulsekegel.com/sitemap.xml
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
+  <url>
+    <loc>https://pulsekegel.com/blog</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://pulsekegel.com/blog/pelvic-floor-exercises-for-men</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://pulsekegel.com/blog/how-to-last-longer-naturally</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://pulsekegel.com/blog/pelvic-floor-recovery-after-childbirth</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://pulsekegel.com/blog/bladder-control-exercises-over-40</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
 </urlset>`);
+  });
+
+  app.get("/blog", (_req, res) => {
+    const blogIndex = join(process.cwd(), 'static-build', 'blog', 'index.html');
+    if (existsSync(blogIndex)) {
+      return res.sendFile(blogIndex);
+    }
+    res.status(404).send('Not found');
+  });
+
+  app.get("/blog/:slug", (req, res) => {
+    const slug = req.params.slug;
+    if (slug.endsWith('.html')) {
+      return res.redirect(301, `/blog/${slug.replace('.html', '')}`);
+    }
+    const filePath = join(process.cwd(), 'static-build', 'blog', `${slug}.html`);
+    if (existsSync(filePath)) {
+      return res.sendFile(filePath);
+    }
+    res.status(404).send('Not found');
   });
 
   app.get("/privacy", (_req, res) => {
