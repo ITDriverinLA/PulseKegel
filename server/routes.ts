@@ -152,6 +152,26 @@ Sitemap: https://pulsekegel.com/sitemap.xml
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
+  <url>
+    <loc>https://pulsekegel.com/blog/3-minute-pelvic-floor-routine-men</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://pulsekegel.com/blog/breathing-exercises-better-control-men</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://pulsekegel.com/blog/postpartum-bladder-confidence-exercises</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://pulsekegel.com/blog/daily-pelvic-floor-routine-over-40</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
 </urlset>`);
   });
 
