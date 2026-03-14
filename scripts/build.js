@@ -1,6 +1,5 @@
 const fs = require("fs");
 const path = require("path");
-const os = require("os");
 const { spawn } = require("child_process");
 const { Readable } = require("stream");
 const { pipeline } = require("stream/promises");
@@ -62,17 +61,6 @@ function getDeploymentDomain() {
 function prepareDirectories(timestamp) {
   console.log("Preparing build directories...");
 
-  const blogDir = path.join("static-build", "blog");
-  const blogBackup = path.join(os.tmpdir(), "pulsekegel-blog-backup");
-
-  if (fs.existsSync(blogDir)) {
-    if (fs.existsSync(blogBackup)) {
-      fs.rmSync(blogBackup, { recursive: true });
-    }
-    fs.cpSync(blogDir, blogBackup, { recursive: true });
-    console.log("Backed up blog directory");
-  }
-
   if (fs.existsSync("static-build")) {
     fs.rmSync("static-build", { recursive: true });
   }
@@ -86,12 +74,6 @@ function prepareDirectories(timestamp) {
 
   for (const dir of dirs) {
     fs.mkdirSync(dir, { recursive: true });
-  }
-
-  if (fs.existsSync(blogBackup)) {
-    fs.cpSync(blogBackup, blogDir, { recursive: true });
-    fs.rmSync(blogBackup, { recursive: true });
-    console.log("Restored blog directory");
   }
 
   console.log("Build:", timestamp);
@@ -611,6 +593,9 @@ async function main() {
 
   console.log("Updating manifests and creating landing page...");
   updateManifests(manifests, timestamp, baseUrl, assetsByHash);
+
+  console.log("Building blog...");
+  require("./build-blog.js");
 
   console.log("Build complete! Deploy to:", baseUrl);
 
