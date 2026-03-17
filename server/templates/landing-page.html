@@ -21,10 +21,14 @@
     <meta property="og:url" content="https://pulsekegel.com">
     <meta property="og:site_name" content="PulseKegel">
     <meta property="og:locale" content="en_US">
+    <meta property="og:image" content="https://pulsekegel.com/favicon.png">
+    <meta property="og:image:width" content="512">
+    <meta property="og:image:height" content="512">
 
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="PulseKegel - Pelvic Floor Exercise App">
     <meta name="twitter:description" content="12-week progressive kegel training with haptic feedback, guided breathwork, ambient music, and AI coaching. Just $4.99/year.">
+    <meta name="twitter:image" content="https://pulsekegel.com/favicon.png">
 
     <link rel="canonical" href="https://pulsekegel.com">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -136,11 +140,23 @@
         "@type": "Organization",
         "name": "PulseKegel",
         "url": "https://pulsekegel.com",
+        "sameAs": [
+            "https://apps.apple.com/us/app/pulsekegel/id6758308054"
+        ],
         "contactPoint": {
             "@type": "ContactPoint",
-            "email": "info@avatargen.com",
-            "contactType": "customer service"
+            "contactType": "customer service",
+            "url": "https://pulsekegel.com"
         }
+    }
+    </script>
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "PulseKegel",
+        "url": "https://pulsekegel.com"
     }
     </script>
 
@@ -161,6 +177,7 @@
         .app-icon { width: 64px; height: 64px; border-radius: 16px; background: linear-gradient(135deg, #1a1a2e, #16213e); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 30px rgba(0, 255, 136, 0.3); }
         .app-icon svg { width: 40px; height: 40px; }
         .logo { font-family: 'Orbitron', sans-serif; font-size: 2.5rem; font-weight: 700; background: linear-gradient(90deg, #00FF88, #00FFFF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-shadow: 0 0 40px rgba(0, 255, 136, 0.5); }
+        .logo-subtitle { font-size: 1rem; font-weight: 400; display: block; margin-top: 4px; background: linear-gradient(90deg, #00FFFF, #FF00FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: 0.05em; }
         .tagline { font-size: 1.1rem; color: rgba(255, 255, 255, 0.7); font-weight: 300; }
         
         .hero { padding: 60px 0; text-align: center; }
@@ -223,6 +240,17 @@
         .faq-question { font-family: 'Orbitron', sans-serif; font-size: 1rem; color: #00FFFF; margin-bottom: 12px; line-height: 1.5; }
         .faq-answer { font-size: 0.95rem; color: rgba(255, 255, 255, 0.75); line-height: 1.7; }
         
+        .blog-section { padding: 80px 0; }
+        .blog-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; max-width: 1000px; margin: 0 auto; }
+        .blog-card { background: rgba(26, 26, 46, 0.6); border: 1px solid rgba(0, 255, 255, 0.15); border-radius: 16px; padding: 28px 32px; text-decoration: none; transition: transform 0.3s ease, border-color 0.3s ease; display: block; }
+        .blog-card:hover { transform: translateY(-4px); border-color: rgba(0, 255, 136, 0.4); }
+        .blog-card-title { font-family: 'Orbitron', sans-serif; font-size: 1rem; color: #00FFFF; margin-bottom: 12px; line-height: 1.5; }
+        .blog-card-excerpt { font-size: 0.9rem; color: rgba(255, 255, 255, 0.65); line-height: 1.6; margin-bottom: 12px; }
+        .blog-card-link { font-size: 0.85rem; color: #00FF88; font-weight: 500; }
+        .blog-view-all { text-align: center; margin-top: 32px; }
+        .blog-view-all a { color: #00FFFF; font-family: 'Orbitron', sans-serif; font-size: 0.95rem; text-decoration: none; border-bottom: 1px solid rgba(0, 255, 255, 0.3); padding-bottom: 2px; transition: border-color 0.3s; }
+        .blog-view-all a:hover { border-color: #00FFFF; }
+
         .cta-section { padding: 80px 0; text-align: center; }
         .cta-card { background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 255, 255, 0.1)); border: 2px solid rgba(0, 255, 136, 0.3); border-radius: 24px; padding: 48px; max-width: 700px; margin: 0 auto; }
         .cta-title { font-family: 'Orbitron', sans-serif; font-size: 1.8rem; margin-bottom: 16px; color: #00FF88; }
@@ -268,7 +296,7 @@
                         <path d="M2 12l10 5 10-5"/>
                     </svg>
                 </div>
-                <h1 class="logo">PulseKegel</h1>
+                <h1 class="logo">PulseKegel <span class="logo-subtitle">Pelvic Floor Exercise App</span></h1>
             </div>
             <p class="tagline">Reclaim control. Last longer. Move better.<br>Age like a weapon, not a warning.</p>
         </header>
@@ -500,7 +528,7 @@
                         <div class="roadmap-check green" aria-hidden="true">&#10003;</div>
                         <div class="roadmap-content">
                             <strong>Badge & Achievement System</strong>
-                            <p>18 badges across 5 categories to keep you motivated and celebrate your milestones</p>
+                            <p>19 badges across 5 categories to keep you motivated and celebrate your milestones</p>
                         </div>
                     </div>
                     <div class="roadmap-item cyan">
@@ -569,6 +597,30 @@
                 </div>
             </section>
             
+            <section class="blog-section" aria-label="From the PulseKegel blog">
+                <h2 class="section-title">From the Blog</h2>
+                <div class="blog-grid">
+                    <a href="/blog/pelvic-floor-exercises-for-men" class="blog-card">
+                        <h3 class="blog-card-title">Pelvic Floor Exercises for Men: A Practical Beginner Plan</h3>
+                        <p class="blog-card-excerpt">Learn a simple pelvic floor routine for men. Build better control with short daily sessions and a 7-day starter plan.</p>
+                        <span class="blog-card-link">Read more</span>
+                    </a>
+                    <a href="/blog/bladder-control-exercises-over-40" class="blog-card">
+                        <h3 class="blog-card-title">Bladder Control Exercises for Adults Over 40</h3>
+                        <p class="blog-card-excerpt">Strengthen your pelvic floor after 40 with daily exercises designed for better bladder confidence and control.</p>
+                        <span class="blog-card-link">Read more</span>
+                    </a>
+                    <a href="/blog/pelvic-floor-recovery-after-childbirth" class="blog-card">
+                        <h3 class="blog-card-title">Pelvic Floor Recovery After Childbirth</h3>
+                        <p class="blog-card-excerpt">Practical daily steps to rebuild pelvic floor strength postpartum with gentle, progressive routines.</p>
+                        <span class="blog-card-link">Read more</span>
+                    </a>
+                </div>
+                <div class="blog-view-all">
+                    <a href="/blog">View all articles</a>
+                </div>
+            </section>
+
             <section class="cta-section" id="pricing" aria-label="Download PulseKegel">
                 <div class="cta-card">
                     <div class="price-badge">$4.99 for 12 months</div>
@@ -584,6 +636,7 @@
         
         <footer>
             <nav class="footer-links" aria-label="Footer navigation">
+                <a href="/about">About</a>
                 <a href="/blog">Blog</a>
                 <a href="/privacy">Privacy Policy</a>
                 <a href="mailto:info@avatargen.com">Contact</a>

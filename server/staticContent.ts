@@ -30,6 +30,8 @@ export const privacyPolicyHtml = `<!DOCTYPE html>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Privacy Policy - PulseKegel</title>
+  <meta name="description" content="PulseKegel privacy policy. Learn how your data is stored locally on your device, what minimal information we collect, and your rights." />
+  <link rel="canonical" href="https://pulsekegel.com/privacy" />
   <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="apple-touch-icon" href="/favicon.png">
   <style>
@@ -127,7 +129,14 @@ export function getAboutPageHtml(): string {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PulseKegel - Take Control of Your Pelvic Health</title>
+    <title>About PulseKegel - Pelvic Floor Exercise App for Men & Women</title>
+    <meta name="description" content="PulseKegel is a pelvic floor exercise app with a 12-week progressive kegel training program, haptic feedback, AI progress reviews, guided breathwork, and ambient music. Built for real results." />
+    <link rel="canonical" href="https://pulsekegel.com/about" />
+    <meta property="og:title" content="About PulseKegel - Pelvic Floor Exercise App" />
+    <meta property="og:description" content="A 12-week progressive kegel training program with haptic feedback, AI progress reviews, guided breathwork, and ambient music. Just $4.99/year." />
+    <meta property="og:url" content="https://pulsekegel.com/about" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://pulsekegel.com/favicon.png" />
     <link rel="icon" type="image/png" href="/favicon.png">
     <link rel="apple-touch-icon" href="/favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -146,6 +155,7 @@ export function getAboutPageHtml(): string {
         .app-icon { width: 64px; height: 64px; border-radius: 16px; background: linear-gradient(135deg, #1a1a2e, #16213e); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 30px rgba(0, 255, 136, 0.3); }
         .app-icon svg { width: 40px; height: 40px; }
         .logo { font-family: 'Orbitron', sans-serif; font-size: 2.5rem; font-weight: 700; background: linear-gradient(90deg, #00FF88, #00FFFF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-shadow: 0 0 40px rgba(0, 255, 136, 0.5); }
+        .logo-subtitle { font-size: 1rem; font-weight: 400; display: block; margin-top: 4px; background: linear-gradient(90deg, #00FFFF, #FF00FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: 0.05em; }
         .tagline { font-size: 1.1rem; color: rgba(255, 255, 255, 0.7); font-weight: 300; }
         .hero { padding: 60px 0; text-align: center; }
         .story-card { background: linear-gradient(135deg, rgba(26, 26, 46, 0.9), rgba(22, 33, 62, 0.9)); border: 1px solid rgba(0, 255, 136, 0.2); border-radius: 24px; padding: 48px; max-width: 800px; margin: 0 auto; position: relative; overflow: hidden; }
@@ -200,7 +210,7 @@ export function getAboutPageHtml(): string {
                         <path d="M2 12l10 5 10-5"/>
                     </svg>
                 </div>
-                <h1 class="logo">PulseKegel</h1>
+                <h1 class="logo">PulseKegel <span class="logo-subtitle">Pelvic Floor Exercise App</span></h1>
             </div>
             <p class="tagline">Pelvic Floor Training, Simplified</p>
         </header>
