@@ -241,7 +241,7 @@ export const storage = {
     let changed = false;
     const current = new Date(start);
 
-    while (current <= today) {
+    while (current < today) {
       const dateStr = formatDate(current);
       if (isRestDayForDate(current, programStartDate)) {
         if (!completedDates.includes(dateStr)) {

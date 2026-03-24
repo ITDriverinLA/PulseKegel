@@ -208,7 +208,7 @@ export default function HomeScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(400).delay(200)}>
-          <View style={[styles.card, { backgroundColor: cp.cardBg, borderColor: isTodayComplete ? `${cp.neonGreen}4D` : cp.cardBorder }]}>
+          <View style={[styles.card, { backgroundColor: cp.cardBg, borderColor: isTodayComplete && !todaysWorkout?.isRestDay ? `${cp.neonGreen}4D` : cp.cardBorder }]}>
             {todaysWorkout ? (
               todaysWorkout.isRestDay ? (
                 <>
@@ -217,17 +217,9 @@ export default function HomeScreen() {
                       <Text style={[styles.phaseLabel, { fontSize: 14 * fontScale, color: colors.accentSecondary, textShadowColor: isDarkMode ? cp.neonCyan : 'transparent' }]}>
                         Week {todaysWorkout.week.weekNumber} - {todaysWorkout.week.phase}
                       </Text>
-                      <View style={styles.titleRow}>
-                        <Text style={[styles.workoutTitle, { fontSize: 24 * fontScale, color: cp.text }]}>
-                          Rest Day
-                        </Text>
-                        {isTodayComplete ? (
-                          <View style={[styles.completedBadge, { backgroundColor: `${cp.neonGreen}26`, borderColor: `${cp.neonGreen}4D` }]}>
-                            <Feather name="check" size={12} color={cp.neonGreen} />
-                            <Text style={[styles.completedBadgeText, { color: cp.neonGreen }]}>Done</Text>
-                          </View>
-                        ) : null}
-                      </View>
+                      <Text style={[styles.workoutTitle, { fontSize: 24 * fontScale, color: cp.text }]}>
+                        Rest Day
+                      </Text>
                     </View>
                     <View style={[styles.durationBadge, { backgroundColor: 'rgba(139, 92, 246, 0.2)' }]}>
                       <Feather name="moon" size={14} color={cp.neonPurple} />
@@ -242,52 +234,40 @@ export default function HomeScreen() {
                   </Text>
 
                   <View style={styles.restDayContent}>
-                    <View style={[styles.restDayIcon, isTodayComplete && { backgroundColor: `${cp.neonGreen}1A` }]}>
-                      <Feather name={isTodayComplete ? 'check-circle' : 'battery-charging'} size={32} color={isTodayComplete ? cp.neonGreen : cp.neonPurple} />
+                    <View style={styles.restDayIcon}>
+                      <Feather name="battery-charging" size={32} color={cp.neonPurple} />
                     </View>
                     <Text style={[styles.restDayMessage, { color: cp.textSecondary }]}>
-                      {isTodayComplete
-                        ? 'Rest day complete. Your body is recovering and getting stronger.'
-                        : 'Rest days are essential for muscle recovery and preventing overtraining. Your pelvic floor is building strength from your previous workouts.'}
+                      Rest days are essential for muscle recovery and preventing overtraining. Your pelvic floor is building strength from your previous workouts.
                     </Text>
                   </View>
 
-                  {isTodayComplete ? (
-                    <Pressable onPress={() => navigation.navigate('BreathworkModeSelector')} style={styles.breathworkLink} testID="breathwork-button">
-                      <Feather name="wind" size={16} color="#00B4C5" />
-                      <Text style={[styles.breathworkLinkText, { color: '#00B4C5' }]}>Another Breathwork Session</Text>
-                      <Feather name="chevron-right" size={16} color="#00B4C5" />
+                  <View style={styles.buttonsRow}>
+                    <Pressable onPress={() => navigation.navigate('BreathworkModeSelector')} style={styles.startButtonContainer} testID="breathwork-button">
+                      <LinearGradient
+                        colors={['#00B4C5', '#0090A0']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.startButton}
+                      >
+                        <Feather name="wind" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+                        <Text style={[styles.startButtonText, { fontSize: 16 * fontScale }]}>Breathwork Session</Text>
+                      </LinearGradient>
                     </Pressable>
-                  ) : (
-                    <>
-                      <View style={styles.buttonsRow}>
-                        <Pressable onPress={() => navigation.navigate('BreathworkModeSelector')} style={styles.startButtonContainer} testID="breathwork-button">
-                          <LinearGradient
-                            colors={['#00B4C5', '#0090A0']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                            style={styles.startButton}
-                          >
-                            <Feather name="wind" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
-                            <Text style={[styles.startButtonText, { fontSize: 16 * fontScale }]}>Breathwork Session</Text>
-                          </LinearGradient>
-                        </Pressable>
-                      </View>
+                  </View>
 
-                      <View style={styles.buttonsRow}>
-                        <Pressable onPress={handleQuickWorkout} style={styles.startButtonContainer}>
-                          <LinearGradient
-                            colors={[cp.neonPurple, cp.neonPink]}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                            style={styles.startButton}
-                          >
-                            <Text style={[styles.startButtonText, { fontSize: 16 * fontScale }]}>Optional Quick Workout</Text>
-                          </LinearGradient>
-                        </Pressable>
-                      </View>
-                    </>
-                  )}
+                  <View style={styles.buttonsRow}>
+                    <Pressable onPress={handleQuickWorkout} style={styles.startButtonContainer}>
+                      <LinearGradient
+                        colors={[cp.neonPurple, cp.neonPink]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.startButton}
+                      >
+                        <Text style={[styles.startButtonText, { fontSize: 16 * fontScale }]}>Optional Quick Workout</Text>
+                      </LinearGradient>
+                    </Pressable>
+                  </View>
                 </>
               ) : isTodayComplete ? (
                 <>
