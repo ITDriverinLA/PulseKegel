@@ -1,5 +1,15 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, Image, Dimensions, Pressable, TextInput } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  StyleSheet,
+  View,
+  Image,
+  Dimensions,
+  Pressable,
+  TextInput,
+  ScrollView,
+  Text,
+  Switch,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -11,11 +21,14 @@ import Animated, {
   WithSpringConfig,
 } from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
+import Slider from '@react-native-community/slider';
 
 import { ThemedText } from '@/components/ThemedText';
 import { Spacing, BorderRadius } from '@/constants/theme';
-import { storage, AnatomyType } from '@/lib/storage';
+import { storage, AnatomyType, defaultSettings } from '@/lib/storage';
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
+import { useAudio } from '@/contexts/AudioContext';
+import { ALL_AMBIENT_TRACKS } from '@/lib/audioManager';
 
 interface OnboardingScreenProps {
   onComplete: () => void;
@@ -49,6 +62,12 @@ const pages = [
       'Select your anatomy type to receive tailored health insights and exercise guidance.',
   },
   {
+    type: 'settings',
+    title: 'Set Your Preferences',
+    description:
+      'Customize the experience to match how you like to train. You can always adjust these in Settings later.',
+  },
+  {
     image: require('../../assets/images/icon.png'),
     title: 'Your 12-Week Journey',
     description:
@@ -70,12 +89,25 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   const [currentPage, setCurrentPage] = useState(0);
   const [selectedAnatomy, setSelectedAnatomy] = useState<AnatomyType>(null);
   const [userName, setUserName] = useState('');
+  const [restDuration, setRestDuration] = useState(defaultSettings.restDuration);
+  const [blockRestDuration, setBlockRestDuration] = useState(defaultSettings.blockRestDuration);
   const insets = useSafeAreaInsets();
-  const { cp, isDarkMode } = useThemePreference();
+  const { cp, isDarkMode, toggleDarkMode } = useThemePreference();
+  const { audioSettings, updateAudioSettings } = useAudio();
 
   const isLastPage = currentPage === pages.length - 1;
   const isAnatomyPage = pages[currentPage].type === 'anatomy';
   const isNamePage = pages[currentPage].type === 'name';
+  const isSettingsPage = pages[currentPage].type === 'settings';
+
+  useEffect(() => {
+    if (isSettingsPage) {
+      storage.getSettings().then((s) => {
+        setRestDuration(s.restDuration);
+        setBlockRestDuration(s.blockRestDuration);
+      });
+    }
+  }, [isSettingsPage]);
 
   const handleNext = async () => {
     if (isLastPage) {
@@ -97,6 +129,32 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
     await storage.saveSettings({ anatomyType: type });
     setCurrentPage(prev => prev + 1);
   };
+
+  const handleSelectTheme = async (wantDark: boolean) => {
+    if (isDarkMode !== wantDark) {
+      await toggleDarkMode();
+    }
+  };
+
+  const handleRestDurationChange = async (value: number) => {
+    setRestDuration(value);
+    await storage.saveSettings({ restDuration: value });
+  };
+
+  const handleBlockRestDurationChange = async (value: number) => {
+    setBlockRestDuration(value);
+    await storage.saveSettings({ blockRestDuration: value });
+  };
+
+  const handleMusicToggle = async (enabled: boolean) => {
+    if (enabled) {
+      await updateAudioSettings({ selectedTracks: ALL_AMBIENT_TRACKS });
+    } else {
+      await updateAudioSettings({ selectedTracks: [] });
+    }
+  };
+
+  const musicEnabled = audioSettings.selectedTracks.length > 0;
 
   return (
     <View style={styles.container}>
@@ -127,7 +185,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
               <ThemedText type="body" style={[styles.description, { color: cp.textSecondary }]}>
                 {pages[currentPage].description}
               </ThemedText>
-              
+
               <TextInput
                 style={[styles.nameInput, { backgroundColor: cp.cardBorder, color: cp.text, borderColor: `${cp.neonGreen}4D` }]}
                 placeholder="Enter your name"
@@ -139,7 +197,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                 returnKeyType="done"
                 onSubmitEditing={handleNameSubmit}
               />
-              
+
               <Pressable style={styles.nameButton} onPress={handleNameSubmit}>
                 <LinearGradient
                   colors={[cp.neonGreen, cp.neonCyan]}
@@ -165,7 +223,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
               <ThemedText type="body" style={[styles.description, { color: cp.textSecondary }]}>
                 {pages[currentPage].description}
               </ThemedText>
-              
+
               <View style={styles.anatomyButtons}>
                 <Pressable
                   style={styles.anatomyButton}
@@ -179,7 +237,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                     <ThemedText style={[styles.anatomyButtonText, { color: cp.text }]}>Female</ThemedText>
                   </LinearGradient>
                 </Pressable>
-                
+
                 <Pressable
                   style={styles.anatomyButton}
                   onPress={() => handleAnatomySelect('male')}
@@ -193,6 +251,165 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                   </LinearGradient>
                 </Pressable>
               </View>
+            </Animated.View>
+          ) : isSettingsPage ? (
+            <Animated.View
+              key={currentPage}
+              entering={FadeIn.duration(300)}
+              style={styles.settingsContainer}
+            >
+              <ThemedText type="h1" style={[styles.title, { color: cp.text }]}>
+                {pages[currentPage].title}
+              </ThemedText>
+              <ThemedText type="body" style={[styles.description, { color: cp.textSecondary }]}>
+                {pages[currentPage].description}
+              </ThemedText>
+
+              <ScrollView
+                style={styles.settingsScroll}
+                contentContainerStyle={styles.settingsScrollContent}
+                showsVerticalScrollIndicator={false}
+              >
+                <View style={[styles.settingsCard, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
+                  <View style={styles.settingsSectionHeader}>
+                    <Feather name="sun" size={16} color={cp.neonCyan} />
+                    <Text style={[styles.settingsSectionLabel, { color: cp.neonCyan }]}>THEME</Text>
+                  </View>
+                  <View style={styles.themeCards}>
+                    <Pressable
+                      style={[
+                        styles.themeCard,
+                        {
+                          backgroundColor: isDarkMode ? `${cp.neonGreen}22` : cp.cardBorder,
+                          borderColor: isDarkMode ? cp.neonGreen : cp.divider,
+                        },
+                      ]}
+                      onPress={() => handleSelectTheme(true)}
+                    >
+                      <View style={[styles.themePreview, styles.themePreviewDark]}>
+                        <View style={styles.themePreviewBar} />
+                        <View style={[styles.themePreviewBar, { opacity: 0.6, width: '70%' }]} />
+                      </View>
+                      <Feather
+                        name="moon"
+                        size={18}
+                        color={isDarkMode ? cp.neonGreen : cp.textMuted}
+                      />
+                      <Text style={[styles.themeCardLabel, { color: isDarkMode ? cp.neonGreen : cp.textMuted }]}>
+                        Dark
+                      </Text>
+                      {isDarkMode ? (
+                        <View style={[styles.themeCheckmark, { backgroundColor: cp.neonGreen }]}>
+                          <Feather name="check" size={10} color="#000" />
+                        </View>
+                      ) : null}
+                    </Pressable>
+
+                    <Pressable
+                      style={[
+                        styles.themeCard,
+                        {
+                          backgroundColor: !isDarkMode ? `${cp.neonGreen}22` : cp.cardBorder,
+                          borderColor: !isDarkMode ? cp.neonGreen : cp.divider,
+                        },
+                      ]}
+                      onPress={() => handleSelectTheme(false)}
+                    >
+                      <View style={[styles.themePreview, styles.themePreviewLight]}>
+                        <View style={[styles.themePreviewBar, { backgroundColor: 'rgba(0,0,0,0.2)' }]} />
+                        <View style={[styles.themePreviewBar, { backgroundColor: 'rgba(0,0,0,0.12)', width: '70%' }]} />
+                      </View>
+                      <Feather
+                        name="sun"
+                        size={18}
+                        color={!isDarkMode ? cp.neonGreen : cp.textMuted}
+                      />
+                      <Text style={[styles.themeCardLabel, { color: !isDarkMode ? cp.neonGreen : cp.textMuted }]}>
+                        Light
+                      </Text>
+                      {!isDarkMode ? (
+                        <View style={[styles.themeCheckmark, { backgroundColor: cp.neonGreen }]}>
+                          <Feather name="check" size={10} color="#000" />
+                        </View>
+                      ) : null}
+                    </Pressable>
+                  </View>
+                </View>
+
+                <View style={[styles.settingsCard, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
+                  <View style={styles.settingsSectionHeader}>
+                    <Feather name="clock" size={16} color={cp.neonCyan} />
+                    <Text style={[styles.settingsSectionLabel, { color: cp.neonCyan }]}>WORKOUT TIMINGS</Text>
+                  </View>
+
+                  <View style={styles.sliderBlock}>
+                    <View style={styles.sliderRow}>
+                      <Text style={[styles.sliderLabel, { color: cp.text }]}>Rest between reps</Text>
+                      <Text style={[styles.sliderValue, { color: cp.neonGreen }]}>{restDuration}s</Text>
+                    </View>
+                    <Slider
+                      style={styles.slider}
+                      minimumValue={2}
+                      maximumValue={10}
+                      step={1}
+                      value={restDuration}
+                      onSlidingComplete={handleRestDurationChange}
+                      minimumTrackTintColor={cp.neonGreen}
+                      maximumTrackTintColor={cp.inputBg}
+                      thumbTintColor={cp.neonGreen}
+                    />
+                    <Text style={[styles.sliderHint, { color: cp.textMuted }]}>2 – 10 seconds</Text>
+                  </View>
+
+                  <View style={[styles.sliderDivider, { backgroundColor: cp.divider }]} />
+
+                  <View style={styles.sliderBlock}>
+                    <View style={styles.sliderRow}>
+                      <Text style={[styles.sliderLabel, { color: cp.text }]}>Rest between blocks</Text>
+                      <Text style={[styles.sliderValue, { color: cp.neonCyan }]}>{blockRestDuration}s</Text>
+                    </View>
+                    <Slider
+                      style={styles.slider}
+                      minimumValue={10}
+                      maximumValue={45}
+                      step={5}
+                      value={blockRestDuration}
+                      onSlidingComplete={handleBlockRestDurationChange}
+                      minimumTrackTintColor={cp.neonCyan}
+                      maximumTrackTintColor={cp.inputBg}
+                      thumbTintColor={cp.neonCyan}
+                    />
+                    <Text style={[styles.sliderHint, { color: cp.textMuted }]}>10 – 45 seconds</Text>
+                  </View>
+                </View>
+
+                <View style={[styles.settingsCard, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
+                  <View style={styles.settingsSectionHeader}>
+                    <Feather name="music" size={16} color={cp.neonCyan} />
+                    <Text style={[styles.settingsSectionLabel, { color: cp.neonCyan }]}>AMBIENT MUSIC</Text>
+                  </View>
+                  <View style={styles.musicToggleRow}>
+                    <View style={styles.musicToggleText}>
+                      <Text style={[styles.sliderLabel, { color: cp.text }]}>
+                        Play music during workouts
+                      </Text>
+                      <Text style={[styles.sliderHint, { color: cp.textMuted, marginTop: 2 }]}>
+                        {musicEnabled ? `All ${ALL_AMBIENT_TRACKS.length} tracks enabled` : 'Off'}
+                      </Text>
+                    </View>
+                    <Switch
+                      value={musicEnabled}
+                      onValueChange={handleMusicToggle}
+                      trackColor={{ false: cp.inputBg, true: `${cp.neonGreen}66` }}
+                      thumbColor={musicEnabled ? cp.neonGreen : cp.textMuted}
+                      ios_backgroundColor={cp.inputBg}
+                    />
+                  </View>
+                  <Text style={[styles.musicHint, { color: cp.textMuted, borderTopColor: cp.divider }]}>
+                    Manage individual tracks in Settings after setup.
+                  </Text>
+                </View>
+              </ScrollView>
             </Animated.View>
           ) : (
             <>
@@ -436,5 +653,122 @@ const styles = StyleSheet.create({
     color: '#000',
     fontWeight: '600',
     fontSize: 16,
+  },
+  settingsContainer: {
+    flex: 1,
+  },
+  settingsScroll: {
+    flex: 1,
+    marginTop: Spacing.xl,
+  },
+  settingsScrollContent: {
+    gap: Spacing.lg,
+    paddingBottom: Spacing.md,
+  },
+  settingsCard: {
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1,
+    padding: Spacing.lg,
+  },
+  settingsSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginBottom: Spacing.lg,
+  },
+  settingsSectionLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+  },
+  themeCards: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+  },
+  themeCard: {
+    flex: 1,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+    padding: Spacing.md,
+    alignItems: 'center',
+    gap: Spacing.sm,
+    position: 'relative',
+  },
+  themePreview: {
+    width: '100%',
+    height: 48,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.sm,
+    gap: Spacing.xs,
+    marginBottom: Spacing.xs,
+    justifyContent: 'center',
+  },
+  themePreviewDark: {
+    backgroundColor: '#0a0a1a',
+  },
+  themePreviewLight: {
+    backgroundColor: '#f0f2f7',
+  },
+  themePreviewBar: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(0,255,136,0.6)',
+    width: '85%',
+  },
+  themeCardLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  themeCheckmark: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sliderBlock: {
+    gap: Spacing.xs,
+  },
+  sliderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  sliderLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  sliderValue: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  slider: {
+    width: '100%',
+    height: 36,
+  },
+  sliderHint: {
+    fontSize: 11,
+  },
+  sliderDivider: {
+    height: 1,
+    marginVertical: Spacing.md,
+  },
+  musicToggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.md,
+  },
+  musicToggleText: {
+    flex: 1,
+  },
+  musicHint: {
+    fontSize: 11,
+    marginTop: Spacing.md,
+    paddingTop: Spacing.md,
+    borderTopWidth: 1,
   },
 });
