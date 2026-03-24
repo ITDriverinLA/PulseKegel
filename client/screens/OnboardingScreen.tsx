@@ -353,6 +353,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                       maximumValue={10}
                       step={1}
                       value={restDuration}
+                      onValueChange={(value: number) => setRestDuration(value)}
                       onSlidingComplete={handleRestDurationChange}
                       minimumTrackTintColor={cp.neonGreen}
                       maximumTrackTintColor={cp.inputBg}
@@ -374,6 +375,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                       maximumValue={45}
                       step={5}
                       value={blockRestDuration}
+                      onValueChange={(value: number) => setBlockRestDuration(value)}
                       onSlidingComplete={handleBlockRestDurationChange}
                       minimumTrackTintColor={cp.neonCyan}
                       maximumTrackTintColor={cp.inputBg}
