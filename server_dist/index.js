@@ -118,7 +118,7 @@ var privacyPolicyHtml = `<!DOCTYPE html>
     <section class="contact-section">
       <h2>Contact Us</h2>
       <p>If you have questions about this privacy policy, please contact us at:</p>
-      <a href="mailto:info@avatargen.com" class="contact-email">info@avatargen.com</a>
+      <a href="mailto:info@pulsekegel.com" class="contact-email">info@pulsekegel.com</a>
     </section>
     <footer class="footer">
       <p>PulseKegel - Pelvic Floor Workout App</p>
