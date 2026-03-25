@@ -31,7 +31,7 @@ import { hapticsManager, HapticPulseController } from '@/lib/hapticsManager';
 import { storage, UserSettings, defaultSettings } from '@/lib/storage';
 import { useAudio } from '@/contexts/AudioContext';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
-import { cancelTodaysReminderIfCompleted, sendBadgeEarnedNotification } from '@/lib/notifications';
+import { rescheduleAfterCompletion, sendBadgeEarnedNotification } from '@/lib/notifications';
 import { getBadgeById } from '@/data/badges';
 
 type RouteProps = RouteProp<RootStackParamList, 'WorkoutPlayer'>;
@@ -172,7 +172,7 @@ export default function WorkoutPlayerScreen() {
           await storage.setProgramStartDate(today);
         }
 
-        await cancelTodaysReminderIfCompleted();
+        await rescheduleAfterCompletion();
 
         const awarded = await storage.checkAndAwardBadges();
         if (awarded.length > 0) {

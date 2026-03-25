@@ -119,6 +119,12 @@ export function buildReminderMessage(
       body: "Momentum is building - open PulseKegel and keep it going.",
     };
   }
+  if (streak === 2) {
+    return {
+      title: 'Day 3 - Keep Going',
+      body: "Two days down. Consistency is the whole game - open PulseKegel.",
+    };
+  }
   if (streak === 1) {
     return {
       title: "Day 2 - Let's Go",
@@ -201,4 +207,42 @@ export async function cancelTodaysReminderIfCompleted(): Promise<void> {
   const settings = await storage.getSettings();
   if (!settings.reminderEnabled) return;
   await cancelAllReminders();
+}
+
+export async function rescheduleAfterCompletion(): Promise<void> {
+  try {
+    const settings = await storage.getSettings();
+    if (!settings.reminderEnabled) return;
+
+    await Notifications.cancelAllScheduledNotificationsAsync();
+
+    const timeStr = settings.reminderTime || '08:00';
+    const [hours, minutes] = timeStr.split(':').map(Number);
+
+    const progress = await storage.getProgress();
+    const earnedBadges = await storage.getEarnedBadges();
+    const earnedIds = earnedBadges.map((b: { badgeId: string }) => b.badgeId);
+    const programStartDate = await storage.getProgramStartDate();
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const isRestDay = programStartDate ? isRestDayForDate(tomorrow, programStartDate) : false;
+
+    const isFirstEver = progress.totalSessions <= 1;
+
+    const message = buildReminderMessage(progress.currentStreak, isRestDay, earnedIds, false, isFirstEver);
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: message.title,
+        body: message.body,
+        data: { screen: 'Home' },
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        hour: hours,
+        minute: minutes,
+      },
+    });
+  } catch {}
 }
