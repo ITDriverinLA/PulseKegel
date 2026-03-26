@@ -48,7 +48,7 @@ function buildFallback(daysWorkedOut: number, scheduledDays: number, weekNumber:
   if (daysWorkedOut === 0) {
     return `Week ${weekNumber} passed without a session. That happens, but it means starting from scratch on the streak. This week is a clean slate — one session is all it takes to get back on track.`;
   }
-  const missedDays = scheduledDays - daysWorkedOut;
+  const missedDays = Math.max(0, scheduledDays - daysWorkedOut);
   if (missedDays === 0) {
     return `${daysWorkedOut} sessions completed this week — the full schedule. That kind of consistency is exactly what builds real, lasting results. Carry that momentum into next week.`;
   }
@@ -83,7 +83,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (missedDays === 0) {
         modeInstructions = `This person hit every session this week: ${daysWorkedOut} of ${scheduledDays} scheduled.${streak > 1 ? ` Their current streak is ${streak} days.` : ''} Celebrate this with specific reference to their session count${streak > 1 ? ` and streak` : ''}. Make the praise feel earned — reference the actual numbers, not generic effort.`;
       } else if (daysWorkedOut >= 3 && missedDays <= 2) {
-        modeInstructions = `This person completed ${daysWorkedOut} of ${scheduledDays} scheduled sessions this week, missing ${missedDays}. Acknowledge the missed sessions by number — do not skip over it. Note that the full week of consistency is what compounds into results. Encourage them to close that gap next week. Tone: honest and supportive, not punishing.`;
+        const streakNote = streak > 1 ? ` Their current streak is ${streak} days, which means those missed sessions did not break momentum entirely.` : ` Their streak did not hold this week.`;
+        modeInstructions = `This person completed ${daysWorkedOut} of ${scheduledDays} scheduled sessions this week, missing ${missedDays}.${streakNote} Acknowledge the missed sessions by number — do not skip over it. Note that the full week of consistency is what compounds into results. Encourage them to close that gap next week. Tone: honest and supportive, not punishing.`;
       } else {
         modeInstructions = `This person completed only ${daysWorkedOut} of ${scheduledDays} scheduled sessions this week — missing ${missedDays}.${streak <= 1 ? ' Their streak was broken.' : ''} Be direct: state the missed session count clearly. Do not lead with praise or bury the accountability. Challenge them to do better next week. End with one forward-looking sentence. Tone: firm and honest, but not harsh.`;
       }

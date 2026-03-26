@@ -66,7 +66,7 @@ export function WeeklyReviewModal({
       onMessageReady?.(data.message);
     } catch (error) {
       const scheduledDays = weekNumber <= 2 ? 3 : weekNumber <= 6 ? 5 : weekNumber <= 10 ? 7 : 5;
-      const missedDays = scheduledDays - daysWorkedOut;
+      const missedDays = Math.max(0, scheduledDays - daysWorkedOut);
       let fallback: string;
       if (daysWorkedOut === 0) {
         fallback = `Week ${weekNumber} passed without a session. That happens, but it means starting from scratch on the streak. This week is a clean slate — one session is all it takes to get back on track.`;
