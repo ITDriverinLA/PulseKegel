@@ -18,6 +18,7 @@ interface WeeklyReviewModalProps {
   totalMinutes: number;
   anatomyType: AnatomyType;
   userName: string;
+  currentStreak: number;
   onMessageReady?: (message: string) => void;
 }
 
@@ -29,6 +30,7 @@ export function WeeklyReviewModal({
   totalMinutes,
   anatomyType,
   userName,
+  currentStreak,
   onMessageReady,
 }: WeeklyReviewModalProps) {
   const { cp, isDarkMode } = useThemePreference();
@@ -43,7 +45,7 @@ export function WeeklyReviewModal({
       setLoading(true);
       fetchReviewMessage();
     }
-  }, [visible, weekNumber, daysWorkedOut, totalMinutes, anatomyType, userName]);
+  }, [visible, weekNumber, daysWorkedOut, totalMinutes, anatomyType, userName, currentStreak]);
 
   const fetchReviewMessage = async () => {
     setLoading(true);
@@ -52,7 +54,7 @@ export function WeeklyReviewModal({
       const response = await fetch(`${apiUrl}/api/weekly-review`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ weekNumber, daysWorkedOut, totalMinutes, anatomyType, userName }),
+        body: JSON.stringify({ weekNumber, daysWorkedOut, totalMinutes, anatomyType, userName, currentStreak }),
       });
       
       if (!response.ok) {
@@ -63,9 +65,18 @@ export function WeeklyReviewModal({
       setMessage(data.message);
       onMessageReady?.(data.message);
     } catch (error) {
-      const fallback = weekNumber === 1 
-        ? "You completed your first week! Your pelvic floor is already getting stronger."
-        : `${weekNumber} weeks down! Your consistency is building real strength.`;
+      const scheduledDays = weekNumber <= 2 ? 3 : weekNumber <= 6 ? 5 : weekNumber <= 10 ? 7 : 5;
+      const missedDays = scheduledDays - daysWorkedOut;
+      let fallback: string;
+      if (daysWorkedOut === 0) {
+        fallback = `Week ${weekNumber} passed without a session. That happens, but it means starting from scratch on the streak. This week is a clean slate — one session is all it takes to get back on track.`;
+      } else if (missedDays === 0) {
+        fallback = `${daysWorkedOut} sessions completed this week — the full schedule. That kind of consistency is exactly what builds real, lasting results. Carry that momentum into next week.`;
+      } else if (daysWorkedOut >= 3 && missedDays <= 2) {
+        fallback = `${daysWorkedOut} of ${scheduledDays} sessions done this week — ${missedDays} missed. The progress is real, but the full week is where the results compound. Aim to close that gap next week.`;
+      } else {
+        fallback = `${daysWorkedOut} of ${scheduledDays} scheduled sessions completed this week — ${missedDays} missed. That is not the week you needed. Next week, start on day one and do not let the first miss become two.`;
+      }
       setMessage(fallback);
       onMessageReady?.(fallback);
     } finally {
