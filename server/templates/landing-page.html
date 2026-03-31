@@ -305,6 +305,31 @@
         .footer-links a:hover { color: #00FFFF; }
         .copyright { color: rgba(255, 255, 255, 0.4); font-size: 0.85rem; }
         
+        .hero-bridge { font-family: 'Orbitron', sans-serif; font-size: 1.15rem; color: rgba(255, 255, 255, 0.75); text-align: center; max-width: 600px; margin: 0 auto 40px; line-height: 1.7; letter-spacing: 0.01em; }
+
+        .need-trainable { font-family: 'Orbitron', sans-serif; font-size: 1.1rem; font-weight: 700; color: #00FF88; margin: 24px 0 0 0; letter-spacing: 0.03em; }
+
+        .why-works-close { font-family: 'Orbitron', sans-serif; font-size: 1rem; color: #00FFFF; text-align: center; margin-top: 32px; letter-spacing: 0.04em; }
+        .why-works-credibility { font-size: 0.9rem; color: rgba(255, 255, 255, 0.5); text-align: center; max-width: 560px; margin: 12px auto 0; line-height: 1.6; font-style: italic; }
+
+        .diy-section { padding: 60px 0; }
+        .diy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 860px; margin: 0 auto; }
+        @media (max-width: 640px) { .diy-grid { grid-template-columns: 1fr; } }
+        .diy-col { border-radius: 16px; padding: 32px 28px; }
+        .diy-col-problem { background: rgba(255, 60, 60, 0.07); border: 1px solid rgba(255, 80, 80, 0.2); }
+        .diy-col-solution { background: rgba(0, 255, 136, 0.06); border: 1px solid rgba(0, 255, 136, 0.25); }
+        .diy-col-label { font-family: 'Orbitron', sans-serif; font-size: 0.85rem; font-weight: 600; margin-bottom: 20px; letter-spacing: 0.04em; }
+        .diy-col-problem .diy-col-label { color: rgba(255, 120, 120, 0.9); }
+        .diy-col-solution .diy-col-label { color: #00FF88; }
+        .diy-list { list-style: none; padding: 0; margin: 0; }
+        .diy-list li { padding: 9px 0 9px 24px; position: relative; font-size: 0.95rem; color: rgba(255, 255, 255, 0.8); line-height: 1.6; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .diy-list li:last-child { border-bottom: none; }
+        .diy-col-problem .diy-list li::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 7px; height: 7px; border-radius: 50%; background: rgba(255, 100, 100, 0.7); }
+        .diy-col-solution .diy-list li::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 7px; height: 7px; border-radius: 50%; background: #00FF88; box-shadow: 0 0 6px rgba(0, 255, 136, 0.5); }
+
+        .payoff-section { padding: 60px 0; text-align: center; }
+        .payoff-statement { font-family: 'Orbitron', sans-serif; font-size: 2rem; font-weight: 700; background: linear-gradient(90deg, #00FF88, #00FFFF, #FF00FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; max-width: 700px; margin: 0 auto; line-height: 1.4; }
+
         @media (max-width: 600px) { 
             .logo { font-size: 1.8rem; } 
             .story-card { padding: 32px 24px; } 
@@ -316,6 +341,7 @@
             .cta-title { font-size: 1.4rem; }
             .hero-buttons { flex-direction: column; align-items: center; }
             .faq-item { padding: 20px 24px; }
+            .payoff-statement { font-size: 1.4rem; }
         }
     </style>
 </head>
@@ -336,12 +362,13 @@
                 </div>
                 <h1 class="logo">PulseKegel <span class="logo-subtitle">Pelvic Floor Exercise App</span></h1>
             </div>
-            <p class="tagline">Control, stamina, confidence — train what matters.<br>Age like a weapon, not a warning.</p>
+            <p class="tagline">Stay in control. Longer.<br><span style="font-size:0.95em; opacity:0.85;">Age like a weapon, not a warning.</span></p>
             <p class="tagline-clarity">PulseKegel is a guided 12-week pelvic floor training app — short daily sessions that rebuild control, stamina, and confidence from the inside out.</p>
         </header>
         
         <main>
             <section class="hero" aria-label="About PulseKegel">
+                <p class="hero-bridge">You don't notice these muscles&hellip; until they start slipping.</p>
                 <div class="story-card">
                     <div class="quote-mark" aria-hidden="true">"</div>
                     <p class="story-text">
@@ -365,16 +392,16 @@
             
             <section class="need-section" aria-label="Who needs pelvic floor training">
                 <div class="need-card">
-                    <p class="need-hook">You don't notice these muscles&hellip; until they start slipping.</p>
-                    <p class="need-subhook">Most people don't realise this is weakening until it shows up somewhere they didn't expect. This happens to most people over time. The good news — it's trainable.</p>
+                    <p class="need-hook">Think you're fine?</p>
+                    <p class="need-subhook">Most people do. Until control starts slipping, endurance drops, or confidence takes a hit.</p>
                     <ul class="need-list">
-                        <li>You feel less control than you used to — leaks, urgency, or that constant low-level pressure that shouldn't be there</li>
-                        <li>Your bedroom confidence or stamina has dipped and you want to stop the slide before it gets harder to reverse</li>
-                        <li>You're over 35 and want to stay sharp in ways most people never think to train</li>
-                        <li>You've had surgery, an injury, or a major life event that left your core feeling disconnected</li>
-                        <li>You sit most of the day and feel that dull, tight tension in your lower body you can't quite locate</li>
-                        <li>You want a private habit that compounds — no gym, no coach, no audience</li>
+                        <li>Less control than you used to have — leaks, urgency, or pressure that shouldn't be there</li>
+                        <li>Bedroom stamina or confidence has dipped and you want to stop the slide</li>
+                        <li>Post-surgery, post-injury, or post-pregnancy and your core feels disconnected</li>
+                        <li>You sit all day and that dull tension in your lower body won't shift</li>
+                        <li>You want a private habit that compounds without a gym or a coach</li>
                     </ul>
+                    <p class="need-trainable">This is trainable.</p>
                     <div class="decline-block">
                         <p class="decline-title">What happens if you ignore this?</p>
                         <ul class="decline-list">
@@ -453,22 +480,46 @@
                         <div class="why-works-icon">
                             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="2" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                         </div>
-                        <p class="why-works-title">You don't guess — you follow the pulse</p>
-                        <p class="why-works-desc">Every session is structured and guided. No figuring out what to do or for how long — the app leads, you follow.</p>
+                        <p class="why-works-title">Follow the pulse</p>
+                        <p class="why-works-desc">The app leads. You follow. Every rep is timed and guided — no figuring out what to do or for how long.</p>
                     </div>
                     <div class="why-works-card">
                         <div class="why-works-icon">
                             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FFFF" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                         </div>
-                        <p class="why-works-title">You don't overdo it — it guides the intensity</p>
-                        <p class="why-works-desc">Progressive phases build load gradually. No burnout, no plateau — just steady gain that your body can actually absorb.</p>
+                        <p class="why-works-title">Contract and release</p>
+                        <p class="why-works-desc">Squeeze when the bar rises. Rest when it drops. That's the entire method — repeated with the right structure to build real strength.</p>
                     </div>
                     <div class="why-works-card">
                         <div class="why-works-icon">
                             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF00FF" stroke-width="2" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                         </div>
-                        <p class="why-works-title">You stay consistent — it tracks the progress</p>
-                        <p class="why-works-desc">Streaks, session logs, and a 12-week arc keep you anchored. Consistency is where the results actually live.</p>
+                        <p class="why-works-title">Done in minutes</p>
+                        <p class="why-works-desc">Five to ten minutes a day. Short enough to actually do. Structured enough to actually work. Tracked so the gains compound.</p>
+                    </div>
+                </div>
+                <p class="why-works-close">No guessing. No overthinking.</p>
+                <p class="why-works-credibility">These are the same muscle groups targeted in clinical pelvic floor training — simplified for daily use.</p>
+            </section>
+
+            <section class="diy-section" aria-label="Why not just do Kegels on your own">
+                <h2 class="section-title">Why Not Just Do Kegels on Your Own?</h2>
+                <div class="diy-grid">
+                    <div class="diy-col diy-col-problem">
+                        <p class="diy-col-label">Doing it yourself</p>
+                        <ul class="diy-list">
+                            <li>Don't know if you're doing it right — and no feedback to tell you</li>
+                            <li>Easy to rush or overtrain without a structured pace</li>
+                            <li>Hard to stay consistent with no accountability and no progress to see</li>
+                        </ul>
+                    </div>
+                    <div class="diy-col diy-col-solution">
+                        <p class="diy-col-label">With PulseKegel</p>
+                        <ul class="diy-list">
+                            <li>Visual pulses guide the exact timing of every contraction</li>
+                            <li>Sets proper pace and intensity with a 12-week progressive structure</li>
+                            <li>Short sessions and streak tracking keep you consistent day after day</li>
+                        </ul>
                     </div>
                 </div>
             </section>
@@ -729,6 +780,10 @@
                 <div class="blog-view-all">
                     <a href="/blog">View all articles</a>
                 </div>
+            </section>
+
+            <section class="payoff-section" aria-label="Future state payoff">
+                <p class="payoff-statement">Feel in control again — without thinking about it.</p>
             </section>
 
             <section class="cta-section" id="pricing" aria-label="Download PulseKegel">
