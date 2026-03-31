@@ -137,21 +137,274 @@ function ensureArticleSchema(html, headline, description, slug, datePublished) {
   return html.replace("</head>", `${schema}\n</head>`);
 }
 
-function linkifyMetaBlogText(html) {
-  html = html.replace(
-    /<div class="meta">PulseKegel Blog/g,
-    '<div class="meta"><a href="/blog" style="color:#0d5ea6;text-decoration:none">PulseKegel Blog</a>'
-  );
-  html = html.replace(
-    /(<p class="meta">)PulseKegel Blog/g,
-    '$1<a href="/blog" style="color:#0d5ea6;text-decoration:none">PulseKegel Blog</a>'
-  );
-  return html;
-}
-
 function getH1(html) {
   const m = html.match(/<h1[^>]*>([^<]+)<\/h1>/i);
   return m ? m[1].trim() : null;
+}
+
+const BRAND_HEAD_INJECT = `  <link rel="icon" type="image/png" href="/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />`;
+
+const BRAND_STYLE = `  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 25%, #16213e 50%, #0f0f23 75%, #0a0a1a 100%);
+      color: rgba(255, 255, 255, 0.88);
+      min-height: 100vh;
+      overflow-x: hidden;
+      line-height: 1.7;
+      font-size: 1rem;
+    }
+
+    /* HEADER */
+    .pk-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid rgba(0, 255, 136, 0.15);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      background: rgba(10, 10, 26, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      z-index: 100;
+    }
+    .pk-logo {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #00FF88, #00FFFF);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+    .pk-breadcrumb-sep {
+      color: rgba(255, 255, 255, 0.3);
+      font-size: 0.9rem;
+    }
+    .pk-breadcrumb-link {
+      font-size: 0.875rem;
+      color: rgba(255, 255, 255, 0.55);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .pk-breadcrumb-link:hover { color: #00FFFF; }
+    .pk-header-rule {
+      height: 2px;
+      background: linear-gradient(90deg, #00FF88, #00FFFF, transparent);
+    }
+
+    /* ARTICLE LAYOUT */
+    .pk-article {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 48px 24px 64px;
+    }
+
+    .pk-article h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(1.5rem, 4vw, 2.25rem);
+      font-weight: 700;
+      line-height: 1.25;
+      margin-bottom: 32px;
+      background: linear-gradient(135deg, #ffffff 0%, #00FFFF 60%, #00FF88 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .pk-article h2 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+      font-weight: 600;
+      color: #00FF88;
+      margin-top: 48px;
+      margin-bottom: 16px;
+      line-height: 1.35;
+    }
+
+    .pk-article h3 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #00FFFF;
+      margin-top: 32px;
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+
+    .pk-article p {
+      margin-bottom: 18px;
+      color: rgba(255, 255, 255, 0.82);
+    }
+
+    .pk-article a {
+      color: #00FFFF;
+      text-decoration: underline;
+      text-decoration-color: rgba(0, 255, 255, 0.35);
+      transition: color 0.2s, text-decoration-color 0.2s;
+    }
+    .pk-article a:hover {
+      color: #00FF88;
+      text-decoration-color: rgba(0, 255, 136, 0.5);
+    }
+
+    .pk-article ul, .pk-article ol {
+      margin: 0 0 20px 0;
+      padding-left: 0;
+      list-style: none;
+    }
+    .pk-article ul li, .pk-article ol li {
+      position: relative;
+      padding: 6px 0 6px 22px;
+      color: rgba(255, 255, 255, 0.8);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .pk-article ul li:last-child, .pk-article ol li:last-child {
+      border-bottom: none;
+    }
+    .pk-article ul li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #00FF88;
+      box-shadow: 0 0 6px rgba(0, 255, 136, 0.5);
+    }
+    .pk-article ol {
+      counter-reset: ol-counter;
+    }
+    .pk-article ol li {
+      counter-increment: ol-counter;
+    }
+    .pk-article ol li::before {
+      content: counter(ol-counter) ".";
+      position: absolute;
+      left: 0;
+      color: #00FF88;
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+
+    .pk-article blockquote {
+      margin: 24px 0;
+      padding: 20px 24px;
+      border-left: 3px solid #00FFFF;
+      background: rgba(0, 255, 255, 0.05);
+      border-radius: 0 12px 12px 0;
+      font-style: italic;
+      color: rgba(255, 255, 255, 0.75);
+    }
+
+    .pk-article code {
+      font-family: 'Courier New', monospace;
+      font-size: 0.875em;
+      background: rgba(0, 255, 136, 0.08);
+      border: 1px solid rgba(0, 255, 136, 0.2);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #00FF88;
+    }
+
+    .pk-article pre {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(0, 255, 136, 0.15);
+      border-radius: 12px;
+      padding: 20px 24px;
+      overflow-x: auto;
+      margin-bottom: 20px;
+    }
+    .pk-article pre code {
+      background: none;
+      border: none;
+      padding: 0;
+    }
+
+    /* META */
+    .pk-article .meta {
+      font-size: 0.875rem;
+      color: rgba(255, 255, 255, 0.4);
+      margin-bottom: 24px;
+    }
+
+    /* FOOTER */
+    .pk-footer {
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 40px 24px;
+      text-align: center;
+    }
+    .pk-footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 28px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .pk-footer-links a {
+      font-size: 0.875rem;
+      color: rgba(255, 255, 255, 0.5);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .pk-footer-links a:hover { color: #00FF88; }
+    .pk-footer-copy {
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.28);
+    }
+
+    @media (max-width: 480px) {
+      .pk-article { padding: 32px 16px 48px; }
+    }
+  </style>`;
+
+const BRAND_HEADER = `<header class="pk-header">
+    <a href="/" class="pk-logo">PulseKegel</a>
+    <span class="pk-breadcrumb-sep">/</span>
+    <a href="/blog" class="pk-breadcrumb-link">Blog</a>
+  </header>
+  <div class="pk-header-rule"></div>`;
+
+const BRAND_FOOTER = `<footer class="pk-footer">
+    <div class="pk-footer-links">
+      <a href="/blog">Back to Blog</a>
+      <a href="https://apps.apple.com/app/pulsekegel/id6741057595" target="_blank" rel="noopener">Download on the App Store</a>
+    </div>
+    <p class="pk-footer-copy">&copy; 2026 PulseKegel. All rights reserved.</p>
+  </footer>`;
+
+function applyBrandStyling(html) {
+  if (!html.includes('<link rel="icon"')) {
+    html = html.replace("</head>", `${BRAND_HEAD_INJECT}\n</head>`);
+  } else {
+    html = html.replace("</head>", `  <link rel="preconnect" href="https://fonts.googleapis.com" />\n  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />\n  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />\n</head>`);
+  }
+
+  html = html.replace(/<style>[\s\S]*?<\/style>/i, BRAND_STYLE);
+
+  html = html.replace(/<body[^>]*>/, `<body>\n  ${BRAND_HEADER}`);
+
+  const articleBodyOpen = `\n  <div class="pk-article">`;
+  const articleBodyClose = `\n  </div>`;
+
+  html = html.replace(
+    /(<body[^>]*>[\s\S]*?<\/header>\s*<div class="pk-header-rule"><\/div>)([\s\S]*?)(<\/body>)/i,
+    (match, headerPart, content, closing) => {
+      return `${headerPart}${articleBodyOpen}${content}${articleBodyClose}\n  ${BRAND_FOOTER}\n${closing}`;
+    }
+  );
+
+  return html;
 }
 
 function processFile(filename) {
@@ -186,7 +439,7 @@ function processFile(filename) {
   html = ensureArticleSchema(html, headline, description || "", slug, datePublished);
   html = ensureOgTags(html, metaTitle || headline, description || "", fullUrl);
   html = ensureBreadcrumbSchema(html, headline, slug);
-  html = linkifyMetaBlogText(html);
+  html = applyBrandStyling(html);
 
   fs.writeFileSync(outputPath, html);
   console.log(`  ${filename} → processed`);
