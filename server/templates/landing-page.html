@@ -256,6 +256,22 @@
         .blog-view-all a { color: #00FFFF; font-family: 'Orbitron', sans-serif; font-size: 0.95rem; text-decoration: none; border-bottom: 1px solid rgba(0, 255, 255, 0.3); padding-bottom: 2px; transition: border-color 0.3s; }
         .blog-view-all a:hover { border-color: #00FFFF; }
 
+        .need-section { padding: 60px 0; }
+        .need-card { background: linear-gradient(135deg, rgba(26, 26, 46, 0.9), rgba(22, 33, 62, 0.9)); border: 1px solid rgba(0, 255, 136, 0.3); border-radius: 24px; padding: 48px; max-width: 800px; margin: 0 auto; position: relative; overflow: hidden; }
+        .need-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #FF00FF, #00FFFF, #00FF88); }
+        .need-hook { font-family: 'Orbitron', sans-serif; font-size: 1.2rem; color: #00FFFF; margin-bottom: 24px; line-height: 1.6; }
+        .need-list { list-style: none; padding: 0; margin: 0; }
+        .need-list li { padding: 10px 0 10px 28px; position: relative; font-size: 1rem; color: rgba(255, 255, 255, 0.85); line-height: 1.6; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        .need-list li:last-child { border-bottom: none; }
+        .need-list li::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 8px; height: 8px; border-radius: 50%; background: #00FF88; box-shadow: 0 0 8px rgba(0, 255, 136, 0.6); }
+
+        .outcomes-strip { padding: 40px 0; }
+        .outcomes-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 900px; margin: 0 auto; }
+        @media (max-width: 600px) { .outcomes-grid { grid-template-columns: 1fr; } }
+        .outcome-item { text-align: center; padding: 28px 20px; background: rgba(0, 255, 136, 0.05); border: 1px solid rgba(0, 255, 136, 0.2); border-radius: 16px; }
+        .outcome-label { font-family: 'Orbitron', sans-serif; font-size: 1rem; color: #00FF88; margin-bottom: 8px; }
+        .outcome-desc { font-size: 0.9rem; color: rgba(255, 255, 255, 0.65); line-height: 1.5; }
+
         .cta-section { padding: 80px 0; text-align: center; }
         .cta-card { background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 255, 255, 0.1)); border: 2px solid rgba(0, 255, 136, 0.3); border-radius: 24px; padding: 48px; max-width: 700px; margin: 0 auto; }
         .cta-title { font-family: 'Orbitron', sans-serif; font-size: 1.8rem; margin-bottom: 16px; color: #00FF88; }
@@ -311,9 +327,12 @@
                 <div class="story-card">
                     <div class="quote-mark" aria-hidden="true">"</div>
                     <p class="story-text">
-                        At 54, I hit a few speed bumps in the bedroom, and Kegels were the one recommendation that actually helped. I tried a popular app, but it was packed with extras I didn't want and a monthly subscription that was... <strong>disrespectful</strong>. So I built a simpler Kegel app that does the job, <strong>no fluff, just results</strong>, for a small fee to cover running costs.
+                        <strong>Your pelvic floor controls more than you think</strong> — bladder confidence, sexual stamina, core stability, and how well you age. Kegel training is the one daily habit that quietly improves all of it. At 54, it was the thing that actually moved the needle for me after hitting a few speed bumps in the bedroom. I tried a popular app, but it was packed with extras I didn't want and a monthly subscription that was... <strong>disrespectful</strong>. So I built a simpler app that does the job, <strong>no fluff, just results</strong>, for a small fee to cover running costs.
                     </p>
-                    <p class="cta-text">Ready to take control? Download it and start today.</p>
+                    <p class="story-text" style="font-size: 1rem; margin-top: -16px; margin-bottom: 32px; color: rgba(255,255,255,0.65);">
+                        Kegels are simple muscle contractions — tighten, hold, release. Done consistently, they rebuild the floor that supports your bladder, your core, and your confidence. Five to ten minutes a day is all it takes.
+                    </p>
+                    <p class="cta-text">Stop losing ground. Start training today.</p>
                     <div class="hero-buttons">
                         <a href="https://apps.apple.com/us/app/pulsekegel/id6758308054" class="app-store-btn" target="_blank" rel="noopener" aria-label="Download PulseKegel on the Apple App Store">
                             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
@@ -326,6 +345,20 @@
                 </div>
             </section>
             
+            <section class="need-section" aria-label="Who needs pelvic floor training">
+                <div class="need-card">
+                    <p class="need-hook">You don't notice these muscles&hellip; until they start slipping.</p>
+                    <ul class="need-list">
+                        <li>You feel less control than you used to — even small leaks, urgency rushes, or that constant sense of needing to go</li>
+                        <li>You've noticed a decline in bedroom confidence or stamina and want to address it before it gets worse</li>
+                        <li>You're over 35 and want to stay sharp in ways most people don't think to train</li>
+                        <li>You've had surgery, an injury, or a major life event that left your core feeling weaker</li>
+                        <li>You sit most of the day and feel that dull, disconnected tension in your lower body</li>
+                        <li>You want a simple, private habit that compounds — without a gym, a coach, or an audience</li>
+                    </ul>
+                </div>
+            </section>
+
             <section class="screenshots-section" aria-label="App screenshots">
                 <h2 class="section-title">See It In Action</h2>
                 <div class="screenshots-grid">
@@ -385,6 +418,23 @@
                 </div>
             </section>
             
+            <section class="outcomes-strip" aria-label="What you get">
+                <div class="outcomes-grid">
+                    <div class="outcome-item">
+                        <p class="outcome-label">Better Control</p>
+                        <p class="outcome-desc">Stronger bladder confidence and less urgency — day and night</p>
+                    </div>
+                    <div class="outcome-item">
+                        <p class="outcome-label">Stronger Performance</p>
+                        <p class="outcome-desc">More stamina, better function, and a foundation that holds up</p>
+                    </div>
+                    <div class="outcome-item">
+                        <p class="outcome-label">Lasting Confidence</p>
+                        <p class="outcome-desc">A quiet edge that compounds with every session you complete</p>
+                    </div>
+                </div>
+            </section>
+
             <section class="features-section" aria-label="App features">
                 <h2 class="section-title">Everything You Need for Pelvic Floor Training</h2>
                 <div class="features-grid">
@@ -393,42 +443,42 @@
                             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="2" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
                         </div>
                         <h3 class="feature-title">12-Week Kegel Program</h3>
-                        <p class="feature-desc">4 progressive phases - Control, Strength, Power, and Maintenance - with 7 exercise types that build real pelvic floor strength</p>
+                        <p class="feature-desc">4 progressive phases — Control, Strength, Power, and Maintenance — with 7 exercise types that build real, lasting pelvic floor strength</p>
                     </article>
                     <article class="feature-card">
                         <div class="feature-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FFFF" stroke-width="2" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FFFF" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                         </div>
-                        <h3 class="feature-title">Quick Pelvic Floor Workouts</h3>
-                        <p class="feature-desc">8 standalone sessions you can do anytime - Quick Flicks, Endurance, Elevator, and more - outside the main program</p>
+                        <h3 class="feature-title">Quick 5-Minute Sessions</h3>
+                        <p class="feature-desc">Just 5-10 minutes a day — short enough to actually do, structured enough to actually work</p>
                     </article>
                     <article class="feature-card">
                         <div class="feature-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF00FF" stroke-width="2" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><path d="M12 18h.01"/></svg>
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF00FF" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                         </div>
-                        <h3 class="feature-title">Haptic Feedback</h3>
-                        <p class="feature-desc">Distinct vibration patterns for each exercise type with dynamic intensity that matches the power bar level</p>
+                        <h3 class="feature-title">Private & Secure</h3>
+                        <p class="feature-desc">All data stays on your device. No account required. No tracking. Your pelvic health, your business</p>
                     </article>
                     <article class="feature-card">
                         <div class="feature-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="2" aria-hidden="true"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
-                        </div>
-                        <h3 class="feature-title">Visual Power Bar</h3>
-                        <p class="feature-desc">LED-style display with real-time SQUEEZE, REST, and BREATHE cues to guide every kegel rep</p>
-                    </article>
-                    <article class="feature-card">
-                        <div class="feature-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FFFF" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
                         </div>
                         <h3 class="feature-title">Weekly AI Reviews</h3>
                         <p class="feature-desc">Personalized progress analysis and pelvic floor health tips each week, with full history so you can reread past insights</p>
                     </article>
                     <article class="feature-card">
                         <div class="feature-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FFFF" stroke-width="2" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                        </div>
+                        <h3 class="feature-title">Quick Pelvic Floor Workouts</h3>
+                        <p class="feature-desc">8 standalone sessions you can do anytime — Quick Flicks, Endurance, Elevator, and more — outside the main program</p>
+                    </article>
+                    <article class="feature-card">
+                        <div class="feature-icon">
                             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF00FF" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
                         </div>
                         <h3 class="feature-title">19 Achievement Badges</h3>
-                        <p class="feature-desc">Earn achievements across 5 categories - Streaks, Milestones, Program Phases, Mastery, and Special</p>
+                        <p class="feature-desc">Earn achievements across 5 categories — Streaks, Milestones, Program Phases, Mastery, and Special</p>
                     </article>
                     <article class="feature-card">
                         <div class="feature-icon">
@@ -453,17 +503,17 @@
                     </article>
                     <article class="feature-card">
                         <div class="feature-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="2" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><path d="M12 18h.01"/></svg>
                         </div>
-                        <h3 class="feature-title">Quick 5-Minute Sessions</h3>
-                        <p class="feature-desc">Just 5-10 minutes per day. Screen stays awake during workouts so you can focus on your pelvic floor exercises</p>
+                        <h3 class="feature-title">Haptic Feedback</h3>
+                        <p class="feature-desc">Distinct vibration patterns for each exercise type with dynamic intensity that matches the power bar level</p>
                     </article>
                     <article class="feature-card">
                         <div class="feature-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FFFF" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FFFF" stroke-width="2" aria-hidden="true"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
                         </div>
-                        <h3 class="feature-title">Private & Secure</h3>
-                        <p class="feature-desc">All data stays on your device. No account required. No tracking. Your pelvic health, your business</p>
+                        <h3 class="feature-title">Visual Power Bar</h3>
+                        <p class="feature-desc">LED-style display with real-time SQUEEZE, REST, and BREATHE cues to guide every kegel rep</p>
                     </article>
                     <article class="feature-card">
                         <div class="feature-icon">
@@ -629,8 +679,8 @@
             <section class="cta-section" id="pricing" aria-label="Download PulseKegel">
                 <div class="cta-card">
                     <div class="price-badge">$4.99 for 12 months</div>
-                    <h2 class="cta-title">Start Your Kegel Training Journey</h2>
-                    <p class="cta-subtitle">Download PulseKegel and take the first step toward better pelvic floor health.</p>
+                    <h2 class="cta-title">Build the Foundation. Own the Outcome.</h2>
+                    <p class="cta-subtitle">Start your 7-day free trial. No account, no fluff — just a structured program that works quietly in the background of your life.</p>
                     <a href="https://apps.apple.com/us/app/pulsekegel/id6758308054" class="download-btn" target="_blank" rel="noopener" aria-label="Download PulseKegel on the Apple App Store">
                         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
                         Download on App Store
