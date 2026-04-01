@@ -315,7 +315,8 @@
         .video-section { padding: 60px 0; }
         .video-section-title { font-family: 'Orbitron', sans-serif; font-size: 1.6rem; text-align: center; margin-bottom: 32px; color: #00FFFF; line-height: 1.4; }
         .video-container { max-width: 800px; margin: 0 auto; background: rgba(26, 26, 46, 0.85); border: 1px solid rgba(0, 255, 255, 0.3); border-radius: 20px; overflow: hidden; box-shadow: 0 0 40px rgba(0, 255, 255, 0.1); }
-        .video-container video { display: block; width: 100%; border-radius: 0; }
+        .video-embed-wrapper { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; }
+        .video-embed-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
         .video-description { max-width: 800px; margin: 24px auto 0; font-size: 1rem; color: rgba(255, 255, 255, 0.75); line-height: 1.75; text-align: center; padding: 0 8px; }
 
         .diy-section { padding: 60px 0; }
@@ -534,10 +535,9 @@
                 <div class="container">
                     <h2 class="video-section-title">Watch: The Truth About Pelvic Floor Training</h2>
                     <div class="video-container">
-                        <video controls preload="none" width="800">
-                            <source src="/pk-interview.mp4" type="video/mp4">
-                            Your browser does not support the video element.
-                        </video>
+                        <div class="video-embed-wrapper">
+                            <iframe src="https://www.youtube.com/embed/qXGjAB-wYXM" title="The Truth About Pelvic Floor Training" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe>
+                        </div>
                     </div>
                     <p class="video-description">Most people are doing kegels wrong — and it's causing more harm than good. In this interview, we break down the truth about pelvic floor training: what actually works, what the myths are getting wrong, and the simple daily habit that changes everything. Whether you're dealing with leakage, core weakness, or just want a stronger foundation, this one's for you.</p>
                 </div>
