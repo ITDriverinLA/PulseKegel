@@ -41,3 +41,6 @@ app-example
 # generated native folders
 /ios
 /android
+
+# generated env config (may contain API keys - use environment secrets instead)
+client/lib/env-config.generated.ts
