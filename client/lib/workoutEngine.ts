@@ -206,20 +206,11 @@ export class WorkoutEngine {
     this.callbacks.onStateChange(this.getState());
   }
 
-  private pendingAdvance: boolean = false;
-
   private startTicking(): void {
     this.stopTicking();
     
     this.tickInterval = setInterval(() => {
       if (this.state.isPaused || !this.state.isRunning) return;
-
-      if (this.pendingAdvance) {
-        this.pendingAdvance = false;
-        this.advancePhase();
-        this.callbacks.onStateChange(this.getState());
-        return;
-      }
       
       this.state.secondsRemaining--;
       this.state.totalElapsedSeconds++;
@@ -227,7 +218,7 @@ export class WorkoutEngine {
       this.callbacks.onTick(this.state.secondsRemaining);
       
       if (this.state.secondsRemaining <= 0) {
-        this.pendingAdvance = true;
+        this.advancePhase();
       }
       
       this.callbacks.onStateChange(this.getState());
