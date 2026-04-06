@@ -42,6 +42,8 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const audioSettingsRef = useRef<AudioSettings>(defaultAudioSettings);
   const currentTrackIndexRef = useRef(0);
   const lastPlayedTrackRef = useRef<AmbientTrack>('none');
+  const audioSettingsLoadedRef = useRef(false);
+  const pendingAmbientStartRef = useRef(false);
 
   useEffect(() => {
     audioSettingsRef.current = audioSettings;
@@ -104,7 +106,44 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       if (!merged.selectedTracks) {
         merged.selectedTracks = [];
       }
+      audioSettingsRef.current = merged;
+      audioSettingsLoadedRef.current = true;
       setAudioSettings(merged);
+      if (pendingAmbientStartRef.current && isWorkoutActiveRef.current) {
+        pendingAmbientStartRef.current = false;
+        const tracks = merged.selectedTracks;
+        if (tracks.length > 0) {
+          const singleTrack = tracks.length === 1 && !merged.shuffleEnabled;
+          if (merged.shuffleEnabled) {
+            const track = tracks[Math.floor(Math.random() * tracks.length)];
+            const player = ambientPlayers[track];
+            if (player) {
+              try {
+                player.loop = false;
+                player.volume = merged.ambientVolume;
+                player.seekTo(0);
+                player.play();
+                setCurrentAmbientTrack(track);
+                lastPlayedTrackRef.current = track;
+              } catch {}
+            }
+          } else {
+            currentTrackIndexRef.current = 1;
+            const track = tracks[0];
+            const player = ambientPlayers[track];
+            if (player) {
+              try {
+                player.loop = singleTrack;
+                player.volume = merged.ambientVolume;
+                player.seekTo(0);
+                player.play();
+                setCurrentAmbientTrack(track);
+                lastPlayedTrackRef.current = track;
+              } catch {}
+            }
+          }
+        }
+      }
     };
     loadSettings();
   }, []);
@@ -211,6 +250,12 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const startAmbient = useCallback(() => {
     isWorkoutActiveRef.current = true;
     currentTrackIndexRef.current = 0;
+
+    if (!audioSettingsLoadedRef.current) {
+      pendingAmbientStartRef.current = true;
+      return;
+    }
+
     const settings = audioSettingsRef.current;
     const tracks = settings.selectedTracks;
     if (tracks.length === 0) return;
@@ -229,6 +274,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
 
   const stopAmbient = useCallback(() => {
     isWorkoutActiveRef.current = false;
+    pendingAmbientStartRef.current = false;
     stopAllAmbient();
     setCurrentAmbientTrack('none');
     lastPlayedTrackRef.current = 'none';
