@@ -116,12 +116,22 @@ function generateEnvConfig() {
 
   if (!iosKey && !androidKey) {
     console.log(
-      "No EXPO_PUBLIC_REVENUECAT keys found in environment. Keeping existing generated config.",
+      "No EXPO_PUBLIC_REVENUECAT keys found in environment. Checking existing generated config...",
     );
     if (fs.existsSync(envConfigPath)) {
       const existing = fs.readFileSync(envConfigPath, "utf-8");
-      console.log(
-        `Existing config found (${existing.length} bytes). Will use pre-generated values.`,
+      const hasKey = existing.includes("appl_") || existing.includes("goog_");
+      if (!hasKey) {
+        exitWithError(
+          "ERROR: env-config.generated.ts exists but has empty RevenueCat keys, and no EXPO_PUBLIC_REVENUECAT env vars are set. " +
+          "The build cannot proceed without valid keys. Set EXPO_PUBLIC_REVENUECAT_IOS_KEY and EXPO_PUBLIC_REVENUECAT_ANDROID_KEY.",
+        );
+      }
+      console.log(`Existing config has keys (${existing.length} bytes). Using pre-generated values.`);
+    } else {
+      exitWithError(
+        "ERROR: No env-config.generated.ts file and no EXPO_PUBLIC_REVENUECAT env vars. " +
+        "Set EXPO_PUBLIC_REVENUECAT_IOS_KEY and EXPO_PUBLIC_REVENUECAT_ANDROID_KEY.",
       );
     }
     return;
