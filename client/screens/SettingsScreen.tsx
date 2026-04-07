@@ -35,10 +35,12 @@ export default function SettingsScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const navigation = useNavigation<NavigationProp>();
   const { refresh: refreshAccessibility, fontScale, colors } = useAccessibility();
-  const { isSubscribed, isTrialActive, trialDaysRemaining, restorePurchases, hasAccess } = useSubscription();
+  const { isSubscribed, isTrialActive, trialDaysRemaining, restorePurchases, hasAccess, getDiagnostics } = useSubscription();
   const { cp, isDarkMode, toggleDarkMode } = useThemePreference();
   const { audioSettings, updateAudioSettings, playSfx } = useAudio();
   const [isRestoring, setIsRestoring] = useState(false);
+  const [diagnosticsText, setDiagnosticsText] = useState<string | null>(null);
+  const [isDiagnosing, setIsDiagnosing] = useState(false);
 
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -221,6 +223,16 @@ export default function SettingsScreen() {
       }
     } finally {
       setIsRestoring(false);
+    }
+  };
+
+  const handleDiagnostics = async () => {
+    setIsDiagnosing(true);
+    try {
+      const report = await getDiagnostics();
+      setDiagnosticsText(report);
+    } finally {
+      setIsDiagnosing(false);
     }
   };
 
@@ -622,6 +634,19 @@ export default function SettingsScreen() {
                 {isRestoring ? 'Restoring...' : 'Restore Purchases'}
               </Text>
             </Pressable>
+
+            <View style={[styles.divider, { backgroundColor: cp.divider }]} />
+
+            <Pressable
+              onPress={handleDiagnostics}
+              style={styles.subscriptionButton}
+              disabled={isDiagnosing}
+            >
+              <Feather name="activity" size={20} color={cp.textMuted} />
+              <Text style={[styles.subscriptionButtonText, { color: cp.textMuted }]}>
+                {isDiagnosing ? 'Checking...' : 'Subscription Diagnostics'}
+              </Text>
+            </Pressable>
           </View>
         </Animated.View>
 
@@ -719,6 +744,39 @@ export default function SettingsScreen() {
                   >
                     <Text style={styles.modalDeleteText}>Delete Everything</Text>
                   </LinearGradient>
+                </Pressable>
+              </View>
+            </LinearGradient>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={diagnosticsText !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDiagnosticsText(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContainer, { borderColor: `${cp.neonCyan}4D` }]}>
+            <LinearGradient
+              colors={isDarkMode ? ['#1a1a2e', '#16213e', '#0f0f23'] : ['#fff', '#f8f9fb', '#f0f2f7']}
+              style={styles.modalGradient}
+            >
+              <Text style={[styles.modalTitle, { color: cp.text }]}>Subscription Diagnostics</Text>
+
+              <ScrollView style={{ maxHeight: 300, width: '100%' }}>
+                <Text selectable style={[styles.modalMessage, { color: cp.textSecondary, fontFamily: 'monospace', fontSize: 12, textAlign: 'left' }]}>
+                  {diagnosticsText}
+                </Text>
+              </ScrollView>
+
+              <View style={styles.modalButtons}>
+                <Pressable
+                  onPress={() => setDiagnosticsText(null)}
+                  style={[styles.modalCancelButton, { backgroundColor: cp.inputBg, flex: 1 }]}
+                >
+                  <Text style={[styles.modalCancelText, { color: cp.textSecondary }]}>Close</Text>
                 </Pressable>
               </View>
             </LinearGradient>

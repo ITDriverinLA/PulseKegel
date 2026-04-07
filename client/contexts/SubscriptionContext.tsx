@@ -22,6 +22,7 @@ interface SubscriptionContextType {
   restorePurchases: () => Promise<boolean>;
   checkSubscription: () => Promise<void>;
   hasAccess: boolean;
+  getDiagnostics: () => Promise<string>;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType>({
@@ -34,6 +35,7 @@ const SubscriptionContext = createContext<SubscriptionContextType>({
   restorePurchases: async () => false,
   checkSubscription: async () => {},
   hasAccess: true,
+  getDiagnostics: async () => '',
 });
 
 import { GENERATED_ENV } from '@/lib/env-config.generated';
@@ -209,6 +211,32 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     init();
   }, []);
 
+  const getDiagnostics = useCallback(async (): Promise<string> => {
+    const lines: string[] = [];
+    const iosKey = REVENUECAT_API_KEY_IOS;
+    const androidKey = REVENUECAT_API_KEY_ANDROID;
+    lines.push(`Platform: ${Platform.OS}`);
+    lines.push(`iOS key: ${iosKey ? iosKey.substring(0, 12) + '...' : 'EMPTY'}`);
+    lines.push(`Android key: ${androidKey ? androidKey.substring(0, 12) + '...' : 'EMPTY'}`);
+    lines.push(`RC configured: ${configuredRef.current}`);
+    lines.push(`isSubscribed: ${isSubscribed}`);
+    lines.push(`isTrialActive: ${isTrialActive}`);
+    lines.push(`trialDaysRemaining: ${trialDaysRemaining}`);
+    if (configuredRef.current) {
+      try {
+        const info = await Purchases.getCustomerInfo();
+        lines.push(`Active entitlements: ${JSON.stringify(Object.keys(info.entitlements.active))}`);
+        lines.push(`All entitlements: ${JSON.stringify(Object.keys(info.entitlements.all))}`);
+        lines.push(`Active subscriptions: ${JSON.stringify(info.activeSubscriptions)}`);
+        lines.push(`Original app user ID: ${info.originalAppUserId}`);
+        lines.push(`Management URL: ${info.managementURL ?? 'none'}`);
+      } catch (e: any) {
+        lines.push(`getCustomerInfo error: ${e?.message ?? e}`);
+      }
+    }
+    return lines.join('\n');
+  }, [isSubscribed, isTrialActive, trialDaysRemaining]);
+
   const hasAccess = isSubscribed || isTrialActive;
 
   return (
@@ -223,6 +251,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         restorePurchases,
         checkSubscription,
         hasAccess,
+        getDiagnostics,
       }}
     >
       {children}
