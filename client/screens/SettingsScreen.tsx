@@ -201,9 +201,23 @@ export default function SettingsScreen() {
     try {
       const success = await restorePurchases();
       if (success) {
-        Alert.alert('Success', 'Your purchases have been restored!', [{ text: 'OK' }]);
+        Alert.alert('Subscription Restored', 'Your subscription has been restored successfully.', [{ text: 'OK' }]);
       } else {
-        Alert.alert('No Purchases Found', 'We could not find any previous purchases to restore.', [{ text: 'OK' }]);
+        Alert.alert(
+          'No Active Subscription Found',
+          'We could not find an active subscription linked to your Apple ID.\n\nPlease check iOS Settings → [Your Name] → Subscriptions to confirm PulseKegel is listed as active. If your subscription lapsed, you can renew it there.',
+          [
+            {
+              text: 'Check Apple Subscriptions',
+              onPress: async () => {
+                try {
+                  await Linking.openURL('https://apps.apple.com/account/subscriptions');
+                } catch {}
+              },
+            },
+            { text: 'OK', style: 'cancel' },
+          ]
+        );
       }
     } finally {
       setIsRestoring(false);
