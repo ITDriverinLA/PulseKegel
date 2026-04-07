@@ -669,7 +669,7 @@ export default function SettingsScreen() {
 
         <Animated.View entering={FadeInDown.duration(400).delay(600)}>
           <View style={styles.footer}>
-            <Text style={[styles.footerText, { color: cp.textMuted }]}>PulseKegel v1.0.0</Text>
+            <Text style={[styles.footerText, { color: cp.textMuted }]}>PulseKegel v1.3.6</Text>
             <Text style={[styles.footerText, { color: cp.textMuted }]}>
               Not medical advice. Consult a healthcare provider for pelvic health concerns.
             </Text>
