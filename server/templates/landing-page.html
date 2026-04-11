@@ -197,6 +197,8 @@
         .app-store-btn { display: inline-flex; align-items: center; gap: 12px; padding: 14px 32px; background: #000; border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 1rem; text-decoration: none; border-radius: 12px; transition: transform 0.3s ease, box-shadow 0.3s ease; }
         .app-store-btn:hover { transform: scale(1.05); box-shadow: 0 0 30px rgba(255, 255, 255, 0.2); }
         .app-store-btn svg { width: 28px; height: 28px; }
+        .app-store-btn--muted { opacity: 0.55; cursor: pointer; font-family: inherit; }
+        .app-store-btn--muted:hover { opacity: 0.8; box-shadow: 0 0 20px rgba(255, 255, 255, 0.12); }
         .btn-text { text-align: left; }
         .btn-text-small { font-size: 0.7rem; color: rgba(255,255,255,0.7); display: block; }
         .btn-text-large { font-size: 1.1rem; font-weight: 600; }
@@ -413,6 +415,13 @@
                                 <span class="btn-text-large">App Store</span>
                             </span>
                         </a>
+                        <button class="app-store-btn app-store-btn--muted" onclick="var el=this.querySelector('.android-label');el.textContent='By End of April';" aria-label="Android app coming soon">
+                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.523 15.341a.9.9 0 01-.9.9.9.9 0 01-.9-.9.9.9 0 01.9-.9.9.9 0 01.9.9m-9.246 0a.9.9 0 01-.9.9.9.9 0 01-.9-.9.9.9 0 01.9-.9.9.9 0 01.9.9M17.78 10.5l1.745-3.022a.363.363 0 00-.133-.496.363.363 0 00-.496.133L17.14 10.17a10.762 10.762 0 00-4.64-1.045 10.762 10.762 0 00-4.641 1.045L6.104 7.115a.363.363 0 00-.496-.133.363.363 0 00-.133.496L7.22 10.5C4.646 11.93 2.91 14.567 2.91 17.625h18.18c0-3.058-1.736-5.694-3.31-7.125"/></svg>
+                            <span class="btn-text">
+                                <span class="btn-text-small">Coming soon on</span>
+                                <span class="btn-text-large android-label">Android</span>
+                            </span>
+                        </button>
                     </div>
                 </div>
             </section>
