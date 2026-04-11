@@ -209,6 +209,12 @@ Sitemap: https://pulsekegel.com/sitemap.xml
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
+  <url>
+    <loc>https://pulsekegel.com/blog/you-squat-300-but-skip-this-muscle</loc>
+    <lastmod>2026-04-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
 </urlset>`);
   });
 
