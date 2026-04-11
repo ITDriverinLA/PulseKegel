@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="You train every muscle in the gym — except the one that controls bladder function, stamina, and core stability. Here's why lifters need pelvic floor training.">
+<title>You Squat 300 lbs but Skip the Muscle Holding It All Together | PulseKegel Blog</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: #0a0a1a;
+    color: #e0e0e8;
+    line-height: 1.75;
+    font-size: 17px;
+  }
+
+  /* NAV */
+  .nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(10,10,26,0.92); backdrop-filter: blur(12px);
+    padding: 16px 32px; display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(54,231,179,0.15);
+  }
+  .nav-logo { font-size: 20px; font-weight: 700; color: #36e7b3; letter-spacing: -0.5px; }
+  .nav-cta {
+    background: #36e7b3; color: #0c0f38; padding: 10px 24px; border-radius: 8px;
+    font-weight: 600; font-size: 14px; text-decoration: none; transition: all 0.2s;
+  }
+  .nav-cta:hover { background: #2dd4a0; transform: translateY(-1px); }
+
+  /* HERO */
+  .hero {
+    padding: 140px 32px 80px; text-align: center;
+    background: linear-gradient(180deg, #0c0f38 0%, #0a0a1a 100%);
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: ''; position: absolute; top: -200px; left: 50%; transform: translateX(-50%);
+    width: 600px; height: 600px; background: radial-gradient(circle, rgba(54,231,179,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-tag {
+    display: inline-block; background: rgba(54,231,179,0.12); color: #36e7b3;
+    padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;
+    letter-spacing: 0.5px; margin-bottom: 24px; text-transform: uppercase;
+  }
+  .hero h1 {
+    font-size: clamp(32px, 5vw, 56px); font-weight: 800; color: #fff;
+    line-height: 1.15; max-width: 820px; margin: 0 auto 24px;
+  }
+  .hero h1 span { color: #36e7b3; }
+  .hero-sub {
+    font-size: 19px; color: #a0a0b8; max-width: 600px; margin: 0 auto 40px; line-height: 1.6;
+  }
+  .hero-meta {
+    display: flex; justify-content: center; gap: 32px; font-size: 14px; color: #707088;
+  }
+  .hero-meta span { display: flex; align-items: center; gap: 6px; }
+
+  /* HERO IMAGE */
+  .hero-image {
+    max-width: 800px; margin: 48px auto 0; border-radius: 16px; overflow: hidden;
+    border: 1px solid rgba(54,231,179,0.15);
+  }
+  .hero-image svg { width: 100%; height: auto; display: block; }
+
+  /* CONTENT */
+  article {
+    max-width: 720px; margin: 0 auto; padding: 64px 32px;
+  }
+  article h2 {
+    font-size: 28px; font-weight: 700; color: #fff; margin: 56px 0 20px;
+    line-height: 1.3;
+  }
+  article h2:first-of-type { margin-top: 0; }
+  article p {
+    margin-bottom: 20px; color: #c8c8d8;
+  }
+  article strong { color: #fff; font-weight: 600; }
+
+  /* PULL QUOTE */
+  .pull-quote {
+    border-left: 3px solid #36e7b3; padding: 24px 0 24px 28px;
+    margin: 40px 0; font-size: 22px; font-weight: 600; color: #36e7b3;
+    line-height: 1.5;
+  }
+
+  /* STAT CARDS */
+  .stat-row {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px; margin: 40px 0;
+  }
+  .stat-card {
+    background: rgba(54,231,179,0.06); border: 1px solid rgba(54,231,179,0.15);
+    border-radius: 12px; padding: 24px; text-align: center;
+  }
+  .stat-card .num {
+    font-size: 36px; font-weight: 800; color: #36e7b3; line-height: 1;
+  }
+  .stat-card .label {
+    font-size: 14px; color: #a0a0b8; margin-top: 8px; line-height: 1.4;
+  }
+
+  /* INFOGRAPHIC */
+  .infographic {
+    background: #0c0f38; border: 1px solid rgba(54,231,179,0.15);
+    border-radius: 16px; padding: 40px; margin: 48px 0; text-align: center;
+  }
+  .infographic h3 {
+    font-size: 20px; color: #36e7b3; margin-bottom: 32px; font-weight: 700;
+  }
+  .infographic svg { max-width: 100%; height: auto; }
+
+  /* COMPARISON TABLE */
+  .compare-table {
+    width: 100%; border-collapse: collapse; margin: 32px 0;
+    font-size: 15px;
+  }
+  .compare-table th {
+    background: rgba(54,231,179,0.1); color: #36e7b3; padding: 14px 16px;
+    text-align: left; font-weight: 600; border-bottom: 2px solid rgba(54,231,179,0.2);
+  }
+  .compare-table td {
+    padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.06); color: #c8c8d8;
+  }
+  .compare-table tr:hover td { background: rgba(54,231,179,0.03); }
+  .check { color: #36e7b3; font-weight: 700; }
+  .cross { color: #ff6b6b; font-weight: 700; }
+
+  /* TIP BOX */
+  .tip-box {
+    background: rgba(54,231,179,0.06); border: 1px solid rgba(54,231,179,0.2);
+    border-radius: 12px; padding: 24px 28px; margin: 32px 0;
+  }
+  .tip-box .tip-label {
+    font-size: 13px; font-weight: 700; color: #36e7b3;
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;
+  }
+  .tip-box p { margin: 0; color: #c8c8d8; }
+
+  /* CTA SECTION */
+  .cta-section {
+    background: linear-gradient(135deg, #0c0f38 0%, #121640 100%);
+    border: 1px solid rgba(54,231,179,0.2); border-radius: 16px;
+    padding: 48px 40px; text-align: center; margin: 56px 0 0;
+  }
+  .cta-section h2 { color: #fff; margin: 0 0 12px; font-size: 28px; }
+  .cta-section p { color: #a0a0b8; margin-bottom: 28px; font-size: 17px; }
+  .cta-btn {
+    display: inline-block; background: #36e7b3; color: #0c0f38; padding: 16px 40px;
+    border-radius: 10px; font-weight: 700; font-size: 17px; text-decoration: none;
+    transition: all 0.2s;
+  }
+  .cta-btn:hover { background: #2dd4a0; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(54,231,179,0.25); }
+  .cta-price { font-size: 14px; color: #707088; margin-top: 16px; }
+
+  /* FOOTER */
+  footer {
+    text-align: center; padding: 48px 32px; font-size: 14px; color: #505068;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+
+  /* ANIMATED DIAGRAM */
+  .diagram-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 40px 0;
+  }
+  .diagram-card {
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px; padding: 24px; transition: all 0.3s;
+  }
+  .diagram-card:hover {
+    border-color: rgba(54,231,179,0.3); background: rgba(54,231,179,0.04);
+    transform: translateY(-2px);
+  }
+  .diagram-card .icon { font-size: 32px; margin-bottom: 12px; }
+  .diagram-card h4 { color: #fff; font-size: 16px; margin-bottom: 8px; }
+  .diagram-card p { font-size: 14px; color: #a0a0b8; margin: 0; line-height: 1.5; }
+
+  @media (max-width: 640px) {
+    .hero { padding: 120px 20px 60px; }
+    article { padding: 40px 20px; }
+    .diagram-grid { grid-template-columns: 1fr; }
+    .hero-meta { flex-direction: column; gap: 8px; }
+    .cta-section { padding: 36px 24px; }
+    .infographic { padding: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">PulseKegel</div>
+  <a href="#cta" class="nav-cta">Start Free Trial</a>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-tag">For Lifters</div>
+  <h1>You Squat 300 lbs but Skip the <span>Muscle Holding It All Together</span></h1>
+  <p class="hero-sub">You train every muscle in the gym. Except the one that controls bladder function, stamina, and core stability under load.</p>
+  <div class="hero-meta">
+    <span>8 min read</span>
+    <span>PulseKegel Team</span>
+    <span>April 2026</span>
+  </div>
+
+  <!-- HERO IMAGE: Stylized barbell + pelvic floor visualization -->
+  <div class="hero-image">
+    <svg viewBox="0 0 800 360" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="glow" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#36e7b3" stop-opacity="0.3"/>
+          <stop offset="100%" stop-color="#36e7b3" stop-opacity="0"/>
+        </linearGradient>
+        <radialGradient id="pulse" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#36e7b3" stop-opacity="0.15"/>
+          <stop offset="100%" stop-color="#36e7b3" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect width="800" height="360" fill="#0c0f38"/>
+
+      <!-- Background glow -->
+      <circle cx="400" cy="180" r="200" fill="url(#pulse)"/>
+
+      <!-- Barbell -->
+      <rect x="160" y="155" width="480" height="10" rx="5" fill="#2a2d5e"/>
+      <!-- Plates left -->
+      <rect x="140" y="120" width="30" height="80" rx="4" fill="#36e7b3" opacity="0.8"/>
+      <rect x="110" y="130" width="25" height="60" rx="4" fill="#36e7b3" opacity="0.5"/>
+      <rect x="85" y="140" width="20" height="40" rx="3" fill="#36e7b3" opacity="0.3"/>
+      <!-- Plates right -->
+      <rect x="630" y="120" width="30" height="80" rx="4" fill="#36e7b3" opacity="0.8"/>
+      <rect x="665" y="130" width="25" height="60" rx="4" fill="#36e7b3" opacity="0.5"/>
+      <rect x="695" y="140" width="20" height="40" rx="3" fill="#36e7b3" opacity="0.3"/>
+
+      <!-- Arrow pointing down from bar center -->
+      <line x1="400" y1="175" x2="400" y2="240" stroke="#36e7b3" stroke-width="2" stroke-dasharray="6,4" opacity="0.6"/>
+      <polygon points="392,238 408,238 400,252" fill="#36e7b3" opacity="0.6"/>
+
+      <!-- Pelvic floor representation: curved hammock shape -->
+      <path d="M 280 270 Q 340 310 400 315 Q 460 310 520 270" stroke="#36e7b3" stroke-width="3" fill="none" opacity="0.8"/>
+      <path d="M 280 270 Q 340 310 400 315 Q 460 310 520 270" stroke="none" fill="url(#glow)"/>
+
+      <!-- Labels -->
+      <text x="400" y="290" text-anchor="middle" fill="#36e7b3" font-family="Poppins, sans-serif" font-size="11" font-weight="600" letter-spacing="2" opacity="0.7">PELVIC FLOOR</text>
+      <text x="400" y="345" text-anchor="middle" fill="#a0a0b8" font-family="Poppins, sans-serif" font-size="12" opacity="0.5">Every rep loads this muscle. Are you training it?</text>
+    </svg>
+  </div>
+</header>
+
+<!-- ARTICLE -->
+<article>
+
+  <h2>The Gap in Every Lifter's Program</h2>
+
+  <p>You wouldn't skip leg day and expect to squat heavy. You wouldn't ignore your rotator cuffs and expect your bench to hold up. But there's a muscle group that bears load on every single compound lift you do, and you've probably never trained it once.</p>
+
+  <p>Your pelvic floor is a sling of muscles at the base of your core. It supports your organs, controls your bladder, and plays a direct role in intra-abdominal pressure — the same pressure you build when you brace for a heavy squat, deadlift, or overhead press. Every time you load a barbell, your pelvic floor takes the hit.</p>
+
+  <p><strong>And if it's weak, everything built on top of it is compromised.</strong></p>
+
+  <!-- STATS -->
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="num">1 in 3</div>
+      <div class="label">men who lift heavy report bladder leaks during training</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">100%</div>
+      <div class="label">of compound lifts engage the pelvic floor under load</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">0%</div>
+      <div class="label">of most gym programs include pelvic floor training</div>
+    </div>
+  </div>
+
+  <h2>What Actually Happens When You Lift Heavy</h2>
+
+  <p>When you brace for a heavy lift, you take a deep breath and tighten your core. That increases intra-abdominal pressure, which stabilizes your spine. It's essential for safety and performance.</p>
+
+  <p>But that pressure doesn't just push against your abs. It pushes down — directly onto your pelvic floor. Think of it as the bottom of a canister. Your diaphragm is the top, your abs and obliques are the walls, and your pelvic floor is the base. When pressure increases inside the canister, the base has to hold.</p>
+
+  <p><strong>If your pelvic floor can't match the pressure your core generates, something gives.</strong> That might look like a small leak during a heavy set. It might feel like reduced control or stability. Over time, it can mean a pelvic floor that gets progressively weaker under repeated strain — even as the rest of your body gets stronger.</p>
+
+  <div class="pull-quote">You're building pressure your pelvic floor can't handle. That's not strength. That's a structural gap.</div>
+
+  <!-- INFOGRAPHIC: The Core Canister -->
+  <div class="infographic">
+    <h3>The Core Canister: Why Your Pelvic Floor Is the Foundation</h3>
+    <svg viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+      <rect width="600" height="320" fill="none"/>
+
+      <!-- Canister outline -->
+      <ellipse cx="300" cy="60" rx="120" ry="30" stroke="#36e7b3" stroke-width="2" fill="none" opacity="0.5"/>
+      <line x1="180" y1="60" x2="180" y2="240" stroke="#36e7b3" stroke-width="2" opacity="0.5"/>
+      <line x1="420" y1="60" x2="420" y2="240" stroke="#36e7b3" stroke-width="2" opacity="0.5"/>
+      <ellipse cx="300" cy="240" rx="120" ry="30" stroke="#36e7b3" stroke-width="2.5" fill="rgba(54,231,179,0.08)"/>
+
+      <!-- Labels -->
+      <text x="300" y="65" text-anchor="middle" fill="#a0a0b8" font-family="Poppins" font-size="12" font-weight="500">DIAPHRAGM (top)</text>
+
+      <!-- Side labels -->
+      <text x="140" y="155" text-anchor="end" fill="#a0a0b8" font-family="Poppins" font-size="12" font-weight="500">ABS &amp;</text>
+      <text x="140" y="172" text-anchor="end" fill="#a0a0b8" font-family="Poppins" font-size="12" font-weight="500">OBLIQUES</text>
+      <text x="460" y="155" text-anchor="start" fill="#a0a0b8" font-family="Poppins" font-size="12" font-weight="500">SPINAL</text>
+      <text x="460" y="172" text-anchor="start" fill="#a0a0b8" font-family="Poppins" font-size="12" font-weight="500">STABILIZERS</text>
+
+      <!-- Pressure arrows -->
+      <line x1="300" y1="100" x2="300" y2="190" stroke="#ff6b6b" stroke-width="2" stroke-dasharray="6,4" opacity="0.7"/>
+      <polygon points="293,188 307,188 300,200" fill="#ff6b6b" opacity="0.7"/>
+      <text x="340" y="150" fill="#ff6b6b" font-family="Poppins" font-size="11" font-weight="600" opacity="0.8">PRESSURE</text>
+
+      <!-- Bottom label - highlighted -->
+      <text x="300" y="248" text-anchor="middle" fill="#36e7b3" font-family="Poppins" font-size="13" font-weight="700">PELVIC FLOOR (base)</text>
+      <text x="300" y="295" text-anchor="middle" fill="#a0a0b8" font-family="Poppins" font-size="11">If this can't hold, the whole system leaks — literally.</text>
+    </svg>
+  </div>
+
+  <h2>The Lifts That Load Your Pelvic Floor the Most</h2>
+
+  <p>Not all lifts are equal when it comes to pelvic floor demand. The more intra-abdominal pressure a movement generates, the more your pelvic floor has to resist. Here's where the load is highest.</p>
+
+  <div class="diagram-grid">
+    <div class="diagram-card">
+      <div class="icon">🏋️</div>
+      <h4>Back Squat</h4>
+      <p>Maximum downward pressure at the bottom of the hole. Your pelvic floor braces hardest when your hips are below parallel.</p>
+    </div>
+    <div class="diagram-card">
+      <div class="icon">💪</div>
+      <h4>Deadlift</h4>
+      <p>Peak bracing at the pull from the floor. Heavy conventional deadlifts generate massive intra-abdominal pressure.</p>
+    </div>
+    <div class="diagram-card">
+      <div class="icon">🔝</div>
+      <h4>Overhead Press</h4>
+      <p>Standing presses load the pelvic floor with both the weight and the postural demand of staying upright under load.</p>
+    </div>
+    <div class="diagram-card">
+      <div class="icon">⚡</div>
+      <h4>Heavy Carries</h4>
+      <p>Farmer's walks and loaded carries create sustained pelvic floor engagement — every step is a bracing event.</p>
+    </div>
+  </div>
+
+  <div class="tip-box">
+    <div class="tip-label">The Takeaway</div>
+    <p>If you're lifting heavy and not training your pelvic floor, you're building a house on a foundation you've never reinforced. The weights get heavier. The foundation doesn't keep up.</p>
+  </div>
+
+  <h2>Signs Your Pelvic Floor Isn't Keeping Up</h2>
+
+  <p>Most guys won't notice a weak pelvic floor until it becomes a problem. And by then, they've been compensating for months or years without knowing it. Here's what to watch for.</p>
+
+  <p><strong>Leaking during heavy sets.</strong> Even a few drops during a max-effort squat or deadlift means your pelvic floor couldn't match the pressure. This isn't rare — it's just not talked about.</p>
+
+  <p><strong>Loss of bracing stability.</strong> If your core feels like it "gives" under heavy load, your pelvic floor may be the weak link. You can't build full intra-abdominal pressure if the base of the canister can't hold.</p>
+
+  <p><strong>Post-workout urgency.</strong> Needing to get to the bathroom immediately after training, or feeling increased urgency on heavy days, is a signal your pelvic floor is being overloaded.</p>
+
+  <p><strong>Reduced endurance in the bedroom.</strong> Control and stamina aren't just mental. They're muscular. The pelvic floor controls both, and a fatigued one underperforms everywhere.</p>
+
+  <h2>How to Actually Train It</h2>
+
+  <p>You don't need to stop lifting heavy. You need to add one thing to your program that you've been missing.</p>
+
+  <p>Pelvic floor training follows the same principles as any other muscle group: progressive overload, proper form, and consistent training. The problem is that most guys have no idea if they're doing it right — because unlike a bicep curl, you can't see the muscle working.</p>
+
+  <p><strong>That's where biofeedback changes everything.</strong> Instead of guessing whether you're engaging the right muscle, biofeedback gives you real-time data. You can see the contraction. You can measure the strength. You can track progress over weeks the same way you track your squat PR.</p>
+
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th></th>
+        <th>Guessing</th>
+        <th>With Biofeedback</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Know if you're engaging correctly</td>
+        <td class="cross">✗</td>
+        <td class="check">✓</td>
+      </tr>
+      <tr>
+        <td>Track strength over time</td>
+        <td class="cross">✗</td>
+        <td class="check">✓</td>
+      </tr>
+      <tr>
+        <td>Progressive overload</td>
+        <td class="cross">✗</td>
+        <td class="check">✓</td>
+      </tr>
+      <tr>
+        <td>Guided, timed sessions</td>
+        <td class="cross">✗</td>
+        <td class="check">✓</td>
+      </tr>
+      <tr>
+        <td>Time required</td>
+        <td>Unknown</td>
+        <td>5 min/day</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Add It to Your Program Like Any Other Muscle</h2>
+
+  <p>You don't need a separate "pelvic floor day." Five minutes is enough — before your workout, after, or on its own. Here's how it fits into a lifting schedule.</p>
+
+  <p><strong>Pre-workout:</strong> A short pelvic floor activation session wakes up the base of your core canister before you load it. Think of it like glute activation before squats — you're priming the muscle that's about to work.</p>
+
+  <p><strong>Rest days:</strong> Dedicated pelvic floor training on recovery days builds strength without competing with your lifting volume. This is where progressive overload happens.</p>
+
+  <p><strong>Post-workout:</strong> A cooldown session helps the pelvic floor recover from the sustained pressure of heavy training. It also reinforces the neuromuscular connection when the muscle is fatigued.</p>
+
+  <div class="pull-quote">You already train every muscle that moves the weight. Now train the one that holds it all together.</div>
+
+  <!-- CTA -->
+  <div class="cta-section" id="cta">
+    <h2>Close the Gap in Your Program</h2>
+    <p>PulseKegel uses real-time biofeedback to guide your pelvic floor training — so you know you're actually doing it right. Five minutes a day. Progressive. Measurable. Built for people who already train hard.</p>
+    <a href="https://pulsekegel.com" class="cta-btn">Start Your Free Trial</a>
+    <div class="cta-price">7-day free trial, then $4.99 for a full year</div>
+  </div>
+
+</article>
+
+<footer>
+  &copy; 2026 PulseKegel. All rights reserved.
+</footer>
+
+</body>
+</html>
