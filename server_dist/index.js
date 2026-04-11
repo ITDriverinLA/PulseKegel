@@ -36,6 +36,8 @@ var privacyPolicyHtml = `<!DOCTYPE html>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Privacy Policy - PulseKegel</title>
+  <meta name="description" content="PulseKegel privacy policy. Learn how your data is stored locally on your device, what minimal information we collect, and your rights." />
+  <link rel="canonical" href="https://pulsekegel.com/privacy" />
   <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="apple-touch-icon" href="/favicon.png">
   <style>
@@ -132,7 +134,14 @@ function getAboutPageHtml() {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PulseKegel - Take Control of Your Pelvic Health</title>
+    <title>About PulseKegel - Pelvic Floor Exercise App for Men & Women</title>
+    <meta name="description" content="PulseKegel is a pelvic floor exercise app with a 12-week progressive kegel training program, haptic feedback, AI progress reviews, guided breathwork, and ambient music. Built for real results." />
+    <link rel="canonical" href="https://pulsekegel.com/about" />
+    <meta property="og:title" content="About PulseKegel - Pelvic Floor Exercise App" />
+    <meta property="og:description" content="A 12-week progressive kegel training program with haptic feedback, AI progress reviews, guided breathwork, and ambient music. Just $4.99/year." />
+    <meta property="og:url" content="https://pulsekegel.com/about" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://pulsekegel.com/favicon.png" />
     <link rel="icon" type="image/png" href="/favicon.png">
     <link rel="apple-touch-icon" href="/favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -151,6 +160,7 @@ function getAboutPageHtml() {
         .app-icon { width: 64px; height: 64px; border-radius: 16px; background: linear-gradient(135deg, #1a1a2e, #16213e); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 30px rgba(0, 255, 136, 0.3); }
         .app-icon svg { width: 40px; height: 40px; }
         .logo { font-family: 'Orbitron', sans-serif; font-size: 2.5rem; font-weight: 700; background: linear-gradient(90deg, #00FF88, #00FFFF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-shadow: 0 0 40px rgba(0, 255, 136, 0.5); }
+        .logo-subtitle { font-size: 1rem; font-weight: 400; display: block; margin-top: 4px; background: linear-gradient(90deg, #00FFFF, #FF00FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: 0.05em; }
         .tagline { font-size: 1.1rem; color: rgba(255, 255, 255, 0.7); font-weight: 300; }
         .hero { padding: 60px 0; text-align: center; }
         .story-card { background: linear-gradient(135deg, rgba(26, 26, 46, 0.9), rgba(22, 33, 62, 0.9)); border: 1px solid rgba(0, 255, 136, 0.2); border-radius: 24px; padding: 48px; max-width: 800px; margin: 0 auto; position: relative; overflow: hidden; }
@@ -205,7 +215,7 @@ function getAboutPageHtml() {
                         <path d="M2 12l10 5 10-5"/>
                     </svg>
                 </div>
-                <h1 class="logo">PulseKegel</h1>
+                <h1 class="logo">PulseKegel <span class="logo-subtitle">Pelvic Floor Exercise App</span></h1>
             </div>
             <p class="tagline">Pelvic Floor Training, Simplified</p>
         </header>
@@ -344,59 +354,83 @@ var openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL
 });
 var FEMALE_HEALTH_BENEFITS = [
-  "improved bladder control and reduced urinary incontinence",
-  "stronger pelvic organ support to help prevent prolapse",
-  "enhanced intimate sensation and satisfaction",
-  "better preparation for pregnancy and faster postpartum recovery",
-  "reduced lower back pain through core stabilization",
+  "stronger pelvic floor muscles and endurance",
+  "improved core strength and stability",
+  "enhanced mind-body awareness and control",
+  "reduced lower back tension through core stabilization",
   "improved posture and hip alignment",
-  "better circulation to pelvic organs",
-  "reduced symptoms of pelvic floor dysfunction",
-  "enhanced core strength and stability",
-  "improved bowel function and reduced constipation",
-  "better stress management through mind-body connection",
-  "increased confidence in physical activities"
+  "better circulation and blood flow",
+  "enhanced overall muscle coordination",
+  "greater confidence in physical activities",
+  "better stress management through focused breathing",
+  "improved balance and body awareness",
+  "stronger foundation for everyday movement",
+  "enhanced relaxation and recovery skills"
 ];
 var MALE_HEALTH_BENEFITS = [
-  "improved erectile function and stamina",
-  "better bladder control, especially after prostate surgery",
-  "enhanced ejaculatory control",
-  "reduced risk of prostate-related issues",
+  "stronger pelvic floor muscles and endurance",
+  "improved core strength and stability",
+  "enhanced mind-body awareness and control",
   "stronger core support for lower back health",
-  "improved posture and hip stability",
-  "better circulation to pelvic region",
+  "improved posture and hip alignment",
+  "better circulation and blood flow",
   "enhanced athletic performance through core strength",
-  "reduced symptoms of chronic pelvic pain",
-  "improved bowel function and control",
+  "greater confidence in physical activities",
   "better stress management through focused breathing",
-  "increased confidence in physical activities"
+  "improved balance and body awareness",
+  "stronger foundation for everyday movement",
+  "enhanced relaxation and recovery skills"
 ];
+function buildFallback(daysWorkedOut, scheduledDays, weekNumber) {
+  if (daysWorkedOut === 0) {
+    return `Week ${weekNumber} passed without a session. That happens, but it means starting from scratch on the streak. This week is a clean slate \u2014 one session is all it takes to get back on track.`;
+  }
+  const missedDays = Math.max(0, scheduledDays - daysWorkedOut);
+  if (missedDays === 0) {
+    return `${daysWorkedOut} sessions completed this week \u2014 the full schedule. That kind of consistency is exactly what builds real, lasting results. Carry that momentum into next week.`;
+  }
+  if (daysWorkedOut >= 3 && missedDays <= 2) {
+    return `${daysWorkedOut} of ${scheduledDays} sessions done this week \u2014 ${missedDays} missed. The progress is real, but the full week is where the results compound. Aim to close that gap next week.`;
+  }
+  return `${daysWorkedOut} of ${scheduledDays} scheduled sessions completed this week \u2014 ${missedDays} missed. That is not the week you needed. Next week, start on day one and do not let the first miss become two.`;
+}
 async function registerRoutes(app2) {
   app2.post("/api/weekly-review", async (req, res) => {
-    const { daysWorkedOut, weekNumber, totalMinutes, anatomyType, userName } = req.body;
+    const { daysWorkedOut, weekNumber, totalMinutes, anatomyType, userName, currentStreak } = req.body;
+    const scheduledDays = weekNumber <= 2 ? 3 : weekNumber <= 6 ? 5 : weekNumber <= 10 ? 7 : 5;
+    const missedDays = Math.max(0, scheduledDays - (daysWorkedOut || 0));
+    const streak = typeof currentStreak === "number" ? currentStreak : 0;
     try {
-      const weekLabel = weekNumber === 1 ? "their very first week" : weekNumber === 2 ? "2 weeks" : `${weekNumber} weeks`;
       const benefits = anatomyType === "male" ? MALE_HEALTH_BENEFITS : FEMALE_HEALTH_BENEFITS;
       const benefitIndex = (weekNumber - 1) % benefits.length;
       const weekBenefit = benefits[benefitIndex];
       const anatomyLabel = anatomyType === "male" ? "male" : "female";
-      const nameInstruction = userName ? `Address them by name: "${userName}".` : "Do not use any name.";
-      const prompt = `Write a 2-sentence encouraging fitness message.
-${userName ? `Start with "${userName},"` : "No name."}
-Week ${weekNumber}${weekNumber === 1 ? " (first week!)" : ""}, ${daysWorkedOut} days, ${anatomyLabel}.
-Mention this benefit: "${weekBenefit}"
-${daysWorkedOut >= 5 ? "Celebrate dedication." : daysWorkedOut >= 3 ? "Warm encouragement." : "Supportive tone."}
-No quotes in response.`;
+      let modeInstructions;
+      if (daysWorkedOut === 0) {
+        modeInstructions = `This person completed 0 of ${scheduledDays} scheduled sessions this week \u2014 they did not train at all. Acknowledge that plainly and directly. Do not open with praise or pivot quickly to encouragement. The second or third sentence can note what picking it back up looks like. End with one brief forward-looking sentence.`;
+      } else if (missedDays === 0) {
+        modeInstructions = `This person hit every session this week: ${daysWorkedOut} of ${scheduledDays} scheduled.${streak > 1 ? ` Their current streak is ${streak} days.` : ""} Celebrate this with specific reference to their session count${streak > 1 ? ` and streak` : ""}. Make the praise feel earned \u2014 reference the actual numbers, not generic effort.`;
+      } else if (daysWorkedOut >= 3 && missedDays <= 2) {
+        const streakNote = streak > 1 ? ` Their current streak is ${streak} days, which means those missed sessions did not break momentum entirely.` : ` Their streak did not hold this week.`;
+        modeInstructions = `This person completed ${daysWorkedOut} of ${scheduledDays} scheduled sessions this week, missing ${missedDays}.${streakNote} Acknowledge the missed sessions by number \u2014 do not skip over it. Note that the full week of consistency is what compounds into results. Encourage them to close that gap next week. Tone: honest and supportive, not punishing.`;
+      } else {
+        modeInstructions = `This person completed only ${daysWorkedOut} of ${scheduledDays} scheduled sessions this week \u2014 missing ${missedDays}.${streak <= 1 ? " Their streak was broken." : ""} Be direct: state the missed session count clearly. Do not lead with praise or bury the accountability. Challenge them to do better next week. End with one forward-looking sentence. Tone: firm and honest, but not harsh.`;
+      }
+      const prompt = `Write a 3-4 sentence weekly fitness review for a pelvic floor training app.
+${userName ? `Start with "${userName},"` : "Do not use a name."}
+Week ${weekNumber}, ${anatomyLabel} anatomy.
+${modeInstructions}
+Weave in this fitness benefit naturally (do not force it if it disrupts the tone): "${weekBenefit}"
+Rules: exactly 3-4 sentences. No filler phrases like "Great job!", "Keep it up!", or "You're doing amazing!". No medical conditions, surgeries, diagnoses, or health problems. No quotes in the response.`;
       const response = await openai.chat.completions.create({
         model: "gpt-5-nano",
         messages: [{ role: "user", content: prompt }]
       });
-      const message = response.choices[0]?.message?.content || "Great work this week! Keep it up!";
+      const message = response.choices[0]?.message?.content || buildFallback(daysWorkedOut, scheduledDays, weekNumber);
       res.json({ message });
     } catch (error) {
       console.error("Error generating weekly review:", error);
-      const fallback = weekNumber === 1 ? "You did it! Your first week is complete. Keep up the great work!" : `${weekNumber} weeks down! Your consistency is building real strength.`;
-      res.json({ message: fallback });
+      res.json({ message: buildFallback(daysWorkedOut, scheduledDays, weekNumber) });
     }
   });
   app2.get("/favicon.png", (_req, res) => {
@@ -427,20 +461,101 @@ Sitemap: https://pulsekegel.com/sitemap.xml
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://pulsekegel.com/</loc>
+    <lastmod>2026-03-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://pulsekegel.com/privacy</loc>
+    <lastmod>2026-03-17</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://pulsekegel.com/about</loc>
+    <lastmod>2026-03-17</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
+  <url>
+    <loc>https://pulsekegel.com/blog</loc>
+    <lastmod>2026-03-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://pulsekegel.com/blog/pelvic-floor-exercises-for-men</loc>
+    <lastmod>2026-03-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://pulsekegel.com/blog/how-to-last-longer-naturally</loc>
+    <lastmod>2026-03-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://pulsekegel.com/blog/pelvic-floor-recovery-after-childbirth</loc>
+    <lastmod>2026-03-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://pulsekegel.com/blog/bladder-control-exercises-over-40</loc>
+    <lastmod>2026-03-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://pulsekegel.com/blog/3-minute-pelvic-floor-routine-men</loc>
+    <lastmod>2026-03-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://pulsekegel.com/blog/breathing-exercises-better-control-men</loc>
+    <lastmod>2026-03-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://pulsekegel.com/blog/postpartum-bladder-confidence-exercises</loc>
+    <lastmod>2026-03-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://pulsekegel.com/blog/daily-pelvic-floor-routine-over-40</loc>
+    <lastmod>2026-03-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://pulsekegel.com/blog/you-squat-300-but-skip-this-muscle</loc>
+    <lastmod>2026-04-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
 </urlset>`);
+  });
+  app2.get("/blog", (_req, res) => {
+    const blogIndex = join2(process.cwd(), "static-build", "blog", "index.html");
+    if (existsSync2(blogIndex)) {
+      return res.sendFile(blogIndex);
+    }
+    res.status(404).send("Not found");
+  });
+  app2.get("/blog/:slug", (req, res) => {
+    const slug = req.params.slug;
+    if (slug.endsWith(".html")) {
+      return res.redirect(301, `/blog/${slug.replace(".html", "")}`);
+    }
+    const filePath = join2(process.cwd(), "static-build", "blog", `${slug}.html`);
+    if (existsSync2(filePath)) {
+      return res.sendFile(filePath);
+    }
+    res.status(404).send("Not found");
   });
   app2.get("/privacy", (_req, res) => {
     res.setHeader("Content-Type", "text/html");
@@ -508,7 +623,8 @@ function setupRequestLogging(app2) {
       return originalResJson.apply(res, [bodyJson, ...args]);
     };
     res.on("finish", () => {
-      if (!path2.startsWith("/api")) return;
+      if (!path2.startsWith("/api"))
+        return;
       const duration = Date.now() - start;
       let logLine = `${req.method} ${path2} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
@@ -620,7 +736,7 @@ function setupErrorHandler(app2) {
   configureExpoAndLanding(app);
   const server = await registerRoutes(app);
   setupErrorHandler(app);
-  const port = parseInt(process.env.PORT || "5000", 10);
+  const port = parseInt(process.env.PORT || "8080", 10);
   server.listen(
     {
       port,

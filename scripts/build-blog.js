@@ -419,6 +419,13 @@ function processFile(filename) {
     return;
   }
 
+  // Pre-styled posts are already fully branded — copy without transformation
+  if (html.includes('name="pk-pre-styled"')) {
+    fs.writeFileSync(outputPath, html);
+    console.log(`  ${filename} → copied (pre-styled)`);
+    return;
+  }
+
   const { extracted, cleaned } = extractMetaFromBody(html);
   html = cleaned;
 
