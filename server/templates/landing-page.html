@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PulseKegel - Pelvic Floor Exercise App | 12-Week Kegel Training Program</title>
-    <meta name="description" content="Strengthen your pelvic floor with PulseKegel's 12-week progressive kegel exercise program. Haptic feedback, visual guidance, AI progress reviews, guided breathwork, ambient music, daily reminders, and 19 achievement badges. Start the 7-Day Control Challenge free, then just $4.99/year.">
+    <meta name="description" content="Train the muscle most men ignore. Start the 7-Day Control Challenge free — guided pelvic floor training with haptic feedback, visual cues, AI progress reviews, ambient music, and 19 achievement badges. Just $4.99/year after your challenge.">
     <meta name="keywords" content="kegel exercises, pelvic floor exercises, pelvic floor training, kegel app, pelvic floor workout, bladder control exercises, men's pelvic health, kegel exercise program, pelvic floor strengthening, incontinence exercises">
     <meta name="author" content="PulseKegel">
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
@@ -15,8 +15,8 @@
     <link rel="icon" type="image/png" href="/favicon.png">
     <link rel="apple-touch-icon" href="/favicon.png">
 
-    <meta property="og:title" content="PulseKegel - Pelvic Floor Exercise App | 12-Week Kegel Program">
-    <meta property="og:description" content="12-week progressive pelvic floor training with haptic feedback, guided breathwork, ambient music, daily reminders, and AI weekly reviews. Just $4.99/year.">
+    <meta property="og:title" content="PulseKegel - Train the muscle most men ignore | 7-Day Control Challenge">
+    <meta property="og:description" content="Start the 7-Day Control Challenge free. Guided pelvic floor training with haptic feedback, visual cues, ambient music, and AI weekly reviews. Just $4.99/year after.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://pulsekegel.com">
     <meta property="og:site_name" content="PulseKegel">
@@ -26,8 +26,8 @@
     <meta property="og:image:height" content="512">
 
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="PulseKegel - Pelvic Floor Exercise App">
-    <meta name="twitter:description" content="12-week progressive kegel training with haptic feedback, guided breathwork, ambient music, and AI coaching. Just $4.99/year.">
+    <meta name="twitter:title" content="PulseKegel - Train the muscle most men ignore">
+    <meta name="twitter:description" content="Start the 7-Day Control Challenge free. Guided pelvic floor training with haptic feedback, visual cues, ambient music, and AI coaching. Just $4.99/year after.">
     <meta name="twitter:image" content="https://pulsekegel.com/favicon.png">
 
     <link rel="canonical" href="https://pulsekegel.com">
@@ -356,7 +356,42 @@
             .hero-buttons { flex-direction: column; align-items: center; }
             .faq-item { padding: 20px 24px; }
             .payoff-statement { font-size: 1.4rem; }
+            .hero-headline { font-size: 1.9rem; }
+            .hero-subhead { font-size: 1.05rem; }
+            .challenge-card { padding: 32px 24px; }
+            .challenge-list li { font-size: 1rem; }
+            .privacy-card { flex-direction: column; padding: 28px 24px; gap: 20px; }
         }
+
+        /* ── New lean hero ── */
+        .hero-new { padding: 80px 0 60px; text-align: center; }
+        .hero-headline { font-family: 'Orbitron', sans-serif; font-size: 2.8rem; font-weight: 700; background: linear-gradient(90deg, #00FF88, #00FFFF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; max-width: 820px; margin: 0 auto 24px; line-height: 1.2; }
+        .hero-subhead { font-size: 1.2rem; color: rgba(255, 255, 255, 0.72); max-width: 580px; margin: 0 auto 44px; line-height: 1.75; font-weight: 300; }
+        .hero-ctas { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+        .cta-secondary { font-size: 0.9rem; color: rgba(255, 255, 255, 0.45); text-decoration: none; border-bottom: 1px solid rgba(255, 255, 255, 0.18); padding-bottom: 2px; transition: color 0.3s, border-color 0.3s; letter-spacing: 0.02em; }
+        .cta-secondary:hover { color: #00FFFF; border-color: rgba(0, 255, 255, 0.5); }
+
+        /* ── 7-Day Control Challenge section ── */
+        .challenge-section { padding: 60px 0; text-align: center; }
+        .challenge-card { background: linear-gradient(135deg, rgba(0, 255, 136, 0.07), rgba(0, 255, 255, 0.07)); border: 1px solid rgba(0, 255, 136, 0.28); border-radius: 24px; padding: 48px; max-width: 640px; margin: 0 auto; position: relative; overflow: hidden; }
+        .challenge-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #00FF88, #00FFFF, #FF00FF); }
+        .challenge-list { list-style: none; padding: 0; margin: 0 0 36px; text-align: left; display: inline-block; }
+        .challenge-list li { padding: 12px 0 12px 32px; position: relative; font-size: 1.08rem; color: rgba(255, 255, 255, 0.88); line-height: 1.5; border-bottom: 1px solid rgba(255, 255, 255, 0.07); }
+        .challenge-list li:last-child { border-bottom: none; }
+        .challenge-list li::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 10px; height: 10px; border-radius: 50%; background: #00FF88; box-shadow: 0 0 10px rgba(0, 255, 136, 0.7); }
+
+        /* ── Founder section ── */
+        .founder-section { padding: 60px 0; text-align: center; }
+
+        /* ── Privacy callout ── */
+        .privacy-section { padding: 48px 0; }
+        .privacy-card { background: linear-gradient(135deg, rgba(255, 0, 255, 0.05), rgba(0, 255, 255, 0.05)); border: 1px solid rgba(0, 255, 255, 0.2); border-radius: 20px; padding: 36px 48px; max-width: 800px; margin: 0 auto; display: flex; gap: 28px; align-items: flex-start; }
+        .privacy-icon { flex-shrink: 0; margin-top: 2px; }
+        .privacy-title { font-family: 'Orbitron', sans-serif; font-size: 1rem; color: #00FFFF; margin-bottom: 10px; line-height: 1.5; }
+        .privacy-desc { font-size: 0.95rem; color: rgba(255, 255, 255, 0.68); line-height: 1.7; margin: 0; }
+
+        /* ── Features bridge ── */
+        .features-bridge { font-size: 1rem; color: rgba(255, 255, 255, 0.55); text-align: center; max-width: 580px; margin: -28px auto 48px; line-height: 1.7; }
     </style>
 </head>
 <body>
@@ -396,7 +431,87 @@
         </header>
         
         <main>
-            <section class="hero" aria-label="About PulseKegel">
+
+            <!-- ① NEW HERO -->
+            <section class="hero hero-new" aria-label="PulseKegel pelvic floor training app">
+                <h2 class="hero-headline">Train the muscle most men ignore.</h2>
+                <p class="hero-subhead">Improve bladder control, pelvic strength, and confidence in a few minutes a day. Private, guided, and built for men.</p>
+                <div class="hero-ctas">
+                    <a href="https://apps.apple.com/us/app/pulsekegel/id6758308054" class="download-btn" target="_blank" rel="noopener" aria-label="Start the 7-Day Control Challenge on the App Store">
+                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                        Start the 7-Day Control Challenge
+                    </a>
+                    <a href="https://apps.apple.com/us/app/pulsekegel/id6758308054" class="cta-secondary" target="_blank" rel="noopener" aria-label="View PulseKegel on the App Store">View on the App Store</a>
+                </div>
+            </section>
+
+            <!-- ② 7-DAY CONTROL CHALLENGE -->
+            <section class="challenge-section" aria-label="7-Day Control Challenge">
+                <h2 class="section-title">7-Day Control Challenge</h2>
+                <div class="challenge-card">
+                    <ul class="challenge-list">
+                        <li>A few minutes a day</li>
+                        <li>Guided squeeze and release cues</li>
+                        <li>Private by design</li>
+                        <li>Build consistency before intensity</li>
+                    </ul>
+                    <a href="https://apps.apple.com/us/app/pulsekegel/id6758308054" class="download-btn" target="_blank" rel="noopener" aria-label="Download PulseKegel on the Apple App Store">
+                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                        Start the Challenge Free
+                    </a>
+                </div>
+            </section>
+
+            <!-- ③ OUTCOME BENEFITS -->
+            <section class="outcomes-strip" aria-label="What you get">
+                <div class="outcomes-grid">
+                    <div class="outcome-item">
+                        <p class="outcome-label">Better Control</p>
+                        <p class="outcome-desc">Stronger bladder confidence and less urgency — day and night</p>
+                    </div>
+                    <div class="outcome-item">
+                        <p class="outcome-label">Stronger Performance</p>
+                        <p class="outcome-desc">More stamina, better function, and a foundation that holds up</p>
+                    </div>
+                    <div class="outcome-item">
+                        <p class="outcome-label">Lasting Confidence</p>
+                        <p class="outcome-desc">A quiet edge that compounds with every session you complete</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ④ HOW IT WORKS -->
+            <section class="why-works-section" aria-label="Why PulseKegel works">
+                <h2 class="section-title">How It Works</h2>
+                <div class="why-works-grid">
+                    <div class="why-works-card">
+                        <div class="why-works-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="2" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                        </div>
+                        <p class="why-works-title">Follow the pulse</p>
+                        <p class="why-works-desc">The app leads. You follow. Every rep is timed and guided — no figuring out what to do or for how long.</p>
+                    </div>
+                    <div class="why-works-card">
+                        <div class="why-works-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FFFF" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        </div>
+                        <p class="why-works-title">Contract and release</p>
+                        <p class="why-works-desc">Squeeze when the bar rises. Rest when it drops. That's the entire method — repeated with the right structure to build real strength.</p>
+                    </div>
+                    <div class="why-works-card">
+                        <div class="why-works-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF00FF" stroke-width="2" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        </div>
+                        <p class="why-works-title">Done in minutes</p>
+                        <p class="why-works-desc">Five to ten minutes a day. Short enough to actually do. Structured enough to actually work. Tracked so the gains compound.</p>
+                    </div>
+                </div>
+                <p class="why-works-close">No guessing. No overthinking.</p>
+                <p class="why-works-credibility">These are the same muscle groups targeted in clinical pelvic floor training — simplified for daily use.</p>
+            </section>
+
+            <!-- ⑤ FOUNDER STORY -->
+            <section class="founder-section" aria-label="Why PulseKegel was built">
                 <p class="hero-bridge">You don't notice these muscles&hellip; until they start slipping.</p>
                 <div class="story-card">
                     <div class="quote-mark" aria-hidden="true">"</div>
@@ -425,172 +540,55 @@
                     </div>
                 </div>
             </section>
-            
-            <section class="need-section" aria-label="Who needs pelvic floor training">
-                <div class="need-card">
-                    <p class="need-hook">Think you're fine?</p>
-                    <p class="need-subhook">Most people do. Until control starts slipping, endurance drops, or confidence takes a hit.</p>
-                    <ul class="need-list">
-                        <li>Less control than you used to have — leaks, urgency, or pressure that shouldn't be there</li>
-                        <li>Bedroom stamina or confidence has dipped and you want to stop the slide</li>
-                        <li>Post-surgery, post-injury, or post-pregnancy and your core feels disconnected</li>
-                        <li>You sit all day and that dull tension in your lower body won't shift</li>
-                        <li>You want a private habit that compounds without a gym or a coach</li>
-                    </ul>
-                    <p class="need-trainable">This is trainable.</p>
-                    <div class="decline-block">
-                        <p class="decline-title">What happens if you ignore this?</p>
-                        <ul class="decline-list">
-                            <li>Control keeps slipping — and the window to reverse it quietly closes</li>
-                            <li>Bedroom performance gets harder to blame on anything else</li>
-                            <li>Your core becomes the weak link in everything else you do</li>
-                        </ul>
-                        <p class="decline-pivot">Or&hellip; train it in minutes a day.</p>
+
+            <!-- ⑥ PRIVACY -->
+            <section class="privacy-section" aria-label="Privacy and data security">
+                <div class="privacy-card">
+                    <div class="privacy-icon">
+                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#00FFFF" stroke-width="1.5" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    </div>
+                    <div>
+                        <p class="privacy-title">Your data never leaves your device.</p>
+                        <p class="privacy-desc">No account. No sign-up. No health data uploaded anywhere. Everything stays on your phone — completely private by design. Your pelvic floor training is nobody else's business.</p>
                     </div>
                 </div>
             </section>
 
-            <section class="screenshots-section" aria-label="App screenshots">
-                <h2 class="section-title">See It In Action</h2>
-                <div class="screenshots-grid">
-                    <div class="screenshot-item">
-                        <div class="phone-frame">
-                            <div class="phone-mockup" role="img" aria-label="PulseKegel onboarding screen showing personalized setup">
-                                <div class="phone-mockup-content">
-                                    <div class="phone-mockup-icon">
-                                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="1.5" aria-hidden="true">
-                                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                                        </svg>
-                                    </div>
-                                    <p class="phone-mockup-text">Personalized onboarding experience</p>
-                                </div>
-                            </div>
-                        </div>
-                        <p class="screenshot-label">Welcome</p>
-                        <p class="screenshot-desc">Beautiful guided onboarding</p>
+            <!-- FAQ -->
+            <section class="faq-section" aria-label="Frequently asked questions about kegel exercises">
+                <h2 class="section-title">Frequently Asked Questions</h2>
+                <div class="faq-grid">
+                    <div class="faq-item">
+                        <h3 class="faq-question">What are kegel exercises and why should I do them?</h3>
+                        <p class="faq-answer">Kegel exercises strengthen the pelvic floor muscles that support your bladder, bowel, and sexual function. Regular kegel training can improve bladder control, reduce incontinence, and enhance sexual health. PulseKegel guides you through a structured 12-week program with 7 different exercise types for comprehensive pelvic floor strengthening.</p>
                     </div>
-                    <div class="screenshot-item">
-                        <div class="phone-frame">
-                            <div class="phone-mockup" role="img" aria-label="PulseKegel workout screen with visual power bar and haptic feedback indicators">
-                                <div class="phone-mockup-content">
-                                    <div class="phone-mockup-icon">
-                                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#00FFFF" stroke-width="1.5" aria-hidden="true">
-                                            <path d="M12 20V10"/>
-                                            <path d="M18 20V4"/>
-                                            <path d="M6 20v-4"/>
-                                        </svg>
-                                    </div>
-                                    <p class="phone-mockup-text">Real-time visual feedback with haptics</p>
-                                </div>
-                            </div>
-                        </div>
-                        <p class="screenshot-label">Train</p>
-                        <p class="screenshot-desc">Visual cues & haptic feedback</p>
+                    <div class="faq-item">
+                        <h3 class="faq-question">How long does each PulseKegel workout take?</h3>
+                        <p class="faq-answer">PulseKegel workouts take just 5-10 minutes per day. The app's 12-week program starts with shorter sessions in the Control Phase and gradually builds to more comprehensive workouts in the Power Phase, all designed to fit into a busy schedule.</p>
                     </div>
-                    <div class="screenshot-item">
-                        <div class="phone-frame">
-                            <div class="phone-mockup" role="img" aria-label="PulseKegel progress tracking screen with calendar and streak counter">
-                                <div class="phone-mockup-content">
-                                    <div class="phone-mockup-icon">
-                                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#FF00FF" stroke-width="1.5" aria-hidden="true">
-                                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                                            <line x1="16" y1="2" x2="16" y2="6"/>
-                                            <line x1="8" y1="2" x2="8" y2="6"/>
-                                            <line x1="3" y1="10" x2="21" y2="10"/>
-                                        </svg>
-                                    </div>
-                                    <p class="phone-mockup-text">Track your progress over 12 weeks</p>
-                                </div>
-                            </div>
-                        </div>
-                        <p class="screenshot-label">Track</p>
-                        <p class="screenshot-desc">Calendar & streak tracking</p>
+                    <div class="faq-item">
+                        <h3 class="faq-question">How does the haptic feedback work during exercises?</h3>
+                        <p class="faq-answer">PulseKegel uses your phone's vibration motor to provide distinct haptic patterns for each exercise type. Slow holds use steady pulses with progressive intensity, quick flicks use rapid staccato bursts, and elevator exercises use stepped patterns. The intensity matches the visual power bar so you can feel the rhythm without looking at the screen.</p>
                     </div>
-                </div>
-            </section>
-            
-            <section class="why-works-section" aria-label="Why PulseKegel works">
-                <h2 class="section-title">Why This Works</h2>
-                <div class="why-works-grid">
-                    <div class="why-works-card">
-                        <div class="why-works-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="2" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                        </div>
-                        <p class="why-works-title">Follow the pulse</p>
-                        <p class="why-works-desc">The app leads. You follow. Every rep is timed and guided — no figuring out what to do or for how long.</p>
+                    <div class="faq-item">
+                        <h3 class="faq-question">Is PulseKegel suitable for men?</h3>
+                        <p class="faq-answer">Yes, PulseKegel is designed for anyone who wants to strengthen their pelvic floor. Pelvic floor exercises are beneficial for men of all ages and can help with bladder control, post-prostate surgery recovery, and overall pelvic health.</p>
                     </div>
-                    <div class="why-works-card">
-                        <div class="why-works-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FFFF" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                        </div>
-                        <p class="why-works-title">Contract and release</p>
-                        <p class="why-works-desc">Squeeze when the bar rises. Rest when it drops. That's the entire method — repeated with the right structure to build real strength.</p>
+                    <div class="faq-item">
+                        <h3 class="faq-question">How much does PulseKegel cost?</h3>
+                        <p class="faq-answer">PulseKegel offers a 7-Day Control Challenge — free for 7 days — so you can try the full app before committing. After the challenge, it costs just $4.99 per year - that's about $0.42 per month, making it one of the most affordable pelvic floor training apps available.</p>
                     </div>
-                    <div class="why-works-card">
-                        <div class="why-works-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF00FF" stroke-width="2" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                        </div>
-                        <p class="why-works-title">Done in minutes</p>
-                        <p class="why-works-desc">Five to ten minutes a day. Short enough to actually do. Structured enough to actually work. Tracked so the gains compound.</p>
-                    </div>
-                </div>
-                <p class="why-works-close">No guessing. No overthinking.</p>
-                <p class="why-works-credibility">These are the same muscle groups targeted in clinical pelvic floor training — simplified for daily use.</p>
-            </section>
-
-            <section class="diy-section" aria-label="Why not just do Kegels on your own">
-                <h2 class="section-title">Why Not Just Do Kegels on Your Own?</h2>
-                <div class="diy-grid">
-                    <div class="diy-col diy-col-problem">
-                        <p class="diy-col-label">Doing it yourself</p>
-                        <ul class="diy-list">
-                            <li>Don't know if you're doing it right — and no feedback to tell you</li>
-                            <li>Easy to rush or overtrain without a structured pace</li>
-                            <li>Hard to stay consistent with no accountability and no progress to see</li>
-                        </ul>
-                    </div>
-                    <div class="diy-col diy-col-solution">
-                        <p class="diy-col-label">With PulseKegel</p>
-                        <ul class="diy-list">
-                            <li>Visual pulses guide the exact timing of every contraction</li>
-                            <li>Sets proper pace and intensity with a 12-week progressive structure</li>
-                            <li>Short sessions and streak tracking keep you consistent day after day</li>
-                        </ul>
+                    <div class="faq-item">
+                        <h3 class="faq-question">Is my health data private and secure?</h3>
+                        <p class="faq-answer">Absolutely. All your workout data stays entirely on your device. PulseKegel doesn't require an account, doesn't track you, and never uploads your health information. Your pelvic floor training is completely private.</p>
                     </div>
                 </div>
             </section>
 
-            <section class="video-section" aria-label="Interview: The truth about pelvic floor training">
-                <div class="container">
-                    <h2 class="video-section-title">Watch: The Truth About Pelvic Floor Training</h2>
-                    <div class="video-container">
-                        <div class="video-embed-wrapper">
-                            <iframe src="https://www.youtube.com/embed/qXGjAB-wYXM" title="The Truth About Pelvic Floor Training" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe>
-                        </div>
-                    </div>
-                    <p class="video-description">Most people are doing kegels wrong — and it's causing more harm than good. In this interview, we break down the truth about pelvic floor training: what actually works, what the myths are getting wrong, and the simple daily habit that changes everything. Whether you're dealing with leakage, core weakness, or just want a stronger foundation, this one's for you.</p>
-                </div>
-            </section>
-
-            <section class="outcomes-strip" aria-label="What you get">
-                <div class="outcomes-grid">
-                    <div class="outcome-item">
-                        <p class="outcome-label">Better Control</p>
-                        <p class="outcome-desc">Stronger bladder confidence and less urgency — day and night</p>
-                    </div>
-                    <div class="outcome-item">
-                        <p class="outcome-label">Stronger Performance</p>
-                        <p class="outcome-desc">More stamina, better function, and a foundation that holds up</p>
-                    </div>
-                    <div class="outcome-item">
-                        <p class="outcome-label">Lasting Confidence</p>
-                        <p class="outcome-desc">A quiet edge that compounds with every session you complete</p>
-                    </div>
-                </div>
-            </section>
-
+            <!-- ⑦ FEATURES -->
             <section class="features-section" aria-label="App features">
-                <h2 class="section-title">Everything You Need for Pelvic Floor Training</h2>
+                <h2 class="section-title">Built for the Long Game</h2>
+                <p class="features-bridge">Once the Challenge builds the habit, the 12-week program takes you the rest of the way.</p>
                 <div class="features-grid">
                     <article class="feature-card">
                         <div class="feature-icon">
@@ -700,36 +698,123 @@
                 </div>
             </section>
 
-            <section class="faq-section" aria-label="Frequently asked questions about kegel exercises">
-                <h2 class="section-title">Frequently Asked Questions</h2>
-                <div class="faq-grid">
-                    <div class="faq-item">
-                        <h3 class="faq-question">What are kegel exercises and why should I do them?</h3>
-                        <p class="faq-answer">Kegel exercises strengthen the pelvic floor muscles that support your bladder, bowel, and sexual function. Regular kegel training can improve bladder control, reduce incontinence, and enhance sexual health. PulseKegel guides you through a structured 12-week program with 7 different exercise types for comprehensive pelvic floor strengthening.</p>
+            <section class="diy-section" aria-label="Why not just do Kegels on your own">
+                <h2 class="section-title">Why Not Just Do Kegels on Your Own?</h2>
+                <div class="diy-grid">
+                    <div class="diy-col diy-col-problem">
+                        <p class="diy-col-label">Doing it yourself</p>
+                        <ul class="diy-list">
+                            <li>Don't know if you're doing it right — and no feedback to tell you</li>
+                            <li>Easy to rush or overtrain without a structured pace</li>
+                            <li>Hard to stay consistent with no accountability and no progress to see</li>
+                        </ul>
                     </div>
-                    <div class="faq-item">
-                        <h3 class="faq-question">How long does each PulseKegel workout take?</h3>
-                        <p class="faq-answer">PulseKegel workouts take just 5-10 minutes per day. The app's 12-week program starts with shorter sessions in the Control Phase and gradually builds to more comprehensive workouts in the Power Phase, all designed to fit into a busy schedule.</p>
-                    </div>
-                    <div class="faq-item">
-                        <h3 class="faq-question">How does the haptic feedback work during exercises?</h3>
-                        <p class="faq-answer">PulseKegel uses your phone's vibration motor to provide distinct haptic patterns for each exercise type. Slow holds use steady pulses with progressive intensity, quick flicks use rapid staccato bursts, and elevator exercises use stepped patterns. The intensity matches the visual power bar so you can feel the rhythm without looking at the screen.</p>
-                    </div>
-                    <div class="faq-item">
-                        <h3 class="faq-question">Is PulseKegel suitable for men?</h3>
-                        <p class="faq-answer">Yes, PulseKegel is designed for anyone who wants to strengthen their pelvic floor. Pelvic floor exercises are beneficial for men of all ages and can help with bladder control, post-prostate surgery recovery, and overall pelvic health.</p>
-                    </div>
-                    <div class="faq-item">
-                        <h3 class="faq-question">How much does PulseKegel cost?</h3>
-                        <p class="faq-answer">PulseKegel offers a 7-Day Control Challenge — free for 7 days — so you can try the full app before committing. After the challenge, it costs just $4.99 per year - that's about $0.42 per month, making it one of the most affordable pelvic floor training apps available.</p>
-                    </div>
-                    <div class="faq-item">
-                        <h3 class="faq-question">Is my health data private and secure?</h3>
-                        <p class="faq-answer">Absolutely. All your workout data stays entirely on your device. PulseKegel doesn't require an account, doesn't track you, and never uploads your health information. Your pelvic floor training is completely private.</p>
+                    <div class="diy-col diy-col-solution">
+                        <p class="diy-col-label">With PulseKegel</p>
+                        <ul class="diy-list">
+                            <li>Visual pulses guide the exact timing of every contraction</li>
+                            <li>Sets proper pace and intensity with a 12-week progressive structure</li>
+                            <li>Short sessions and streak tracking keep you consistent day after day</li>
+                        </ul>
                     </div>
                 </div>
             </section>
-            
+
+            <section class="video-section" aria-label="Interview: The truth about pelvic floor training">
+                <div class="container">
+                    <h2 class="video-section-title">Watch: The Truth About Pelvic Floor Training</h2>
+                    <div class="video-container">
+                        <div class="video-embed-wrapper">
+                            <iframe src="https://www.youtube.com/embed/qXGjAB-wYXM" title="The Truth About Pelvic Floor Training" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe>
+                        </div>
+                    </div>
+                    <p class="video-description">Most people are doing kegels wrong — and it's causing more harm than good. In this interview, we break down the truth about pelvic floor training: what actually works, what the myths are getting wrong, and the simple daily habit that changes everything. Whether you're dealing with leakage, core weakness, or just want a stronger foundation, this one's for you.</p>
+                </div>
+            </section>
+
+            <section class="screenshots-section" aria-label="App screenshots">
+                <h2 class="section-title">See It In Action</h2>
+                <div class="screenshots-grid">
+                    <div class="screenshot-item">
+                        <div class="phone-frame">
+                            <div class="phone-mockup" role="img" aria-label="PulseKegel onboarding screen showing personalized setup">
+                                <div class="phone-mockup-content">
+                                    <div class="phone-mockup-icon">
+                                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="1.5" aria-hidden="true">
+                                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                                        </svg>
+                                    </div>
+                                    <p class="phone-mockup-text">Personalized onboarding experience</p>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="screenshot-label">Welcome</p>
+                        <p class="screenshot-desc">Beautiful guided onboarding</p>
+                    </div>
+                    <div class="screenshot-item">
+                        <div class="phone-frame">
+                            <div class="phone-mockup" role="img" aria-label="PulseKegel workout screen with visual power bar and haptic feedback indicators">
+                                <div class="phone-mockup-content">
+                                    <div class="phone-mockup-icon">
+                                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#00FFFF" stroke-width="1.5" aria-hidden="true">
+                                            <path d="M12 20V10"/>
+                                            <path d="M18 20V4"/>
+                                            <path d="M6 20v-4"/>
+                                        </svg>
+                                    </div>
+                                    <p class="phone-mockup-text">Real-time visual feedback with haptics</p>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="screenshot-label">Train</p>
+                        <p class="screenshot-desc">Visual cues & haptic feedback</p>
+                    </div>
+                    <div class="screenshot-item">
+                        <div class="phone-frame">
+                            <div class="phone-mockup" role="img" aria-label="PulseKegel progress tracking screen with calendar and streak counter">
+                                <div class="phone-mockup-content">
+                                    <div class="phone-mockup-icon">
+                                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#FF00FF" stroke-width="1.5" aria-hidden="true">
+                                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                            <line x1="16" y1="2" x2="16" y2="6"/>
+                                            <line x1="8" y1="2" x2="8" y2="6"/>
+                                            <line x1="3" y1="10" x2="21" y2="10"/>
+                                        </svg>
+                                    </div>
+                                    <p class="phone-mockup-text">Track your progress over 12 weeks</p>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="screenshot-label">Track</p>
+                        <p class="screenshot-desc">Calendar & streak tracking</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="need-section" aria-label="Who needs pelvic floor training">
+                <div class="need-card">
+                    <p class="need-hook">Think you're fine?</p>
+                    <p class="need-subhook">Most people do. Until control starts slipping, endurance drops, or confidence takes a hit.</p>
+                    <ul class="need-list">
+                        <li>Less control than you used to have — leaks, urgency, or pressure that shouldn't be there</li>
+                        <li>Bedroom stamina or confidence has dipped and you want to stop the slide</li>
+                        <li>Post-surgery, post-injury, or post-pregnancy and your core feels disconnected</li>
+                        <li>You sit all day and that dull tension in your lower body won't shift</li>
+                        <li>You want a private habit that compounds without a gym or a coach</li>
+                    </ul>
+                    <p class="need-trainable">This is trainable.</p>
+                    <div class="decline-block">
+                        <p class="decline-title">What happens if you ignore this?</p>
+                        <ul class="decline-list">
+                            <li>Control keeps slipping — and the window to reverse it quietly closes</li>
+                            <li>Bedroom performance gets harder to blame on anything else</li>
+                            <li>Your core becomes the weak link in everything else you do</li>
+                        </ul>
+                        <p class="decline-pivot">Or&hellip; train it in minutes a day.</p>
+                    </div>
+                </div>
+            </section>
+
             <section class="roadmap-section" aria-label="Product roadmap">
                 <h2 class="roadmap-title">What's New & What's Next</h2>
                 <div class="roadmap-grid">
