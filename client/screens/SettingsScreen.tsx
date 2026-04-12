@@ -590,10 +590,10 @@ export default function SettingsScreen() {
               />
               <View style={styles.subscriptionInfo}>
                 <Text style={[styles.subscriptionTitle, { color: cp.text }]}>
-                  {isSubscribed ? 'Premium Active' : (isTrialActive ? `Free Trial - ${trialDaysRemaining} days left` : 'Trial Expired')}
+                  {isSubscribed ? 'Premium Active' : (isTrialActive ? `7-Day Challenge – ${trialDaysRemaining} days left` : 'Challenge Ended')}
                 </Text>
                 <Text style={[styles.subscriptionDesc, { color: cp.textSecondary }]}>
-                  {isSubscribed ? 'Thank you for supporting PulseKegel!' : (isTrialActive ? 'Enjoying full access during your trial' : 'Subscribe to continue your training')}
+                  {isSubscribed ? 'Thank you for supporting PulseKegel!' : (isTrialActive ? 'Enjoying full access during your challenge' : 'Subscribe to continue your training')}
                 </Text>
               </View>
             </View>

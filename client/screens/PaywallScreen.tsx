@@ -150,11 +150,11 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
           </Text>
           {trialDaysRemaining > 0 ? (
             <Text style={[styles.subtitle, { fontSize: 16 * fontScale, color: cp.textSecondary }]}>
-              Your free trial ends in {trialDaysRemaining} day{trialDaysRemaining !== 1 ? 's' : ''}
+              {trialDaysRemaining} day{trialDaysRemaining !== 1 ? 's' : ''} left in your 7-Day Control Challenge
             </Text>
           ) : (
             <Text style={[styles.subtitle, { fontSize: 16 * fontScale, color: cp.textSecondary }]}>
-              Your free trial has ended
+              Your 7-Day Control Challenge has ended
             </Text>
           )}
         </Animated.View>
