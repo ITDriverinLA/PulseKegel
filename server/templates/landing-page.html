@@ -285,6 +285,9 @@
         .tagline-clarity { font-size: 1rem; color: rgba(255, 255, 255, 0.6); margin-top: 12px; line-height: 1.7; max-width: 640px; margin-left: auto; margin-right: auto; }
 
         .outcomes-strip { padding: 40px 0; }
+        .infographic-section { padding: 40px 0 20px; text-align: center; }
+        .infographic-section img { max-width: 520px; width: 100%; border-radius: 16px; display: block; margin: 0 auto; }
+        @media (max-width: 600px) { .infographic-section img { border-radius: 10px; } }
         .outcomes-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 900px; margin: 0 auto; }
         @media (max-width: 600px) { .outcomes-grid { grid-template-columns: 1fr; } }
         .outcome-item { text-align: center; padding: 28px 20px; background: rgba(0, 255, 136, 0.05); border: 1px solid rgba(0, 255, 136, 0.2); border-radius: 16px; }
@@ -478,6 +481,11 @@
                         <p class="outcome-desc">A quiet edge that compounds with every session you complete</p>
                     </div>
                 </div>
+            </section>
+
+            <!-- ③b INFOGRAPHIC -->
+            <section class="infographic-section" aria-label="PulseKegel infographic">
+                <img src="/pulsekegel-infographic.png" alt="PulseKegel: Reclaim Your Hidden Engine — infographic showing the 12-week evolution, myth vs reality, and daily exercise routine" loading="lazy">
             </section>
 
             <!-- ④ HOW IT WORKS -->
