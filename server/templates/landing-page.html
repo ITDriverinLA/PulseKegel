@@ -390,6 +390,14 @@
         .challenge-list li:last-child { border-bottom: none; }
         .challenge-list li::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 10px; height: 10px; border-radius: 50%; background: #00FF88; box-shadow: 0 0 10px rgba(0, 255, 136, 0.7); }
 
+        /* ── Early users / testimonials ── */
+        .testimonials-section { padding: 60px 0; text-align: center; }
+        .testimonials-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 860px; margin: 0 auto 32px; }
+        @media (max-width: 700px) { .testimonials-grid { grid-template-columns: 1fr; gap: 16px; } }
+        .testimonial-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(0,255,136,0.15); border-radius: 16px; padding: 24px 20px; text-align: left; }
+        .testimonial-card p { font-size: 1rem; color: rgba(255,255,255,0.82); line-height: 1.55; font-style: italic; }
+        .testimonials-close { font-size: 0.95rem; color: rgba(255,255,255,0.5); margin: 0; }
+
         /* ── Founder section ── */
         .founder-section { padding: 60px 0; text-align: center; }
 
@@ -526,7 +534,18 @@
                 <p class="why-works-credibility">These are the same muscle groups targeted in clinical pelvic floor training — simplified for daily use.</p>
             </section>
 
-            <!-- ⑤ FOUNDER STORY -->
+            <!-- ⑤ EARLY USERS -->
+            <section class="testimonials-section" aria-label="Early user feedback">
+                <h2 class="section-title">Early users say</h2>
+                <div class="testimonials-grid">
+                    <div class="testimonial-card"><p>"Finally simple and not awkward."</p></div>
+                    <div class="testimonial-card"><p>"The cues make it easy to stay consistent."</p></div>
+                    <div class="testimonial-card"><p>"Private, fast, and way less weird than I expected."</p></div>
+                </div>
+                <p class="testimonials-close">Designed to be easy to start and easy to stick with.</p>
+            </section>
+
+            <!-- ⑥ FOUNDER STORY -->
             <section class="founder-section" aria-label="Why PulseKegel was built">
                 <p class="hero-bridge">You don't notice these muscles&hellip; until they start slipping.</p>
                 <div class="story-card">
