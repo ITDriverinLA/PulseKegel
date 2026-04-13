@@ -224,6 +224,13 @@
         .feature-icon { width: 56px; height: 56px; margin: 0 auto 16px; background: linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 255, 255, 0.2)); border-radius: 12px; display: flex; align-items: center; justify-content: center; }
         .feature-title { font-family: 'Orbitron', sans-serif; font-size: 1.1rem; color: #00FFFF; margin-bottom: 8px; }
         .feature-desc { font-size: 0.95rem; color: rgba(255, 255, 255, 0.7); line-height: 1.6; }
+        .features-more { display: none; margin-top: 24px; }
+        .features-more.is-open { display: block; }
+        .features-toggle-wrap { text-align: center; margin-top: 28px; }
+        .features-toggle { display: inline-flex; align-items: center; gap: 8px; background: none; border: 1px solid rgba(255,255,255,0.15); border-radius: 999px; color: rgba(255,255,255,0.55); font-size: 0.9rem; cursor: pointer; padding: 10px 22px; transition: color 0.2s, border-color 0.2s; }
+        .features-toggle:hover { color: rgba(255,255,255,0.85); border-color: rgba(255,255,255,0.35); }
+        .features-toggle-chevron { transition: transform 0.3s; }
+        .features-toggle.is-open .features-toggle-chevron { transform: rotate(180deg); }
         
         .roadmap-section { padding: 80px 24px; }
         .roadmap-title { text-align: center; font-family: 'Orbitron', sans-serif; font-size: 1.75rem; font-weight: 700; margin-bottom: 1.5rem; background: linear-gradient(135deg, #00FF88, #00FFFF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
@@ -600,112 +607,128 @@
             <section class="features-section" aria-label="App features">
                 <h2 class="section-title">Built for the Long Game</h2>
                 <p class="features-bridge">Once the Challenge builds the habit, the 12-week program takes you the rest of the way.</p>
+
+                <!-- 3 hero cards always visible -->
                 <div class="features-grid">
-                    <article class="feature-card">
-                        <div class="feature-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="2" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                        </div>
-                        <h3 class="feature-title">12-Week Kegel Program</h3>
-                        <p class="feature-desc">4 progressive phases — Control, Strength, Power, and Maintenance — with 7 exercise types that build real, lasting pelvic floor strength</p>
-                    </article>
                     <article class="feature-card">
                         <div class="feature-icon">
                             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FFFF" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                         </div>
-                        <h3 class="feature-title">Quick 5-Minute Sessions</h3>
-                        <p class="feature-desc">Just 5-10 minutes a day — short enough to actually do, structured enough to actually work</p>
-                    </article>
-                    <article class="feature-card">
-                        <div class="feature-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF00FF" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                        </div>
-                        <h3 class="feature-title">Private & Secure</h3>
-                        <p class="feature-desc">All data stays on your device. No account required. No tracking. Your pelvic health, your business</p>
-                    </article>
-                    <article class="feature-card">
-                        <div class="feature-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-                        </div>
-                        <h3 class="feature-title">Weekly AI Reviews</h3>
-                        <p class="feature-desc">Personalized progress analysis and pelvic floor health tips each week, with full history so you can reread past insights</p>
-                    </article>
-                    <article class="feature-card">
-                        <div class="feature-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FFFF" stroke-width="2" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
-                        </div>
-                        <h3 class="feature-title">Quick Pelvic Floor Workouts</h3>
-                        <p class="feature-desc">8 standalone sessions you can do anytime — Quick Flicks, Endurance, Elevator, and more — outside the main program</p>
-                    </article>
-                    <article class="feature-card">
-                        <div class="feature-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF00FF" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
-                        </div>
-                        <h3 class="feature-title">19 Achievement Badges</h3>
-                        <p class="feature-desc">Earn achievements across 5 categories — Streaks, Milestones, Program Phases, Mastery, and Special</p>
+                        <h3 class="feature-title">Guided Daily Sessions</h3>
+                        <p class="feature-desc">5-10 minutes a day — short enough to actually do, structured enough to actually work</p>
                     </article>
                     <article class="feature-card">
                         <div class="feature-icon">
                             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                         </div>
-                        <h3 class="feature-title">Progress Tracking</h3>
+                        <h3 class="feature-title">Progress Tracking &amp; Streaks</h3>
                         <p class="feature-desc">Calendar view with workout and rest day indicators, streak counter, session stats, and longest streak records</p>
                     </article>
                     <article class="feature-card">
                         <div class="feature-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FFFF" stroke-width="2" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF00FF" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                         </div>
-                        <h3 class="feature-title">Recovery Mode</h3>
-                        <p class="feature-desc">Feeling sore or off? Switch to reduced intensity with gentler exercises and relaxation segments</p>
+                        <h3 class="feature-title">100% Private — No Account Required</h3>
+                        <p class="feature-desc">All data stays on your device. No sign-up. No tracking. Your pelvic health is nobody else's business</p>
                     </article>
-                    <article class="feature-card">
-                        <div class="feature-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF00FF" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                        </div>
-                        <h3 class="feature-title">Fully Customizable</h3>
-                        <p class="feature-desc">Adjust rest durations, block breaks, cooldowns, haptic intensity, and accessibility settings to fit your needs</p>
-                    </article>
-                    <article class="feature-card">
-                        <div class="feature-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="2" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><path d="M12 18h.01"/></svg>
-                        </div>
-                        <h3 class="feature-title">Haptic Feedback</h3>
-                        <p class="feature-desc">Distinct vibration patterns for each exercise type with dynamic intensity that matches the power bar level</p>
-                    </article>
-                    <article class="feature-card">
-                        <div class="feature-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FFFF" stroke-width="2" aria-hidden="true"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
-                        </div>
-                        <h3 class="feature-title">Visual Power Bar</h3>
-                        <p class="feature-desc">LED-style display with real-time SQUEEZE, REST, and BREATHE cues to guide every kegel rep</p>
-                    </article>
-                    <article class="feature-card">
-                        <div class="feature-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="2" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 12l2-6 2 6-2 6-2-6z" opacity="0.5"/><path d="M12 8l6 2-6 2-6-2 6-2z" opacity="0.5"/></svg>
-                        </div>
-                        <h3 class="feature-title">Guided Breathwork</h3>
-                        <p class="feature-desc">Three 5-minute breathing modes - Calm & Reset, Energize & Focus, and Pelvic Floor Connect - with voice guidance and animated visuals</p>
-                    </article>
-                    <article class="feature-card">
-                        <div class="feature-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FFFF" stroke-width="2" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-                        </div>
-                        <h3 class="feature-title">Ambient Music & Sound</h3>
-                        <p class="feature-desc">14 ambient tracks with shuffle mode, per-track volume control, plus phase transition sound effects and completion celebrations</p>
-                    </article>
-                    <article class="feature-card">
-                        <div class="feature-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF00FF" stroke-width="2" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                        </div>
-                        <h3 class="feature-title">Daily Reminders</h3>
-                        <p class="feature-desc">Streak-aware push notifications with badge proximity alerts, configurable time, and auto-suppression after you complete your session</p>
-                    </article>
-                    <article class="feature-card">
-                        <div class="feature-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-                        </div>
-                        <h3 class="feature-title">Light & Dark Themes</h3>
-                        <p class="feature-desc">Toggle between a cyberpunk dark mode with neon accents and a clean light mode with soft grays - your choice</p>
-                    </article>
+                </div>
+
+                <!-- Toggle button -->
+                <div class="features-toggle-wrap">
+                    <button class="features-toggle" id="features-toggle-btn" aria-expanded="false" aria-controls="features-more" onclick="(function(btn,more){var open=more.classList.toggle('is-open');btn.classList.toggle('is-open',open);btn.setAttribute('aria-expanded',open);btn.querySelector('.features-toggle-label').textContent=open?'Show less':'See all features';})(this,document.getElementById('features-more'))">
+                        <span class="features-toggle-label">See all features</span>
+                        <svg class="features-toggle-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                </div>
+
+                <!-- 12 additional cards, hidden by default -->
+                <div class="features-more" id="features-more" aria-hidden="true">
+                    <div class="features-grid">
+                        <article class="feature-card">
+                            <div class="feature-icon">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="2" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                            </div>
+                            <h3 class="feature-title">12-Week Kegel Program</h3>
+                            <p class="feature-desc">4 progressive phases — Control, Strength, Power, and Maintenance — with 7 exercise types that build real, lasting pelvic floor strength</p>
+                        </article>
+                        <article class="feature-card">
+                            <div class="feature-icon">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                            </div>
+                            <h3 class="feature-title">Weekly AI Reviews</h3>
+                            <p class="feature-desc">Personalized progress analysis and pelvic floor health tips each week, with full history so you can reread past insights</p>
+                        </article>
+                        <article class="feature-card">
+                            <div class="feature-icon">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FFFF" stroke-width="2" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                            </div>
+                            <h3 class="feature-title">Quick Pelvic Floor Workouts</h3>
+                            <p class="feature-desc">8 standalone sessions you can do anytime — Quick Flicks, Endurance, Elevator, and more — outside the main program</p>
+                        </article>
+                        <article class="feature-card">
+                            <div class="feature-icon">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF00FF" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+                            </div>
+                            <h3 class="feature-title">19 Achievement Badges</h3>
+                            <p class="feature-desc">Earn achievements across 5 categories — Streaks, Milestones, Program Phases, Mastery, and Special</p>
+                        </article>
+                        <article class="feature-card">
+                            <div class="feature-icon">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FFFF" stroke-width="2" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                            </div>
+                            <h3 class="feature-title">Recovery Mode</h3>
+                            <p class="feature-desc">Feeling sore or off? Switch to reduced intensity with gentler exercises and relaxation segments</p>
+                        </article>
+                        <article class="feature-card">
+                            <div class="feature-icon">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF00FF" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                            </div>
+                            <h3 class="feature-title">Fully Customizable</h3>
+                            <p class="feature-desc">Adjust rest durations, block breaks, cooldowns, haptic intensity, and accessibility settings to fit your needs</p>
+                        </article>
+                        <article class="feature-card">
+                            <div class="feature-icon">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="2" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><path d="M12 18h.01"/></svg>
+                            </div>
+                            <h3 class="feature-title">Haptic Feedback</h3>
+                            <p class="feature-desc">Distinct vibration patterns for each exercise type with dynamic intensity that matches the power bar level</p>
+                        </article>
+                        <article class="feature-card">
+                            <div class="feature-icon">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FFFF" stroke-width="2" aria-hidden="true"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+                            </div>
+                            <h3 class="feature-title">Visual Power Bar</h3>
+                            <p class="feature-desc">LED-style display with real-time SQUEEZE, REST, and BREATHE cues to guide every kegel rep</p>
+                        </article>
+                        <article class="feature-card">
+                            <div class="feature-icon">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="2" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 12l2-6 2 6-2 6-2-6z" opacity="0.5"/><path d="M12 8l6 2-6 2-6-2 6-2z" opacity="0.5"/></svg>
+                            </div>
+                            <h3 class="feature-title">Guided Breathwork</h3>
+                            <p class="feature-desc">Three 5-minute breathing modes — Calm &amp; Reset, Energize &amp; Focus, and Pelvic Floor Connect — with voice guidance and animated visuals</p>
+                        </article>
+                        <article class="feature-card">
+                            <div class="feature-icon">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FFFF" stroke-width="2" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                            </div>
+                            <h3 class="feature-title">Ambient Music &amp; Sound</h3>
+                            <p class="feature-desc">14 ambient tracks with shuffle mode, per-track volume control, plus phase transition sound effects and completion celebrations</p>
+                        </article>
+                        <article class="feature-card">
+                            <div class="feature-icon">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF00FF" stroke-width="2" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                            </div>
+                            <h3 class="feature-title">Daily Reminders</h3>
+                            <p class="feature-desc">Streak-aware push notifications with badge proximity alerts, configurable time, and auto-suppression after you complete your session</p>
+                        </article>
+                        <article class="feature-card">
+                            <div class="feature-icon">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                            </div>
+                            <h3 class="feature-title">Light &amp; Dark Themes</h3>
+                            <p class="feature-desc">Toggle between a cyberpunk dark mode with neon accents and a clean light mode with soft grays</p>
+                        </article>
+                    </div>
                 </div>
             </section>
 
