@@ -446,6 +446,21 @@ Rules: exactly 3-4 sentences. No filler phrases like "Great job!", "Keep it up!"
     }
     res.status(404).send("Not found");
   });
+  app2.get("/pulsekegel-infographic.jpg", (_req, res) => {
+    const paths = [
+      join2(__dirname2, "public", "pulsekegel-infographic.jpg"),
+      join2(__dirname2, "..", "server", "public", "pulsekegel-infographic.jpg"),
+      join2(process.cwd(), "server", "public", "pulsekegel-infographic.jpg")
+    ];
+    for (const p of paths) {
+      if (existsSync2(p)) {
+        res.setHeader("Content-Type", "image/jpeg");
+        res.setHeader("Cache-Control", "public, max-age=31536000");
+        return res.sendFile(p);
+      }
+    }
+    res.status(404).send("Not found");
+  });
   app2.get("/robots.txt", (_req, res) => {
     res.setHeader("Content-Type", "text/plain");
     res.send(`User-agent: *
