@@ -635,7 +635,7 @@
 
                 <!-- Toggle button -->
                 <div class="features-toggle-wrap">
-                    <button class="features-toggle" id="features-toggle-btn" aria-expanded="false" aria-controls="features-more" onclick="(function(btn,more){var open=more.classList.toggle('is-open');btn.classList.toggle('is-open',open);btn.setAttribute('aria-expanded',open);btn.querySelector('.features-toggle-label').textContent=open?'Show less':'See all features';})(this,document.getElementById('features-more'))">
+                    <button class="features-toggle" id="features-toggle-btn" aria-expanded="false" aria-controls="features-more" onclick="(function(btn,more){var open=more.classList.toggle('is-open');btn.classList.toggle('is-open',open);btn.setAttribute('aria-expanded',open);more.setAttribute('aria-hidden',!open);btn.querySelector('.features-toggle-label').textContent=open?'Show less':'See all features';})(this,document.getElementById('features-more'))">
                         <span class="features-toggle-label">See all features</span>
                         <svg class="features-toggle-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
                     </button>
