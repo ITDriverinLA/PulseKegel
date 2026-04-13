@@ -6,6 +6,7 @@ import WorkoutPlayerScreen from '@/screens/WorkoutPlayerScreen';
 import WorkoutPickerScreen from '@/screens/WorkoutPickerScreen';
 import OnboardingScreen from '@/screens/OnboardingScreen';
 import PaywallScreen from '@/screens/PaywallScreen';
+import ChallengeCompleteScreen from '@/screens/ChallengeCompleteScreen';
 import MusicScreen from '@/screens/MusicScreen';
 import BreathworkModeSelectorScreen from '@/screens/BreathworkModeSelectorScreen';
 import BreathworkSessionScreen from '@/screens/BreathworkSessionScreen';
@@ -25,6 +26,7 @@ export type RootStackParamList = {
   WorkoutPicker: undefined;
   Onboarding: undefined;
   Paywall: undefined;
+  ChallengeComplete: undefined;
   Music: undefined;
   BreathworkModeSelector: undefined;
   BreathworkSession: { mode: BreathworkMode };
@@ -90,6 +92,14 @@ export default function RootStackNavigator() {
         component={PaywallScreen}
         options={{
           presentation: 'modal',
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="ChallengeComplete"
+        component={ChallengeCompleteScreen}
+        options={{
+          presentation: 'fullScreenModal',
           headerShown: false,
         }}
       />

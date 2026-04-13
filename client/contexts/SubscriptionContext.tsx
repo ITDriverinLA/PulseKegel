@@ -16,6 +16,7 @@ interface SubscriptionContextType {
   isSubscribed: boolean;
   isTrialActive: boolean;
   trialDaysRemaining: number;
+  daysSinceInstall: number;
   isLoading: boolean;
   packages: PurchasesPackage[];
   purchasePackage: (pkg: PurchasesPackage) => Promise<boolean>;
@@ -28,6 +29,7 @@ const SubscriptionContext = createContext<SubscriptionContextType>({
   isSubscribed: false,
   isTrialActive: true,
   trialDaysRemaining: TRIAL_DURATION_DAYS,
+  daysSinceInstall: 0,
   isLoading: true,
   packages: [],
   purchasePackage: async () => false,
@@ -45,6 +47,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isTrialActive, setIsTrialActive] = useState(true);
   const [trialDaysRemaining, setTrialDaysRemaining] = useState(TRIAL_DURATION_DAYS);
+  const [daysSinceInstall, setDaysSinceInstall] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
   const configuredRef = useRef(false);
@@ -71,6 +74,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       }
       
       console.log('[PulseKegel] Trial status:', { daysSinceInstall, remaining, installDate });
+      setDaysSinceInstall(daysSinceInstall);
       setTrialDaysRemaining(remaining);
       setIsTrialActive(remaining > 0);
       
@@ -217,6 +221,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         isSubscribed,
         isTrialActive,
         trialDaysRemaining,
+        daysSinceInstall,
         isLoading,
         packages,
         purchasePackage,

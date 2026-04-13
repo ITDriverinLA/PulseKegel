@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { StyleSheet, View, Text, Pressable, RefreshControl, ScrollView } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
@@ -102,11 +103,21 @@ export default function HomeScreen() {
     setSettings(prev => ({ ...prev, recoveryMode: value }));
   };
 
-  const handleStartWorkout = () => {
+  const navigateToTrialExpired = async () => {
+    const seen = await AsyncStorage.getItem('pulsekegel_challenge_shown');
+    if (!seen) {
+      await AsyncStorage.setItem('pulsekegel_challenge_shown', 'true');
+      navigation.navigate('ChallengeComplete');
+    } else {
+      navigation.navigate('Paywall');
+    }
+  };
+
+  const handleStartWorkout = async () => {
     if (!todaysWorkout) return;
     
     if (!hasAccess) {
-      navigation.navigate('Paywall');
+      await navigateToTrialExpired();
       return;
     }
     
@@ -121,9 +132,9 @@ export default function HomeScreen() {
     });
   };
 
-  const handleQuickWorkout = () => {
+  const handleQuickWorkout = async () => {
     if (!hasAccess) {
-      navigation.navigate('Paywall');
+      await navigateToTrialExpired();
       return;
     }
     navigation.navigate('WorkoutPicker');
