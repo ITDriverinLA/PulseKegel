@@ -4,7 +4,7 @@ import { existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import OpenAI from "openai";
-import { privacyPolicyHtml, getAboutPageHtml } from "./staticContent";
+import { privacyPolicyHtml } from "./staticContent";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -166,12 +166,6 @@ Sitemap: https://pulsekegel.com/sitemap.xml
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://pulsekegel.com/about</loc>
-    <lastmod>2026-03-17</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
     <loc>https://pulsekegel.com/blog</loc>
     <lastmod>2026-03-17</lastmod>
     <changefreq>weekly</changefreq>
@@ -257,11 +251,6 @@ Sitemap: https://pulsekegel.com/sitemap.xml
   app.get("/privacy", (_req, res) => {
     res.setHeader('Content-Type', 'text/html');
     res.send(privacyPolicyHtml);
-  });
-
-  app.get("/about", (_req, res) => {
-    res.setHeader('Content-Type', 'text/html');
-    res.send(getAboutPageHtml());
   });
 
   const httpServer = createServer(app);
