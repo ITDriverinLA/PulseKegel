@@ -104,11 +104,15 @@ export default function HomeScreen() {
   };
 
   const navigateToTrialExpired = async () => {
-    const seen = await AsyncStorage.getItem('pulsekegel_challenge_shown');
-    if (!seen) {
-      await AsyncStorage.setItem('pulsekegel_challenge_shown', 'true');
-      navigation.navigate('ChallengeComplete');
-    } else {
+    try {
+      const seen = await AsyncStorage.getItem('pulsekegel_challenge_shown');
+      if (!seen) {
+        await AsyncStorage.setItem('pulsekegel_challenge_shown', 'true');
+        navigation.navigate('ChallengeComplete');
+      } else {
+        navigation.navigate('Paywall');
+      }
+    } catch {
       navigation.navigate('Paywall');
     }
   };

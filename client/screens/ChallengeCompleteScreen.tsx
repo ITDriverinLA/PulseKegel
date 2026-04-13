@@ -27,7 +27,7 @@ export default function ChallengeCompleteScreen() {
   }, []);
 
   const handleContinue = () => {
-    navigation.navigate('Paywall');
+    navigation.replace('Paywall');
   };
 
   const handleDismiss = () => {
