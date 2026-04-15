@@ -161,7 +161,7 @@ Sitemap: https://pulsekegel.com/sitemap.xml
   </url>
   <url>
     <loc>https://pulsekegel.com/privacy</loc>
-    <lastmod>2026-03-17</lastmod>
+    <lastmod>2026-04-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
@@ -173,7 +173,7 @@ Sitemap: https://pulsekegel.com/sitemap.xml
   </url>
   <url>
     <loc>https://pulsekegel.com/blog/pelvic-floor-exercises-for-men</loc>
-    <lastmod>2026-03-17</lastmod>
+    <lastmod>2026-04-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -185,7 +185,7 @@ Sitemap: https://pulsekegel.com/sitemap.xml
   </url>
   <url>
     <loc>https://pulsekegel.com/blog/how-to-last-longer-naturally</loc>
-    <lastmod>2026-03-17</lastmod>
+    <lastmod>2026-04-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -203,13 +203,13 @@ Sitemap: https://pulsekegel.com/sitemap.xml
   </url>
   <url>
     <loc>https://pulsekegel.com/blog/pelvic-floor-recovery-after-childbirth</loc>
-    <lastmod>2026-03-17</lastmod>
+    <lastmod>2026-04-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://pulsekegel.com/blog/bladder-control-exercises-over-40</loc>
-    <lastmod>2026-03-17</lastmod>
+    <lastmod>2026-04-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -221,19 +221,19 @@ Sitemap: https://pulsekegel.com/sitemap.xml
   </url>
   <url>
     <loc>https://pulsekegel.com/blog/3-minute-pelvic-floor-routine-men</loc>
-    <lastmod>2026-03-17</lastmod>
+    <lastmod>2026-04-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://pulsekegel.com/blog/breathing-exercises-better-control-men</loc>
-    <lastmod>2026-03-17</lastmod>
+    <lastmod>2026-04-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://pulsekegel.com/blog/postpartum-bladder-confidence-exercises</loc>
-    <lastmod>2026-03-17</lastmod>
+    <lastmod>2026-04-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -251,7 +251,7 @@ Sitemap: https://pulsekegel.com/sitemap.xml
   </url>
   <url>
     <loc>https://pulsekegel.com/blog/daily-pelvic-floor-routine-over-40</loc>
-    <lastmod>2026-03-17</lastmod>
+    <lastmod>2026-04-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
