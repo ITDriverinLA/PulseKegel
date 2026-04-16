@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "node:http";
-import { existsSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import OpenAI from "openai";
@@ -14,6 +14,26 @@ const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
 
+/**
+ * Reads the lastmod date from a blog HTML file's first-line comment.
+ * Blog posts must include `<!--lastmod:YYYY-MM-DD-->` as the very first line
+ * (no leading whitespace or BOM) for the date to be picked up.
+ * Falls back to filesystem mtime if the comment is absent or malformed.
+ *
+ * Example first line of a blog post:
+ *   <!--lastmod:2026-04-15-->
+ */
+function readLastmod(filePath: string): string {
+  try {
+    const firstLine = readFileSync(filePath, 'utf8').split('\n')[0].trim();
+    const match = firstLine.match(/^<!--lastmod:(\d{4}-\d{2}-\d{2})-->$/);
+    if (match) return match[1];
+  } catch {
+    // fall through to mtime
+  }
+  return statSync(filePath).mtime.toISOString().slice(0, 10);
+}
+
 function discoverBlogSlugs(): { slug: string; lastmod: string }[] {
   const blogDirs = [
     join(process.cwd(), 'static-build', 'blog'),
@@ -26,8 +46,8 @@ function discoverBlogSlugs(): { slug: string; lastmod: string }[] {
         .sort()
         .map(f => {
           const slug = f.replace(/\.html$/, '');
-          const mtime = statSync(join(dir, f)).mtime;
-          return { slug, lastmod: mtime.toISOString().slice(0, 10) };
+          const lastmod = readLastmod(join(dir, f));
+          return { slug, lastmod };
         });
     }
   }
