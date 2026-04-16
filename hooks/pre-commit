@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# pre-commit hook: ensure blog-content/*.html lastmod dates are current
+#
+# For every blog-content/*.html file that is STAGED for this commit, the
+# <!--lastmod:YYYY-MM-DD--> comment on line 1 (as it exists in the index,
+# not the working tree) must be >= today's date (UTC).
+#
+# Reads staged content via `git show :path` to handle partial-staging correctly.
+#
+# Install via:  ./install-hooks.sh
+# Bypass (emergency only): git commit --no-verify
+
+set -euo pipefail
+
+STAGED_BLOG_FILES=$(git diff --cached --name-only --diff-filter=AM | grep '^blog-content/.*\.html$' || true)
+
+if [[ -z "$STAGED_BLOG_FILES" ]]; then
+  exit 0
+fi
+
+TODAY=$(date -u +%F)   # YYYY-MM-DD in UTC
+ERRORS=0
+
+while IFS= read -r rel; do
+  basename="${rel##*/}"
+  if [[ "$basename" == "index.html" ]]; then
+    continue
+  fi
+
+  # Read the first line from the STAGED blob (not the working tree)
+  first_line=$(git show ":$rel" 2>/dev/null | head -1 || true)
+
+  if [[ "$first_line" =~ ^'<!--lastmod:'([0-9]{4}-[0-9]{2}-[0-9]{2})'-->'$ ]]; then
+    lastmod="${BASH_REMATCH[1]}"
+    if [[ "$lastmod" < "$TODAY" ]]; then
+      echo "ERROR: $rel"
+      echo "       lastmod ($lastmod) is older than today ($TODAY, UTC)."
+      echo "       Update <!--lastmod:--> on line 1 and dateModified in JSON-LD to $TODAY, then re-stage."
+      ERRORS=$((ERRORS + 1))
+    else
+      echo "OK:    $rel  (lastmod: $lastmod)"
+    fi
+  else
+    echo "ERROR: $rel"
+    echo "       Missing or malformed <!--lastmod:YYYY-MM-DD--> on line 1 of the staged file."
+    echo "       Add  <!--lastmod:$TODAY-->  as the very first line, then re-stage."
+    ERRORS=$((ERRORS + 1))
+  fi
+done <<< "$STAGED_BLOG_FILES"
+
+if [[ $ERRORS -gt 0 ]]; then
+  echo ""
+  echo "FAILED: $ERRORS staged blog file(s) have stale or missing lastmod dates."
+  echo "Today's date (UTC): $TODAY"
+  exit 1
+fi
+
+echo ""
+echo "All staged blog lastmod dates are up-to-date."
