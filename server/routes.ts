@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "node:http";
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync, statSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import OpenAI from "openai";
@@ -13,6 +13,28 @@ const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
+
+function discoverBlogSlugs(): { slug: string; lastmod: string }[] {
+  const blogDirs = [
+    join(process.cwd(), 'static-build', 'blog'),
+    join(process.cwd(), 'blog-content'),
+  ];
+  for (const dir of blogDirs) {
+    if (existsSync(dir)) {
+      return readdirSync(dir)
+        .filter(f => f.endsWith('.html') && f !== 'index.html')
+        .sort()
+        .map(f => {
+          const slug = f.replace(/\.html$/, '');
+          const mtime = statSync(join(dir, f)).mtime;
+          return { slug, lastmod: mtime.toISOString().slice(0, 10) };
+        });
+    }
+  }
+  return [];
+}
+
+const BLOG_SITEMAP_ENTRIES = discoverBlogSlugs();
 
 const FEMALE_HEALTH_BENEFITS = [
   "stronger pelvic floor muscles and endurance",
@@ -150,117 +172,43 @@ Sitemap: https://pulsekegel.com/sitemap.xml
   });
 
   app.get("/sitemap.xml", (_req, res) => {
-    res.setHeader('Content-Type', 'application/xml');
-    res.send(`<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
+    const today = new Date().toISOString().slice(0, 10);
+
+    const staticUrls = `  <url>
     <loc>https://pulsekegel.com/</loc>
-    <lastmod>2026-04-15</lastmod>
+    <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://pulsekegel.com/privacy</loc>
-    <lastmod>2026-04-15</lastmod>
+    <lastmod>${today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://pulsekegel.com/blog</loc>
-    <lastmod>2026-04-15</lastmod>
+    <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://pulsekegel.com/blog/pelvic-floor-exercises-for-men</loc>
-    <lastmod>2026-04-15</lastmod>
+  </url>`;
+
+    const blogUrls = BLOG_SITEMAP_ENTRIES
+      .map(
+        ({ slug, lastmod }) => `  <url>
+    <loc>https://pulsekegel.com/blog/${slug}</loc>
+    <lastmod>${lastmod}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://pulsekegel.com/blog/kegel-exercises-for-men</loc>
-    <lastmod>2026-04-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://pulsekegel.com/blog/how-to-last-longer-naturally</loc>
-    <lastmod>2026-04-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://pulsekegel.com/blog/how-to-do-kegels-correctly-men</loc>
-    <lastmod>2026-04-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://pulsekegel.com/blog/best-kegel-app-for-men</loc>
-    <lastmod>2026-04-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://pulsekegel.com/blog/pelvic-floor-recovery-after-childbirth</loc>
-    <lastmod>2026-04-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://pulsekegel.com/blog/bladder-control-exercises-over-40</loc>
-    <lastmod>2026-04-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://pulsekegel.com/blog/bladder-control-for-men</loc>
-    <lastmod>2026-04-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://pulsekegel.com/blog/3-minute-pelvic-floor-routine-men</loc>
-    <lastmod>2026-04-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://pulsekegel.com/blog/breathing-exercises-better-control-men</loc>
-    <lastmod>2026-04-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://pulsekegel.com/blog/postpartum-bladder-confidence-exercises</loc>
-    <lastmod>2026-04-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://pulsekegel.com/blog/pelvic-floor-exercises-men-over-40</loc>
-    <lastmod>2026-04-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://pulsekegel.com/blog/pelvic-floor-after-prostate-surgery</loc>
-    <lastmod>2026-04-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://pulsekegel.com/blog/daily-pelvic-floor-routine-over-40</loc>
-    <lastmod>2026-04-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://pulsekegel.com/blog/you-squat-300-but-skip-this-muscle</loc>
-    <lastmod>2026-04-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
+  </url>`
+      )
+      .join('\n');
+
+    res.setHeader('Content-Type', 'application/xml');
+    res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${staticUrls}
+${blogUrls}
 </urlset>`);
   });
 
