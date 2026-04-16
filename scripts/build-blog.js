@@ -466,9 +466,17 @@ function processFile(filename) {
     ? rawSlug.replace(/^https?:\/\/pulsekegel\.com\/blog\//, "").replace(/^blog\//, "")
     : filename.replace(".html", "");
   const headline = getH1(html) || metaTitle || slug;
-  const datePublished = filename.endsWith(".html")
-    ? (getFirstCommitDate(sourcePath) || getExistingDatePublished(html) || "2025-01-01")
-    : "2025-01-01";
+  let datePublished = "2025-01-01";
+  if (filename.endsWith(".html")) {
+    const gitDate = getFirstCommitDate(sourcePath);
+    if (gitDate) {
+      datePublished = gitDate;
+    } else {
+      const fallback = getExistingDatePublished(html) || "2025-01-01";
+      datePublished = fallback;
+      console.warn(`  WARNING: no git history for ${filename} — datePublished may be incorrect (using ${fallback})`);
+    }
+  }
 
   const fullUrl = `https://pulsekegel.com/blog/${slug}`;
 
