@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { syncAll } = require("./sync-blog-dates");
 
 const SOURCE_DIR = path.join(process.cwd(), "blog-content");
 const OUTPUT_DIR = path.join(process.cwd(), "static-build", "blog");
@@ -454,6 +455,9 @@ function processFile(filename) {
 
 function buildBlog() {
   console.log("Building blog...");
+
+  console.log("Syncing lastmod dates...");
+  syncAll();
 
   if (!fs.existsSync(OUTPUT_DIR)) {
     fs.mkdirSync(OUTPUT_DIR, { recursive: true });
