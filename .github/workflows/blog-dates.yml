@@ -17,7 +17,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: Find changed blog HTML files
         id: changed
@@ -25,13 +25,16 @@ jobs:
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             BASE="${{ github.event.pull_request.base.sha }}"
           else
-            BASE="HEAD~1"
+            # Use github.event.before to cover multi-commit pushes correctly
+            BASE="${{ github.event.before }}"
           fi
 
-          FILES=$(git diff --name-only "$BASE" HEAD -- 'blog-content/*.html' | grep -v 'blog-content/index.html' || true)
+          # --diff-filter=AM: added or modified only (skip deletions)
+          FILES=$(git diff --name-only --diff-filter=AM "$BASE" HEAD -- 'blog-content/*.html' \
+            | grep -v 'blog-content/index.html' || true)
 
           if [[ -z "$FILES" ]]; then
-            echo "No blog HTML files changed — skipping date validation."
+            echo "No blog HTML files added/modified — skipping date validation."
             echo "files=" >> "$GITHUB_OUTPUT"
           else
             echo "Changed blog files:"
@@ -46,7 +49,6 @@ jobs:
         run: |
           chmod +x validate-blog-dates.sh
 
-          # Run the validator on only the changed files
           while IFS= read -r f; do
             [[ -z "$f" ]] && continue
             ./validate-blog-dates.sh "$f"
