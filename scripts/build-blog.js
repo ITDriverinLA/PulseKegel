@@ -560,7 +560,37 @@ function buildBlog() {
   }
 }
 
-if (process.argv.includes("--check")) {
+function checkDates() {
+  const files = fs.readdirSync(SOURCE_DIR).filter((f) => f.endsWith(".html"));
+  const mismatches = [];
+
+  for (const file of files) {
+    if (file === "index.html") continue;
+    const sourcePath = path.join(SOURCE_DIR, file);
+    const gitDate = getFirstCommitDate(sourcePath);
+    if (!gitDate) continue; // no history — handled by --check, skip here
+    const html = fs.readFileSync(sourcePath, "utf-8");
+    const storedDate = getExistingDatePublished(html);
+    if (storedDate && storedDate !== gitDate) {
+      mismatches.push({ file, storedDate, gitDate });
+    }
+  }
+
+  if (mismatches.length === 0) {
+    console.log(`check-dates: all blog posts with git history have matching datePublished.`);
+    process.exit(0);
+  } else {
+    console.error(`check-dates: ${mismatches.length} blog post(s) have a datePublished mismatch:`);
+    for (const { file, storedDate, gitDate } of mismatches) {
+      console.error(`  - ${file}: stored=${storedDate}, git=${gitDate}`);
+    }
+    process.exit(1);
+  }
+}
+
+if (process.argv.includes("--check-dates")) {
+  checkDates();
+} else if (process.argv.includes("--check")) {
   checkBlog();
 } else {
   buildBlog();
