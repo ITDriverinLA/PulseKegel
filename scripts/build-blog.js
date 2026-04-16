@@ -507,6 +507,31 @@ function processFile(filename, strictErrors) {
   console.log(`  ${filename} → processed`);
 }
 
+function checkBlog() {
+  const files = fs.readdirSync(SOURCE_DIR).filter((f) => f.endsWith(".html"));
+  const missing = [];
+
+  for (const file of files) {
+    if (file === "index.html") continue;
+    const sourcePath = path.join(SOURCE_DIR, file);
+    const gitDate = getFirstCommitDate(sourcePath);
+    if (!gitDate) {
+      missing.push(file);
+    }
+  }
+
+  if (missing.length === 0) {
+    console.log(`check: all ${files.length - 1} blog post(s) have git history.`);
+    process.exit(0);
+  } else {
+    console.error(`check: ${missing.length} blog post(s) are missing git history:`);
+    for (const file of missing) {
+      console.error(`  - ${file}`);
+    }
+    process.exit(1);
+  }
+}
+
 function buildBlog() {
   console.log("Building blog...");
 
@@ -535,4 +560,8 @@ function buildBlog() {
   }
 }
 
-buildBlog();
+if (process.argv.includes("--check")) {
+  checkBlog();
+} else {
+  buildBlog();
+}
