@@ -161,6 +161,16 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           return;
         }
 
+        if (Platform.OS === 'ios' && !apiKey.startsWith('appl_')) {
+          console.error(
+            `[PulseKegel] WRONG RevenueCat key for iOS — expected appl_ prefix, got ${apiKey.slice(0, 8)}. Check env-config.generated.ts`
+          );
+        } else if (Platform.OS === 'android' && !apiKey.startsWith('goog_')) {
+          console.error(
+            `[PulseKegel] WRONG RevenueCat key for Android — expected goog_ prefix, got ${apiKey.slice(0, 8)}. Check env-config.generated.ts`
+          );
+        }
+
         try {
           await Purchases.configure({ apiKey });
           configuredRef.current = true;
