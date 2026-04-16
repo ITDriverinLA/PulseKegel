@@ -588,7 +588,56 @@ function checkDates() {
   }
 }
 
-if (process.argv.includes("--check-dates")) {
+function fixDates() {
+  const files = fs.readdirSync(SOURCE_DIR).filter((f) => f.endsWith(".html"));
+  const fixed = [];
+  const skipped = [];
+
+  for (const file of files) {
+    if (file === "index.html") continue;
+    const sourcePath = path.join(SOURCE_DIR, file);
+    const gitDate = getFirstCommitDate(sourcePath);
+    if (!gitDate) {
+      skipped.push(file);
+      continue;
+    }
+    const html = fs.readFileSync(sourcePath, "utf-8");
+    const storedDate = getExistingDatePublished(html);
+    if (!storedDate || storedDate === gitDate) continue;
+
+    const updated = html.replace(
+      /"datePublished"\s*:\s*"\d{4}-\d{2}-\d{2}"/g,
+      `"datePublished": "${gitDate}"`
+    );
+    fs.writeFileSync(sourcePath, updated, "utf-8");
+    fixed.push({ file, storedDate, gitDate });
+  }
+
+  if (fixed.length === 0 && skipped.length === 0) {
+    console.log("fix-dates: all datePublished values already match git history. Nothing to do.");
+  } else {
+    if (fixed.length > 0) {
+      console.log(`fix-dates: updated ${fixed.length} file(s):`);
+      for (const { file, storedDate, gitDate } of fixed) {
+        console.log(`  - ${file}: ${storedDate} → ${gitDate}`);
+      }
+    } else {
+      console.log("fix-dates: no mismatches found — nothing updated.");
+    }
+    if (skipped.length > 0) {
+      console.warn(`fix-dates: skipped ${skipped.length} file(s) with no git history:`);
+      for (const file of skipped) {
+        console.warn(`  - ${file}`);
+      }
+    }
+  }
+
+  process.exit(0);
+}
+
+if (process.argv.includes("--fix-dates")) {
+  fixDates();
+} else if (process.argv.includes("--check-dates")) {
   checkDates();
 } else if (process.argv.includes("--check")) {
   checkBlog();
