@@ -1,0 +1,53 @@
+name: Blog lastmod validation
+
+on:
+  push:
+    paths:
+      - 'blog-content/*.html'
+  pull_request:
+    paths:
+      - 'blog-content/*.html'
+
+jobs:
+  validate-blog-dates:
+    name: Check blog lastmod dates
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Find changed blog HTML files
+        id: changed
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE="HEAD~1"
+          fi
+
+          FILES=$(git diff --name-only "$BASE" HEAD -- 'blog-content/*.html' | grep -v 'blog-content/index.html' || true)
+
+          if [[ -z "$FILES" ]]; then
+            echo "No blog HTML files changed — skipping date validation."
+            echo "files=" >> "$GITHUB_OUTPUT"
+          else
+            echo "Changed blog files:"
+            echo "$FILES"
+            echo "files<<EOF" >> "$GITHUB_OUTPUT"
+            echo "$FILES" >> "$GITHUB_OUTPUT"
+            echo "EOF" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate lastmod dates
+        if: steps.changed.outputs.files != ''
+        run: |
+          chmod +x validate-blog-dates.sh
+
+          # Run the validator on only the changed files
+          while IFS= read -r f; do
+            [[ -z "$f" ]] && continue
+            ./validate-blog-dates.sh "$f"
+          done <<< "${{ steps.changed.outputs.files }}"
