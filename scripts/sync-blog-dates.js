@@ -52,8 +52,32 @@ function gitLastCommitDate(filePath) {
   }
 }
 
+/**
+ * Returns the date of the very first git commit for a file (YYYY-MM-DD).
+ * This is the stable publication date that survives clones and rebuilds.
+ */
+function gitFirstCommitDate(filePath) {
+  try {
+    const rel = path.relative(process.cwd(), filePath);
+    const out = execSync(`git log --format="%ci" --follow -- "${rel}"`, {
+      encoding: "utf-8",
+      stdio: ["pipe", "pipe", "pipe"],
+    }).trim();
+    if (!out) return null;
+    const firstLine = out.split("\n").pop().trim();
+    return firstLine ? firstLine.slice(0, 10) : null;
+  } catch {
+    return null;
+  }
+}
+
 function jsonLdDateModified(content) {
   const m = content.match(/"dateModified"\s*:\s*"(\d{4}-\d{2}-\d{2})"/);
+  return m ? m[1] : null;
+}
+
+function jsonLdDatePublished(content) {
+  const m = content.match(/"datePublished"\s*:\s*"(\d{4}-\d{2}-\d{2})"/);
   return m ? m[1] : null;
 }
 
@@ -83,10 +107,21 @@ function setJsonLdDateModified(content, date) {
   );
 }
 
+function setJsonLdDatePublished(content, date) {
+  return content.replace(
+    /("datePublished"\s*:\s*")(\d{4}-\d{2}-\d{2})(")/g,
+    `$1${date}$3`
+  );
+}
+
 /**
  * Sync a single file.
+ * Updates lastmod comment and dateModified using the most-recent commit date,
+ * and also updates datePublished using the first-ever commit date (stable across
+ * clones and rebuilds).
+ *
  * @param {string} filePath  Absolute or relative path to the HTML file.
- * @param {string|null} forceDate  When set, use this date instead of auto-detecting.
+ * @param {string|null} forceDate  When set, use this date for lastmod/dateModified only.
  */
 function syncFile(filePath, forceDate = null) {
   const basename = path.basename(filePath);
@@ -98,8 +133,14 @@ function syncFile(filePath, forceDate = null) {
   content = setLastmodComment(content, date);
   content = setJsonLdDateModified(content, date);
 
+  const publishedDate =
+    gitFirstCommitDate(filePath) ||
+    jsonLdDatePublished(content) ||
+    date;
+  content = setJsonLdDatePublished(content, publishedDate);
+
   fs.writeFileSync(filePath, content, "utf-8");
-  console.log(`synced  ${basename}  →  lastmod:${date}`);
+  console.log(`synced  ${basename}  →  lastmod:${date}  datePublished:${publishedDate}`);
 }
 
 /**

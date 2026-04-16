@@ -1,9 +1,38 @@
 const fs = require("fs");
 const path = require("path");
+const { execSync } = require("child_process");
 const { syncAll } = require("./sync-blog-dates");
 
 const SOURCE_DIR = path.join(process.cwd(), "blog-content");
 const OUTPUT_DIR = path.join(process.cwd(), "static-build", "blog");
+
+/**
+ * Returns the date of the very first git commit for a file (YYYY-MM-DD),
+ * or null if git history is unavailable or the file has no commits yet.
+ */
+function getFirstCommitDate(filePath) {
+  try {
+    const rel = path.relative(process.cwd(), filePath);
+    const out = execSync(`git log --format="%ci" --follow -- "${rel}"`, {
+      encoding: "utf-8",
+      stdio: ["pipe", "pipe", "pipe"],
+    }).trim();
+    if (!out) return null;
+    const firstLine = out.split("\n").pop().trim();
+    return firstLine ? firstLine.slice(0, 10) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Extracts the datePublished value from any existing JSON-LD Article block in
+ * the HTML string, or returns null if none is found.
+ */
+function getExistingDatePublished(html) {
+  const m = html.match(/"datePublished"\s*:\s*"(\d{4}-\d{2}-\d{2})"/);
+  return m ? m[1] : null;
+}
 
 function extractMetaFromBody(html) {
   const extracted = { metaTitle: null, description: null, slug: null };
@@ -438,7 +467,7 @@ function processFile(filename) {
     : filename.replace(".html", "");
   const headline = getH1(html) || metaTitle || slug;
   const datePublished = filename.endsWith(".html")
-    ? (fs.statSync(sourcePath).mtime.toISOString().split("T")[0])
+    ? (getFirstCommitDate(sourcePath) || getExistingDatePublished(html) || "2025-01-01")
     : "2025-01-01";
 
   const fullUrl = `https://pulsekegel.com/blog/${slug}`;
