@@ -10,6 +10,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Slider from '@react-native-community/slider';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { reloadAppAsync } from 'expo';
+import Constants from 'expo-constants';
 import * as WebBrowser from 'expo-web-browser';
 import { requestNotificationPermission, getNotificationPermissionStatus, scheduleDailyReminder, cancelAllReminders } from '@/lib/notifications';
 
@@ -645,7 +646,7 @@ export default function SettingsScreen() {
 
         <Animated.View entering={FadeInDown.duration(400).delay(600)}>
           <View style={styles.footer}>
-            <Text style={[styles.footerText, { color: cp.textMuted }]}>PulseKegel v1.3.6</Text>
+            <Text style={[styles.footerText, { color: cp.textMuted }]}>PulseKegel v{Constants.expoConfig?.version ?? '—'}</Text>
             <Text style={[styles.footerText, { color: cp.textMuted }]}>
               Not medical advice. Consult a healthcare provider for pelvic health concerns.
             </Text>
