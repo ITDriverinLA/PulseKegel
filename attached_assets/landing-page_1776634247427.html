@@ -1,0 +1,1913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PulseKegel — Hero + Section 2 (Premium Concept)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://api.fontshare.com/v2/css?f[]=general-sans@700,800&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --navy:       #0C0F38;
+    --navy-deep:  #070924;
+    --unlit:      #1A1E4A;
+    --teal:       #36E7B3;
+    --teal-dim:   #1E8C6C;
+    --peak-amber: #FFD166;
+    --peak-red:   #FF4A6E;
+    --purple:     #8B5CF6;
+    --white:      #FFFFFF;
+    --gray:       #C8C8D8;
+    --gray-dim:   #6B6E8F;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* Make <body> the explicit scroll container so scroll-snap binds to it.
+     Chrome is most reliable when the scroll-snap-type rule lives on the
+     actual scrolling element, so we pin html to 100% height with no scroll,
+     and hand the scrolling + snap duties to body. */
+  html {
+    height: 100%;
+    overflow: hidden;
+  }
+  body {
+    height: 100%;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+    /* Each full-viewport section/footer is a snap point.
+       `mandatory` forces the viewport to fully rest on a page —
+       the user cannot sit half-way between two sections. */
+    scroll-snap-type: y mandatory;
+    background: var(--navy-deep);
+    color: var(--white);
+    font-family: 'Poppins', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- SHARED HUD BRACKETS ---------- */
+  .bracket {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border-color: var(--teal);
+    border-style: solid;
+    border-width: 0;
+    opacity: 0.65;
+    pointer-events: none;
+  }
+  .bracket.tl { top: 18px; left: 18px; border-top-width: 2px; border-left-width: 2px; }
+  .bracket.tr { top: 18px; right: 18px; border-top-width: 2px; border-right-width: 2px; }
+  .bracket.bl { bottom: 18px; left: 18px; border-bottom-width: 2px; border-left-width: 2px; }
+  .bracket.br { bottom: 18px; right: 18px; border-bottom-width: 2px; border-right-width: 2px; }
+
+  /* ---------- CHASSIS (HERO) ---------- */
+  .chassis {
+    min-height: 100vh;
+    background:
+      radial-gradient(ellipse at 28% 55%, rgba(54, 231, 179, 0.10) 0%, transparent 50%),
+      linear-gradient(180deg, var(--navy) 0%, var(--navy-deep) 100%);
+    position: relative;
+    padding: 28px 44px 40px;
+    display: flex;
+    flex-direction: column;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+
+  /* ---------- TOP NAV ---------- */
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 24px;
+    position: relative;
+    z-index: 5;
+  }
+  .wordmark {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: 20px;
+    letter-spacing: -0.01em;
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .wordmark .dot {
+    width: 8px;
+    height: 8px;
+    background: var(--teal);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--teal);
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.45; transform: scale(0.85); }
+    50%      { opacity: 1;    transform: scale(1.1);  }
+  }
+  .menu {
+    display: flex;
+    gap: 28px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gray);
+  }
+  .menu > a {
+    color: inherit;
+    text-decoration: none;
+    padding-bottom: 2px;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .menu > a:hover { color: var(--teal); border-bottom-color: var(--teal); }
+
+  /* ---------- SIDE READOUTS ---------- */
+  .rail-left, .rail-right {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%) rotate(-90deg);
+    transform-origin: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.25em;
+    color: var(--gray-dim);
+    white-space: nowrap;
+  }
+  .rail-left  { left: -40px; }
+  .rail-right { right: -64px; color: var(--teal-dim); }
+  .rail-right .live {
+    color: var(--teal);
+    animation: blink 1.6s steps(2, end) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0.25; } }
+
+  /* ---------- HERO GRID ---------- */
+  .hero {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr minmax(260px, 360px);
+    gap: 72px;
+    align-items: center;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 20px 0 40px;
+  }
+
+  /* ---------- GAUGE (shared) ---------- */
+  .gauge-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    color: var(--teal);
+    text-transform: uppercase;
+    opacity: 0.9;
+  }
+  .gauge-assembly {
+    display: flex;
+    gap: 16px;
+    align-items: stretch;
+  }
+  .bar-frame {
+    background:
+      linear-gradient(180deg, rgba(0,0,0,0.4), rgba(0,0,0,0.6)),
+      var(--navy);
+    border: 1px solid rgba(54, 231, 179, 0.22);
+    border-radius: 4px;
+    padding: 10px 8px;
+    box-shadow:
+      inset 0 2px 8px rgba(0,0,0,0.55),
+      0 0 48px rgba(54, 231, 179, 0.12);
+    position: relative;
+  }
+  .bar-frame::before {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border: 1px solid rgba(255,255,255,0.03);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+  .bar {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 3px;
+  }
+  .hero-bar { width: 72px; height: 380px; }
+  .phone-bar { width: 46px; height: 240px; gap: 2px; }
+  .seg {
+    flex: 1;
+    background: var(--unlit);
+    border-radius: 2px;
+    transition: background 60ms linear, box-shadow 60ms linear;
+  }
+  .seg.on-teal  { background: var(--teal);       box-shadow: 0 0 6px var(--teal),       inset 0 1px 0 rgba(255,255,255,0.15); }
+  .seg.on-amber { background: var(--peak-amber); box-shadow: 0 0 8px var(--peak-amber), inset 0 1px 0 rgba(255,255,255,0.2);  }
+  .seg.on-red   { background: var(--peak-red);   box-shadow: 0 0 10px var(--peak-red),  inset 0 1px 0 rgba(255,255,255,0.2);  }
+
+  .scale {
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    color: var(--gray-dim);
+    padding: 10px 0;
+  }
+  .scale .tick {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .scale .tick::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 1px;
+    background: var(--gray-dim);
+    opacity: 0.6;
+  }
+
+  .state {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--gray);
+    padding: 10px 16px;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 3px;
+    background: rgba(255,255,255,0.02);
+    min-width: 280px;
+    justify-content: center;
+  }
+  .state .rep { color: var(--gray-dim); }
+  .state .divider { color: var(--gray-dim); }
+  .state .phase { color: var(--teal); transition: color 0.3s; }
+  .state .phase.rest { color: var(--gray-dim); }
+  .state .phase.release { color: var(--teal-dim); }
+  .state .phase.hold { color: var(--peak-amber); }
+
+  .gauge-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+  }
+
+  /* ---------- HERO CONTENT ---------- */
+  .content-column { max-width: 560px; }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.3em;
+    color: var(--teal);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .eyebrow::before {
+    content: '';
+    width: 36px;
+    height: 1px;
+    background: var(--teal);
+    opacity: 0.7;
+  }
+  h1 {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: clamp(44px, 5.6vw, 76px);
+    line-height: 0.98;
+    letter-spacing: -0.025em;
+    color: var(--white);
+  }
+  h1 .accent { color: var(--teal); display: block; }
+
+  .subline {
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--gray);
+    margin-top: 24px;
+    max-width: 460px;
+  }
+
+  .meta-row {
+    margin-top: 22px;
+    display: flex;
+    gap: 22px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    color: var(--gray-dim);
+    text-transform: uppercase;
+  }
+  .meta-row span { color: var(--teal); margin-right: 6px; }
+
+  .cta-row {
+    margin-top: 36px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 16px 26px;
+    border-radius: 3px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, color 0.18s ease;
+  }
+  .btn-primary {
+    background: var(--teal);
+    color: var(--navy-deep);
+    box-shadow: 0 0 0 1px var(--teal), 0 8px 24px rgba(54, 231, 179, 0.25);
+  }
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0 0 1px var(--teal), 0 10px 32px rgba(54, 231, 179, 0.4);
+  }
+  .btn-ghost {
+    color: var(--gray);
+    border: 1px solid rgba(200, 200, 216, 0.25);
+    background: transparent;
+  }
+  .btn-ghost:hover { color: var(--teal); border-color: var(--teal); }
+  .btn .arrow { transition: transform 0.2s; }
+  .btn:hover .arrow { transform: translateX(4px); }
+
+  /* ---------- SECTION 2: INSTRUMENT ---------- */
+  .section {
+    position: relative;
+    width: 100%;
+    /* min-height: 100vh so each section is a full page,
+       but content flows from the top (not vertically centered) —
+       section-divider anchors near the top of the viewport,
+       headline sits in the upper third, rest flows downward. */
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 70px 44px 50px;
+    background:
+      radial-gradient(ellipse at 72% 40%, rgba(139, 92, 246, 0.07) 0%, transparent 55%),
+      linear-gradient(180deg, var(--navy-deep) 0%, var(--navy) 50%, var(--navy-deep) 100%);
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+  .section-divider {
+    max-width: 1200px;
+    margin: 0 auto 48px;
+    padding: 0;
+    border-top: 1px dashed rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: space-between;
+    padding-top: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    color: var(--gray-dim);
+    text-transform: uppercase;
+  }
+  .section-header {
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto 42px;
+  }
+  .section-header h2 {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: clamp(36px, 5vw, 64px);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--white);
+    max-width: 700px;
+  }
+  .section-header h2 .accent { color: var(--teal); }
+
+  .instrument-grid {
+    display: grid;
+    grid-template-columns: minmax(280px, 340px) 1fr;
+    gap: 90px;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  /* ---------- PHONE MOCKUP ---------- */
+  .phone-wrap {
+    display: flex;
+    justify-content: center;
+    position: relative;
+  }
+  .phone-wrap::before {
+    /* soft teal glow behind the phone */
+    content: '';
+    position: absolute;
+    inset: -40px;
+    background: radial-gradient(ellipse at center, rgba(54, 231, 179, 0.18) 0%, transparent 60%);
+    z-index: 0;
+    pointer-events: none;
+  }
+  .phone {
+    position: relative;
+    z-index: 1;
+    width: 300px;
+    height: 610px;
+    background: linear-gradient(180deg, #15183A 0%, #080A20 100%);
+    border: 1px solid rgba(54, 231, 179, 0.18);
+    border-radius: 44px;
+    padding: 8px;
+    box-shadow:
+      0 0 0 1px rgba(0,0,0,0.5),
+      0 30px 80px rgba(0,0,0,0.55),
+      inset 0 0 0 1px rgba(255,255,255,0.04);
+  }
+  .phone-notch {
+    position: absolute;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90px;
+    height: 22px;
+    background: #05071B;
+    border-radius: 14px;
+    z-index: 3;
+  }
+  .phone-screen {
+    width: 100%;
+    height: 100%;
+    background:
+      radial-gradient(ellipse at 50% 40%, rgba(54, 231, 179, 0.08) 0%, transparent 60%),
+      var(--navy);
+    border-radius: 36px;
+    padding: 54px 22px 24px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+  .phone-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-bottom: 14px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .phone-header .app-title {
+    font-family: 'General Sans', sans-serif;
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    color: var(--white);
+  }
+  .phone-header .session {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.24em;
+    color: var(--gray-dim);
+    text-transform: uppercase;
+  }
+  .phone-gauge-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.3em;
+    color: var(--teal);
+    text-transform: uppercase;
+    text-align: center;
+    opacity: 0.9;
+    margin-bottom: 12px;
+  }
+  .phone-gauge-row {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+  }
+  .phone-bar-frame {
+    background:
+      linear-gradient(180deg, rgba(0,0,0,0.4), rgba(0,0,0,0.6)),
+      var(--navy-deep);
+    border: 1px solid rgba(54, 231, 179, 0.22);
+    border-radius: 4px;
+    padding: 8px 6px;
+  }
+  .phone-scale {
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    color: var(--gray-dim);
+    padding: 6px 0;
+  }
+  .phone-state {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 10px 12px;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 3px;
+    margin-top: 14px;
+    color: var(--gray);
+  }
+  .phone-state .phase { color: var(--teal); transition: color 0.3s; }
+  .phone-state .phase.hold { color: var(--peak-amber); }
+  .phone-state .phase.release { color: var(--teal-dim); }
+  .phone-state .phase.rest { color: var(--gray-dim); }
+  .phone-pill {
+    background: var(--teal);
+    color: var(--navy-deep);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    padding: 12px;
+    border-radius: 999px;
+    text-align: center;
+    margin-top: 14px;
+  }
+
+  /* ---------- SECTION 2: COPY ---------- */
+  .instrument-copy { max-width: 520px; }
+  .instrument-copy p {
+    font-family: 'Poppins', sans-serif;
+    font-size: 20px;
+    line-height: 1.55;
+    color: var(--gray);
+    margin-bottom: 18px;
+  }
+  .instrument-copy p strong { color: var(--white); font-weight: 500; }
+
+  .spec-list {
+    margin-top: 34px;
+    display: grid;
+    gap: 0;
+  }
+  .spec-list .row {
+    display: flex;
+    gap: 22px;
+    align-items: baseline;
+    padding: 16px 0;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .spec-list .row:first-child { border-top: 1px dashed rgba(255, 255, 255, 0.08); }
+  .spec-list .row .key {
+    color: var(--teal);
+    min-width: 120px;
+    font-weight: 600;
+  }
+  .spec-list .row .val {
+    color: var(--gray);
+    flex: 1;
+    letter-spacing: 0.06em;
+    text-transform: none;
+    font-size: 13px;
+  }
+
+  /* ---------- SECTION 3: OUTCOMES ---------- */
+  .outcomes-stack {
+    max-width: 1100px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .outcome {
+    display: grid;
+    grid-template-columns: 140px 1fr 240px;
+    gap: 48px;
+    padding: 32px 0;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+    align-items: start;
+  }
+  .outcome:first-child { border-top: 1px dashed rgba(255, 255, 255, 0.08); }
+  .outcome:last-child  { border-bottom: none; }
+
+  .outcome .index {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    color: var(--teal);
+    padding-top: 10px;
+    text-transform: uppercase;
+  }
+
+  .outcome .body h3 {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: clamp(32px, 3.8vw, 52px);
+    line-height: 0.98;
+    letter-spacing: -0.025em;
+    color: var(--white);
+  }
+  .outcome .body h3 .dot { color: var(--teal); }
+
+  .outcome .body p {
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--gray);
+    margin-top: 14px;
+    max-width: 520px;
+  }
+
+  .outcome .stats {
+    display: grid;
+    gap: 0;
+    padding-top: 18px;
+  }
+  .outcome .stats .stat {
+    display: grid;
+    grid-template-columns: 88px 1fr;
+    gap: 12px;
+    align-items: baseline;
+    padding: 9px 0;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.06);
+  }
+  .outcome .stats .stat:first-child { border-top: 1px dashed rgba(255, 255, 255, 0.06); }
+
+  .outcome .stats .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--teal);
+  }
+  .outcome .stats .desc {
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--gray);
+  }
+
+  /* ---------- SECTION 4: PROOF ---------- */
+  .proof-grid {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    width: 100%;
+  }
+  .proof-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    padding: 30px 28px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .proof-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 28px;
+    width: 36px;
+    height: 2px;
+    background: var(--teal);
+  }
+  .proof-card:hover {
+    border-color: rgba(54, 231, 179, 0.35);
+    transform: translateY(-2px);
+  }
+  .proof-card .mark {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    color: var(--teal);
+    text-transform: uppercase;
+  }
+  .proof-card blockquote {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 21px;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    color: var(--white);
+    flex: 1;
+  }
+  .proof-card .attribution {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    color: var(--gray-dim);
+    text-transform: uppercase;
+    padding-top: 16px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  }
+  .proof-card .attribution .name { color: var(--gray); font-weight: 600; }
+
+  /* ---------- SECTION 5: PRIVACY ---------- */
+  .section-privacy {
+    text-align: center;
+    /* True-center the privacy-content by pulling the section-divider out
+       of the flex flow (absolute at top). With only privacy-content left
+       as a flex item, justify-content: center centers it perfectly. */
+    justify-content: center;
+  }
+  .section-privacy .section-divider {
+    position: absolute;
+    top: 70px;
+    left: 44px;
+    right: 44px;
+    margin: 0;
+    max-width: none;
+    width: auto;
+  }
+  .privacy-content {
+    max-width: 820px;
+    margin: 0 auto;
+  }
+  .privacy-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.32em;
+    color: var(--teal);
+    text-transform: uppercase;
+    margin-bottom: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+  }
+  .privacy-eyebrow::before,
+  .privacy-eyebrow::after {
+    content: '';
+    width: 38px;
+    height: 1px;
+    background: var(--teal);
+    opacity: 0.6;
+  }
+  .privacy-content h2 {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: clamp(42px, 6vw, 76px);
+    line-height: 0.98;
+    letter-spacing: -0.025em;
+    color: var(--white);
+    margin-bottom: 34px;
+  }
+  .privacy-content h2 .accent { color: var(--teal); }
+
+  .privacy-lead {
+    font-family: 'Poppins', sans-serif;
+    font-size: 19px;
+    line-height: 1.6;
+    color: var(--gray);
+    max-width: 640px;
+    margin: 0 auto 44px;
+  }
+  .privacy-tags {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 32px 44px;
+  }
+  .privacy-tags .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--gray);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .privacy-tags .tag .dot {
+    color: var(--teal);
+    font-size: 9px;
+    line-height: 1;
+  }
+
+  /* ---------- SECTION 6: CLOSE ---------- */
+  .section-close { text-align: center; }
+  .close-content {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .close-content h2 {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: clamp(44px, 6vw, 78px);
+    line-height: 0.98;
+    letter-spacing: -0.025em;
+    color: var(--white);
+    margin-bottom: 28px;
+  }
+  .close-content h2 .accent { color: var(--teal); }
+  .close-content .lead {
+    font-family: 'Poppins', sans-serif;
+    font-size: 18px;
+    line-height: 1.55;
+    color: var(--gray);
+    max-width: 520px;
+    margin: 0 auto 44px;
+  }
+  .close-spec {
+    max-width: 420px;
+    margin: 0 auto 40px;
+    padding: 24px 28px;
+    border: 1px solid rgba(54, 231, 179, 0.22);
+    border-radius: 4px;
+    background: rgba(54, 231, 179, 0.03);
+    text-align: left;
+  }
+  .close-spec .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 12px 0;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .close-spec .row:last-child { border-bottom: none; }
+  .close-spec .row .k { color: var(--teal); font-weight: 600; }
+  .close-spec .row .v {
+    color: var(--gray);
+    letter-spacing: 0.06em;
+    text-transform: none;
+    font-size: 13px;
+  }
+  .close-spec .row .v.price {
+    font-family: 'General Sans', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--white);
+  }
+  .close-cta-headline {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: clamp(22px, 2.2vw, 26px);
+    letter-spacing: -0.01em;
+    color: var(--white);
+    margin-bottom: 22px;
+    line-height: 1.2;
+  }
+  .close-cta-headline .accent { color: var(--teal); }
+
+  .close-cta-row {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+
+  /* platform-specific app badges */
+  .app-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 22px;
+    background: var(--white);
+    color: var(--navy);
+    border-radius: 10px;
+    text-decoration: none;
+    transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.2s ease;
+    min-width: 220px;
+  }
+  .app-badge:hover {
+    background: var(--teal);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(54, 231, 179, 0.22);
+  }
+  .app-badge-logo { flex-shrink: 0; }
+  .app-badge-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1;
+    gap: 3px;
+  }
+  .app-badge-text .small {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+  .app-badge-text .big {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: -0.01em;
+  }
+
+  /* Google Play — coming soon state */
+  .app-badge.soon {
+    background: transparent;
+    color: var(--gray);
+    border: 1px solid rgba(255,255,255,0.14);
+    cursor: default;
+  }
+  .app-badge.soon:hover {
+    background: transparent;
+    color: var(--gray);
+    transform: none;
+    box-shadow: none;
+  }
+  .app-badge.soon .app-badge-logo { opacity: 0.65; }
+  .app-badge.soon .app-badge-text .small { color: var(--teal); opacity: 1; }
+  .btn-xl { font-size: 13px; padding: 20px 32px; }
+
+  .trust-line {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--gray-dim);
+  }
+  .trust-line span { color: var(--teal); margin: 0 8px; }
+
+  .end-tag {
+    max-width: 1200px;
+    margin: 90px auto 0;
+    padding: 18px 0 0;
+    border-top: 1px dashed rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    color: var(--gray-dim);
+    text-transform: uppercase;
+  }
+  .end-tag .end-live {
+    color: var(--teal);
+    animation: blink 1.6s steps(2, end) infinite;
+  }
+
+  /* ---------- FOOTER ---------- */
+  .page-footer {
+    padding: 72px 44px 28px;
+    background: var(--navy-deep);
+    border-top: 1px solid rgba(255,255,255,0.06);
+    position: relative;
+    /* Footer is its own gentle snap target so scrolling past the
+       close section lands cleanly on the colophon instead of floating. */
+    scroll-snap-align: start;
+  }
+  .page-footer::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 48px;
+    height: 2px;
+    background: var(--teal);
+    box-shadow: 0 0 12px rgba(54, 231, 179, 0.6);
+  }
+  .footer-main {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr 1fr;
+    gap: 56px;
+    padding-bottom: 48px;
+    border-bottom: 1px dashed rgba(255,255,255,0.08);
+  }
+  .footer-col h4 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--gray-dim);
+    margin-bottom: 18px;
+  }
+  .footer-col .wordmark {
+    margin-bottom: 20px;
+  }
+  .footer-tagline {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    line-height: 1.15;
+    color: var(--white);
+  }
+  .footer-tagline span { color: var(--teal); }
+  .footer-links {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .footer-links a {
+    color: var(--gray);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .footer-links a:hover { color: var(--teal); }
+  .footer-links .soon {
+    color: var(--gray-dim);
+    font-size: 13px;
+  }
+  .footer-links .soon em {
+    color: var(--teal);
+    font-style: normal;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-left: 6px;
+  }
+  .footer-socials {
+    display: flex;
+    gap: 12px;
+  }
+  .footer-socials a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    color: var(--gray);
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+  }
+  .footer-socials a:hover {
+    color: var(--teal);
+    border-color: var(--teal);
+    background: rgba(54, 231, 179, 0.06);
+  }
+  .footer-bottom {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-top: 22px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gray-dim);
+  }
+  .footer-bottom .left span { color: var(--teal); }
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width: 900px) {
+    .hero {
+      grid-template-columns: 1fr;
+      gap: 36px;
+      text-align: left;
+    }
+    .gauge-column { align-items: flex-start; }
+    .hero-bar { height: 240px; width: 64px; }
+    .rail-left, .rail-right { display: none; }
+
+    .instrument-grid {
+      grid-template-columns: 1fr;
+      gap: 60px;
+    }
+    .section { padding: 70px 32px; }
+    .phone-wrap { order: 2; }  /* copy first, phone below on mobile */
+    .instrument-copy { order: 1; }
+
+    .outcome {
+      grid-template-columns: 1fr;
+      gap: 24px;
+      padding: 40px 0;
+    }
+    .outcome .index { padding-top: 0; }
+    .outcome .stats { padding-top: 0; }
+
+    .proof-grid { grid-template-columns: 1fr; gap: 16px; }
+    .proof-card { padding: 24px 22px; }
+    .proof-card::before { left: 22px; }
+    .proof-card blockquote { font-size: 19px; }
+
+    .footer-main { grid-template-columns: 1fr 1fr; gap: 40px; }
+    .footer-main .brand-col { grid-column: 1 / -1; }
+    .page-footer { padding: 60px 32px 28px; }
+  }
+  @media (max-width: 600px) {
+    .chassis { padding: 20px 20px 30px; }
+    .section { padding: 60px 20px; }
+    .menu { display: none; }
+    .hero-bar { height: 200px; width: 54px; }
+    .scale { font-size: 9px; }
+    h1 { font-size: 42px; }
+    .subline { font-size: 15px; }
+    .page-footer { padding: 48px 20px 24px; }
+    .footer-main { grid-template-columns: 1fr; gap: 32px; padding-bottom: 32px; }
+    .footer-bottom { flex-direction: column; gap: 8px; align-items: flex-start; font-size: 9px; }
+    .state { min-width: 0; width: 100%; font-size: 10px; letter-spacing: 0.18em; }
+    .meta-row { flex-wrap: wrap; gap: 14px; font-size: 10px; }
+    .phone { width: 260px; height: 540px; }
+    .phone-bar { height: 200px; width: 40px; }
+    .instrument-copy p { font-size: 17px; }
+
+    .close-spec { padding: 20px 22px; }
+    .close-cta-row { flex-direction: column; align-items: stretch; gap: 12px; }
+    .app-badge { min-width: 0; justify-content: flex-start; padding: 12px 18px; }
+    .app-badge-text .big { font-size: 18px; }
+    .end-tag { flex-direction: column; gap: 10px; font-size: 9px; text-align: left; }
+
+    .section-privacy { padding: 90px 20px 90px; }
+    .privacy-lead { font-size: 17px; }
+    .privacy-tags { gap: 18px 26px; }
+    .privacy-tags .tag { font-size: 10px; letter-spacing: 0.18em; }
+    .privacy-eyebrow::before,
+    .privacy-eyebrow::after { width: 22px; }
+  }
+  @media (max-width: 400px) {
+    .hero-bar { height: 170px; width: 48px; }
+    .gauge-assembly { gap: 12px; }
+    .phone { width: 240px; height: 500px; }
+  }
+
+  /* =========================================================
+     SCROLL REVEAL SYSTEM — HUD "boot up" on section entry
+     All animations are one-shot and driven by .in-view class,
+     added by IntersectionObserver at the bottom of the file.
+     ========================================================= */
+
+  /* One-shot keyframes — animations (not transitions) keep the transition
+     slot free so per-element hover transitions (.app-badge, .btn) still work. */
+  @keyframes reveal-up {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0);    }
+  }
+  @keyframes reveal-left {
+    from { opacity: 0; transform: translateX(-16px); }
+    to   { opacity: 1; transform: translateX(0);     }
+  }
+  @keyframes reveal-wipe {
+    from { clip-path: inset(0 100% 0 0); }
+    to   { clip-path: inset(0 0 0 0);    }
+  }
+  @keyframes stagger-up {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0);    }
+  }
+
+  /* Generic fade-up (headlines, body copy, cards, badges).
+     We set the end state explicitly on .in-view (instead of animation-fill-mode: forwards),
+     so after the animation ends the element's computed style is just regular CSS —
+     leaving hover transforms on .btn / .app-badge free to work. */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    will-change: opacity, transform;
+  }
+  .reveal.in-view {
+    opacity: 1;
+    transform: translateY(0);
+    animation: reveal-up 0.75s cubic-bezier(0.22, 0.7, 0.2, 1) backwards;
+  }
+
+  /* Eyebrow / section numbers — slide in from the left */
+  .reveal-x {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  .reveal-x.in-view {
+    opacity: 1;
+    transform: translateX(0);
+    animation: reveal-left 0.6s ease-out backwards;
+  }
+
+  /* Dashed section divider — wipes in L → R */
+  .reveal-line {
+    clip-path: inset(0 100% 0 0);
+  }
+  .reveal-line.in-view {
+    clip-path: inset(0 0 0 0);
+    animation: reveal-wipe 1s cubic-bezier(0.22, 0.7, 0.2, 1) backwards;
+  }
+
+  /* Staggered children — spec rows, outcome slabs, proof cards, CTA badges */
+  .reveal-stagger > * {
+    opacity: 0;
+    transform: translateY(18px);
+    will-change: opacity, transform;
+  }
+  .reveal-stagger.in-view > * {
+    opacity: 1;
+    transform: translateY(0);
+    animation: stagger-up 0.65s ease-out backwards;
+  }
+  .reveal-stagger.in-view > *:nth-child(1)  { animation-delay:  60ms; }
+  .reveal-stagger.in-view > *:nth-child(2)  { animation-delay: 150ms; }
+  .reveal-stagger.in-view > *:nth-child(3)  { animation-delay: 240ms; }
+  .reveal-stagger.in-view > *:nth-child(4)  { animation-delay: 330ms; }
+  .reveal-stagger.in-view > *:nth-child(5)  { animation-delay: 420ms; }
+  .reveal-stagger.in-view > *:nth-child(6)  { animation-delay: 510ms; }
+  .reveal-stagger.in-view > *:nth-child(7)  { animation-delay: 600ms; }
+  .reveal-stagger.in-view > *:nth-child(8)  { animation-delay: 690ms; }
+
+  /* Gauge "power-on" — LED segments fade up bottom-to-top in sequence.
+     Uses @keyframes (not transition) so the live runGauge() loop's
+     background/box-shadow transitions on .seg remain intact. */
+  @keyframes seg-boot {
+    from { opacity: 0; transform: scale(0.5); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  .bar.reveal-gauge .seg {
+    opacity: 0;
+    transform: scale(0.5);
+    transform-origin: center;
+  }
+  .bar.reveal-gauge.in-view .seg {
+    opacity: 1;
+    transform: scale(1);
+    animation: seg-boot 0.42s cubic-bezier(0.22, 0.7, 0.2, 1) backwards;
+    /* --i is set by runGauge() in JS; bottom segment boots first */
+    animation-delay: calc(var(--i, 0) * 20ms);
+  }
+
+  /* Privacy dots — sequential systems-check light-up */
+  .privacy-tags .tag .dot {
+    opacity: 0;
+    transform: scale(0.3);
+    transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+  }
+  .privacy-tags.in-view .tag:nth-child(1) .dot { opacity: 1; transform: scale(1); transition-delay: 120ms; }
+  .privacy-tags.in-view .tag:nth-child(2) .dot { opacity: 1; transform: scale(1); transition-delay: 260ms; }
+  .privacy-tags.in-view .tag:nth-child(3) .dot { opacity: 1; transform: scale(1); transition-delay: 400ms; }
+  .privacy-tags.in-view .tag:nth-child(4) .dot { opacity: 1; transform: scale(1); transition-delay: 540ms; }
+
+  /* End-tag one-shot "acquire" pulse on arrival */
+  @keyframes boot-pulse {
+    0%   { transform: scale(0.3); opacity: 0; }
+    40%  { transform: scale(1.6); opacity: 1; }
+    100% { transform: scale(1);   opacity: 1; }
+  }
+  .end-tag.reveal .end-live {
+    display: inline-block;
+    animation: none;
+  }
+  .end-tag.reveal.in-view .end-live {
+    animation: boot-pulse 0.8s cubic-bezier(0.22, 0.7, 0.2, 1) forwards,
+               blink 1.6s steps(2, end) 1s infinite;
+  }
+
+  /* Respect reduced-motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    body { scroll-snap-type: none; scroll-behavior: auto; }
+    .reveal, .reveal-x, .reveal-line, .reveal-stagger > *,
+    .bar.reveal-gauge .seg, .privacy-tags .tag .dot {
+      opacity: 1 !important;
+      transform: none !important;
+      clip-path: none !important;
+      transition: none !important;
+    }
+    .end-tag.reveal.in-view .end-live { animation: blink 1.6s steps(2, end) infinite; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- SECTION 01: HERO                                              -->
+<!-- ============================================================ -->
+<div class="chassis">
+  <span class="bracket tl"></span>
+  <span class="bracket tr"></span>
+  <span class="bracket bl"></span>
+  <span class="bracket br"></span>
+
+  <div class="rail-left">01 / TRAIN &nbsp; ▸ &nbsp; CONTROL SIGNAL</div>
+  <div class="rail-right">TRAIN MODE &nbsp; <span class="live">● ACTIVE</span> &nbsp; v1.0</div>
+
+  <nav class="nav">
+    <div class="wordmark">
+      <span class="dot"></span>
+      PulseKegel
+    </div>
+    <div class="menu">
+      <a href="/blog">Blog</a>
+      <a href="/privacy">Privacy</a>
+      <a href="/contact">Contact</a>
+    </div>
+  </nav>
+
+  <main class="hero">
+    <!-- CONTENT LEFT (top on mobile) -->
+    <div class="content-column">
+      <div class="eyebrow reveal-x">Train the muscle you're missing</div>
+      <h1 class="reveal">
+        It's not age.
+        <span class="accent">It's neglect.</span>
+      </h1>
+      <p class="subline reveal">
+        PulseKegel trains the one muscle most men never work — the one that runs control, performance, and core foundation. Five to ten minutes. No gym. No equipment.
+      </p>
+      <div class="meta-row reveal-stagger">
+        <div><span>●</span>5–10 min / day</div>
+        <div><span>●</span>Haptic-guided</div>
+        <div><span>●</span>$4.99 / yr</div>
+      </div>
+      <div class="cta-row reveal-stagger">
+        <a href="https://apps.apple.com/us/app/pulsekegel/id6758308054" target="_blank" rel="noopener" class="btn btn-primary">
+          Start the 7-Day Challenge <span class="arrow">→</span>
+        </a>
+        <a href="#how-it-works" class="btn btn-ghost">
+          How it works <span class="arrow">→</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- GAUGE RIGHT (below on mobile) -->
+    <div class="gauge-column">
+      <div class="gauge-label reveal-x">Control Signal</div>
+      <div class="gauge-assembly">
+        <div class="bar-frame">
+          <div class="bar hero-bar reveal-gauge" data-gauge="hero"></div>
+        </div>
+        <div class="scale reveal">
+          <div class="tick">0</div>
+          <div class="tick">25</div>
+          <div class="tick">50</div>
+          <div class="tick">75</div>
+          <div class="tick">MAX</div>
+        </div>
+      </div>
+      <div class="state reveal">
+        <span class="rep">REP <span data-rep="hero">01</span> / <span data-rep-total="hero">08</span></span>
+        <span class="divider">//</span>
+        <span class="phase" data-phase="hero">SQUEEZE</span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 02: INSTRUMENT                                        -->
+<!-- ============================================================ -->
+<section class="section" id="how-it-works">
+  <span class="bracket tl"></span>
+  <span class="bracket tr"></span>
+  <span class="bracket bl"></span>
+  <span class="bracket br"></span>
+  <div class="rail-left">02 / INSTRUMENT &nbsp; ▸ &nbsp; HUD DISPLAY</div>
+  <div class="rail-right">INPUT STREAM &nbsp; <span class="live">● LINKED</span> &nbsp; v1.0</div>
+
+  <div class="section-divider reveal-line">
+    <span>02 / Instrument</span>
+    <span>The app, live</span>
+  </div>
+
+  <div class="section-header">
+    <h2 class="reveal">
+      This is the<br />
+      <span class="accent">instrument.</span>
+    </h2>
+  </div>
+
+  <div class="instrument-grid">
+    <!-- PHONE LEFT (below copy on mobile) -->
+    <div class="phone-wrap reveal">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="phone-header">
+            <div class="app-title">TRAIN</div>
+            <div class="session">Session 01 · Day 03</div>
+          </div>
+
+          <div class="phone-gauge-label">Control Signal</div>
+
+          <div class="phone-gauge-row">
+            <div class="phone-bar-frame">
+              <div class="bar phone-bar reveal-gauge" data-gauge="phone"></div>
+            </div>
+            <div class="phone-scale">
+              <div>0</div>
+              <div>25</div>
+              <div>50</div>
+              <div>75</div>
+              <div>MAX</div>
+            </div>
+          </div>
+
+          <div class="phone-state">
+            <span>REP <span data-rep="phone">01</span> / <span data-rep-total="phone">06</span></span>
+            <span class="phase" data-phase="phone">SQUEEZE</span>
+          </div>
+
+          <div class="phone-pill">Pause Session</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COPY RIGHT (top on mobile) -->
+    <div class="instrument-copy reveal-stagger">
+      <p>
+        <strong>The gauge in the hero? That's the app.</strong> Hold your phone and it pulses you through each contraction — ramping up, holding steady, easing back — so you train by feel, not by guessing.
+      </p>
+      <p>
+        No sensors. No clinic. No gym. The bar rises, the haptics rise with it. You match the intensity with your body. Rep count scales as your program advances.
+      </p>
+
+      <div class="spec-list">
+        <div class="row"><span class="key">Cue</span><span class="val">Haptic intensity — ramped, held, released</span></div>
+        <div class="row"><span class="key">Reps</span><span class="val">Variable · shaped by your program</span></div>
+        <div class="row"><span class="key">Signal</span><span class="val">Phone vibration synced to the gauge</span></div>
+        <div class="row"><span class="key">Session</span><span class="val">5 to 10 mins, every day</span></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 03: WHY IT MATTERS                                    -->
+<!-- ============================================================ -->
+<section class="section">
+  <span class="bracket tl"></span>
+  <span class="bracket tr"></span>
+  <span class="bracket bl"></span>
+  <span class="bracket br"></span>
+  <div class="rail-left">03 / OUTCOMES &nbsp; ▸ &nbsp; THREE VECTORS</div>
+  <div class="rail-right">DATA LOG &nbsp; <span class="live">● NOMINAL</span> &nbsp; v1.0</div>
+
+  <div class="section-divider reveal-line">
+    <span>03 / Why it matters</span>
+    <span>Three things change</span>
+  </div>
+
+  <div class="section-header">
+    <h2 class="reveal">
+      This is what<br />
+      <span class="accent">changes.</span>
+    </h2>
+  </div>
+
+  <div class="outcomes-stack reveal-stagger">
+
+    <!-- Outcome 01 / CONTROL -->
+    <div class="outcome">
+      <div class="index">/ 01 &nbsp; Control</div>
+      <div class="body">
+        <h3>Control<span class="dot">.</span></h3>
+        <p>
+          The pelvic floor is the valve on everything below the belt. Train it and "holding on" stops being luck. You decide when things start. You decide when they end.
+        </p>
+      </div>
+      <div class="stats">
+        <div class="stat"><span class="label">Longer</span><span class="desc">More time, on your terms</span></div>
+        <div class="stat"><span class="label">Steadier</span><span class="desc">Less urgency, fewer surprises</span></div>
+        <div class="stat"><span class="label">Sharper</span><span class="desc">Reflex becomes choice</span></div>
+      </div>
+    </div>
+
+    <!-- Outcome 02 / PERFORMANCE -->
+    <div class="outcome">
+      <div class="index">/ 02 &nbsp; Performance</div>
+      <div class="body">
+        <h3>Performance<span class="dot">.</span></h3>
+        <p>
+          This is the part of the core most athletes never train — the one that transfers power between your torso and your legs, and the one that governs sexual function along with it. Strengthen it and you get more output, harder function, faster recovery. A measurable edge where most men never thought to look.
+        </p>
+      </div>
+      <div class="stats">
+        <div class="stat"><span class="label">Power</span><span class="desc">Transfer, not leakage</span></div>
+        <div class="stat"><span class="label">Recovery</span><span class="desc">Shorter, cleaner</span></div>
+        <div class="stat"><span class="label">Edge</span><span class="desc">Where no one else trains</span></div>
+      </div>
+    </div>
+
+    <!-- Outcome 03 / FOUNDATION -->
+    <div class="outcome">
+      <div class="index">/ 03 &nbsp; Foundation</div>
+      <div class="body">
+        <h3>Foundation<span class="dot">.</span></h3>
+        <p>
+          The pelvic floor is the floor of your core. Weak floor, weak everything — back pain, bad posture, compromised lifts. Strengthen it and the structure above it stabilizes. This is the muscle everyone assumes their ab work is already hitting. It isn't.
+        </p>
+      </div>
+      <div class="stats">
+        <div class="stat"><span class="label">Core</span><span class="desc">Actually engaged</span></div>
+        <div class="stat"><span class="label">Posture</span><span class="desc">Stacked, aligned</span></div>
+        <div class="stat"><span class="label">Lifts</span><span class="desc">Less lower-back cost</span></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 04: PROOF                                             -->
+<!-- ============================================================ -->
+<section class="section">
+  <span class="bracket tl"></span>
+  <span class="bracket tr"></span>
+  <span class="bracket bl"></span>
+  <span class="bracket br"></span>
+  <div class="rail-left">04 / PROOF &nbsp; ▸ &nbsp; FIELD REPORTS</div>
+  <div class="rail-right">FEED &nbsp; <span class="live">● STREAMING</span> &nbsp; v1.0</div>
+
+  <div class="section-divider reveal-line">
+    <span>04 / From the program</span>
+    <span>Early reports</span>
+  </div>
+
+  <div class="section-header">
+    <h2 class="reveal">
+      What it's<br />
+      <span class="accent">doing.</span>
+    </h2>
+  </div>
+
+  <!-- PLACEHOLDER QUOTES — swap with real, named reviews before launch -->
+  <div class="proof-grid reveal-stagger">
+    <article class="proof-card">
+      <div class="mark">/ Control</div>
+      <blockquote>"Three weeks in and I'm not second-guessing myself anymore. Didn't expect that to show up this fast."</blockquote>
+      <div class="attribution"><span class="name">Dan, 42</span> &nbsp;·&nbsp; Week 3</div>
+    </article>
+
+    <article class="proof-card">
+      <div class="mark">/ Performance</div>
+      <blockquote>"My girlfriend noticed before I did. Asked what changed. Couldn't hide the smirk."</blockquote>
+      <div class="attribution"><span class="name">Mike R., 36</span> &nbsp;·&nbsp; Day 28</div>
+    </article>
+
+    <article class="proof-card">
+      <div class="mark">/ Foundation</div>
+      <blockquote>"Lower back used to complain after deadlift day. Hasn't in a month. This was the gap."</blockquote>
+      <div class="attribution"><span class="name">J.C., 48</span> &nbsp;·&nbsp; Week 5</div>
+    </article>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 05: PRIVACY                                           -->
+<!-- ============================================================ -->
+<section class="section section-privacy">
+  <span class="bracket tl"></span>
+  <span class="bracket tr"></span>
+  <span class="bracket bl"></span>
+  <span class="bracket br"></span>
+  <div class="rail-left">05 / PRIVACY &nbsp; ▸ &nbsp; VAULT STATUS</div>
+  <div class="rail-right">CRYPTO &nbsp; <span class="live">● SEALED</span> &nbsp; v1.0</div>
+
+  <div class="section-divider reveal-line">
+    <span>05 / Private by design</span>
+    <span>Your data stays put</span>
+  </div>
+
+  <div class="privacy-content">
+    <div class="privacy-eyebrow reveal-x">Private by design</div>
+    <h2 class="reveal">
+      Your data never<br />
+      leaves your <span class="accent">device.</span>
+    </h2>
+    <p class="privacy-lead reveal">
+      No account. No sign-up. No health data uploaded anywhere. Everything stays on your phone — completely private by design. Your pelvic floor training is nobody else's business.
+    </p>
+
+    <div class="privacy-tags">
+      <span class="tag"><span class="dot">●</span> No account</span>
+      <span class="tag"><span class="dot">●</span> No sign-up</span>
+      <span class="tag"><span class="dot">●</span> No uploads</span>
+      <span class="tag"><span class="dot">●</span> On-device only</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 06: CLOSE / CTA                                       -->
+<!-- ============================================================ -->
+<section class="section section-close">
+  <span class="bracket tl"></span>
+  <span class="bracket tr"></span>
+  <span class="bracket bl"></span>
+  <span class="bracket br"></span>
+  <div class="rail-left">06 / NEXT REP &nbsp; ▸ &nbsp; COMMIT READY</div>
+  <div class="rail-right">SYSTEMS &nbsp; <span class="live">● GO</span> &nbsp; v1.0</div>
+
+  <div class="section-divider reveal-line">
+    <span>06 / Next rep</span>
+    <span>Start the program</span>
+  </div>
+
+  <div class="close-content">
+    <h2 class="reveal">
+      Stop skipping<br />
+      <span class="accent">the one muscle.</span>
+    </h2>
+    <p class="lead reveal">
+      Seven days, free. No credit card required, nothing to cancel. If you want a year of training after that, it's $4.99.
+    </p>
+
+    <div class="close-spec reveal">
+      <div class="row"><span class="k">Trial</span><span class="v">7 days · free</span></div>
+      <div class="row"><span class="k">Commitment</span><span class="v">None · No credit card</span></div>
+      <div class="row"><span class="k">Session</span><span class="v">5 to 10 mins / day</span></div>
+      <div class="row"><span class="k">Price</span><span class="v price">$4.99 / yr</span></div>
+    </div>
+
+    <p class="close-cta-headline reveal">
+      Start the <span class="accent">7-day challenge.</span>
+    </p>
+
+    <div class="close-cta-row reveal-stagger">
+      <a href="https://apps.apple.com/us/app/pulsekegel/id6758308054" target="_blank" rel="noopener" class="app-badge" aria-label="Download on the App Store">
+        <svg class="app-badge-logo" viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true">
+          <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zm-5.24-14.1c-.1-2.18 1.67-4 3.71-4.18.26 2.39-2.17 4.33-3.71 4.18z"/>
+        </svg>
+        <span class="app-badge-text">
+          <span class="small">Download on the</span>
+          <span class="big">App Store</span>
+        </span>
+      </a>
+
+      <span class="app-badge soon" aria-label="Google Play — Coming soon">
+        <svg class="app-badge-logo" viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true">
+          <path d="M3.6 2.5C3.3 2.8 3.2 3.2 3.2 3.7v16.6c0 .5.1.9.4 1.2l9.5-9.5L3.6 2.5zm11.1 10.1l2.7 2.7-10.1 5.7c-.3.2-.7.2-1 .1l8.4-8.5zm2.7-4.5l3.3 1.9c.7.4.7 1.3 0 1.7l-3.4 1.9L14.6 12l2.8-3.9zm-13.2-5l10.2 5.8-2.6 2.6-8.3-8.3c.3-.1.5-.1.7-.1z"/>
+        </svg>
+        <span class="app-badge-text">
+          <span class="small">Coming soon to</span>
+          <span class="big">Google Play</span>
+        </span>
+      </span>
+    </div>
+
+    <div class="trust-line reveal">
+      No upsells <span>●</span> No ads <span>●</span> No clinic required
+    </div>
+  </div>
+
+  <div class="end-tag reveal">
+    <span>Session complete</span>
+    <span><span class="end-live">●</span> Standby &nbsp;&nbsp; v1.0</span>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- FOOTER                                                        -->
+<!-- ============================================================ -->
+<footer class="page-footer">
+  <div class="footer-main">
+
+    <!-- BRAND -->
+    <div class="footer-col brand-col">
+      <div class="wordmark">
+        <span class="dot"></span>
+        PulseKegel
+      </div>
+      <p class="footer-tagline">
+        It's not age.<br />
+        <span>It's neglect.</span>
+      </p>
+    </div>
+
+    <!-- NAVIGATE -->
+    <div class="footer-col">
+      <h4>Navigate</h4>
+      <ul class="footer-links">
+        <li><a href="/blog">Blog</a></li>
+        <li><a href="/privacy">Privacy</a></li>
+        <li><a href="/contact">Contact</a></li>
+      </ul>
+    </div>
+
+    <!-- GET THE APP -->
+    <div class="footer-col">
+      <h4>Get the app</h4>
+      <ul class="footer-links">
+        <li><a href="https://apps.apple.com/us/app/pulsekegel/id6758308054" target="_blank" rel="noopener">App Store — iOS</a></li>
+        <li><span class="soon">Google Play <em>Soon</em></span></li>
+      </ul>
+    </div>
+
+    <!-- FOLLOW -->
+    <div class="footer-col">
+      <h4>Follow</h4>
+      <div class="footer-socials">
+        <a href="#" aria-label="Facebook">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+            <path d="M13.5 21v-8.25h2.78l.42-3.22h-3.2V7.49c0-.93.26-1.57 1.6-1.57l1.71-.01V3.13c-.3-.04-1.31-.13-2.49-.13-2.47 0-4.16 1.51-4.16 4.27v2.38H7.38v3.22h2.78V21h3.34z"/>
+          </svg>
+        </a>
+        <a href="#" aria-label="Instagram">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+            <rect x="3.2" y="3.2" width="17.6" height="17.6" rx="5" />
+            <circle cx="12" cy="12" r="3.8" />
+            <circle cx="17.4" cy="6.6" r="0.9" fill="currentColor" stroke="none" />
+          </svg>
+        </a>
+        <a href="#" aria-label="Threads">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+            <path d="M12.19 21.5c-3.02-.02-5.34-1.04-6.89-3.03-1.38-1.78-2.09-4.26-2.11-7.36v-.22c.02-3.1.73-5.58 2.11-7.36C6.85 1.54 9.17.52 12.19.5h.01c2.3.01 4.21.6 5.67 1.72 1.37 1.05 2.34 2.55 2.87 4.44l-1.95.55c-.45-1.58-1.21-2.77-2.26-3.56-1.08-.82-2.52-1.24-4.34-1.25-2.29.02-4.02.76-5.15 2.21-1.06 1.35-1.6 3.31-1.62 5.83v.22c.02 2.52.56 4.48 1.62 5.83 1.13 1.45 2.86 2.19 5.15 2.21 2.06-.01 3.42-.49 4.56-1.6.91-.88 1.4-2.05 1.4-3.37 0-.67-.13-1.27-.39-1.79-.33.72-.84 1.32-1.54 1.75-.95.6-2.14.88-3.55.82-1.25-.05-2.38-.36-3.25-.9-.97-.6-1.52-1.51-1.52-2.62 0-1.04.48-1.93 1.39-2.55.93-.63 2.17-.95 3.58-.92 1.19.03 2.3.29 3.26.77-.11-.71-.46-1.27-1.03-1.65-.51-.34-1.17-.52-1.93-.52h-.05c-.81.02-1.94.28-2.58 1.29l-1.65-1.12c.85-1.35 2.4-2.09 4.25-2.12h.08c1.59 0 2.91.48 3.83 1.39.53.53.92 1.21 1.14 2.02.63.26 1.19.58 1.65.95 1.09.85 1.69 2.14 1.69 3.62 0 2.85-2.16 4.82-4.55 5.58-1.04.33-2.21.5-3.5.5zm0-9.22c-.85 0-1.58.17-2.08.49-.48.31-.72.74-.72 1.29 0 .49.23.87.69 1.16.47.29 1.09.44 1.8.47 1.01.04 1.86-.16 2.45-.58.55-.39.86-.93.91-1.62-.7-.54-1.75-.93-2.96-1.1-.03-.04-.06-.06-.09-.11z"/>
+          </svg>
+        </a>
+        <a href="#" aria-label="TikTok">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+            <path d="M19.6 6.76c-1.41-.31-2.69-1.07-3.57-2.17A5.4 5.4 0 0 1 15 2.4h-3.13v12.51a2.54 2.54 0 1 1-1.77-2.42V9.3a5.67 5.67 0 1 0 4.9 5.61V9.03a8.46 8.46 0 0 0 4.6 1.43V7.29l-.03-.53z"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer-bottom">
+    <div class="left">© 2026 PulseKegel <span>● System nominal</span></div>
+    <div class="right">Train the muscle you're missing.</div>
+  </div>
+</footer>
+
+<script>
+  // ---------- SINGLE-BAR LED GAUGE ----------
+  // Runs a real squeeze cycle (SQUEEZE → HOLD → RELEASE → REST).
+  // Reusable: call runGauge(bar, phaseEl, repEl) for each instance.
+
+  const SEGMENTS = 24;
+  const PHASES = [
+    { name: 'SQUEEZE', cls: '',         dur: 1800, from: 0.00, to: 0.82 },
+    { name: 'HOLD',    cls: 'hold',     dur: 2400, from: 0.82, to: 0.82 },
+    { name: 'RELEASE', cls: 'release',  dur: 1600, from: 0.82, to: 0.05 },
+    { name: 'REST',    cls: 'rest',     dur: 1400, from: 0.05, to: 0.05 },
+  ];
+  const TOTAL = PHASES.reduce((a, p) => a + p.dur, 0);
+
+  function easeInOut(t) { return t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2)/2; }
+
+  function runGauge(barEl, phaseEl, repEl, repTarget = 10, startOffset = 0) {
+    const segs = [];
+    for (let i = 0; i < SEGMENTS; i++) {
+      const s = document.createElement('div');
+      s.className = 'seg';
+      // index from bottom (visually: segments stack bottom-up because .bar is flex-col-reverse)
+      // so --i: 0 is the bottom segment, --i: SEGMENTS-1 is the top — for staggered boot-up
+      s.style.setProperty('--i', i);
+      barEl.appendChild(s);
+      segs.push(s);
+    }
+
+    let rep = 1;
+    let start = null;
+    let lastPhase = null;
+
+    function tick(ts) {
+      if (!start) start = ts - startOffset;
+      const elapsed = (ts - start) % TOTAL;
+
+      let acc = 0;
+      let current = PHASES[0];
+      let phaseLocalTs = 0;
+      for (const p of PHASES) {
+        if (elapsed < acc + p.dur) {
+          current = p;
+          phaseLocalTs = (elapsed - acc) / p.dur;
+          break;
+        }
+        acc += p.dur;
+      }
+
+      if (lastPhase !== current.name) {
+        lastPhase = current.name;
+        phaseEl.textContent = current.name;
+        phaseEl.className = 'phase ' + current.cls;
+        if (current.name === 'SQUEEZE') {
+          rep = (rep % repTarget) + 1;
+          repEl.textContent = String(rep).padStart(2, '0');
+        }
+      }
+
+      let level = current.from + (current.to - current.from) * easeInOut(phaseLocalTs);
+      if (current.name === 'HOLD') {
+        level += Math.sin(ts / 120) * 0.015;
+      }
+      level = Math.max(0, Math.min(1, level));
+
+      const lit = Math.round(level * SEGMENTS);
+      for (let i = 0; i < SEGMENTS; i++) {
+        const el = segs[i];
+        if (i < lit) {
+          if (i >= SEGMENTS - 1)       el.className = 'seg on-red';
+          else if (i >= SEGMENTS - 3)  el.className = 'seg on-amber';
+          else                         el.className = 'seg on-teal';
+        } else {
+          el.className = 'seg';
+        }
+      }
+
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  // Instantiate both gauges. Rep totals differ to show that reps are
+  // variable (program-driven), not a fixed count. Phone offset so the
+  // two aren't synced — reads as "two instruments, alive."
+  runGauge(
+    document.querySelector('[data-gauge="hero"]'),
+    document.querySelector('[data-phase="hero"]'),
+    document.querySelector('[data-rep="hero"]'),
+    8,    // this session's rep target — varies by program phase
+    0
+  );
+  runGauge(
+    document.querySelector('[data-gauge="phone"]'),
+    document.querySelector('[data-phase="phone"]'),
+    document.querySelector('[data-rep="phone"]'),
+    6,    // different session, different target
+    3100
+  );
+
+  // ---------- SCROLL-REVEAL OBSERVER ----------
+  // One-shot reveals: add .in-view the first time an element crosses the
+  // viewport threshold, then stop watching it. Handles every reveal variant
+  // via a single shared class selector.
+  (function setupReveals() {
+    const selector = [
+      '.reveal',
+      '.reveal-x',
+      '.reveal-line',
+      '.reveal-stagger',
+      '.bar.reveal-gauge',
+      '.privacy-tags'
+    ].join(', ');
+
+    const targets = document.querySelectorAll(selector);
+    if (!('IntersectionObserver' in window) || !targets.length) {
+      // Fallback: just show everything immediately
+      targets.forEach(el => el.classList.add('in-view'));
+      return;
+    }
+
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in-view');
+          io.unobserve(entry.target);
+        }
+      });
+    }, {
+      threshold: 0.18,
+      rootMargin: '0px 0px -6% 0px'
+    });
+
+    targets.forEach(el => io.observe(el));
+  })();
+</script>
+</body>
+</html>
