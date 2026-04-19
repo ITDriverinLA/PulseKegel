@@ -1,1033 +1,1333 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>
-      PulseKegel Blog - Pelvic Floor Exercise Guides & Training Tips
-    </title>
-    <meta
-      name="description"
-      content="Expert guides on pelvic floor exercises, kegel routines for men and women, bladder control tips, postpartum recovery, and breathing techniques. Free training plans you can start today."
-    />
-    <link rel="canonical" href="https://pulsekegel.com/blog" />
-    <link rel="icon" type="image/png" href="/favicon.png" />
-    <meta
-      property="og:title"
-      content="PulseKegel Blog - Pelvic Floor Exercise Guides & Training Tips"
-    />
-    <meta
-      property="og:description"
-      content="Expert guides on pelvic floor exercises, kegel routines, bladder control, postpartum recovery, and breathing techniques."
-    />
-    <meta property="og:url" content="https://pulsekegel.com/blog" />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://pulsekegel.com/favicon.png" />
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-          {
-            "@type": "ListItem",
-            "position": 1,
-            "name": "Home",
-            "item": "https://pulsekegel.com"
-          },
-          {
-            "@type": "ListItem",
-            "position": 2,
-            "name": "Blog",
-            "item": "https://pulsekegel.com/blog"
-          }
-        ]
-      }
-    </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;900&family=Inter:wght@300;400;500;600&display=swap"
-      rel="stylesheet"
-    />
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-      html {
-        scroll-behavior: smooth;
-      }
-      body {
-        font-family:
-          "Inter",
-          -apple-system,
-          BlinkMacSystemFont,
-          sans-serif;
-        background: linear-gradient(
-          135deg,
-          #0a0a1a 0%,
-          #1a1a2e 25%,
-          #16213e 50%,
-          #0f0f23 75%,
-          #0a0a1a 100%
-        );
-        color: #ffffff;
-        min-height: 100vh;
-        overflow-x: hidden;
-      }
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Blog — PulseKegel</title>
+<meta name="description" content="Straightforward guides on bladder control, stamina, and pelvic strength. Take back control — learn what actually works." />
+<meta name="theme-color" content="#0B0E26" />
 
-      .glow-orb {
-        position: fixed;
-        border-radius: 50%;
-        filter: blur(80px);
-        opacity: 0.3;
-        pointer-events: none;
-        z-index: 0;
-      }
-      .orb-1 {
-        width: 400px;
-        height: 400px;
-        background: #00ff88;
-        top: -100px;
-        right: -100px;
-      }
-      .orb-2 {
-        width: 300px;
-        height: 300px;
-        background: #ff00ff;
-        bottom: 20%;
-        left: -100px;
-      }
-      .orb-3 {
-        width: 250px;
-        height: 250px;
-        background: #00ffff;
-        bottom: -50px;
-        right: 20%;
-      }
+<!-- Open Graph -->
+<meta property="og:title" content="Blog — PulseKegel" />
+<meta property="og:description" content="Straightforward guides on bladder control, stamina, and pelvic strength." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://pulsekegel.com/blog/" />
 
-      .container {
-        max-width: 1100px;
-        margin: 0 auto;
-        padding: 0 24px;
-        position: relative;
-        z-index: 1;
-      }
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 
-      /* HEADER */
-      .site-header {
-        padding: 24px 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        position: relative;
-        z-index: 1;
-      }
-      .header-inner {
-        max-width: 1100px;
-        margin: 0 auto;
-        padding: 0 24px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-      }
-      .header-logo {
-        font-family: "Orbitron", sans-serif;
-        font-size: 1.4rem;
-        font-weight: 700;
-        background: linear-gradient(90deg, #00ff88, #00ffff);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        text-decoration: none;
-      }
-      .header-nav a {
-        font-size: 0.9rem;
-        color: rgba(255, 255, 255, 0.65);
-        text-decoration: none;
-        transition: color 0.2s;
-      }
-      .header-nav a:hover {
-        color: #00ff88;
-      }
-      .breadcrumb {
-        font-size: 0.85rem;
-        color: rgba(255, 255, 255, 0.4);
-      }
-      .breadcrumb a {
-        color: rgba(255, 255, 255, 0.55);
-        text-decoration: none;
-      }
-      .breadcrumb a:hover {
-        color: #00ffff;
-      }
+<style>
+  /* =========================================================
+     PULSEKEGEL — BLOG INDEX
+     Brand system shared with pk-premium-hero-concept-v2.html
+     ========================================================= */
+  :root {
+    --navy-deep: #080A20;
+    --navy: #0B0E26;
+    --navy-soft: #15183A;
+    --teal: #36E7B3;
+    --teal-dim: #1E8A6B;
+    --white: #F6F7FB;
+    --gray: #A8ACC4;
+    --gray-dim: #6B6F88;
+    --violet: #8B5CF6;
+    --line: rgba(255, 255, 255, 0.08);
+    --line-strong: rgba(255, 255, 255, 0.14);
+  }
 
-      /* HERO */
-      .hero {
-        padding: 80px 0 64px;
-        text-align: center;
-      }
-      .hero-eyebrow {
-        font-family: "Orbitron", sans-serif;
-        font-size: 0.75rem;
-        letter-spacing: 0.15em;
-        color: #00ff88;
-        text-transform: uppercase;
-        margin-bottom: 20px;
-      }
-      .hero-headline {
-        font-family: "Orbitron", sans-serif;
-        font-size: clamp(1.8rem, 5vw, 3rem);
-        font-weight: 700;
-        line-height: 1.25;
-        margin-bottom: 20px;
-        background: linear-gradient(
-          135deg,
-          #ffffff 0%,
-          #00ffff 60%,
-          #00ff88 100%
-        );
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-      }
-      .hero-subhead {
-        font-size: 1.1rem;
-        color: rgba(255, 255, 255, 0.75);
-        max-width: 560px;
-        margin: 0 auto 16px;
-        line-height: 1.7;
-        font-weight: 300;
-      }
-      .hero-edge {
-        font-size: 0.9rem;
-        color: rgba(255, 255, 255, 0.45);
-        margin-bottom: 36px;
-        font-style: italic;
-      }
-      .hero-cta {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        padding: 15px 40px;
-        background: linear-gradient(135deg, #00ff88, #00ffaa);
-        color: #0a0a1a;
-        font-family: "Orbitron", sans-serif;
-        font-size: 0.95rem;
-        font-weight: 700;
-        text-decoration: none;
-        border-radius: 50px;
-        box-shadow: 0 0 30px rgba(0, 255, 136, 0.4);
-        transition:
-          transform 0.25s ease,
-          box-shadow 0.25s ease;
-        letter-spacing: 0.03em;
-      }
-      .hero-cta:hover {
-        transform: scale(1.05);
-        box-shadow: 0 0 50px rgba(0, 255, 136, 0.6);
-      }
-      .hero-cta svg {
-        width: 18px;
-        height: 18px;
-      }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-      /* SECTION LABELS */
-      .section-label {
-        font-family: "Orbitron", sans-serif;
-        font-size: 0.7rem;
-        letter-spacing: 0.18em;
-        text-transform: uppercase;
-        color: #00ff88;
-        margin-bottom: 12px;
-      }
-      .section-title {
-        font-family: "Orbitron", sans-serif;
-        font-size: clamp(1.25rem, 3vw, 1.75rem);
-        font-weight: 600;
-        margin-bottom: 8px;
-      }
-      .section-title.cyan {
-        color: #00ffff;
-      }
-      .section-title.green {
-        color: #00ff88;
-      }
-      .section-title.white {
-        color: #ffffff;
-      }
-      .section-sub {
-        font-size: 0.95rem;
-        color: rgba(255, 255, 255, 0.5);
-        margin-bottom: 40px;
-      }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--navy-deep);
+    color: var(--white);
+    font-family: 'Poppins', system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
 
-      /* START HERE */
-      .start-here {
-        padding: 64px 0;
-      }
-      .start-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 20px;
-      }
-      .start-tile {
-        background: rgba(26, 26, 46, 0.7);
-        border: 1px solid rgba(0, 255, 255, 0.15);
-        border-radius: 16px;
-        padding: 28px 24px;
-        text-decoration: none;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        transition:
-          transform 0.25s ease,
-          border-color 0.25s ease,
-          box-shadow 0.25s ease;
-      }
-      .start-tile:hover {
-        transform: translateY(-4px);
-        border-color: rgba(0, 255, 136, 0.4);
-        box-shadow: 0 8px 32px rgba(0, 255, 136, 0.1);
-      }
-      .start-situation {
-        font-size: 0.78rem;
-        color: #00ff88;
-        font-weight: 500;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-      }
-      .start-title {
-        font-family: "Orbitron", sans-serif;
-        font-size: 0.95rem;
-        color: #ffffff;
-        line-height: 1.5;
-      }
-      .start-arrow {
-        font-size: 0.85rem;
-        color: #00ffff;
-        margin-top: auto;
-        padding-top: 6px;
-      }
+  a { color: inherit; text-decoration: none; }
 
-      /* MOST READ */
-      .most-read {
-        padding: 64px 0;
-      }
-      .most-read-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 24px;
-      }
-      .featured-card {
-        background: linear-gradient(
-          135deg,
-          rgba(26, 26, 46, 0.9),
-          rgba(22, 33, 62, 0.9)
-        );
-        border: 1px solid rgba(0, 255, 255, 0.2);
-        border-radius: 20px;
-        padding: 32px 28px;
-        text-decoration: none;
-        display: block;
-        position: relative;
-        overflow: hidden;
-        transition:
-          transform 0.25s ease,
-          border-color 0.25s ease;
-      }
-      .featured-card::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, #00ff88, #00ffff);
-      }
-      .featured-card:hover {
-        transform: translateY(-4px);
-        border-color: rgba(0, 255, 136, 0.4);
-      }
-      .featured-badge {
-        display: inline-block;
-        font-size: 0.65rem;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        color: #00ff88;
-        background: rgba(0, 255, 136, 0.1);
-        border: 1px solid rgba(0, 255, 136, 0.25);
-        border-radius: 4px;
-        padding: 3px 8px;
-        margin-bottom: 16px;
-      }
-      .featured-hook {
-        font-family: "Orbitron", sans-serif;
-        font-size: 1rem;
-        color: #ffffff;
-        line-height: 1.55;
-        margin-bottom: 12px;
-      }
-      .featured-punch {
-        font-size: 0.875rem;
-        color: rgba(255, 255, 255, 0.6);
-        line-height: 1.6;
-        margin-bottom: 20px;
-      }
-      .featured-read {
-        font-size: 0.82rem;
-        color: #00ffff;
-        font-weight: 500;
-      }
+  ::selection { background: var(--teal); color: var(--navy-deep); }
 
-      /* PRODUCT BRIDGE CTA */
-      .bridge-cta {
-        padding: 64px 0;
-      }
-      .bridge-card {
-        background: linear-gradient(
-          135deg,
-          rgba(0, 255, 136, 0.08),
-          rgba(0, 255, 255, 0.08)
-        );
-        border: 1px solid rgba(0, 255, 136, 0.3);
-        border-radius: 24px;
-        padding: 48px 40px;
-        text-align: center;
-        max-width: 720px;
-        margin: 0 auto;
-        position: relative;
-        overflow: hidden;
-      }
-      .bridge-card::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, #00ff88, #00ffff, #ff00ff);
-      }
-      .bridge-title {
-        font-family: "Orbitron", sans-serif;
-        font-size: clamp(1.1rem, 3vw, 1.5rem);
-        color: #00ff88;
-        margin-bottom: 16px;
-        line-height: 1.4;
-      }
-      .bridge-body {
-        font-size: 1rem;
-        color: rgba(255, 255, 255, 0.75);
-        margin-bottom: 32px;
-        line-height: 1.7;
-        max-width: 520px;
-        margin-left: auto;
-        margin-right: auto;
-      }
-      .bridge-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        padding: 14px 36px;
-        background: linear-gradient(135deg, #00ff88, #00ffaa);
-        color: #0a0a1a;
-        font-family: "Orbitron", sans-serif;
-        font-size: 0.9rem;
-        font-weight: 700;
-        text-decoration: none;
-        border-radius: 50px;
-        box-shadow: 0 0 24px rgba(0, 255, 136, 0.35);
-        transition:
-          transform 0.25s ease,
-          box-shadow 0.25s ease;
-        letter-spacing: 0.03em;
-      }
-      .bridge-btn:hover {
-        transform: scale(1.05);
-        box-shadow: 0 0 40px rgba(0, 255, 136, 0.55);
-      }
-      .bridge-btn svg {
-        width: 16px;
-        height: 16px;
-      }
+  /* ---------- SHARED HUD BRACKETS ---------- */
+  .bracket {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border-color: var(--teal);
+    border-style: solid;
+    border-width: 0;
+    opacity: 0.65;
+    pointer-events: none;
+  }
+  .bracket.tl { top: 18px; left: 18px; border-top-width: 2px; border-left-width: 2px; }
+  .bracket.tr { top: 18px; right: 18px; border-top-width: 2px; border-right-width: 2px; }
+  .bracket.bl { bottom: 18px; left: 18px; border-bottom-width: 2px; border-left-width: 2px; }
+  .bracket.br { bottom: 18px; right: 18px; border-bottom-width: 2px; border-right-width: 2px; }
 
-      /* ALL ARTICLES */
-      .all-articles {
-        padding: 64px 0;
-      }
-      .articles-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 20px;
-      }
-      .article-card {
-        background: rgba(26, 26, 46, 0.6);
-        border: 1px solid rgba(0, 255, 255, 0.12);
-        border-radius: 16px;
-        padding: 28px 24px;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        transition:
-          transform 0.25s ease,
-          border-color 0.25s ease;
-      }
-      .article-card:hover {
-        transform: translateY(-3px);
-        border-color: rgba(0, 255, 255, 0.3);
-      }
-      .article-hook {
-        font-family: "Orbitron", sans-serif;
-        font-size: 0.9rem;
-        color: #00ffff;
-        line-height: 1.55;
-      }
-      .article-punch {
-        font-size: 0.875rem;
-        color: rgba(255, 255, 255, 0.58);
-        line-height: 1.6;
-        flex-grow: 1;
-      }
-      .article-read {
-        display: inline-block;
-        margin-top: 12px;
-        font-size: 0.82rem;
-        color: #00ff88;
-        font-weight: 500;
-        text-decoration: none;
-      }
-      .article-read:hover {
-        color: #00ffff;
-      }
-      .article-badge {
-        display: inline-block;
-        background: rgba(0, 255, 136, 0.1);
-        color: #00ff88;
-        border: 1px solid rgba(0, 255, 136, 0.25);
-        padding: 3px 10px;
-        border-radius: 20px;
-        font-size: 0.7rem;
-        font-weight: 600;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        margin-bottom: 4px;
-      }
+  /* ---------- SIDE READOUTS (vertical rails) ---------- */
+  .rail-left, .rail-right {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%) rotate(-90deg);
+    transform-origin: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.25em;
+    color: var(--gray-dim);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .rail-left  { left: -40px; }
+  .rail-right { right: -64px; color: var(--teal-dim); }
+  .rail-right .live {
+    color: var(--teal);
+    animation: blink 1.6s steps(2, end) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0.25; } }
 
-      /* BROWSE BY GOAL */
-      .browse-goals {
-        padding: 64px 0;
-      }
-      .goals-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 16px;
-      }
-      .goal-tile {
-        background: rgba(26, 26, 46, 0.65);
-        border: 1px solid rgba(255, 0, 255, 0.15);
-        border-radius: 14px;
-        padding: 24px 20px;
-        text-decoration: none;
-        text-align: center;
-        transition:
-          transform 0.25s ease,
-          border-color 0.25s ease,
-          box-shadow 0.25s ease;
-      }
-      .goal-tile:hover {
-        transform: translateY(-4px);
-        border-color: rgba(255, 0, 255, 0.4);
-        box-shadow: 0 8px 28px rgba(255, 0, 255, 0.1);
-      }
-      .goal-icon {
-        font-size: 1.4rem;
-        margin-bottom: 10px;
-        display: block;
-      }
-      .goal-name {
-        font-family: "Orbitron", sans-serif;
-        font-size: 0.78rem;
-        color: #ff00ff;
-        line-height: 1.4;
-        font-weight: 600;
-        letter-spacing: 0.04em;
-      }
-      .goal-desc {
-        font-size: 0.8rem;
-        color: rgba(255, 255, 255, 0.5);
-        margin-top: 6px;
-        line-height: 1.4;
-      }
+  /* ---------- TOP NAV ---------- */
+  .site-nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    padding: 20px 44px;
+    background: rgba(8, 10, 32, 0.88);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .wordmark {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: 20px;
+    letter-spacing: -0.01em;
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .wordmark .dot {
+    width: 8px;
+    height: 8px;
+    background: var(--teal);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--teal);
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.45; transform: scale(0.85); }
+    50%      { opacity: 1;    transform: scale(1.1);  }
+  }
+  .menu {
+    display: flex;
+    gap: 28px;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gray);
+  }
+  .menu a {
+    padding-bottom: 2px;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .menu a:hover { color: var(--teal); border-bottom-color: var(--teal); }
+  .menu a[aria-current="page"] { color: var(--white); }
 
-      /* DIVIDER */
-      .divider {
-        height: 1px;
-        background: linear-gradient(
-          90deg,
-          transparent,
-          rgba(255, 255, 255, 0.1),
-          transparent
-        );
-        margin: 8px 0;
-      }
+  .btn-primary {
+    background: var(--teal);
+    color: var(--navy-deep);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 10px 18px;
+    border-radius: 3px;
+    transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(54, 231, 179, 0.25);
+  }
+  .btn-primary .arrow { transition: transform 0.2s; }
+  .btn-primary:hover .arrow { transform: translateX(3px); }
 
-      /* FOOTER */
-      footer {
-        padding: 40px 0;
-        border-top: 1px solid rgba(255, 255, 255, 0.08);
-        text-align: center;
-        position: relative;
-        z-index: 1;
-      }
-      .footer-links {
-        display: flex;
-        justify-content: center;
-        gap: 28px;
-        margin-bottom: 16px;
-        flex-wrap: wrap;
-      }
-      .footer-links a {
-        font-size: 0.875rem;
-        color: rgba(255, 255, 255, 0.5);
-        text-decoration: none;
-        transition: color 0.2s;
-      }
-      .footer-links a:hover {
-        color: #00ff88;
-      }
-      .footer-copy {
-        font-size: 0.8rem;
-        color: rgba(255, 255, 255, 0.3);
-      }
+  /* ---------- HERO ---------- */
+  .blog-hero {
+    position: relative;
+    padding: 120px 44px 90px;
+    background:
+      radial-gradient(ellipse at 28% 60%, rgba(54, 231, 179, 0.10) 0%, transparent 50%),
+      linear-gradient(180deg, var(--navy) 0%, var(--navy-deep) 100%);
+    border-bottom: 1px solid var(--line);
+  }
+  .blog-hero-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    position: relative;
+  }
+  .blog-hero .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: var(--teal);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 36px;
+  }
+  .blog-hero .eyebrow::before {
+    content: '';
+    width: 38px;
+    height: 1px;
+    background: var(--teal);
+    opacity: 0.6;
+  }
+  .blog-hero h1 {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: clamp(44px, 6.5vw, 88px);
+    line-height: 0.98;
+    letter-spacing: -0.025em;
+    color: var(--white);
+    max-width: 920px;
+    margin-bottom: 28px;
+  }
+  .blog-hero h1 .accent { color: var(--teal); }
+  .blog-hero .subtitle {
+    font-size: clamp(17px, 1.6vw, 20px);
+    line-height: 1.55;
+    color: var(--gray);
+    max-width: 620px;
+    margin-bottom: 40px;
+  }
+  .blog-hero .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 28px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--gray-dim);
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px dashed var(--line);
+  }
+  .blog-hero .meta-row span .k { color: var(--teal); margin-right: 8px; }
 
-      @media (max-width: 600px) {
-        .hero {
-          padding: 56px 0 48px;
-        }
-        .bridge-card {
-          padding: 36px 24px;
-        }
-        .start-grid {
-          grid-template-columns: 1fr 1fr;
-        }
-        .goals-grid {
-          grid-template-columns: 1fr 1fr;
-        }
-      }
-      @media (max-width: 400px) {
-        .start-grid {
-          grid-template-columns: 1fr;
-        }
-        .goals-grid {
-          grid-template-columns: 1fr;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <div class="glow-orb orb-1"></div>
-    <div class="glow-orb orb-2"></div>
-    <div class="glow-orb orb-3"></div>
+  /* ---------- SHARED SECTION SHELL ---------- */
+  .blog-section {
+    position: relative;
+    padding: 90px 44px 70px;
+    border-bottom: 1px solid var(--line);
+  }
+  .blog-section:nth-of-type(even) {
+    background:
+      radial-gradient(ellipse at 78% 30%, rgba(139, 92, 246, 0.05) 0%, transparent 55%),
+      var(--navy-deep);
+  }
+  .section-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+  .section-divider {
+    border-top: 1px dashed var(--line);
+    padding-top: 14px;
+    display: flex;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    color: var(--gray-dim);
+    text-transform: uppercase;
+    margin-bottom: 40px;
+  }
+  .section-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-bottom: 48px;
+  }
+  .section-head h2 {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: clamp(32px, 4vw, 54px);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--white);
+    max-width: 780px;
+  }
+  .section-head h2 .accent { color: var(--teal); }
+  .section-head .head-note {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gray);
+    max-width: 300px;
+    text-align: right;
+  }
+  .section-head .head-note .k { color: var(--teal); }
 
-    <!-- HEADER -->
-    <header class="site-header">
-      <div class="header-inner">
-        <a href="/" class="header-logo">PulseKegel</a>
-        <nav class="header-nav" aria-label="Site navigation">
-          <a href="/">Back to Home</a>
-        </nav>
+  /* ---------- QUICK-LINK CARDS (Start Here) ---------- */
+  .quick-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+  }
+  .quick-card {
+    position: relative;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 28px 26px 26px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-height: 220px;
+    transition: border-color 0.2s, transform 0.2s, background 0.2s;
+  }
+  .quick-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 26px;
+    width: 32px;
+    height: 2px;
+    background: var(--teal);
+  }
+  .quick-card:hover {
+    border-color: rgba(54, 231, 179, 0.35);
+    background: rgba(54, 231, 179, 0.03);
+    transform: translateY(-3px);
+  }
+  .quick-card .num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    color: var(--teal);
+    text-transform: uppercase;
+  }
+  .quick-card .q-title {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    color: var(--white);
+    flex: 1;
+  }
+  .quick-card .q-sub {
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--gray);
+  }
+  .quick-card .q-go {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.24em;
+    color: var(--teal);
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .quick-card .q-go .arrow { transition: transform 0.2s; }
+  .quick-card:hover .q-go .arrow { transform: translateX(4px); }
+
+  /* ---------- MOST READ (featured row) ---------- */
+  .featured-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  .featured-card {
+    position: relative;
+    background: linear-gradient(180deg, rgba(54, 231, 179, 0.04) 0%, rgba(54, 231, 179, 0) 60%);
+    border: 1px solid rgba(54, 231, 179, 0.20);
+    border-radius: 4px;
+    padding: 30px 28px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-height: 280px;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .featured-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 28px;
+    width: 38px;
+    height: 2px;
+    background: var(--teal);
+    box-shadow: 0 0 10px rgba(54, 231, 179, 0.5);
+  }
+  .featured-card:hover {
+    border-color: rgba(54, 231, 179, 0.5);
+    transform: translateY(-3px);
+  }
+  .featured-card .rank {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    color: var(--teal);
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .featured-card .rank .tag {
+    color: var(--gray);
+    letter-spacing: 0.22em;
+  }
+  .featured-card .f-title {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: clamp(22px, 2vw, 26px);
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    color: var(--white);
+  }
+  .featured-card .f-sub {
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--gray);
+    flex: 1;
+  }
+  .featured-card .f-go {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.26em;
+    color: var(--teal);
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .featured-card .f-go .arrow { transition: transform 0.2s; }
+  .featured-card:hover .f-go .arrow { transform: translateX(4px); }
+
+  /* ---------- ALL GUIDES (post grid) ---------- */
+  .post-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+  }
+  .post-card {
+    position: relative;
+    background: rgba(255, 255, 255, 0.015);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 26px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 240px;
+    transition: border-color 0.2s, transform 0.2s, background 0.2s;
+  }
+  .post-card:hover {
+    border-color: rgba(54, 231, 179, 0.3);
+    background: rgba(54, 231, 179, 0.02);
+    transform: translateY(-2px);
+  }
+  .post-card .p-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.26em;
+    color: var(--teal);
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .post-card .p-tag::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--teal);
+    border-radius: 50%;
+    box-shadow: 0 0 6px rgba(54, 231, 179, 0.6);
+  }
+  .post-card .p-divider {
+    height: 1px;
+    background-image: linear-gradient(to right, var(--line) 50%, transparent 50%);
+    background-size: 8px 1px;
+  }
+  .post-card .p-title {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 19px;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    color: var(--white);
+  }
+  .post-card .p-sub {
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--gray);
+    flex: 1;
+  }
+  .post-card .p-read {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.24em;
+    color: var(--teal);
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding-top: 6px;
+    border-top: 1px dashed var(--line);
+  }
+  .post-card .p-read .arrow { transition: transform 0.2s; }
+  .post-card:hover .p-read .arrow { transform: translateX(4px); }
+
+  /* ---------- FOR LIFTERS (inline spotlight) ---------- */
+  .lifters-card {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: center;
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    border-radius: 4px;
+    padding: 40px 44px;
+    background:
+      radial-gradient(ellipse at 80% 50%, rgba(139, 92, 246, 0.08) 0%, transparent 60%),
+      rgba(255, 255, 255, 0.015);
+    overflow: hidden;
+  }
+  .lifters-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 44px;
+    width: 44px;
+    height: 2px;
+    background: var(--violet);
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.6);
+  }
+  .lifters-card .l-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    color: var(--violet);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: inline-block;
+  }
+  .lifters-card .l-title {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: clamp(26px, 2.6vw, 36px);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--white);
+    margin-bottom: 16px;
+  }
+  .lifters-card .l-sub {
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--gray);
+    max-width: 520px;
+  }
+  .lifters-card .l-go {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    color: var(--violet);
+    text-transform: uppercase;
+    padding: 12px 20px;
+    border: 1px solid rgba(139, 92, 246, 0.4);
+    border-radius: 3px;
+    transition: background 0.2s, border-color 0.2s, transform 0.2s;
+    justify-self: end;
+  }
+  .lifters-card .l-go:hover {
+    background: rgba(139, 92, 246, 0.08);
+    border-color: var(--violet);
+    transform: translateY(-1px);
+  }
+
+  /* ---------- BROWSE BY GOAL ---------- */
+  .goal-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+  }
+  .goal-card {
+    position: relative;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 28px 22px;
+    text-align: center;
+    transition: border-color 0.2s, background 0.2s, transform 0.2s;
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+  }
+  .goal-card:hover {
+    border-color: var(--teal);
+    background: rgba(54, 231, 179, 0.04);
+    transform: translateY(-2px);
+  }
+  .goal-card .g-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    color: var(--teal);
+    text-transform: uppercase;
+  }
+  .goal-card .g-label {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: -0.01em;
+    color: var(--white);
+  }
+  .goal-card .g-arrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--gray-dim);
+    letter-spacing: 0.2em;
+    transition: color 0.2s, transform 0.2s;
+  }
+  .goal-card:hover .g-arrow { color: var(--teal); transform: translateX(3px); }
+
+  /* ---------- CTA BLOCK ---------- */
+  .cta-block {
+    position: relative;
+    text-align: center;
+    padding: 110px 44px;
+    background:
+      radial-gradient(ellipse at 50% 30%, rgba(54, 231, 179, 0.10) 0%, transparent 55%),
+      linear-gradient(180deg, var(--navy) 0%, var(--navy-deep) 100%);
+    border-bottom: 1px solid var(--line);
+  }
+  .cta-block .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.32em;
+    color: var(--teal);
+    text-transform: uppercase;
+    margin-bottom: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+  }
+  .cta-block .eyebrow::before,
+  .cta-block .eyebrow::after {
+    content: '';
+    width: 38px;
+    height: 1px;
+    background: var(--teal);
+    opacity: 0.6;
+  }
+  .cta-block h2 {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: clamp(34px, 4.4vw, 58px);
+    line-height: 1;
+    letter-spacing: -0.025em;
+    color: var(--white);
+    margin-bottom: 22px;
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .cta-block h2 .accent { color: var(--teal); }
+  .cta-block p {
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--gray);
+    max-width: 520px;
+    margin: 0 auto 36px;
+  }
+
+  /* ---------- FOOTER ---------- */
+  .page-footer {
+    padding: 72px 44px 28px;
+    background: var(--navy-deep);
+    position: relative;
+  }
+  .page-footer::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 48px;
+    height: 2px;
+    background: var(--teal);
+    box-shadow: 0 0 12px rgba(54, 231, 179, 0.6);
+  }
+  .footer-main {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr 1fr;
+    gap: 56px;
+    padding-bottom: 48px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .footer-col h4 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--gray-dim);
+    margin-bottom: 18px;
+  }
+  .footer-col .wordmark { margin-bottom: 14px; }
+  .footer-col p.tag {
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--gray);
+    max-width: 280px;
+  }
+  .footer-col ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .footer-col li a {
+    color: var(--gray);
+    font-size: 14px;
+    transition: color 0.2s;
+  }
+  .footer-col li a:hover { color: var(--teal); }
+  .footer-col .social-row {
+    display: flex;
+    gap: 14px;
+  }
+  .footer-col .social-row a {
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gray);
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .footer-col .social-row a:hover {
+    color: var(--teal);
+    border-color: var(--teal);
+  }
+  .footer-col .social-row svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+  }
+  .footer-bottom {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding-top: 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    color: var(--gray-dim);
+    text-transform: uppercase;
+  }
+  .footer-bottom .left span { color: var(--teal); }
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width: 1100px) {
+    .quick-grid { grid-template-columns: repeat(2, 1fr); }
+    .featured-grid { grid-template-columns: repeat(2, 1fr); }
+    .post-grid { grid-template-columns: repeat(2, 1fr); }
+    .goal-grid { grid-template-columns: repeat(3, 1fr); }
+    .rail-left, .rail-right { display: none; }
+  }
+  @media (max-width: 900px) {
+    .site-nav { padding: 16px 32px; }
+    .blog-hero { padding: 90px 32px 70px; }
+    .blog-section { padding: 70px 32px 56px; }
+    .cta-block { padding: 80px 32px; }
+    .lifters-card {
+      grid-template-columns: 1fr;
+      gap: 28px;
+      padding: 32px 28px;
+    }
+    .lifters-card .l-go { justify-self: start; }
+    .footer-main { grid-template-columns: 1fr 1fr; gap: 40px; }
+    .footer-main .brand-col { grid-column: 1 / -1; }
+    .page-footer { padding: 60px 32px 28px; }
+  }
+  @media (max-width: 600px) {
+    .menu .nav-link { display: none; }
+    .menu { gap: 14px; }
+    .site-nav { padding: 14px 20px; }
+    .blog-hero { padding: 80px 20px 60px; }
+    .blog-section { padding: 60px 20px 48px; }
+    .quick-grid { grid-template-columns: 1fr; }
+    .featured-grid { grid-template-columns: 1fr; }
+    .post-grid { grid-template-columns: 1fr; }
+    .goal-grid { grid-template-columns: 1fr 1fr; }
+    .cta-block { padding: 70px 20px; }
+    .cta-block .eyebrow::before,
+    .cta-block .eyebrow::after { width: 22px; }
+    .section-head { flex-direction: column; align-items: flex-start; }
+    .section-head .head-note { text-align: left; }
+    .page-footer { padding: 48px 20px 24px; }
+    .footer-main {
+      grid-template-columns: 1fr;
+      gap: 32px;
+      padding-bottom: 32px;
+    }
+    .footer-bottom {
+      flex-direction: column;
+      align-items: flex-start;
+      font-size: 9px;
+    }
+  }
+
+  /* ---------- SCROLL REVEALS (subtle fade-up on entry) ---------- */
+  @keyframes reveal-up {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .reveal {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  .reveal.in-view {
+    opacity: 1;
+    transform: translateY(0);
+    animation: reveal-up 0.6s cubic-bezier(0.22, 0.7, 0.2, 1) backwards;
+  }
+  .reveal-stagger > * {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  .reveal-stagger.in-view > * {
+    opacity: 1;
+    transform: translateY(0);
+    animation: reveal-up 0.55s ease-out backwards;
+  }
+  .reveal-stagger.in-view > *:nth-child(1) { animation-delay:  40ms; }
+  .reveal-stagger.in-view > *:nth-child(2) { animation-delay: 110ms; }
+  .reveal-stagger.in-view > *:nth-child(3) { animation-delay: 180ms; }
+  .reveal-stagger.in-view > *:nth-child(4) { animation-delay: 250ms; }
+  .reveal-stagger.in-view > *:nth-child(5) { animation-delay: 320ms; }
+  .reveal-stagger.in-view > *:nth-child(6) { animation-delay: 390ms; }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .reveal, .reveal-stagger > * {
+      opacity: 1 !important;
+      transform: none !important;
+      animation: none !important;
+    }
+  }
+</style>
+</head>
+
+<body>
+
+<!-- =========================================================
+     TOP NAV
+     ========================================================= -->
+<header class="site-nav">
+  <div class="nav-inner">
+    <a class="wordmark" href="https://pulsekegel.com/" aria-label="PulseKegel home">
+      <span class="dot" aria-hidden="true"></span>
+      PulseKegel
+    </a>
+    <nav class="menu" aria-label="Primary">
+      <a class="nav-link" href="https://pulsekegel.com/">Home</a>
+      <a class="nav-link" href="https://pulsekegel.com/blog/" aria-current="page">Blog</a>
+      <a class="btn-primary" href="https://apps.apple.com/us/app/pulsekegel/id6758308054" target="_blank" rel="noopener">
+        Start Training
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+    </nav>
+  </div>
+</header>
+
+<!-- =========================================================
+     HERO
+     ========================================================= -->
+<section class="blog-hero" aria-labelledby="blog-hero-title">
+  <span class="bracket tl" aria-hidden="true"></span>
+  <span class="bracket tr" aria-hidden="true"></span>
+  <span class="bracket bl" aria-hidden="true"></span>
+  <span class="bracket br" aria-hidden="true"></span>
+  <div class="rail-left" aria-hidden="true">BLOG &nbsp; ▸ &nbsp; FIELD MANUAL</div>
+  <div class="rail-right" aria-hidden="true">LIBRARY &nbsp; <span class="live">● ONLINE</span> &nbsp; v1.0</div>
+
+  <div class="blog-hero-inner">
+    <div class="eyebrow reveal">Field Manual · 14 Guides</div>
+    <h1 id="blog-hero-title" class="reveal">
+      Take back control.<br />
+      <span class="accent">Learn what actually works.</span>
+    </h1>
+    <p class="subtitle reveal">
+      Straightforward guides on bladder control, stamina, and pelvic strength. No fluff. No pseudoscience. Just what the research says — translated into plain training.
+    </p>
+    <div class="meta-row">
+      <span><span class="k">▸</span> Evidence-based</span>
+      <span><span class="k">▸</span> Plain language</span>
+      <span><span class="k">▸</span> Built for men &amp; women</span>
+      <span><span class="k">▸</span> Free to read</span>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     START HERE — 4 quick cards
+     ========================================================= -->
+<section class="blog-section" id="start-here" aria-labelledby="start-here-title">
+  <div class="section-inner">
+    <div class="section-divider">
+      <span>01 / Start Here</span>
+      <span>Four entry points</span>
+    </div>
+    <div class="section-head">
+      <h2 id="start-here-title">
+        If you're <span class="accent">just starting.</span>
+      </h2>
+      <div class="head-note">
+        <span class="k">▸</span> Pick the one that matches where you are.
       </div>
-    </header>
+    </div>
 
-    <!-- HERO -->
-    <section class="hero">
-      <div class="container">
-        <p class="hero-eyebrow">PulseKegel Blog</p>
-        <h1 class="hero-headline">
-          Take Back Control.<br />Learn What Actually Works.
-        </h1>
-        <p class="hero-subhead">
-          Straightforward guides on bladder control, stamina, and pelvic
-          strength.
-        </p>
-        <p class="hero-edge">
-          No fluff. No awkward medical talk. Just what works.
-        </p>
-        <a
-          href="https://apps.apple.com/app/pulsekegel/id6741057595"
-          class="hero-cta"
-          target="_blank"
-          rel="noopener"
-        >
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path
-              d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"
-            />
-          </svg>
-          Start Training
+    <div class="quick-grid reveal-stagger">
+      <a class="quick-card" href="https://pulsekegel.com/blog/pelvic-floor-exercises-for-men">
+        <div class="num">01 / Beginner</div>
+        <div class="q-title">Pelvic Floor Exercises for Men</div>
+        <div class="q-sub">Stronger control starts here.</div>
+        <div class="q-go">Read <span class="arrow">→</span></div>
+      </a>
+      <a class="quick-card" href="https://pulsekegel.com/blog/how-to-do-kegels-correctly-men">
+        <div class="num">02 / Form</div>
+        <div class="q-title">How to Do Kegels Correctly</div>
+        <div class="q-sub">Doing Kegels wrong is more common than you think.</div>
+        <div class="q-go">Read <span class="arrow">→</span></div>
+      </a>
+      <a class="quick-card" href="https://pulsekegel.com/blog/how-to-last-longer-naturally">
+        <div class="num">03 / Stamina</div>
+        <div class="q-title">How to Last Longer Naturally</div>
+        <div class="q-sub">Lasting longer is trainable.</div>
+        <div class="q-go">Read <span class="arrow">→</span></div>
+      </a>
+      <a class="quick-card" href="https://pulsekegel.com/blog/3-minute-pelvic-floor-routine-men">
+        <div class="num">04 / Quick</div>
+        <div class="q-title">3-Minute Pelvic Floor Routine</div>
+        <div class="q-sub">This takes three minutes.</div>
+        <div class="q-go">Read <span class="arrow">→</span></div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     MOST READ — 3 featured articles
+     ========================================================= -->
+<section class="blog-section" id="most-read" aria-labelledby="most-read-title">
+  <div class="section-inner">
+    <div class="section-divider">
+      <span>02 / Most Read</span>
+      <span>Reader favorites</span>
+    </div>
+    <div class="section-head">
+      <h2 id="most-read-title">
+        Top of the <span class="accent">field manual.</span>
+      </h2>
+      <div class="head-note">
+        <span class="k">▸</span> The three most-clicked guides this season.
+      </div>
+    </div>
+
+    <div class="featured-grid reveal-stagger">
+      <a class="featured-card" href="https://pulsekegel.com/blog/kegel-exercises-for-men">
+        <div class="rank">
+          <span>#01 · Most Read</span>
+          <span class="tag">Foundation</span>
+        </div>
+        <h3 class="f-title">Kegel Exercises for Men</h3>
+        <p class="f-sub">Why it controls stamina, bladder control, and confidence — and how to train it without wasting reps.</p>
+        <div class="f-go">Read guide <span class="arrow">→</span></div>
+      </a>
+      <a class="featured-card" href="https://pulsekegel.com/blog/how-to-do-kegels-correctly-men">
+        <div class="rank">
+          <span>#02 · Most Read</span>
+          <span class="tag">Form</span>
+        </div>
+        <h3 class="f-title">How to Do Kegels Correctly</h3>
+        <p class="f-sub">How to actually train the muscle correctly — and why most routines miss the mark.</p>
+        <div class="f-go">Read guide <span class="arrow">→</span></div>
+      </a>
+      <a class="featured-card" href="https://pulsekegel.com/blog/bladder-control-for-men">
+        <div class="rank">
+          <span>#03 · Most Read</span>
+          <span class="tag">Control</span>
+        </div>
+        <h3 class="f-title">Bladder Control for Men</h3>
+        <p class="f-sub">The exercises that work — and the habits that backfire. A direct walkthrough.</p>
+        <div class="f-go">Read guide <span class="arrow">→</span></div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     ALL GUIDES — 14 post grid
+     ========================================================= -->
+<section class="blog-section" id="all-guides" aria-labelledby="all-guides-title">
+  <div class="section-inner">
+    <div class="section-divider">
+      <span>03 / All Guides</span>
+      <span>14 posts · full library</span>
+    </div>
+    <div class="section-head">
+      <h2 id="all-guides-title">
+        The full <span class="accent">library.</span>
+      </h2>
+      <div class="head-note">
+        <span class="k">▸</span> Every guide, one grid. Pick a topic and start reading.
+      </div>
+    </div>
+
+    <div class="post-grid reveal-stagger">
+      <a class="post-card" href="https://pulsekegel.com/blog/kegel-exercises-for-men">
+        <div class="p-tag">Foundation</div>
+        <div class="p-divider"></div>
+        <h3 class="p-title">Kegel Exercises for Men</h3>
+        <p class="p-sub">Why it controls stamina, bladder control, confidence.</p>
+        <div class="p-read">Read <span class="arrow">→</span></div>
+      </a>
+
+      <a class="post-card" href="https://pulsekegel.com/blog/pelvic-floor-exercises-men-over-40">
+        <div class="p-tag">Over 40</div>
+        <div class="p-divider"></div>
+        <h3 class="p-title">Pelvic Floor Exercises for Men Over 40</h3>
+        <p class="p-sub">A modified routine built for how your body changes.</p>
+        <div class="p-read">Read <span class="arrow">→</span></div>
+      </a>
+
+      <a class="post-card" href="https://pulsekegel.com/blog/bladder-control-for-men">
+        <div class="p-tag">Control</div>
+        <div class="p-divider"></div>
+        <h3 class="p-title">Bladder Control for Men</h3>
+        <p class="p-sub">Control slipping? This is usually why.</p>
+        <div class="p-read">Read <span class="arrow">→</span></div>
+      </a>
+
+      <a class="post-card" href="https://pulsekegel.com/blog/pelvic-floor-after-prostate-surgery">
+        <div class="p-tag">Recovery</div>
+        <div class="p-divider"></div>
+        <h3 class="p-title">Pelvic Floor After Prostate Surgery</h3>
+        <p class="p-sub">A phased guide from rest through rebuilding strength.</p>
+        <div class="p-read">Read <span class="arrow">→</span></div>
+      </a>
+
+      <a class="post-card" href="https://pulsekegel.com/blog/how-to-do-kegels-correctly-men">
+        <div class="p-tag">Form</div>
+        <div class="p-divider"></div>
+        <h3 class="p-title">How to Do Kegels Correctly</h3>
+        <p class="p-sub">How to actually train the muscle correctly.</p>
+        <div class="p-read">Read <span class="arrow">→</span></div>
+      </a>
+
+      <a class="post-card" href="https://pulsekegel.com/blog/best-kegel-app-for-men">
+        <div class="p-tag">Tools</div>
+        <div class="p-divider"></div>
+        <h3 class="p-title">Best Kegel App for Men</h3>
+        <p class="p-sub">The features that matter — the ones that don't.</p>
+        <div class="p-read">Read <span class="arrow">→</span></div>
+      </a>
+
+      <a class="post-card" href="https://pulsekegel.com/blog/pelvic-floor-exercises-for-men">
+        <div class="p-tag">Beginner</div>
+        <div class="p-divider"></div>
+        <h3 class="p-title">Pelvic Floor Exercises for Men</h3>
+        <p class="p-sub">A simple beginner plan you can do today.</p>
+        <div class="p-read">Read <span class="arrow">→</span></div>
+      </a>
+
+      <a class="post-card" href="https://pulsekegel.com/blog/how-to-last-longer-naturally">
+        <div class="p-tag">Stamina</div>
+        <div class="p-divider"></div>
+        <h3 class="p-title">How to Last Longer Naturally</h3>
+        <p class="p-sub">Daily habits that build stamina from the inside out.</p>
+        <div class="p-read">Read <span class="arrow">→</span></div>
+      </a>
+
+      <a class="post-card" href="https://pulsekegel.com/blog/pelvic-floor-recovery-after-childbirth">
+        <div class="p-tag">Postpartum</div>
+        <div class="p-divider"></div>
+        <h3 class="p-title">Pelvic Floor Recovery After Childbirth</h3>
+        <p class="p-sub">Gentle, progressive routines for postpartum recovery.</p>
+        <div class="p-read">Read <span class="arrow">→</span></div>
+      </a>
+
+      <a class="post-card" href="https://pulsekegel.com/blog/bladder-control-exercises-over-40">
+        <div class="p-tag">Over 40</div>
+        <div class="p-divider"></div>
+        <h3 class="p-title">Bladder Control Exercises Over 40</h3>
+        <p class="p-sub">Daily exercises for lasting confidence.</p>
+        <div class="p-read">Read <span class="arrow">→</span></div>
+      </a>
+
+      <a class="post-card" href="https://pulsekegel.com/blog/3-minute-pelvic-floor-routine-men">
+        <div class="p-tag">Quick Start</div>
+        <div class="p-divider"></div>
+        <h3 class="p-title">3-Minute Pelvic Floor Routine</h3>
+        <p class="p-sub">A quick, effective routine for any schedule.</p>
+        <div class="p-read">Read <span class="arrow">→</span></div>
+      </a>
+
+      <a class="post-card" href="https://pulsekegel.com/blog/breathing-exercises-better-control-men">
+        <div class="p-tag">Breath</div>
+        <div class="p-divider"></div>
+        <h3 class="p-title">Breathing Exercises for Better Control</h3>
+        <p class="p-sub">How coordinated breath enhances pelvic floor strength.</p>
+        <div class="p-read">Read <span class="arrow">→</span></div>
+      </a>
+
+      <a class="post-card" href="https://pulsekegel.com/blog/postpartum-bladder-confidence-exercises">
+        <div class="p-tag">Postpartum</div>
+        <div class="p-divider"></div>
+        <h3 class="p-title">Postpartum Bladder Confidence Exercises</h3>
+        <p class="p-sub">Progressive exercises that rebuild from the ground up.</p>
+        <div class="p-read">Read <span class="arrow">→</span></div>
+      </a>
+
+      <a class="post-card" href="https://pulsekegel.com/blog/daily-pelvic-floor-routine-over-40">
+        <div class="p-tag">Over 40</div>
+        <div class="p-divider"></div>
+        <h3 class="p-title">Daily Pelvic Floor Routine Over 40</h3>
+        <p class="p-sub">A sustainable routine built for adults over 40.</p>
+        <div class="p-read">Read <span class="arrow">→</span></div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     FOR LIFTERS — spotlight
+     ========================================================= -->
+<section class="blog-section" id="for-lifters" aria-labelledby="lifters-title">
+  <div class="section-inner">
+    <div class="section-divider">
+      <span>04 / For Lifters</span>
+      <span>Cross-training spotlight</span>
+    </div>
+
+    <a class="lifters-card reveal" href="https://pulsekegel.com/blog/you-squat-300-but-skip-this-muscle">
+      <div>
+        <div class="l-tag">Cross-training · Strength</div>
+        <h3 id="lifters-title" class="l-title">You squat 300 but skip this muscle.</h3>
+        <p class="l-sub">Why every compound lift loads your pelvic floor — and what happens when the one muscle you never trained finally taps out under the bar.</p>
+      </div>
+      <span class="l-go">Read the spotlight <span class="arrow">→</span></span>
+    </a>
+  </div>
+</section>
+
+<!-- =========================================================
+     BROWSE BY GOAL — 5 goal cards
+     ========================================================= -->
+<section class="blog-section" id="browse-by-goal" aria-labelledby="goals-title">
+  <div class="section-inner">
+    <div class="section-divider">
+      <span>05 / Browse by Goal</span>
+      <span>Pick your objective</span>
+    </div>
+    <div class="section-head">
+      <h2 id="goals-title">
+        Or pick a <span class="accent">goal.</span>
+      </h2>
+      <div class="head-note">
+        <span class="k">▸</span> Five training tracks. Each jumps to the best guide.
+      </div>
+    </div>
+
+    <div class="goal-grid reveal-stagger">
+      <a class="goal-card" href="https://pulsekegel.com/blog/bladder-control-for-men">
+        <div class="g-num">G / 01</div>
+        <div class="g-label">Better Control</div>
+        <div class="g-arrow">▸</div>
+      </a>
+      <a class="goal-card" href="https://pulsekegel.com/blog/how-to-last-longer-naturally">
+        <div class="g-num">G / 02</div>
+        <div class="g-label">Last Longer</div>
+        <div class="g-arrow">▸</div>
+      </a>
+      <a class="goal-card" href="https://pulsekegel.com/blog/bladder-control-exercises-over-40">
+        <div class="g-num">G / 03</div>
+        <div class="g-label">Bladder Strength</div>
+        <div class="g-arrow">▸</div>
+      </a>
+      <a class="goal-card" href="https://pulsekegel.com/blog/pelvic-floor-after-prostate-surgery">
+        <div class="g-num">G / 04</div>
+        <div class="g-label">Recover Stronger</div>
+        <div class="g-arrow">▸</div>
+      </a>
+      <a class="goal-card" href="https://pulsekegel.com/blog/3-minute-pelvic-floor-routine-men">
+        <div class="g-num">G / 05</div>
+        <div class="g-label">Quick Start</div>
+        <div class="g-arrow">▸</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     CTA BLOCK
+     ========================================================= -->
+<section class="cta-block" aria-labelledby="cta-title">
+  <span class="bracket tl" aria-hidden="true"></span>
+  <span class="bracket tr" aria-hidden="true"></span>
+  <span class="bracket bl" aria-hidden="true"></span>
+  <span class="bracket br" aria-hidden="true"></span>
+
+  <div class="eyebrow">Start the 7-day challenge</div>
+  <h2 id="cta-title">
+    Reading is easy.<br />
+    <span class="accent">Training is easier.</span>
+  </h2>
+  <p>Seven days free. No credit card. 5 to 10 minutes a day. If you want the full year after that, it's $4.99.</p>
+  <a class="btn-primary" href="https://apps.apple.com/us/app/pulsekegel/id6758308054" target="_blank" rel="noopener">
+    Start Training
+    <span class="arrow" aria-hidden="true">→</span>
+  </a>
+</section>
+
+<!-- =========================================================
+     FOOTER
+     ========================================================= -->
+<footer class="page-footer">
+  <div class="footer-main">
+    <div class="footer-col brand-col">
+      <a class="wordmark" href="https://pulsekegel.com/" aria-label="PulseKegel home">
+        <span class="dot" aria-hidden="true"></span>
+        PulseKegel
+      </a>
+      <p class="tag">Private, evidence-based pelvic floor training. Built for the one muscle nobody talks about.</p>
+    </div>
+
+    <div class="footer-col">
+      <h4>Navigate</h4>
+      <ul>
+        <li><a href="https://pulsekegel.com/">Home</a></li>
+        <li><a href="https://pulsekegel.com/blog/">Blog</a></li>
+        <li><a href="#start-here">Start Here</a></li>
+        <li><a href="#browse-by-goal">Browse by Goal</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4>Get the App</h4>
+      <ul>
+        <li><a href="https://apps.apple.com/us/app/pulsekegel/id6758308054" target="_blank" rel="noopener">App Store</a></li>
+        <li><a href="#">Google Play (soon)</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4>Follow</h4>
+      <div class="social-row">
+        <a href="#" aria-label="Facebook">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12A10 10 0 1 0 10.5 21.9v-7H8v-3h2.5V9.3c0-2.5 1.5-3.9 3.7-3.9 1.1 0 2.2.2 2.2.2v2.4h-1.2c-1.2 0-1.6.8-1.6 1.6V12h2.7l-.4 3h-2.3v7A10 10 0 0 0 22 12z"/></svg>
+        </a>
+        <a href="#" aria-label="Instagram">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.2c3.2 0 3.6 0 4.8.1 1.2 0 1.8.3 2.3.4.6.2 1 .5 1.4.9.4.4.7.9.9 1.4.2.5.4 1.1.4 2.3.1 1.3.1 1.7.1 4.8s0 3.6-.1 4.8c0 1.2-.3 1.8-.4 2.3-.2.6-.5 1-.9 1.4-.4.4-.9.7-1.4.9-.5.2-1.1.4-2.3.4-1.3.1-1.7.1-4.8.1s-3.6 0-4.8-.1c-1.2 0-1.8-.3-2.3-.4-.6-.2-1-.5-1.4-.9-.4-.4-.7-.9-.9-1.4-.2-.5-.4-1.1-.4-2.3C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.8c0-1.2.3-1.8.4-2.3.2-.6.5-1 .9-1.4.4-.4.9-.7 1.4-.9.5-.2 1.1-.4 2.3-.4 1.3-.1 1.7-.1 4.8-.1m0-2.2C8.7 0 8.3 0 7 .1c-1.3.1-2.2.3-3 .6-.8.3-1.6.8-2.3 1.5C1 2.9.6 3.7.3 4.5c-.3.8-.5 1.7-.6 3C-.4 8.7-.4 9.1-.4 12.4s0 3.7.1 5c.1 1.3.3 2.2.6 3 .3.8.8 1.6 1.5 2.3.7.7 1.5 1.1 2.3 1.5.8.3 1.7.5 3 .6 1.3.1 1.7.1 5 .1s3.7 0 5-.1c1.3-.1 2.2-.3 3-.6.8-.3 1.6-.8 2.3-1.5.7-.7 1.1-1.5 1.5-2.3.3-.8.5-1.7.6-3 .1-1.3.1-1.7.1-5s0-3.7-.1-5c-.1-1.3-.3-2.2-.6-3-.3-.8-.8-1.6-1.5-2.3C21.1 1 20.3.6 19.5.3c-.8-.3-1.7-.5-3-.6C15.2 0 14.8 0 11.6 0h.4zm0 5.8a6.2 6.2 0 1 0 0 12.4 6.2 6.2 0 0 0 0-12.4zm0 10.2a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.5-11.9a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/></svg>
+        </a>
+        <a href="#" aria-label="Threads">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.6 11.2c-.1 0-.1 0 0 0-.1-2.4-1.5-3.9-3.6-4-.1 0-.2 0-.3 0-1.4 0-2.5.6-3.2 1.6l1.2.8c.5-.7 1.2-1 2-1h.2c.7 0 1.3.2 1.7.6.3.3.5.7.6 1.2-.7-.1-1.5-.2-2.3-.1-2.3.1-3.8 1.4-3.7 3.3 0 1 .5 1.9 1.4 2.4.7.4 1.6.7 2.7.6 1.4-.1 2.4-.6 3.1-1.6.5-.7.8-1.7.9-2.9.6.4 1.1 1 1.3 1.7.5 1.2.5 3.1-1.1 4.7-1.4 1.4-3 2-5.5 2.1-2.7-.1-4.8-1-6.2-2.7-1.3-1.6-2-3.9-2-6.8 0-2.9.7-5.2 2-6.8C6.9 2.5 9 1.6 11.7 1.5c2.7.1 4.9 1 6.3 2.7.7.8 1.2 1.8 1.6 3l1.4-.4c-.4-1.4-1.1-2.6-1.9-3.6C17.3.8 14.7-.3 11.6-.3 8.5-.3 6 .8 4.2 2.9 2.6 4.8 1.8 7.6 1.8 11v.1C1.8 14.5 2.6 17.2 4.2 19.1c1.7 2.1 4.3 3.1 7.4 3.2h.1c2.8 0 4.7-.7 6.3-2.4 2.1-2.1 2.1-4.8 1.3-6.6-.5-1.1-1.3-1.9-2.2-2.4 0 .1.3.1.5.3z"/></svg>
+        </a>
+        <a href="#" aria-label="TikTok">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.3 6.5a5.9 5.9 0 0 1-3.5-1.1 5.9 5.9 0 0 1-2.4-4.3h-3.6v14a3 3 0 1 1-2.1-2.9V8.5A6.7 6.7 0 1 0 13.5 15V9.3a9.4 9.4 0 0 0 5.8 2z"/></svg>
         </a>
       </div>
-    </section>
+    </div>
+  </div>
 
-    <div class="container"><div class="divider"></div></div>
+  <div class="footer-bottom">
+    <div class="left">
+      <span>●</span> © 2026 PulseKegel. All rights reserved.
+    </div>
+    <div class="right">v1.0 · FIELD MANUAL</div>
+  </div>
+</footer>
 
-    <!-- START HERE -->
-    <section class="start-here">
-      <div class="container">
-        <p class="section-label">Start Here</p>
-        <h2 class="section-title white">Not sure where to begin?</h2>
-        <p class="section-sub">
-          Pick your situation and go straight to what matters.
-        </p>
-        <div class="start-grid">
-          <a href="/blog/pelvic-floor-exercises-for-men" class="start-tile">
-            <span class="start-situation">New to this?</span>
-            <span class="start-title">Stronger control starts here</span>
-            <span class="start-arrow">Read the beginner plan &rarr;</span>
-          </a>
-          <a href="/blog/how-to-do-kegels-correctly-men" class="start-tile">
-            <span class="start-situation">Want better control?</span>
-            <span class="start-title"
-              >Doing Kegels wrong is more common than you think</span
-            >
-            <span class="start-arrow">Fix your form &rarr;</span>
-          </a>
-          <a href="/blog/how-to-last-longer-naturally" class="start-tile">
-            <span class="start-situation">Trying to last longer?</span>
-            <span class="start-title"
-              >Lasting longer is trainable. Most people don't know where to
-              start.</span
-            >
-            <span class="start-arrow">Start training &rarr;</span>
-          </a>
-          <a href="/blog/3-minute-pelvic-floor-routine-men" class="start-tile">
-            <span class="start-situation">Just want a quick routine?</span>
-            <span class="start-title">No time? This takes three minutes.</span>
-            <span class="start-arrow">Get the routine &rarr;</span>
-          </a>
-        </div>
-      </div>
-    </section>
+<script>
+  /* One-shot reveals on scroll — identical pattern to the homepage.
+     Uses IntersectionObserver so reveals fire only when elements enter. */
+  (function setupReveals() {
+    const targets = document.querySelectorAll('.reveal, .reveal-stagger');
+    if (!('IntersectionObserver' in window) || !targets.length) {
+      targets.forEach(el => el.classList.add('in-view'));
+      return;
+    }
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in-view');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -5% 0px' });
+    targets.forEach(el => io.observe(el));
+  })();
+</script>
 
-    <div class="container"><div class="divider"></div></div>
-
-    <!-- MOST READ -->
-    <section class="most-read">
-      <div class="container">
-        <p class="section-label">Most Read</p>
-        <h2 class="section-title cyan">The guides men come back to</h2>
-        <p class="section-sub">
-          Start with these if you're not sure what to read first.
-        </p>
-        <div class="most-read-grid">
-          <a href="/blog/kegel-exercises-for-men" class="featured-card">
-            <span class="featured-badge">Most Popular</span>
-            <h3 class="featured-hook">
-              The muscle most men ignore&hellip; until it starts failing
-            </h3>
-            <p class="featured-punch">
-              Why it controls stamina, bladder control, and confidence
-            </p>
-            <span class="featured-read">Read &rarr;</span>
-          </a>
-          <a href="/blog/how-to-do-kegels-correctly-men" class="featured-card">
-            <span class="featured-badge">Top Rated</span>
-            <h3 class="featured-hook">
-              You think you're doing Kegels right. Most guys aren't.
-            </h3>
-            <p class="featured-punch">
-              How to actually train the muscle correctly
-            </p>
-            <span class="featured-read">Read &rarr;</span>
-          </a>
-          <a href="/blog/bladder-control-for-men" class="featured-card">
-            <span class="featured-badge">Highly Shared</span>
-            <h3 class="featured-hook">
-              Control slipping? This is usually why.
-            </h3>
-            <p class="featured-punch">
-              The exercises that work &mdash; and the habits that backfire
-            </p>
-            <span class="featured-read">Read &rarr;</span>
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <!-- PRODUCT BRIDGE CTA -->
-    <section class="bridge-cta">
-      <div class="container">
-        <div class="bridge-card">
-          <h2 class="bridge-title">Want a guided way to do this right?</h2>
-          <p class="bridge-body">
-            PulseKegel walks you through it &mdash; no guessing, no
-            overthinking.
-          </p>
-          <a
-            href="https://apps.apple.com/app/pulsekegel/id6741057595"
-            class="bridge-btn"
-            target="_blank"
-            rel="noopener"
-          >
-            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path
-                d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"
-              />
-            </svg>
-            Start Training
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <div class="container"><div class="divider"></div></div>
-
-    <!-- ALL ARTICLES -->
-    <section class="all-articles">
-      <div class="container">
-        <p class="section-label">All Guides</p>
-        <h2 class="section-title white">Every article in the library</h2>
-        <p class="section-sub">
-          14 guides covering control, stamina, recovery, and daily training.
-        </p>
-        <div class="articles-grid">
-          <div class="article-card">
-            <h3 class="article-hook">
-              The muscle most men ignore&hellip; until it starts failing
-            </h3>
-            <p class="article-punch">
-              Why it controls stamina, bladder control, and confidence
-            </p>
-            <a href="/blog/kegel-exercises-for-men" class="article-read"
-              >Read &rarr;</a
-            >
-          </div>
-
-          <div class="article-card">
-            <h3 class="article-hook">After 40, this starts weakening faster</h3>
-            <p class="article-punch">
-              A modified routine built for how your body changes
-            </p>
-            <a
-              href="/blog/pelvic-floor-exercises-men-over-40"
-              class="article-read"
-              >Read &rarr;</a
-            >
-          </div>
-
-          <div class="article-card">
-            <h3 class="article-hook">Control slipping? This is usually why.</h3>
-            <p class="article-punch">
-              The exercises that work &mdash; and the habits that backfire
-            </p>
-            <a href="/blog/bladder-control-for-men" class="article-read"
-              >Read &rarr;</a
-            >
-          </div>
-
-          <div class="article-card">
-            <h3 class="article-hook">Recovery starts with this one habit</h3>
-            <p class="article-punch">
-              A phased guide from rest through rebuilding strength
-            </p>
-            <a
-              href="/blog/pelvic-floor-after-prostate-surgery"
-              class="article-read"
-              >Read &rarr;</a
-            >
-          </div>
-
-          <div class="article-card">
-            <h3 class="article-hook">
-              Doing Kegels wrong is more common than you think
-            </h3>
-            <p class="article-punch">
-              How to actually train the muscle correctly
-            </p>
-            <a href="/blog/how-to-do-kegels-correctly-men" class="article-read"
-              >Read &rarr;</a
-            >
-          </div>
-
-          <div class="article-card">
-            <h3 class="article-hook">What makes a Kegel app worth using?</h3>
-            <p class="article-punch">
-              The features that matter &mdash; and the ones that don't
-            </p>
-            <a href="/blog/best-kegel-app-for-men" class="article-read"
-              >Read &rarr;</a
-            >
-          </div>
-
-          <div class="article-card">
-            <h3 class="article-hook">Stronger control starts here</h3>
-            <p class="article-punch">A simple beginner plan you can do today</p>
-            <a href="/blog/pelvic-floor-exercises-for-men" class="article-read"
-              >Read &rarr;</a
-            >
-          </div>
-
-          <div class="article-card">
-            <h3 class="article-hook">
-              Lasting longer is trainable. Most people don't know where to
-              start.
-            </h3>
-            <p class="article-punch">
-              Daily habits that build stamina from the inside out
-            </p>
-            <a href="/blog/how-to-last-longer-naturally" class="article-read"
-              >Read &rarr;</a
-            >
-          </div>
-
-          <div class="article-card">
-            <h3 class="article-hook">Rebuilding after birth: where to start</h3>
-            <p class="article-punch">
-              Gentle, progressive routines for real postpartum recovery
-            </p>
-            <a
-              href="/blog/pelvic-floor-recovery-after-childbirth"
-              class="article-read"
-              >Read &rarr;</a
-            >
-          </div>
-
-          <div class="article-card">
-            <h3 class="article-hook">
-              Bladder control slips in your 40s. You can reverse it.
-            </h3>
-            <p class="article-punch">Daily exercises for lasting confidence</p>
-            <a
-              href="/blog/bladder-control-exercises-over-40"
-              class="article-read"
-              >Read &rarr;</a
-            >
-          </div>
-
-          <div class="article-card">
-            <h3 class="article-hook">No time? This takes three minutes.</h3>
-            <p class="article-punch">
-              A quick, effective routine for any schedule
-            </p>
-            <a
-              href="/blog/3-minute-pelvic-floor-routine-men"
-              class="article-read"
-              >Read &rarr;</a
-            >
-          </div>
-
-          <div class="article-card">
-            <h3 class="article-hook">
-              The breathing trick that makes training twice as effective
-            </h3>
-            <p class="article-punch">
-              How coordinated breath enhances pelvic floor strength
-            </p>
-            <a
-              href="/blog/breathing-exercises-better-control-men"
-              class="article-read"
-              >Read &rarr;</a
-            >
-          </div>
-
-          <div class="article-card">
-            <h3 class="article-hook">
-              Confidence after birth starts with small daily wins
-            </h3>
-            <p class="article-punch">
-              Progressive exercises that rebuild from the ground up
-            </p>
-            <a
-              href="/blog/postpartum-bladder-confidence-exercises"
-              class="article-read"
-              >Read &rarr;</a
-            >
-          </div>
-
-          <div class="article-card">
-            <h3 class="article-hook">
-              Stay ahead of the decline. One daily habit.
-            </h3>
-            <p class="article-punch">
-              A sustainable routine built for adults over 40
-            </p>
-            <a
-              href="/blog/daily-pelvic-floor-routine-over-40"
-              class="article-read"
-              >Read &rarr;</a
-            >
-          </div>
-
-          <div class="article-card">
-            <span class="article-badge">For Lifters</span>
-            <h3 class="article-hook">
-              You Squat 300 lbs but Skip the Muscle Holding It All Together
-            </h3>
-            <p class="article-punch">
-              Why every compound lift loads your pelvic floor — and what to do
-              about it
-            </p>
-            <a
-              href="/blog/you-squat-300-but-skip-this-muscle"
-              class="article-read"
-              >Read &rarr;</a
-            >
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <div class="container"><div class="divider"></div></div>
-
-    <!-- BROWSE BY GOAL -->
-    <section class="browse-goals">
-      <div class="container">
-        <p class="section-label">Browse by Goal</p>
-        <h2 class="section-title" style="color: #ff00ff">
-          Find exactly what you need
-        </h2>
-        <p class="section-sub">
-          Jump straight to the guide that matches your goal.
-        </p>
-        <div class="goals-grid">
-          <a href="/blog/bladder-control-for-men" class="goal-tile">
-            <span class="goal-name">Better Control</span>
-            <span class="goal-desc">Stop leaks and urgency for good</span>
-          </a>
-          <a href="/blog/how-to-last-longer-naturally" class="goal-tile">
-            <span class="goal-name">Last Longer</span>
-            <span class="goal-desc">Build stamina from the inside out</span>
-          </a>
-          <a href="/blog/bladder-control-exercises-over-40" class="goal-tile">
-            <span class="goal-name">Bladder Strength</span>
-            <span class="goal-desc">Daily training for real confidence</span>
-          </a>
-          <a href="/blog/pelvic-floor-after-prostate-surgery" class="goal-tile">
-            <span class="goal-name">Recover Stronger</span>
-            <span class="goal-desc">Phased recovery done right</span>
-          </a>
-          <a href="/blog/3-minute-pelvic-floor-routine-men" class="goal-tile">
-            <span class="goal-name">Quick Start</span>
-            <span class="goal-desc">Three minutes. Start today.</span>
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <!-- FOOTER -->
-    <footer>
-      <div class="container">
-        <div class="footer-links">
-          <a href="/">Home</a>
-          <a href="/blog">Blog</a>
-          <a
-            href="https://apps.apple.com/app/pulsekegel/id6741057595"
-            target="_blank"
-            rel="noopener"
-            >Download App</a
-          >
-        </div>
-        <p class="footer-copy">&copy; 2026 PulseKegel. All rights reserved.</p>
-      </div>
-    </footer>
-  </body>
+</body>
 </html>

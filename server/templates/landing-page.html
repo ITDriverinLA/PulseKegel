@@ -1,999 +1,1913 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PulseKegel - Pelvic Floor Exercise App | 12-Week Kegel Training Program</title>
-    <meta name="description" content="Train the muscle most men ignore. Start the 7-Day Control Challenge free — guided pelvic floor training with haptic feedback, visual cues, AI progress reviews, ambient music, and 19 achievement badges. Just $4.99/year after your challenge.">
-    <meta name="keywords" content="kegel exercises, pelvic floor exercises, pelvic floor training, kegel app, pelvic floor workout, bladder control exercises, men's pelvic health, kegel exercise program, pelvic floor strengthening, incontinence exercises">
-    <meta name="author" content="PulseKegel">
-    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
-    <meta name="theme-color" content="#0a0a1a">
-    <meta name="apple-mobile-web-app-title" content="PulseKegel">
-    <meta name="application-name" content="PulseKegel">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PulseKegel — Hero + Section 2 (Premium Concept)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://api.fontshare.com/v2/css?f[]=general-sans@700,800&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --navy:       #0C0F38;
+    --navy-deep:  #070924;
+    --unlit:      #1A1E4A;
+    --teal:       #36E7B3;
+    --teal-dim:   #1E8C6C;
+    --peak-amber: #FFD166;
+    --peak-red:   #FF4A6E;
+    --purple:     #8B5CF6;
+    --white:      #FFFFFF;
+    --gray:       #C8C8D8;
+    --gray-dim:   #6B6E8F;
+  }
 
-    <link rel="icon" type="image/png" href="/favicon.png">
-    <link rel="apple-touch-icon" href="/favicon.png">
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    <meta property="og:title" content="PulseKegel - Train the muscle most men ignore | 7-Day Control Challenge">
-    <meta property="og:description" content="Start the 7-Day Control Challenge free. Guided pelvic floor training with haptic feedback, visual cues, ambient music, and AI weekly reviews. Just $4.99/year after.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://pulsekegel.com">
-    <meta property="og:site_name" content="PulseKegel">
-    <meta property="og:locale" content="en_US">
-    <meta property="og:image" content="https://pulsekegel.com/favicon.png">
-    <meta property="og:image:width" content="512">
-    <meta property="og:image:height" content="512">
+  /* Make <body> the explicit scroll container so scroll-snap binds to it.
+     Chrome is most reliable when the scroll-snap-type rule lives on the
+     actual scrolling element, so we pin html to 100% height with no scroll,
+     and hand the scrolling + snap duties to body. */
+  html {
+    height: 100%;
+    overflow: hidden;
+  }
+  body {
+    height: 100%;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+    /* Each full-viewport section/footer is a snap point.
+       `mandatory` forces the viewport to fully rest on a page —
+       the user cannot sit half-way between two sections. */
+    scroll-snap-type: y mandatory;
+    background: var(--navy-deep);
+    color: var(--white);
+    font-family: 'Poppins', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
 
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="PulseKegel - Train the muscle most men ignore">
-    <meta name="twitter:description" content="Start the 7-Day Control Challenge free. Guided pelvic floor training with haptic feedback, visual cues, ambient music, and AI coaching. Just $4.99/year after.">
-    <meta name="twitter:image" content="https://pulsekegel.com/favicon.png">
+  /* ---------- SHARED HUD BRACKETS ---------- */
+  .bracket {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border-color: var(--teal);
+    border-style: solid;
+    border-width: 0;
+    opacity: 0.65;
+    pointer-events: none;
+  }
+  .bracket.tl { top: 18px; left: 18px; border-top-width: 2px; border-left-width: 2px; }
+  .bracket.tr { top: 18px; right: 18px; border-top-width: 2px; border-right-width: 2px; }
+  .bracket.bl { bottom: 18px; left: 18px; border-bottom-width: 2px; border-left-width: 2px; }
+  .bracket.br { bottom: 18px; right: 18px; border-bottom-width: 2px; border-right-width: 2px; }
 
-    <link rel="canonical" href="https://pulsekegel.com">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  /* ---------- CHASSIS (HERO) ---------- */
+  .chassis {
+    min-height: 100vh;
+    background:
+      radial-gradient(ellipse at 28% 55%, rgba(54, 231, 179, 0.10) 0%, transparent 50%),
+      linear-gradient(180deg, var(--navy) 0%, var(--navy-deep) 100%);
+    position: relative;
+    padding: 28px 44px 40px;
+    display: flex;
+    flex-direction: column;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
 
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        "name": "PulseKegel",
-        "operatingSystem": "iOS",
-        "applicationCategory": "HealthApplication",
-        "description": "A pelvic floor exercise app with a 12-week progressive kegel training program, haptic feedback, visual power bar guidance, AI weekly progress reviews, guided breathwork sessions, ambient music, daily reminders, and 19 achievement badges.",
-        "url": "https://pulsekegel.com",
-        "downloadUrl": "https://apps.apple.com/us/app/pulsekegel/id6758308054",
-        "offers": {
-            "@type": "Offer",
-            "price": "4.99",
-            "priceCurrency": "USD",
-            "description": "Annual subscription — Start the 7-Day Control Challenge free for 7 days"
-        },
-        "aggregateRating": {
-            "@type": "AggregateRating",
-            "ratingValue": "5",
-            "ratingCount": "1"
-        },
-        "featureList": [
-            "12-week progressive pelvic floor training program",
-            "7 exercise types including slow holds, quick flicks, elevators",
-            "Real-time haptic feedback with exercise-specific vibration patterns",
-            "Visual LED-style power bar with SQUEEZE/REST/BREATHE cues",
-            "AI-powered weekly progress reviews",
-            "19 achievement badges across 5 categories",
-            "8 standalone quick workouts",
-            "3 guided breathwork sessions with voice coaching",
-            "14 ambient music tracks with shuffle and volume control",
-            "Streak-aware daily reminder notifications",
-            "Light and dark theme system",
-            "Recovery mode for reduced intensity",
-            "Customizable rest durations and haptic intensity",
-            "Progress tracking with calendar and streak counter",
-            "Fully offline - all data stays on device",
-            "Screen stays awake during workouts"
-        ]
+  /* ---------- TOP NAV ---------- */
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 24px;
+    position: relative;
+    z-index: 5;
+  }
+  .wordmark {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: 20px;
+    letter-spacing: -0.01em;
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .wordmark .dot {
+    width: 8px;
+    height: 8px;
+    background: var(--teal);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--teal);
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.45; transform: scale(0.85); }
+    50%      { opacity: 1;    transform: scale(1.1);  }
+  }
+  .menu {
+    display: flex;
+    gap: 28px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gray);
+  }
+  .menu > a {
+    color: inherit;
+    text-decoration: none;
+    padding-bottom: 2px;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .menu > a:hover { color: var(--teal); border-bottom-color: var(--teal); }
+
+  /* ---------- SIDE READOUTS ---------- */
+  .rail-left, .rail-right {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%) rotate(-90deg);
+    transform-origin: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.25em;
+    color: var(--gray-dim);
+    white-space: nowrap;
+  }
+  .rail-left  { left: -40px; }
+  .rail-right { right: -64px; color: var(--teal-dim); }
+  .rail-right .live {
+    color: var(--teal);
+    animation: blink 1.6s steps(2, end) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0.25; } }
+
+  /* ---------- HERO GRID ---------- */
+  .hero {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr minmax(260px, 360px);
+    gap: 72px;
+    align-items: center;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 20px 0 40px;
+  }
+
+  /* ---------- GAUGE (shared) ---------- */
+  .gauge-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    color: var(--teal);
+    text-transform: uppercase;
+    opacity: 0.9;
+  }
+  .gauge-assembly {
+    display: flex;
+    gap: 16px;
+    align-items: stretch;
+  }
+  .bar-frame {
+    background:
+      linear-gradient(180deg, rgba(0,0,0,0.4), rgba(0,0,0,0.6)),
+      var(--navy);
+    border: 1px solid rgba(54, 231, 179, 0.22);
+    border-radius: 4px;
+    padding: 10px 8px;
+    box-shadow:
+      inset 0 2px 8px rgba(0,0,0,0.55),
+      0 0 48px rgba(54, 231, 179, 0.12);
+    position: relative;
+  }
+  .bar-frame::before {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border: 1px solid rgba(255,255,255,0.03);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+  .bar {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 3px;
+  }
+  .hero-bar { width: 72px; height: 380px; }
+  .phone-bar { width: 46px; height: 240px; gap: 2px; }
+  .seg {
+    flex: 1;
+    background: var(--unlit);
+    border-radius: 2px;
+    transition: background 60ms linear, box-shadow 60ms linear;
+  }
+  .seg.on-teal  { background: var(--teal);       box-shadow: 0 0 6px var(--teal),       inset 0 1px 0 rgba(255,255,255,0.15); }
+  .seg.on-amber { background: var(--peak-amber); box-shadow: 0 0 8px var(--peak-amber), inset 0 1px 0 rgba(255,255,255,0.2);  }
+  .seg.on-red   { background: var(--peak-red);   box-shadow: 0 0 10px var(--peak-red),  inset 0 1px 0 rgba(255,255,255,0.2);  }
+
+  .scale {
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    color: var(--gray-dim);
+    padding: 10px 0;
+  }
+  .scale .tick {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .scale .tick::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 1px;
+    background: var(--gray-dim);
+    opacity: 0.6;
+  }
+
+  .state {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--gray);
+    padding: 10px 16px;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 3px;
+    background: rgba(255,255,255,0.02);
+    min-width: 280px;
+    justify-content: center;
+  }
+  .state .rep { color: var(--gray-dim); }
+  .state .divider { color: var(--gray-dim); }
+  .state .phase { color: var(--teal); transition: color 0.3s; }
+  .state .phase.rest { color: var(--gray-dim); }
+  .state .phase.release { color: var(--teal-dim); }
+  .state .phase.hold { color: var(--peak-amber); }
+
+  .gauge-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+  }
+
+  /* ---------- HERO CONTENT ---------- */
+  .content-column { max-width: 560px; }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.3em;
+    color: var(--teal);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .eyebrow::before {
+    content: '';
+    width: 36px;
+    height: 1px;
+    background: var(--teal);
+    opacity: 0.7;
+  }
+  h1 {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: clamp(44px, 5.6vw, 76px);
+    line-height: 0.98;
+    letter-spacing: -0.025em;
+    color: var(--white);
+  }
+  h1 .accent { color: var(--teal); display: block; }
+
+  .subline {
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--gray);
+    margin-top: 24px;
+    max-width: 460px;
+  }
+
+  .meta-row {
+    margin-top: 22px;
+    display: flex;
+    gap: 22px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    color: var(--gray-dim);
+    text-transform: uppercase;
+  }
+  .meta-row span { color: var(--teal); margin-right: 6px; }
+
+  .cta-row {
+    margin-top: 36px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 16px 26px;
+    border-radius: 3px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, color 0.18s ease;
+  }
+  .btn-primary {
+    background: var(--teal);
+    color: var(--navy-deep);
+    box-shadow: 0 0 0 1px var(--teal), 0 8px 24px rgba(54, 231, 179, 0.25);
+  }
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0 0 1px var(--teal), 0 10px 32px rgba(54, 231, 179, 0.4);
+  }
+  .btn-ghost {
+    color: var(--gray);
+    border: 1px solid rgba(200, 200, 216, 0.25);
+    background: transparent;
+  }
+  .btn-ghost:hover { color: var(--teal); border-color: var(--teal); }
+  .btn .arrow { transition: transform 0.2s; }
+  .btn:hover .arrow { transform: translateX(4px); }
+
+  /* ---------- SECTION 2: INSTRUMENT ---------- */
+  .section {
+    position: relative;
+    width: 100%;
+    /* min-height: 100vh so each section is a full page,
+       but content flows from the top (not vertically centered) —
+       section-divider anchors near the top of the viewport,
+       headline sits in the upper third, rest flows downward. */
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 70px 44px 50px;
+    background:
+      radial-gradient(ellipse at 72% 40%, rgba(139, 92, 246, 0.07) 0%, transparent 55%),
+      linear-gradient(180deg, var(--navy-deep) 0%, var(--navy) 50%, var(--navy-deep) 100%);
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+  .section-divider {
+    max-width: 1200px;
+    margin: 0 auto 48px;
+    padding: 0;
+    border-top: 1px dashed rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: space-between;
+    padding-top: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    color: var(--gray-dim);
+    text-transform: uppercase;
+  }
+  .section-header {
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto 42px;
+  }
+  .section-header h2 {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: clamp(36px, 5vw, 64px);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--white);
+    max-width: 700px;
+  }
+  .section-header h2 .accent { color: var(--teal); }
+
+  .instrument-grid {
+    display: grid;
+    grid-template-columns: minmax(280px, 340px) 1fr;
+    gap: 90px;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  /* ---------- PHONE MOCKUP ---------- */
+  .phone-wrap {
+    display: flex;
+    justify-content: center;
+    position: relative;
+  }
+  .phone-wrap::before {
+    /* soft teal glow behind the phone */
+    content: '';
+    position: absolute;
+    inset: -40px;
+    background: radial-gradient(ellipse at center, rgba(54, 231, 179, 0.18) 0%, transparent 60%);
+    z-index: 0;
+    pointer-events: none;
+  }
+  .phone {
+    position: relative;
+    z-index: 1;
+    width: 300px;
+    height: 610px;
+    background: linear-gradient(180deg, #15183A 0%, #080A20 100%);
+    border: 1px solid rgba(54, 231, 179, 0.18);
+    border-radius: 44px;
+    padding: 8px;
+    box-shadow:
+      0 0 0 1px rgba(0,0,0,0.5),
+      0 30px 80px rgba(0,0,0,0.55),
+      inset 0 0 0 1px rgba(255,255,255,0.04);
+  }
+  .phone-notch {
+    position: absolute;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90px;
+    height: 22px;
+    background: #05071B;
+    border-radius: 14px;
+    z-index: 3;
+  }
+  .phone-screen {
+    width: 100%;
+    height: 100%;
+    background:
+      radial-gradient(ellipse at 50% 40%, rgba(54, 231, 179, 0.08) 0%, transparent 60%),
+      var(--navy);
+    border-radius: 36px;
+    padding: 54px 22px 24px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+  .phone-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-bottom: 14px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .phone-header .app-title {
+    font-family: 'General Sans', sans-serif;
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    color: var(--white);
+  }
+  .phone-header .session {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.24em;
+    color: var(--gray-dim);
+    text-transform: uppercase;
+  }
+  .phone-gauge-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.3em;
+    color: var(--teal);
+    text-transform: uppercase;
+    text-align: center;
+    opacity: 0.9;
+    margin-bottom: 12px;
+  }
+  .phone-gauge-row {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+  }
+  .phone-bar-frame {
+    background:
+      linear-gradient(180deg, rgba(0,0,0,0.4), rgba(0,0,0,0.6)),
+      var(--navy-deep);
+    border: 1px solid rgba(54, 231, 179, 0.22);
+    border-radius: 4px;
+    padding: 8px 6px;
+  }
+  .phone-scale {
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    color: var(--gray-dim);
+    padding: 6px 0;
+  }
+  .phone-state {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 10px 12px;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 3px;
+    margin-top: 14px;
+    color: var(--gray);
+  }
+  .phone-state .phase { color: var(--teal); transition: color 0.3s; }
+  .phone-state .phase.hold { color: var(--peak-amber); }
+  .phone-state .phase.release { color: var(--teal-dim); }
+  .phone-state .phase.rest { color: var(--gray-dim); }
+  .phone-pill {
+    background: var(--teal);
+    color: var(--navy-deep);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    padding: 12px;
+    border-radius: 999px;
+    text-align: center;
+    margin-top: 14px;
+  }
+
+  /* ---------- SECTION 2: COPY ---------- */
+  .instrument-copy { max-width: 520px; }
+  .instrument-copy p {
+    font-family: 'Poppins', sans-serif;
+    font-size: 20px;
+    line-height: 1.55;
+    color: var(--gray);
+    margin-bottom: 18px;
+  }
+  .instrument-copy p strong { color: var(--white); font-weight: 500; }
+
+  .spec-list {
+    margin-top: 34px;
+    display: grid;
+    gap: 0;
+  }
+  .spec-list .row {
+    display: flex;
+    gap: 22px;
+    align-items: baseline;
+    padding: 16px 0;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .spec-list .row:first-child { border-top: 1px dashed rgba(255, 255, 255, 0.08); }
+  .spec-list .row .key {
+    color: var(--teal);
+    min-width: 120px;
+    font-weight: 600;
+  }
+  .spec-list .row .val {
+    color: var(--gray);
+    flex: 1;
+    letter-spacing: 0.06em;
+    text-transform: none;
+    font-size: 13px;
+  }
+
+  /* ---------- SECTION 3: OUTCOMES ---------- */
+  .outcomes-stack {
+    max-width: 1100px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .outcome {
+    display: grid;
+    grid-template-columns: 140px 1fr 240px;
+    gap: 48px;
+    padding: 32px 0;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+    align-items: start;
+  }
+  .outcome:first-child { border-top: 1px dashed rgba(255, 255, 255, 0.08); }
+  .outcome:last-child  { border-bottom: none; }
+
+  .outcome .index {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    color: var(--teal);
+    padding-top: 10px;
+    text-transform: uppercase;
+  }
+
+  .outcome .body h3 {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: clamp(32px, 3.8vw, 52px);
+    line-height: 0.98;
+    letter-spacing: -0.025em;
+    color: var(--white);
+  }
+  .outcome .body h3 .dot { color: var(--teal); }
+
+  .outcome .body p {
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--gray);
+    margin-top: 14px;
+    max-width: 520px;
+  }
+
+  .outcome .stats {
+    display: grid;
+    gap: 0;
+    padding-top: 18px;
+  }
+  .outcome .stats .stat {
+    display: grid;
+    grid-template-columns: 88px 1fr;
+    gap: 12px;
+    align-items: baseline;
+    padding: 9px 0;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.06);
+  }
+  .outcome .stats .stat:first-child { border-top: 1px dashed rgba(255, 255, 255, 0.06); }
+
+  .outcome .stats .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--teal);
+  }
+  .outcome .stats .desc {
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--gray);
+  }
+
+  /* ---------- SECTION 4: PROOF ---------- */
+  .proof-grid {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    width: 100%;
+  }
+  .proof-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    padding: 30px 28px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .proof-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 28px;
+    width: 36px;
+    height: 2px;
+    background: var(--teal);
+  }
+  .proof-card:hover {
+    border-color: rgba(54, 231, 179, 0.35);
+    transform: translateY(-2px);
+  }
+  .proof-card .mark {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    color: var(--teal);
+    text-transform: uppercase;
+  }
+  .proof-card blockquote {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 21px;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    color: var(--white);
+    flex: 1;
+  }
+  .proof-card .attribution {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    color: var(--gray-dim);
+    text-transform: uppercase;
+    padding-top: 16px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  }
+  .proof-card .attribution .name { color: var(--gray); font-weight: 600; }
+
+  /* ---------- SECTION 5: PRIVACY ---------- */
+  .section-privacy {
+    text-align: center;
+    /* True-center the privacy-content by pulling the section-divider out
+       of the flex flow (absolute at top). With only privacy-content left
+       as a flex item, justify-content: center centers it perfectly. */
+    justify-content: center;
+  }
+  .section-privacy .section-divider {
+    position: absolute;
+    top: 70px;
+    left: 44px;
+    right: 44px;
+    margin: 0;
+    max-width: none;
+    width: auto;
+  }
+  .privacy-content {
+    max-width: 820px;
+    margin: 0 auto;
+  }
+  .privacy-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.32em;
+    color: var(--teal);
+    text-transform: uppercase;
+    margin-bottom: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+  }
+  .privacy-eyebrow::before,
+  .privacy-eyebrow::after {
+    content: '';
+    width: 38px;
+    height: 1px;
+    background: var(--teal);
+    opacity: 0.6;
+  }
+  .privacy-content h2 {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: clamp(42px, 6vw, 76px);
+    line-height: 0.98;
+    letter-spacing: -0.025em;
+    color: var(--white);
+    margin-bottom: 34px;
+  }
+  .privacy-content h2 .accent { color: var(--teal); }
+
+  .privacy-lead {
+    font-family: 'Poppins', sans-serif;
+    font-size: 19px;
+    line-height: 1.6;
+    color: var(--gray);
+    max-width: 640px;
+    margin: 0 auto 44px;
+  }
+  .privacy-tags {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 32px 44px;
+  }
+  .privacy-tags .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--gray);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .privacy-tags .tag .dot {
+    color: var(--teal);
+    font-size: 9px;
+    line-height: 1;
+  }
+
+  /* ---------- SECTION 6: CLOSE ---------- */
+  .section-close { text-align: center; }
+  .close-content {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .close-content h2 {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: clamp(44px, 6vw, 78px);
+    line-height: 0.98;
+    letter-spacing: -0.025em;
+    color: var(--white);
+    margin-bottom: 28px;
+  }
+  .close-content h2 .accent { color: var(--teal); }
+  .close-content .lead {
+    font-family: 'Poppins', sans-serif;
+    font-size: 18px;
+    line-height: 1.55;
+    color: var(--gray);
+    max-width: 520px;
+    margin: 0 auto 44px;
+  }
+  .close-spec {
+    max-width: 420px;
+    margin: 0 auto 40px;
+    padding: 24px 28px;
+    border: 1px solid rgba(54, 231, 179, 0.22);
+    border-radius: 4px;
+    background: rgba(54, 231, 179, 0.03);
+    text-align: left;
+  }
+  .close-spec .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 12px 0;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .close-spec .row:last-child { border-bottom: none; }
+  .close-spec .row .k { color: var(--teal); font-weight: 600; }
+  .close-spec .row .v {
+    color: var(--gray);
+    letter-spacing: 0.06em;
+    text-transform: none;
+    font-size: 13px;
+  }
+  .close-spec .row .v.price {
+    font-family: 'General Sans', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--white);
+  }
+  .close-cta-headline {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: clamp(22px, 2.2vw, 26px);
+    letter-spacing: -0.01em;
+    color: var(--white);
+    margin-bottom: 22px;
+    line-height: 1.2;
+  }
+  .close-cta-headline .accent { color: var(--teal); }
+
+  .close-cta-row {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+
+  /* platform-specific app badges */
+  .app-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 22px;
+    background: var(--white);
+    color: var(--navy);
+    border-radius: 10px;
+    text-decoration: none;
+    transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.2s ease;
+    min-width: 220px;
+  }
+  .app-badge:hover {
+    background: var(--teal);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(54, 231, 179, 0.22);
+  }
+  .app-badge-logo { flex-shrink: 0; }
+  .app-badge-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1;
+    gap: 3px;
+  }
+  .app-badge-text .small {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+  .app-badge-text .big {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: -0.01em;
+  }
+
+  /* Google Play — coming soon state */
+  .app-badge.soon {
+    background: transparent;
+    color: var(--gray);
+    border: 1px solid rgba(255,255,255,0.14);
+    cursor: default;
+  }
+  .app-badge.soon:hover {
+    background: transparent;
+    color: var(--gray);
+    transform: none;
+    box-shadow: none;
+  }
+  .app-badge.soon .app-badge-logo { opacity: 0.65; }
+  .app-badge.soon .app-badge-text .small { color: var(--teal); opacity: 1; }
+  .btn-xl { font-size: 13px; padding: 20px 32px; }
+
+  .trust-line {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--gray-dim);
+  }
+  .trust-line span { color: var(--teal); margin: 0 8px; }
+
+  .end-tag {
+    max-width: 1200px;
+    margin: 90px auto 0;
+    padding: 18px 0 0;
+    border-top: 1px dashed rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    color: var(--gray-dim);
+    text-transform: uppercase;
+  }
+  .end-tag .end-live {
+    color: var(--teal);
+    animation: blink 1.6s steps(2, end) infinite;
+  }
+
+  /* ---------- FOOTER ---------- */
+  .page-footer {
+    padding: 72px 44px 28px;
+    background: var(--navy-deep);
+    border-top: 1px solid rgba(255,255,255,0.06);
+    position: relative;
+    /* Footer is its own gentle snap target so scrolling past the
+       close section lands cleanly on the colophon instead of floating. */
+    scroll-snap-align: start;
+  }
+  .page-footer::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 48px;
+    height: 2px;
+    background: var(--teal);
+    box-shadow: 0 0 12px rgba(54, 231, 179, 0.6);
+  }
+  .footer-main {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr 1fr;
+    gap: 56px;
+    padding-bottom: 48px;
+    border-bottom: 1px dashed rgba(255,255,255,0.08);
+  }
+  .footer-col h4 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--gray-dim);
+    margin-bottom: 18px;
+  }
+  .footer-col .wordmark {
+    margin-bottom: 20px;
+  }
+  .footer-tagline {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    line-height: 1.15;
+    color: var(--white);
+  }
+  .footer-tagline span { color: var(--teal); }
+  .footer-links {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .footer-links a {
+    color: var(--gray);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .footer-links a:hover { color: var(--teal); }
+  .footer-links .soon {
+    color: var(--gray-dim);
+    font-size: 13px;
+  }
+  .footer-links .soon em {
+    color: var(--teal);
+    font-style: normal;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-left: 6px;
+  }
+  .footer-socials {
+    display: flex;
+    gap: 12px;
+  }
+  .footer-socials a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    color: var(--gray);
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+  }
+  .footer-socials a:hover {
+    color: var(--teal);
+    border-color: var(--teal);
+    background: rgba(54, 231, 179, 0.06);
+  }
+  .footer-bottom {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-top: 22px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gray-dim);
+  }
+  .footer-bottom .left span { color: var(--teal); }
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width: 900px) {
+    .hero {
+      grid-template-columns: 1fr;
+      gap: 36px;
+      text-align: left;
     }
-    </script>
+    .gauge-column { align-items: flex-start; }
+    .hero-bar { height: 240px; width: 64px; }
+    .rail-left, .rail-right { display: none; }
 
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-            {
-                "@type": "Question",
-                "name": "What are kegel exercises and why should I do them?",
-                "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": "Kegel exercises strengthen the pelvic floor muscles that support your bladder, bowel, and sexual function. Regular kegel training can improve bladder control, reduce incontinence, and enhance sexual health. PulseKegel guides you through a structured 12-week program with 7 different exercise types for comprehensive pelvic floor strengthening."
-                }
-            },
-            {
-                "@type": "Question",
-                "name": "How long does each PulseKegel workout take?",
-                "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": "PulseKegel workouts take just 5-10 minutes per day. The app's 12-week program starts with shorter sessions in the Control Phase and gradually builds to more comprehensive workouts in the Power Phase, all designed to fit into a busy schedule."
-                }
-            },
-            {
-                "@type": "Question",
-                "name": "How does the haptic feedback work during exercises?",
-                "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": "PulseKegel uses your phone's vibration motor to provide distinct haptic patterns for each exercise type. Slow holds use steady pulses with progressive intensity, quick flicks use rapid staccato bursts, and elevator exercises use stepped patterns. The intensity matches the visual power bar so you can feel the rhythm without looking at the screen."
-                }
-            },
-            {
-                "@type": "Question",
-                "name": "Is PulseKegel suitable for men?",
-                "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": "Yes. PulseKegel is built primarily for men who want better control, pelvic strength, and confidence. Pelvic floor training can also help with prostate recovery and general pelvic health."
-                }
-            },
-            {
-                "@type": "Question",
-                "name": "How much does PulseKegel cost?",
-                "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": "PulseKegel offers a 7-Day Control Challenge — free for 7 days — so you can try the full app before committing. After the challenge, it costs just $4.99 per year - that's about $0.42 per month, making it one of the most affordable pelvic floor training apps available."
-                }
-            },
-            {
-                "@type": "Question",
-                "name": "Is my health data private and secure?",
-                "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": "Absolutely. All your workout data stays entirely on your device. PulseKegel doesn't require an account, doesn't track you, and never uploads your health information. Your pelvic floor training is completely private."
-                }
-            }
-        ]
+    .instrument-grid {
+      grid-template-columns: 1fr;
+      gap: 60px;
     }
-    </script>
+    .section { padding: 70px 32px; }
+    .phone-wrap { order: 2; }  /* copy first, phone below on mobile */
+    .instrument-copy { order: 1; }
 
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        "name": "PulseKegel",
-        "url": "https://pulsekegel.com",
-        "sameAs": [
-            "https://apps.apple.com/us/app/pulsekegel/id6758308054"
-        ],
-        "contactPoint": {
-            "@type": "ContactPoint",
-            "contactType": "customer service",
-            "url": "https://pulsekegel.com"
-        }
+    .outcome {
+      grid-template-columns: 1fr;
+      gap: 24px;
+      padding: 40px 0;
     }
-    </script>
+    .outcome .index { padding-top: 0; }
+    .outcome .stats { padding-top: 0; }
 
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "PulseKegel",
-        "url": "https://pulsekegel.com",
-        "potentialAction": {
-            "@type": "SearchAction",
-            "target": "https://pulsekegel.com/blog?q={search_term_string}",
-            "query-input": "required name=search_term_string"
-        }
+    .proof-grid { grid-template-columns: 1fr; gap: 16px; }
+    .proof-card { padding: 24px 22px; }
+    .proof-card::before { left: 22px; }
+    .proof-card blockquote { font-size: 19px; }
+
+    .footer-main { grid-template-columns: 1fr 1fr; gap: 40px; }
+    .footer-main .brand-col { grid-column: 1 / -1; }
+    .page-footer { padding: 60px 32px 28px; }
+  }
+  @media (max-width: 600px) {
+    .chassis { padding: 20px 20px 30px; }
+    .section { padding: 60px 20px; }
+    .menu { display: none; }
+    .hero-bar { height: 200px; width: 54px; }
+    .scale { font-size: 9px; }
+    h1 { font-size: 42px; }
+    .subline { font-size: 15px; }
+    .page-footer { padding: 48px 20px 24px; }
+    .footer-main { grid-template-columns: 1fr; gap: 32px; padding-bottom: 32px; }
+    .footer-bottom { flex-direction: column; gap: 8px; align-items: flex-start; font-size: 9px; }
+    .state { min-width: 0; width: 100%; font-size: 10px; letter-spacing: 0.18em; }
+    .meta-row { flex-wrap: wrap; gap: 14px; font-size: 10px; }
+    .phone { width: 260px; height: 540px; }
+    .phone-bar { height: 200px; width: 40px; }
+    .instrument-copy p { font-size: 17px; }
+
+    .close-spec { padding: 20px 22px; }
+    .close-cta-row { flex-direction: column; align-items: stretch; gap: 12px; }
+    .app-badge { min-width: 0; justify-content: flex-start; padding: 12px 18px; }
+    .app-badge-text .big { font-size: 18px; }
+    .end-tag { flex-direction: column; gap: 10px; font-size: 9px; text-align: left; }
+
+    .section-privacy { padding: 90px 20px 90px; }
+    .privacy-lead { font-size: 17px; }
+    .privacy-tags { gap: 18px 26px; }
+    .privacy-tags .tag { font-size: 10px; letter-spacing: 0.18em; }
+    .privacy-eyebrow::before,
+    .privacy-eyebrow::after { width: 22px; }
+  }
+  @media (max-width: 400px) {
+    .hero-bar { height: 170px; width: 48px; }
+    .gauge-assembly { gap: 12px; }
+    .phone { width: 240px; height: 500px; }
+  }
+
+  /* =========================================================
+     SCROLL REVEAL SYSTEM — HUD "boot up" on section entry
+     All animations are one-shot and driven by .in-view class,
+     added by IntersectionObserver at the bottom of the file.
+     ========================================================= */
+
+  /* One-shot keyframes — animations (not transitions) keep the transition
+     slot free so per-element hover transitions (.app-badge, .btn) still work. */
+  @keyframes reveal-up {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0);    }
+  }
+  @keyframes reveal-left {
+    from { opacity: 0; transform: translateX(-16px); }
+    to   { opacity: 1; transform: translateX(0);     }
+  }
+  @keyframes reveal-wipe {
+    from { clip-path: inset(0 100% 0 0); }
+    to   { clip-path: inset(0 0 0 0);    }
+  }
+  @keyframes stagger-up {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0);    }
+  }
+
+  /* Generic fade-up (headlines, body copy, cards, badges).
+     We set the end state explicitly on .in-view (instead of animation-fill-mode: forwards),
+     so after the animation ends the element's computed style is just regular CSS —
+     leaving hover transforms on .btn / .app-badge free to work. */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    will-change: opacity, transform;
+  }
+  .reveal.in-view {
+    opacity: 1;
+    transform: translateY(0);
+    animation: reveal-up 0.75s cubic-bezier(0.22, 0.7, 0.2, 1) backwards;
+  }
+
+  /* Eyebrow / section numbers — slide in from the left */
+  .reveal-x {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  .reveal-x.in-view {
+    opacity: 1;
+    transform: translateX(0);
+    animation: reveal-left 0.6s ease-out backwards;
+  }
+
+  /* Dashed section divider — wipes in L → R */
+  .reveal-line {
+    clip-path: inset(0 100% 0 0);
+  }
+  .reveal-line.in-view {
+    clip-path: inset(0 0 0 0);
+    animation: reveal-wipe 1s cubic-bezier(0.22, 0.7, 0.2, 1) backwards;
+  }
+
+  /* Staggered children — spec rows, outcome slabs, proof cards, CTA badges */
+  .reveal-stagger > * {
+    opacity: 0;
+    transform: translateY(18px);
+    will-change: opacity, transform;
+  }
+  .reveal-stagger.in-view > * {
+    opacity: 1;
+    transform: translateY(0);
+    animation: stagger-up 0.65s ease-out backwards;
+  }
+  .reveal-stagger.in-view > *:nth-child(1)  { animation-delay:  60ms; }
+  .reveal-stagger.in-view > *:nth-child(2)  { animation-delay: 150ms; }
+  .reveal-stagger.in-view > *:nth-child(3)  { animation-delay: 240ms; }
+  .reveal-stagger.in-view > *:nth-child(4)  { animation-delay: 330ms; }
+  .reveal-stagger.in-view > *:nth-child(5)  { animation-delay: 420ms; }
+  .reveal-stagger.in-view > *:nth-child(6)  { animation-delay: 510ms; }
+  .reveal-stagger.in-view > *:nth-child(7)  { animation-delay: 600ms; }
+  .reveal-stagger.in-view > *:nth-child(8)  { animation-delay: 690ms; }
+
+  /* Gauge "power-on" — LED segments fade up bottom-to-top in sequence.
+     Uses @keyframes (not transition) so the live runGauge() loop's
+     background/box-shadow transitions on .seg remain intact. */
+  @keyframes seg-boot {
+    from { opacity: 0; transform: scale(0.5); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  .bar.reveal-gauge .seg {
+    opacity: 0;
+    transform: scale(0.5);
+    transform-origin: center;
+  }
+  .bar.reveal-gauge.in-view .seg {
+    opacity: 1;
+    transform: scale(1);
+    animation: seg-boot 0.42s cubic-bezier(0.22, 0.7, 0.2, 1) backwards;
+    /* --i is set by runGauge() in JS; bottom segment boots first */
+    animation-delay: calc(var(--i, 0) * 20ms);
+  }
+
+  /* Privacy dots — sequential systems-check light-up */
+  .privacy-tags .tag .dot {
+    opacity: 0;
+    transform: scale(0.3);
+    transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+  }
+  .privacy-tags.in-view .tag:nth-child(1) .dot { opacity: 1; transform: scale(1); transition-delay: 120ms; }
+  .privacy-tags.in-view .tag:nth-child(2) .dot { opacity: 1; transform: scale(1); transition-delay: 260ms; }
+  .privacy-tags.in-view .tag:nth-child(3) .dot { opacity: 1; transform: scale(1); transition-delay: 400ms; }
+  .privacy-tags.in-view .tag:nth-child(4) .dot { opacity: 1; transform: scale(1); transition-delay: 540ms; }
+
+  /* End-tag one-shot "acquire" pulse on arrival */
+  @keyframes boot-pulse {
+    0%   { transform: scale(0.3); opacity: 0; }
+    40%  { transform: scale(1.6); opacity: 1; }
+    100% { transform: scale(1);   opacity: 1; }
+  }
+  .end-tag.reveal .end-live {
+    display: inline-block;
+    animation: none;
+  }
+  .end-tag.reveal.in-view .end-live {
+    animation: boot-pulse 0.8s cubic-bezier(0.22, 0.7, 0.2, 1) forwards,
+               blink 1.6s steps(2, end) 1s infinite;
+  }
+
+  /* Respect reduced-motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    body { scroll-snap-type: none; scroll-behavior: auto; }
+    .reveal, .reveal-x, .reveal-line, .reveal-stagger > *,
+    .bar.reveal-gauge .seg, .privacy-tags .tag .dot {
+      opacity: 1 !important;
+      transform: none !important;
+      clip-path: none !important;
+      transition: none !important;
     }
-    </script>
-
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html { scroll-behavior: smooth; }
-        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 25%, #16213e 50%, #0f0f23 75%, #0a0a1a 100%); color: #ffffff; min-height: 100vh; overflow-x: hidden; }
-        
-        .glow-orb { position: fixed; border-radius: 50%; filter: blur(80px); opacity: 0.3; pointer-events: none; z-index: 0; }
-        .orb-1 { width: 400px; height: 400px; background: #00FF88; top: -100px; right: -100px; }
-        .orb-2 { width: 300px; height: 300px; background: #FF00FF; bottom: 20%; left: -100px; }
-        .orb-3 { width: 250px; height: 250px; background: #00FFFF; bottom: -50px; right: 20%; }
-        
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
-        
-        header { padding: 40px 0; text-align: center; }
-        .logo-section { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 8px; }
-        .app-icon { width: 64px; height: 64px; border-radius: 16px; background: linear-gradient(135deg, #1a1a2e, #16213e); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 30px rgba(0, 255, 136, 0.3); }
-        .app-icon svg { width: 40px; height: 40px; }
-        .logo { font-family: 'Orbitron', sans-serif; font-size: 2.5rem; font-weight: 700; background: linear-gradient(90deg, #00FF88, #00FFFF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-shadow: 0 0 40px rgba(0, 255, 136, 0.5); }
-        .logo-subtitle { font-size: 1rem; font-weight: 400; display: block; margin-top: 4px; background: linear-gradient(90deg, #00FFFF, #FF00FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: 0.05em; }
-        .tagline { font-size: 1.1rem; color: rgba(255, 255, 255, 0.7); font-weight: 300; }
-        
-        .hero { padding: 60px 0; text-align: center; }
-        .story-card { background: linear-gradient(135deg, rgba(26, 26, 46, 0.9), rgba(22, 33, 62, 0.9)); border: 1px solid rgba(0, 255, 136, 0.2); border-radius: 24px; padding: 48px; max-width: 800px; margin: 0 auto; position: relative; overflow: hidden; }
-        .story-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #00FF88, #00FFFF, #FF00FF); }
-        .quote-mark { font-family: 'Orbitron', sans-serif; font-size: 4rem; color: #00FF88; opacity: 0.3; line-height: 1; margin-bottom: -20px; }
-        .story-text { font-size: 1.25rem; line-height: 1.8; color: rgba(255, 255, 255, 0.9); font-weight: 300; margin-bottom: 32px; }
-        .story-text strong { color: #00FF88; font-weight: 500; }
-        .cta-text { font-family: 'Orbitron', sans-serif; font-size: 1.5rem; font-weight: 600; background: linear-gradient(90deg, #00FFFF, #FF00FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 24px; }
-        
-        .hero-buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
-        .app-store-btn { display: inline-flex; align-items: center; gap: 12px; padding: 14px 32px; background: #000; border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 1rem; text-decoration: none; border-radius: 12px; transition: transform 0.3s ease, box-shadow 0.3s ease; }
-        .app-store-btn:hover { transform: scale(1.05); box-shadow: 0 0 30px rgba(255, 255, 255, 0.2); }
-        .app-store-btn svg { width: 28px; height: 28px; }
-        .app-store-btn--muted { opacity: 0.55; cursor: pointer; font-family: inherit; }
-        .app-store-btn--muted:hover { opacity: 0.8; box-shadow: 0 0 20px rgba(255, 255, 255, 0.12); }
-        .btn-text { text-align: left; }
-        .btn-text-small { font-size: 0.7rem; color: rgba(255,255,255,0.7); display: block; }
-        .btn-text-large { font-size: 1.1rem; font-weight: 600; }
-        
-        .screenshots-section { padding: 80px 0; }
-        .section-title { font-family: 'Orbitron', sans-serif; font-size: 2rem; text-align: center; margin-bottom: 48px; color: #00FFFF; }
-        .screenshots-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; max-width: 1000px; margin: 0 auto; }
-        @media (max-width: 900px) { .screenshots-grid { grid-template-columns: 1fr; gap: 48px; max-width: 320px; } }
-        .screenshot-item { text-align: center; }
-        .phone-frame { position: relative; display: inline-block; }
-        .phone-frame::before { content: ''; position: absolute; inset: -8px; background: linear-gradient(135deg, #00FF88, #00FFFF, #FF00FF); border-radius: 44px; opacity: 0.5; filter: blur(8px); z-index: -1; }
-        .phone-mockup { width: 260px; height: 520px; border-radius: 36px; border: 4px solid #2a2a4e; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); background: linear-gradient(180deg, #1a1a2e 0%, #0f0f23 100%); display: flex; align-items: center; justify-content: center; }
-        .phone-mockup-content { text-align: center; padding: 20px; }
-        .phone-mockup-icon { font-size: 3rem; margin-bottom: 16px; }
-        .phone-mockup-text { color: rgba(255,255,255,0.6); font-size: 0.9rem; }
-        .screenshot-label { margin-top: 20px; font-family: 'Orbitron', sans-serif; font-size: 1rem; color: #00FF88; font-weight: 500; }
-        .screenshot-desc { margin-top: 8px; font-size: 0.9rem; color: rgba(255, 255, 255, 0.6); }
-        
-        .features-section { padding: 80px 0; }
-        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; max-width: 1000px; margin: 0 auto; }
-        .feature-card { background: rgba(26, 26, 46, 0.6); border: 1px solid rgba(0, 255, 255, 0.15); border-radius: 16px; padding: 32px; text-align: center; transition: transform 0.3s ease, border-color 0.3s ease; }
-        .feature-card:hover { transform: translateY(-4px); border-color: rgba(0, 255, 136, 0.4); }
-        .feature-icon { width: 56px; height: 56px; margin: 0 auto 16px; background: linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 255, 255, 0.2)); border-radius: 12px; display: flex; align-items: center; justify-content: center; }
-        .feature-title { font-family: 'Orbitron', sans-serif; font-size: 1.1rem; color: #00FFFF; margin-bottom: 8px; }
-        .feature-desc { font-size: 0.95rem; color: rgba(255, 255, 255, 0.7); line-height: 1.6; }
-        .features-more { display: none; margin-top: 24px; }
-        .features-more.is-open { display: block; }
-        .features-toggle-wrap { text-align: center; margin-top: 28px; }
-        .features-toggle { display: inline-flex; align-items: center; gap: 8px; background: none; border: 1px solid rgba(255,255,255,0.15); border-radius: 999px; color: rgba(255,255,255,0.55); font-size: 0.9rem; cursor: pointer; padding: 10px 22px; transition: color 0.2s, border-color 0.2s; }
-        .features-toggle:hover { color: rgba(255,255,255,0.85); border-color: rgba(255,255,255,0.35); }
-        .features-toggle-chevron { transition: transform 0.3s; }
-        .features-toggle.is-open .features-toggle-chevron { transform: rotate(180deg); }
-        
-        .roadmap-section { padding: 80px 24px; }
-        .roadmap-title { text-align: center; font-family: 'Orbitron', sans-serif; font-size: 1.75rem; font-weight: 700; margin-bottom: 1.5rem; background: linear-gradient(135deg, #00FF88, #00FFFF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .roadmap-grid { max-width: 600px; margin: 0 auto; }
-        .roadmap-item { display: flex; align-items: flex-start; margin-bottom: 1rem; padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 12px; }
-        .roadmap-item.green { border-left: 3px solid #00FF88; }
-        .roadmap-item.cyan { border-left: 3px solid #00FFFF; }
-        .roadmap-item.magenta { border-left: 3px solid #FF00FF; }
-        .roadmap-item.purple { border-left: 3px solid #8B5CF6; }
-        .roadmap-check { margin-right: 1rem; font-size: 1.1rem; }
-        .roadmap-check.green { color: #00FF88; }
-        .roadmap-check.cyan { color: #00FFFF; }
-        .roadmap-check.magenta { color: #FF00FF; }
-        .roadmap-check.purple { color: #8B5CF6; }
-        .roadmap-content strong { color: #fff; }
-        .roadmap-content p { color: rgba(255,255,255,0.6); margin: 0.25rem 0 0 0; font-size: 0.9rem; }
-
-        .faq-section { padding: 80px 0; }
-        .faq-grid { max-width: 800px; margin: 0 auto; }
-        .faq-item { background: rgba(26, 26, 46, 0.6); border: 1px solid rgba(0, 255, 255, 0.12); border-radius: 16px; padding: 28px 32px; margin-bottom: 16px; }
-        .faq-question { font-family: 'Orbitron', sans-serif; font-size: 1rem; color: #00FFFF; margin-bottom: 12px; line-height: 1.5; }
-        .faq-answer { font-size: 0.95rem; color: rgba(255, 255, 255, 0.75); line-height: 1.7; }
-        
-        .blog-section { padding: 80px 0; }
-        .blog-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; max-width: 1000px; margin: 0 auto; }
-        .blog-card { background: rgba(26, 26, 46, 0.6); border: 1px solid rgba(0, 255, 255, 0.15); border-radius: 16px; padding: 28px 32px; text-decoration: none; transition: transform 0.3s ease, border-color 0.3s ease; display: block; }
-        .blog-card:hover { transform: translateY(-4px); border-color: rgba(0, 255, 136, 0.4); }
-        .blog-card-title { font-family: 'Orbitron', sans-serif; font-size: 1rem; color: #00FFFF; margin-bottom: 12px; line-height: 1.5; }
-        .blog-card-excerpt { font-size: 0.9rem; color: rgba(255, 255, 255, 0.65); line-height: 1.6; margin-bottom: 12px; }
-        .blog-card-link { font-size: 0.85rem; color: #00FF88; font-weight: 500; }
-        .blog-view-all { text-align: center; margin-top: 32px; }
-        .blog-view-all a { color: #00FFFF; font-family: 'Orbitron', sans-serif; font-size: 0.95rem; text-decoration: none; border-bottom: 1px solid rgba(0, 255, 255, 0.3); padding-bottom: 2px; transition: border-color 0.3s; }
-        .blog-view-all a:hover { border-color: #00FFFF; }
-
-        .need-section { padding: 60px 0; }
-        .need-card { background: linear-gradient(135deg, rgba(26, 26, 46, 0.9), rgba(22, 33, 62, 0.9)); border: 1px solid rgba(0, 255, 136, 0.3); border-radius: 24px; padding: 48px; max-width: 800px; margin: 0 auto; position: relative; overflow: hidden; }
-        .need-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #FF00FF, #00FFFF, #00FF88); }
-        .need-hook { font-family: 'Orbitron', sans-serif; font-size: 1.2rem; color: #00FFFF; margin-bottom: 12px; line-height: 1.6; }
-        .need-subhook { font-size: 0.95rem; color: rgba(255, 255, 255, 0.6); margin-bottom: 28px; line-height: 1.7; font-style: italic; }
-        .need-list { list-style: none; padding: 0; margin: 0 0 32px 0; }
-        .need-list li { padding: 10px 0 10px 28px; position: relative; font-size: 1rem; color: rgba(255, 255, 255, 0.85); line-height: 1.6; border-bottom: 1px solid rgba(255,255,255,0.06); }
-        .need-list li:last-child { border-bottom: none; }
-        .need-list li::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 8px; height: 8px; border-radius: 50%; background: #00FF88; box-shadow: 0 0 8px rgba(0, 255, 136, 0.6); }
-        .decline-block { margin-top: 28px; padding: 24px 28px; background: rgba(255, 0, 0, 0.06); border: 1px solid rgba(255, 80, 80, 0.2); border-radius: 14px; }
-        .decline-title { font-family: 'Orbitron', sans-serif; font-size: 0.9rem; color: rgba(255, 120, 120, 0.9); margin-bottom: 14px; letter-spacing: 0.03em; }
-        .decline-list { list-style: none; padding: 0; margin: 0 0 18px 0; }
-        .decline-list li { padding: 6px 0 6px 22px; position: relative; font-size: 0.95rem; color: rgba(255, 255, 255, 0.7); line-height: 1.5; }
-        .decline-list li::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 6px; height: 6px; border-radius: 50%; background: rgba(255, 100, 100, 0.7); }
-        .decline-pivot { font-family: 'Orbitron', sans-serif; font-size: 0.95rem; color: #00FF88; margin: 0; letter-spacing: 0.02em; }
-
-        .why-works-section { padding: 60px 0; }
-        .why-works-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 900px; margin: 0 auto; }
-        @media (max-width: 700px) { .why-works-grid { grid-template-columns: 1fr; } }
-        .why-works-card { background: linear-gradient(135deg, rgba(26, 26, 46, 0.85), rgba(22, 33, 62, 0.85)); border: 1px solid rgba(0, 255, 136, 0.2); border-radius: 16px; padding: 28px 24px; }
-        .why-works-icon { margin-bottom: 16px; }
-        .why-works-title { font-family: 'Orbitron', sans-serif; font-size: 0.85rem; color: #00FF88; margin-bottom: 10px; line-height: 1.5; letter-spacing: 0.01em; }
-        .why-works-desc { font-size: 0.9rem; color: rgba(255, 255, 255, 0.65); line-height: 1.6; margin: 0; }
-
-        .tagline-clarity { font-size: 1rem; color: rgba(255, 255, 255, 0.6); margin-top: 12px; line-height: 1.7; max-width: 640px; margin-left: auto; margin-right: auto; }
-
-        .outcomes-strip { padding: 40px 0; }
-        .infographic-section { padding: 40px 0 20px; text-align: center; }
-        .infographic-section img { max-width: 520px; width: 100%; border-radius: 16px; display: block; margin: 0 auto; }
-        @media (max-width: 600px) { .infographic-section img { border-radius: 10px; } }
-        .outcomes-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 900px; margin: 0 auto; }
-        @media (max-width: 600px) { .outcomes-grid { grid-template-columns: 1fr; } }
-        .outcome-item { text-align: center; padding: 28px 20px; background: rgba(0, 255, 136, 0.05); border: 1px solid rgba(0, 255, 136, 0.2); border-radius: 16px; }
-        .outcome-label { font-family: 'Orbitron', sans-serif; font-size: 1rem; color: #00FF88; margin-bottom: 8px; }
-        .outcome-desc { font-size: 0.9rem; color: rgba(255, 255, 255, 0.65); line-height: 1.5; }
-
-        .cta-section { padding: 80px 0; text-align: center; }
-        .cta-card { background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 255, 255, 0.1)); border: 2px solid rgba(0, 255, 136, 0.3); border-radius: 24px; padding: 48px; max-width: 700px; margin: 0 auto; }
-        .cta-title { font-family: 'Orbitron', sans-serif; font-size: 1.8rem; margin-bottom: 16px; color: #00FF88; }
-        .cta-subtitle { font-size: 1.1rem; color: rgba(255, 255, 255, 0.8); margin-bottom: 32px; }
-        .download-btn { display: inline-flex; align-items: center; gap: 12px; padding: 16px 48px; background: linear-gradient(135deg, #00FF88, #00FFAA); color: #0a0a1a; font-family: 'Orbitron', sans-serif; font-size: 1.1rem; font-weight: 600; text-decoration: none; border-radius: 50px; transition: transform 0.3s ease, box-shadow 0.3s ease; box-shadow: 0 0 30px rgba(0, 255, 136, 0.4); }
-        .download-btn:hover { transform: scale(1.05); box-shadow: 0 0 50px rgba(0, 255, 136, 0.6); }
-        .download-btn svg { width: 24px; height: 24px; }
-        
-        .price-badge { display: inline-block; background: linear-gradient(135deg, #FF00FF, #00FFFF); padding: 8px 24px; border-radius: 50px; font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 600; color: #fff; margin-bottom: 24px; box-shadow: 0 0 20px rgba(255, 0, 255, 0.3); }
-        
-        .social-bar { display: flex; justify-content: center; gap: 20px; margin-top: 24px; }
-        .social-bar a { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 12px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.5); text-decoration: none; transition: color 0.25s ease, background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease; }
-        .social-bar a:hover { color: #00FFFF; background: rgba(0, 255, 255, 0.1); border-color: rgba(0, 255, 255, 0.35); box-shadow: 0 0 14px rgba(0, 255, 255, 0.25); }
-        .social-bar svg { width: 22px; height: 22px; fill: currentColor; }
-
-        footer { padding: 40px 0; text-align: center; border-top: 1px solid rgba(255, 255, 255, 0.1); }
-        .footer-links { display: flex; justify-content: center; gap: 32px; margin-bottom: 16px; flex-wrap: wrap; }
-        .footer-links a { color: rgba(255, 255, 255, 0.6); text-decoration: none; font-size: 0.9rem; transition: color 0.3s ease; }
-        .footer-links a:hover { color: #00FFFF; }
-        .copyright { color: rgba(255, 255, 255, 0.4); font-size: 0.85rem; }
-        
-        .hero-bridge { font-family: 'Orbitron', sans-serif; font-size: 1.15rem; color: rgba(255, 255, 255, 0.75); text-align: center; max-width: 600px; margin: 0 auto 40px; line-height: 1.7; letter-spacing: 0.01em; }
-
-        .need-trainable { font-family: 'Orbitron', sans-serif; font-size: 1.1rem; font-weight: 700; color: #00FF88; margin: 24px 0 0 0; letter-spacing: 0.03em; }
-
-        .why-works-close { font-family: 'Orbitron', sans-serif; font-size: 1rem; color: #00FFFF; text-align: center; margin-top: 32px; letter-spacing: 0.04em; }
-        .why-works-credibility { font-size: 0.9rem; color: rgba(255, 255, 255, 0.5); text-align: center; max-width: 560px; margin: 12px auto 0; line-height: 1.6; font-style: italic; }
-
-        .video-section { padding: 60px 0; }
-        .video-section-title { font-family: 'Orbitron', sans-serif; font-size: 1.6rem; text-align: center; margin-bottom: 32px; color: #00FFFF; line-height: 1.4; }
-        .video-container { max-width: 800px; margin: 0 auto; background: rgba(26, 26, 46, 0.85); border: 1px solid rgba(0, 255, 255, 0.3); border-radius: 20px; overflow: hidden; box-shadow: 0 0 40px rgba(0, 255, 255, 0.1); }
-        .video-embed-wrapper { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; }
-        .video-embed-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
-        .video-description { max-width: 800px; margin: 24px auto 0; font-size: 1rem; color: rgba(255, 255, 255, 0.75); line-height: 1.75; text-align: center; padding: 0 8px; }
-
-        .diy-section { padding: 60px 0; }
-        .diy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 860px; margin: 0 auto; }
-        @media (max-width: 640px) { .diy-grid { grid-template-columns: 1fr; } }
-        .diy-col { border-radius: 16px; padding: 32px 28px; }
-        .diy-col-problem { background: rgba(255, 60, 60, 0.07); border: 1px solid rgba(255, 80, 80, 0.2); }
-        .diy-col-solution { background: rgba(0, 255, 136, 0.06); border: 1px solid rgba(0, 255, 136, 0.25); }
-        .diy-col-label { font-family: 'Orbitron', sans-serif; font-size: 0.85rem; font-weight: 600; margin-bottom: 20px; letter-spacing: 0.04em; }
-        .diy-col-problem .diy-col-label { color: rgba(255, 120, 120, 0.9); }
-        .diy-col-solution .diy-col-label { color: #00FF88; }
-        .diy-list { list-style: none; padding: 0; margin: 0; }
-        .diy-list li { padding: 9px 0 9px 24px; position: relative; font-size: 0.95rem; color: rgba(255, 255, 255, 0.8); line-height: 1.6; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .diy-list li:last-child { border-bottom: none; }
-        .diy-col-problem .diy-list li::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 7px; height: 7px; border-radius: 50%; background: rgba(255, 100, 100, 0.7); }
-        .diy-col-solution .diy-list li::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 7px; height: 7px; border-radius: 50%; background: #00FF88; box-shadow: 0 0 6px rgba(0, 255, 136, 0.5); }
-
-        .payoff-section { padding: 60px 0; text-align: center; }
-        .payoff-statement { font-family: 'Orbitron', sans-serif; font-size: 2rem; font-weight: 700; background: linear-gradient(90deg, #00FF88, #00FFFF, #FF00FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; max-width: 700px; margin: 0 auto; line-height: 1.4; }
-
-        @media (max-width: 600px) { 
-            .logo { font-size: 1.8rem; } 
-            .story-card { padding: 32px 24px; } 
-            .story-text { font-size: 1.1rem; } 
-            .cta-text { font-size: 1.2rem; } 
-            .section-title { font-size: 1.5rem; } 
-            .phone-mockup { width: 220px; height: 440px; } 
-            .cta-card { padding: 32px 24px; } 
-            .cta-title { font-size: 1.4rem; }
-            .hero-buttons { flex-direction: column; align-items: center; }
-            .faq-item { padding: 20px 24px; }
-            .payoff-statement { font-size: 1.4rem; }
-            .hero-headline { font-size: 1.9rem; }
-            .hero-subhead { font-size: 1.05rem; }
-            .challenge-card { padding: 32px 24px; }
-            .challenge-list li { font-size: 1rem; }
-            .privacy-card { flex-direction: column; padding: 28px 24px; gap: 20px; }
-        }
-
-        /* ── New lean hero ── */
-        .hero-new { padding: 80px 0 60px; text-align: center; }
-        .hero-headline { font-family: 'Orbitron', sans-serif; font-size: 2.8rem; font-weight: 700; background: linear-gradient(90deg, #00FF88, #00FFFF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; max-width: 820px; margin: 0 auto 24px; line-height: 1.2; }
-        .hero-subhead { font-size: 1.2rem; color: rgba(255, 255, 255, 0.72); max-width: 580px; margin: 0 auto 44px; line-height: 1.75; font-weight: 300; }
-        .hero-ctas { display: flex; flex-direction: column; align-items: center; gap: 18px; }
-        .cta-secondary { font-size: 0.9rem; color: rgba(255, 255, 255, 0.45); text-decoration: none; border-bottom: 1px solid rgba(255, 255, 255, 0.18); padding-bottom: 2px; transition: color 0.3s, border-color 0.3s; letter-spacing: 0.02em; }
-        .cta-secondary:hover { color: #00FFFF; border-color: rgba(0, 255, 255, 0.5); }
-
-        /* ── 7-Day Control Challenge section ── */
-        .challenge-section { padding: 60px 0; text-align: center; }
-        .challenge-card { background: linear-gradient(135deg, rgba(0, 255, 136, 0.07), rgba(0, 255, 255, 0.07)); border: 1px solid rgba(0, 255, 136, 0.28); border-radius: 24px; padding: 48px; max-width: 640px; margin: 0 auto; position: relative; overflow: hidden; }
-        .challenge-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #00FF88, #00FFFF, #FF00FF); }
-        .challenge-list { list-style: none; padding: 0; margin: 0 0 36px; text-align: left; display: inline-block; }
-        .challenge-list li { padding: 12px 0 12px 32px; position: relative; font-size: 1.08rem; color: rgba(255, 255, 255, 0.88); line-height: 1.5; border-bottom: 1px solid rgba(255, 255, 255, 0.07); }
-        .challenge-list li:last-child { border-bottom: none; }
-        .challenge-list li::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 10px; height: 10px; border-radius: 50%; background: #00FF88; box-shadow: 0 0 10px rgba(0, 255, 136, 0.7); }
-
-        /* ── Early users / testimonials ── */
-        .testimonials-section { padding: 60px 0; text-align: center; }
-        .testimonials-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 860px; margin: 0 auto 32px; }
-        @media (max-width: 700px) { .testimonials-grid { grid-template-columns: 1fr; gap: 16px; } }
-        .testimonial-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(0,255,136,0.15); border-radius: 16px; padding: 24px 20px; text-align: left; }
-        .testimonial-card p { font-size: 1rem; color: rgba(255,255,255,0.82); line-height: 1.55; font-style: italic; }
-        .testimonials-close { font-size: 0.95rem; color: rgba(255,255,255,0.5); margin: 0; }
-
-        /* ── Founder section ── */
-        .founder-section { padding: 60px 0; text-align: center; }
-
-        /* ── Privacy callout ── */
-        .privacy-section { padding: 48px 0; }
-        .privacy-card { background: linear-gradient(135deg, rgba(255, 0, 255, 0.05), rgba(0, 255, 255, 0.05)); border: 1px solid rgba(0, 255, 255, 0.2); border-radius: 20px; padding: 36px 48px; max-width: 800px; margin: 0 auto; display: flex; gap: 28px; align-items: flex-start; }
-        .privacy-icon { flex-shrink: 0; margin-top: 2px; }
-        .privacy-title { font-family: 'Orbitron', sans-serif; font-size: 1rem; color: #00FFFF; margin-bottom: 10px; line-height: 1.5; }
-        .privacy-desc { font-size: 0.95rem; color: rgba(255, 255, 255, 0.68); line-height: 1.7; margin: 0; }
-
-        /* ── Features bridge ── */
-        .features-bridge { font-size: 1rem; color: rgba(255, 255, 255, 0.55); text-align: center; max-width: 580px; margin: -28px auto 48px; line-height: 1.7; }
-    </style>
+    .end-tag.reveal.in-view .end-live { animation: blink 1.6s steps(2, end) infinite; }
+  }
+</style>
 </head>
 <body>
-    <div class="glow-orb orb-1" aria-hidden="true"></div>
-    <div class="glow-orb orb-2" aria-hidden="true"></div>
-    <div class="glow-orb orb-3" aria-hidden="true"></div>
-    
-    <div class="container">
-        <header>
-            <div class="logo-section">
-                <div class="app-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="2" aria-hidden="true">
-                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                        <path d="M2 17l10 5 10-5"/>
-                        <path d="M2 12l10 5 10-5"/>
-                    </svg>
-                </div>
-                <h1 class="logo">PulseKegel <span class="logo-subtitle">Pelvic Floor Exercise App</span></h1>
-            </div>
-            <p class="tagline">Stay in control. Longer.<br><span style="font-size:0.95em; opacity:0.85;">Age like a weapon, not a warning.</span></p>
-            <p class="tagline-clarity">PulseKegel is a guided 12-week pelvic floor training app — short daily sessions that rebuild control, stamina, and confidence from the inside out.</p>
 
-            <div class="social-bar" aria-label="Follow PulseKegel on social media">
-                <a href="https://www.facebook.com/profile.php?id=61570994844642" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
-                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047v-2.66c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.883v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
-                </a>
-                <a href="https://www.instagram.com/pulsekegel/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
-                </a>
-                <a href="https://www.threads.com/@pulsekegel" target="_blank" rel="noopener noreferrer" aria-label="Threads">
-                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12.186 24h-.007c-3.581-.024-6.334-1.205-8.184-3.509C2.35 18.44 1.5 15.586 1.472 12.01v-.017c.03-3.579.879-6.43 2.525-8.482C5.845 1.205 8.6.024 12.18 0h.014c2.746.02 5.043.725 6.826 2.098 1.677 1.29 2.858 3.13 3.509 5.467l-2.04.569c-1.104-3.96-3.898-5.984-8.304-6.015-2.91.022-5.11.936-6.54 2.717C4.307 6.504 3.616 8.914 3.589 12c.027 3.086.718 5.496 2.057 7.164 1.43 1.783 3.631 2.698 6.54 2.717 2.623-.02 4.358-.631 5.689-2.044 1.177-1.248 1.844-3.072 1.948-5.322-.48.102-.994.155-1.526.155-3.939 0-6.47-2.223-6.47-5.637 0-3.513 2.68-5.824 6.684-5.824 4.207 0 6.752 2.597 6.752 6.95 0 .66-.054 1.311-.161 1.94-.418 2.479-1.535 4.465-3.242 5.76-1.627 1.24-3.762 1.867-6.364 1.867h-.014c-.21 0-.418-.004-.626-.012zm4.932-12.686c-.1-2.556-1.543-4.062-4.011-4.062-2.368 0-3.943 1.474-3.943 3.753 0 2.197 1.527 3.566 3.979 3.566.403 0 .794-.034 1.166-.1-.096-1.11-.436-1.944-1.006-2.492-.464-.445-1.108-.688-1.877-.721l-.01-.001c.024-.437.19-.813.482-1.08.305-.279.736-.436 1.238-.436.986 0 1.73.604 2.077 1.66.053.163.097.333.13.507l.003.017c.27-.137.516-.286.735-.455a4.2 4.2 0 00.037-.156z"/></svg>
-                </a>
-                <a href="https://www.tiktok.com/@pulsekegal?is_from_webapp=1&sender_device=pc" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
-                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
-                </a>
-            </div>
-        </header>
-        
-        <main>
+<!-- ============================================================ -->
+<!-- SECTION 01: HERO                                              -->
+<!-- ============================================================ -->
+<div class="chassis">
+  <span class="bracket tl"></span>
+  <span class="bracket tr"></span>
+  <span class="bracket bl"></span>
+  <span class="bracket br"></span>
 
-            <!-- ① NEW HERO -->
-            <section class="hero hero-new" aria-label="PulseKegel pelvic floor training app">
-                <h2 class="hero-headline">Train the muscle most men ignore.</h2>
-                <p class="hero-subhead">Improve bladder control, pelvic strength, and confidence in a few minutes a day. Private, guided, and built for men.</p>
-                <div class="hero-ctas">
-                    <a href="https://apps.apple.com/us/app/pulsekegel/id6758308054" class="download-btn" target="_blank" rel="noopener" aria-label="Start the 7-Day Control Challenge on the App Store">
-                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-                        Start the 7-Day Control Challenge
-                    </a>
-                    <a href="https://apps.apple.com/us/app/pulsekegel/id6758308054" class="cta-secondary" target="_blank" rel="noopener" aria-label="View PulseKegel on the App Store">View on the App Store</a>
-                </div>
-            </section>
+  <div class="rail-left">01 / TRAIN &nbsp; ▸ &nbsp; CONTROL SIGNAL</div>
+  <div class="rail-right">TRAIN MODE &nbsp; <span class="live">● ACTIVE</span> &nbsp; v1.0</div>
 
-            <!-- ② 7-DAY CONTROL CHALLENGE -->
-            <section class="challenge-section" aria-label="7-Day Control Challenge">
-                <h2 class="section-title">7-Day Control Challenge</h2>
-                <div class="challenge-card">
-                    <ul class="challenge-list">
-                        <li>A few minutes a day</li>
-                        <li>Guided squeeze and release cues</li>
-                        <li>Private by design</li>
-                        <li>Build consistency before intensity</li>
-                    </ul>
-                    <a href="https://apps.apple.com/us/app/pulsekegel/id6758308054" class="download-btn" target="_blank" rel="noopener" aria-label="Download PulseKegel on the Apple App Store">
-                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-                        Start the Challenge Free
-                    </a>
-                    <p style="margin-top: 18px; font-size: 1rem; color: rgba(255,255,255,0.82); font-weight: 500; letter-spacing: 0.01em;">Try it free for 7 days. Then <span style="color: #00FF88;">$4.99/year.</span></p>
-                </div>
-            </section>
-
-            <!-- ③ OUTCOME BENEFITS -->
-            <section class="outcomes-strip" aria-label="What you get">
-                <div class="outcomes-grid">
-                    <div class="outcome-item">
-                        <p class="outcome-label">Better Control</p>
-                        <p class="outcome-desc">Stronger bladder confidence and less urgency — day and night</p>
-                    </div>
-                    <div class="outcome-item">
-                        <p class="outcome-label">Stronger Performance</p>
-                        <p class="outcome-desc">More stamina, better function, and a foundation that holds up</p>
-                    </div>
-                    <div class="outcome-item">
-                        <p class="outcome-label">Lasting Confidence</p>
-                        <p class="outcome-desc">A quiet edge that compounds with every session you complete</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ③b INFOGRAPHIC -->
-            <section class="infographic-section" aria-label="PulseKegel infographic">
-                <img src="/pulsekegel-infographic.jpg" alt="PulseKegel: Reclaim Your Hidden Engine — infographic showing the 12-week evolution, myth vs reality, and daily exercise routine" loading="lazy">
-            </section>
-
-            <!-- ④ HOW IT WORKS -->
-            <section class="why-works-section" aria-label="Why PulseKegel works">
-                <h2 class="section-title">How It Works</h2>
-                <div class="why-works-grid">
-                    <div class="why-works-card">
-                        <div class="why-works-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="2" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                        </div>
-                        <p class="why-works-title">Follow the pulse</p>
-                        <p class="why-works-desc">The app leads. You follow. Every rep is timed and guided — no figuring out what to do or for how long.</p>
-                    </div>
-                    <div class="why-works-card">
-                        <div class="why-works-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FFFF" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                        </div>
-                        <p class="why-works-title">Contract and release</p>
-                        <p class="why-works-desc">Squeeze when the bar rises. Rest when it drops. That's the entire method — repeated with the right structure to build real strength.</p>
-                    </div>
-                    <div class="why-works-card">
-                        <div class="why-works-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF00FF" stroke-width="2" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                        </div>
-                        <p class="why-works-title">Done in minutes</p>
-                        <p class="why-works-desc">Five to ten minutes a day. Short enough to actually do. Structured enough to actually work. Tracked so the gains compound.</p>
-                    </div>
-                </div>
-                <p class="why-works-close">No guessing. No overthinking.</p>
-                <p class="why-works-credibility">These are the same muscle groups targeted in clinical pelvic floor training — simplified for daily use.</p>
-            </section>
-
-            <!-- ⑤ EARLY USERS -->
-            <section class="testimonials-section" aria-label="Early user feedback">
-                <h2 class="section-title">Early users say</h2>
-                <div class="testimonials-grid">
-                    <div class="testimonial-card"><p>"Finally simple and not awkward."</p></div>
-                    <div class="testimonial-card"><p>"The cues make it easy to stay consistent."</p></div>
-                    <div class="testimonial-card"><p>"Private, fast, and way less weird than I expected."</p></div>
-                </div>
-                <p class="testimonials-close">Designed to be easy to start and easy to stick with.</p>
-            </section>
-
-            <!-- ⑥ FOUNDER STORY -->
-            <section class="founder-section" aria-label="Why PulseKegel was built">
-                <p class="hero-bridge">You don't notice these muscles&hellip; until they start slipping.</p>
-                <div class="story-card">
-                    <div class="quote-mark" aria-hidden="true">"</div>
-                    <p class="story-text">
-                        Your pelvic floor does a lot more than most people realize. It supports control, stability, and confidence, and usually only gets your attention when something starts to slip. At 54, I hit a few of those moments myself.
-                    </p>
-                    <p class="story-text">
-                        I tried a popular app and quickly realized it was bloated, expensive, and not built for someone like me. So I created PulseKegel, a simple app that focuses on one thing: helping you train your pelvic floor consistently, without the fluff.
-                    </p>
-                    <p class="story-text" style="margin-bottom: 32px;">
-                        Pelvic floor training is widely recommended and rarely turned into a real habit. PulseKegel makes it easier to do the work, stay consistent, and build strength over time.
-                    </p>
-                    <p class="cta-text">Stop losing ground. Start training today.</p>
-                    <div class="hero-buttons">
-                        <a href="https://apps.apple.com/us/app/pulsekegel/id6758308054" class="app-store-btn" target="_blank" rel="noopener" aria-label="Download PulseKegel on the Apple App Store">
-                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-                            <span class="btn-text">
-                                <span class="btn-text-small">Download on the</span>
-                                <span class="btn-text-large">App Store</span>
-                            </span>
-                        </a>
-                        <button class="app-store-btn app-store-btn--muted" onclick="var el=this.querySelector('.android-label');el.textContent='By End of April';" aria-label="Android app coming soon">
-                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.523 15.341a.9.9 0 01-.9.9.9.9 0 01-.9-.9.9.9 0 01.9-.9.9.9 0 01.9.9m-9.246 0a.9.9 0 01-.9.9.9.9 0 01-.9-.9.9.9 0 01.9-.9.9.9 0 01.9.9M17.78 10.5l1.745-3.022a.363.363 0 00-.133-.496.363.363 0 00-.496.133L17.14 10.17a10.762 10.762 0 00-4.64-1.045 10.762 10.762 0 00-4.641 1.045L6.104 7.115a.363.363 0 00-.496-.133.363.363 0 00-.133.496L7.22 10.5C4.646 11.93 2.91 14.567 2.91 17.625h18.18c0-3.058-1.736-5.694-3.31-7.125"/></svg>
-                            <span class="btn-text">
-                                <span class="btn-text-small">Coming soon on</span>
-                                <span class="btn-text-large android-label">Android</span>
-                            </span>
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ⑥ PRIVACY -->
-            <section class="privacy-section" aria-label="Privacy and data security">
-                <div class="privacy-card">
-                    <div class="privacy-icon">
-                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#00FFFF" stroke-width="1.5" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    </div>
-                    <div>
-                        <p class="privacy-title">Your data never leaves your device.</p>
-                        <p class="privacy-desc">No account. No sign-up. No health data uploaded anywhere. Everything stays on your phone — completely private by design. Your pelvic floor training is nobody else's business.</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- FAQ -->
-            <section class="faq-section" aria-label="Frequently asked questions about kegel exercises">
-                <h2 class="section-title">Frequently Asked Questions</h2>
-                <div class="faq-grid">
-                    <div class="faq-item">
-                        <h3 class="faq-question">What are kegel exercises and why should I do them?</h3>
-                        <p class="faq-answer">Kegel exercises strengthen the pelvic floor muscles that support your bladder, bowel, and sexual function. Regular kegel training can improve bladder control, reduce incontinence, and enhance sexual health. PulseKegel guides you through a structured 12-week program with 7 different exercise types for comprehensive pelvic floor strengthening.</p>
-                    </div>
-                    <div class="faq-item">
-                        <h3 class="faq-question">How long does each PulseKegel workout take?</h3>
-                        <p class="faq-answer">PulseKegel workouts take just 5-10 minutes per day. The app's 12-week program starts with shorter sessions in the Control Phase and gradually builds to more comprehensive workouts in the Power Phase, all designed to fit into a busy schedule.</p>
-                    </div>
-                    <div class="faq-item">
-                        <h3 class="faq-question">How does the haptic feedback work during exercises?</h3>
-                        <p class="faq-answer">PulseKegel uses your phone's vibration motor to provide distinct haptic patterns for each exercise type. Slow holds use steady pulses with progressive intensity, quick flicks use rapid staccato bursts, and elevator exercises use stepped patterns. The intensity matches the visual power bar so you can feel the rhythm without looking at the screen.</p>
-                    </div>
-                    <div class="faq-item">
-                        <h3 class="faq-question">Is PulseKegel suitable for men?</h3>
-                        <p class="faq-answer">Yes. PulseKegel is built primarily for men who want better control, pelvic strength, and confidence. Pelvic floor training can also help with prostate recovery and general pelvic health.</p>
-                    </div>
-                    <div class="faq-item">
-                        <h3 class="faq-question">How much does PulseKegel cost?</h3>
-                        <p class="faq-answer">PulseKegel offers a 7-Day Control Challenge — free for 7 days — so you can try the full app before committing. After the challenge, it costs just $4.99 per year - that's about $0.42 per month, making it one of the most affordable pelvic floor training apps available.</p>
-                    </div>
-                    <div class="faq-item">
-                        <h3 class="faq-question">Is my health data private and secure?</h3>
-                        <p class="faq-answer">Absolutely. All your workout data stays entirely on your device. PulseKegel doesn't require an account, doesn't track you, and never uploads your health information. Your pelvic floor training is completely private.</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ⑦ FEATURES -->
-            <section class="features-section" aria-label="App features">
-                <h2 class="section-title">Built for the Long Game</h2>
-                <p class="features-bridge">Once the Challenge builds the habit, the 12-week program takes you the rest of the way.</p>
-
-                <!-- 3 hero cards always visible -->
-                <div class="features-grid">
-                    <article class="feature-card">
-                        <div class="feature-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FFFF" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                        </div>
-                        <h3 class="feature-title">Guided Daily Sessions</h3>
-                        <p class="feature-desc">5-10 minutes a day — short enough to actually do, structured enough to actually work</p>
-                    </article>
-                    <article class="feature-card">
-                        <div class="feature-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                        </div>
-                        <h3 class="feature-title">Progress Tracking &amp; Streaks</h3>
-                        <p class="feature-desc">Calendar view with workout and rest day indicators, streak counter, session stats, and longest streak records</p>
-                    </article>
-                    <article class="feature-card">
-                        <div class="feature-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF00FF" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                        </div>
-                        <h3 class="feature-title">100% Private — No Account Required</h3>
-                        <p class="feature-desc">All data stays on your device. No sign-up. No tracking. Your pelvic health is nobody else's business</p>
-                    </article>
-                </div>
-
-                <!-- Toggle button -->
-                <div class="features-toggle-wrap">
-                    <button class="features-toggle" id="features-toggle-btn" aria-expanded="false" aria-controls="features-more" onclick="(function(btn,more){var open=more.classList.toggle('is-open');btn.classList.toggle('is-open',open);btn.setAttribute('aria-expanded',open);more.setAttribute('aria-hidden',!open);btn.querySelector('.features-toggle-label').textContent=open?'Show less':'See all features';})(this,document.getElementById('features-more'))">
-                        <span class="features-toggle-label">See all features</span>
-                        <svg class="features-toggle-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
-                    </button>
-                </div>
-
-                <!-- 12 additional cards, hidden by default -->
-                <div class="features-more" id="features-more" aria-hidden="true">
-                    <div class="features-grid">
-                        <article class="feature-card">
-                            <div class="feature-icon">
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="2" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                            </div>
-                            <h3 class="feature-title">12-Week Kegel Program</h3>
-                            <p class="feature-desc">4 progressive phases — Control, Strength, Power, and Maintenance — with 7 exercise types that build real, lasting pelvic floor strength</p>
-                        </article>
-                        <article class="feature-card">
-                            <div class="feature-icon">
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-                            </div>
-                            <h3 class="feature-title">Weekly AI Reviews</h3>
-                            <p class="feature-desc">Personalized progress analysis and pelvic floor health tips each week, with full history so you can reread past insights</p>
-                        </article>
-                        <article class="feature-card">
-                            <div class="feature-icon">
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FFFF" stroke-width="2" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
-                            </div>
-                            <h3 class="feature-title">Quick Pelvic Floor Workouts</h3>
-                            <p class="feature-desc">8 standalone sessions you can do anytime — Quick Flicks, Endurance, Elevator, and more — outside the main program</p>
-                        </article>
-                        <article class="feature-card">
-                            <div class="feature-icon">
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF00FF" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
-                            </div>
-                            <h3 class="feature-title">19 Achievement Badges</h3>
-                            <p class="feature-desc">Earn achievements across 5 categories — Streaks, Milestones, Program Phases, Mastery, and Special</p>
-                        </article>
-                        <article class="feature-card">
-                            <div class="feature-icon">
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FFFF" stroke-width="2" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-                            </div>
-                            <h3 class="feature-title">Recovery Mode</h3>
-                            <p class="feature-desc">Feeling sore or off? Switch to reduced intensity with gentler exercises and relaxation segments</p>
-                        </article>
-                        <article class="feature-card">
-                            <div class="feature-icon">
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF00FF" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                            </div>
-                            <h3 class="feature-title">Fully Customizable</h3>
-                            <p class="feature-desc">Adjust rest durations, block breaks, cooldowns, haptic intensity, and accessibility settings to fit your needs</p>
-                        </article>
-                        <article class="feature-card">
-                            <div class="feature-icon">
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="2" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><path d="M12 18h.01"/></svg>
-                            </div>
-                            <h3 class="feature-title">Haptic Feedback</h3>
-                            <p class="feature-desc">Distinct vibration patterns for each exercise type with dynamic intensity that matches the power bar level</p>
-                        </article>
-                        <article class="feature-card">
-                            <div class="feature-icon">
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FFFF" stroke-width="2" aria-hidden="true"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
-                            </div>
-                            <h3 class="feature-title">Visual Power Bar</h3>
-                            <p class="feature-desc">LED-style display with real-time SQUEEZE, REST, and BREATHE cues to guide every kegel rep</p>
-                        </article>
-                        <article class="feature-card">
-                            <div class="feature-icon">
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="2" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 12l2-6 2 6-2 6-2-6z" opacity="0.5"/><path d="M12 8l6 2-6 2-6-2 6-2z" opacity="0.5"/></svg>
-                            </div>
-                            <h3 class="feature-title">Guided Breathwork</h3>
-                            <p class="feature-desc">Three 5-minute breathing modes — Calm &amp; Reset, Energize &amp; Focus, and Pelvic Floor Connect — with voice guidance and animated visuals</p>
-                        </article>
-                        <article class="feature-card">
-                            <div class="feature-icon">
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FFFF" stroke-width="2" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-                            </div>
-                            <h3 class="feature-title">Ambient Music &amp; Sound</h3>
-                            <p class="feature-desc">14 ambient tracks with shuffle mode, per-track volume control, plus phase transition sound effects and completion celebrations</p>
-                        </article>
-                        <article class="feature-card">
-                            <div class="feature-icon">
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF00FF" stroke-width="2" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                            </div>
-                            <h3 class="feature-title">Daily Reminders</h3>
-                            <p class="feature-desc">Streak-aware push notifications with badge proximity alerts, configurable time, and auto-suppression after you complete your session</p>
-                        </article>
-                        <article class="feature-card">
-                            <div class="feature-icon">
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-                            </div>
-                            <h3 class="feature-title">Light &amp; Dark Themes</h3>
-                            <p class="feature-desc">Toggle between a cyberpunk dark mode with neon accents and a clean light mode with soft grays</p>
-                        </article>
-                    </div>
-                </div>
-            </section>
-
-            <section class="diy-section" aria-label="Why not just do Kegels on your own">
-                <h2 class="section-title">Why Not Just Do Kegels on Your Own?</h2>
-                <div class="diy-grid">
-                    <div class="diy-col diy-col-problem">
-                        <p class="diy-col-label">Doing it yourself</p>
-                        <ul class="diy-list">
-                            <li>Don't know if you're doing it right — and no feedback to tell you</li>
-                            <li>Easy to rush or overtrain without a structured pace</li>
-                            <li>Hard to stay consistent with no accountability and no progress to see</li>
-                        </ul>
-                    </div>
-                    <div class="diy-col diy-col-solution">
-                        <p class="diy-col-label">With PulseKegel</p>
-                        <ul class="diy-list">
-                            <li>Visual pulses guide the exact timing of every contraction</li>
-                            <li>Sets proper pace and intensity with a 12-week progressive structure</li>
-                            <li>Short sessions and streak tracking keep you consistent day after day</li>
-                        </ul>
-                    </div>
-                </div>
-            </section>
-
-            <section class="video-section" aria-label="Interview: The truth about pelvic floor training">
-                <div class="container">
-                    <h2 class="video-section-title">Watch: The Truth About Pelvic Floor Training</h2>
-                    <div class="video-container">
-                        <div class="video-embed-wrapper">
-                            <iframe src="https://www.youtube.com/embed/qXGjAB-wYXM" title="The Truth About Pelvic Floor Training" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe>
-                        </div>
-                    </div>
-                    <p class="video-description">Most people are doing kegels wrong — and it's causing more harm than good. In this interview, we break down the truth about pelvic floor training: what actually works, what the myths are getting wrong, and the simple daily habit that changes everything. Whether you're dealing with leakage, core weakness, or just want a stronger foundation, this one's for you.</p>
-                </div>
-            </section>
-
-            <section class="screenshots-section" aria-label="App screenshots">
-                <h2 class="section-title">See It In Action</h2>
-                <div class="screenshots-grid">
-                    <div class="screenshot-item">
-                        <div class="phone-frame">
-                            <div class="phone-mockup" role="img" aria-label="PulseKegel onboarding screen showing personalized setup">
-                                <div class="phone-mockup-content">
-                                    <div class="phone-mockup-icon">
-                                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="1.5" aria-hidden="true">
-                                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                                        </svg>
-                                    </div>
-                                    <p class="phone-mockup-text">Personalized onboarding experience</p>
-                                </div>
-                            </div>
-                        </div>
-                        <p class="screenshot-label">Welcome</p>
-                        <p class="screenshot-desc">Beautiful guided onboarding</p>
-                    </div>
-                    <div class="screenshot-item">
-                        <div class="phone-frame">
-                            <div class="phone-mockup" role="img" aria-label="PulseKegel workout screen with visual power bar and haptic feedback indicators">
-                                <div class="phone-mockup-content">
-                                    <div class="phone-mockup-icon">
-                                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#00FFFF" stroke-width="1.5" aria-hidden="true">
-                                            <path d="M12 20V10"/>
-                                            <path d="M18 20V4"/>
-                                            <path d="M6 20v-4"/>
-                                        </svg>
-                                    </div>
-                                    <p class="phone-mockup-text">Real-time visual feedback with haptics</p>
-                                </div>
-                            </div>
-                        </div>
-                        <p class="screenshot-label">Train</p>
-                        <p class="screenshot-desc">Visual cues & haptic feedback</p>
-                    </div>
-                    <div class="screenshot-item">
-                        <div class="phone-frame">
-                            <div class="phone-mockup" role="img" aria-label="PulseKegel progress tracking screen with calendar and streak counter">
-                                <div class="phone-mockup-content">
-                                    <div class="phone-mockup-icon">
-                                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#FF00FF" stroke-width="1.5" aria-hidden="true">
-                                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                                            <line x1="16" y1="2" x2="16" y2="6"/>
-                                            <line x1="8" y1="2" x2="8" y2="6"/>
-                                            <line x1="3" y1="10" x2="21" y2="10"/>
-                                        </svg>
-                                    </div>
-                                    <p class="phone-mockup-text">Track your progress over 12 weeks</p>
-                                </div>
-                            </div>
-                        </div>
-                        <p class="screenshot-label">Track</p>
-                        <p class="screenshot-desc">Calendar & streak tracking</p>
-                    </div>
-                </div>
-            </section>
-
-            <section class="need-section" aria-label="Who needs pelvic floor training">
-                <div class="need-card">
-                    <p class="need-hook">Think you're fine?</p>
-                    <p class="need-subhook">Most people do. Until control starts slipping, endurance drops, or confidence takes a hit.</p>
-                    <ul class="need-list">
-                        <li>Less control than you used to have — leaks, urgency, or pressure that shouldn't be there</li>
-                        <li>Bedroom stamina or confidence has dipped and you want to stop the slide</li>
-                        <li>Post-surgery, post-injury, or post-pregnancy and your core feels disconnected</li>
-                        <li>You sit all day and that dull tension in your lower body won't shift</li>
-                        <li>You want a private habit that compounds without a gym or a coach</li>
-                    </ul>
-                    <p class="need-trainable">This is trainable.</p>
-                    <div class="decline-block">
-                        <p class="decline-title">What happens if you ignore this?</p>
-                        <ul class="decline-list">
-                            <li>Control keeps slipping — and the window to reverse it quietly closes</li>
-                            <li>Bedroom performance gets harder to blame on anything else</li>
-                            <li>Your core becomes the weak link in everything else you do</li>
-                        </ul>
-                        <p class="decline-pivot">Or&hellip; train it in minutes a day.</p>
-                    </div>
-                </div>
-            </section>
-
-            <section class="roadmap-section" aria-label="Product roadmap">
-                <h2 class="roadmap-title">What's New & What's Next</h2>
-                <div class="roadmap-grid">
-                    <div class="roadmap-item green">
-                        <div class="roadmap-check green" aria-hidden="true">&#10003;</div>
-                        <div class="roadmap-content">
-                            <strong>Badge & Achievement System</strong>
-                            <p>19 badges across 5 categories to keep you motivated and celebrate your milestones</p>
-                        </div>
-                    </div>
-                    <div class="roadmap-item cyan">
-                        <div class="roadmap-check cyan" aria-hidden="true">&#10003;</div>
-                        <div class="roadmap-content">
-                            <strong>AI Weekly Progress Reviews</strong>
-                            <p>Personalized insights each week with full history you can reread anytime</p>
-                        </div>
-                    </div>
-                    <div class="roadmap-item magenta">
-                        <div class="roadmap-check magenta" aria-hidden="true">&#10003;</div>
-                        <div class="roadmap-content">
-                            <strong>Quick Workout Picker</strong>
-                            <p>8 standalone workouts you can do anytime, outside the 12-week program</p>
-                        </div>
-                    </div>
-                    <div class="roadmap-item green">
-                        <div class="roadmap-check green" aria-hidden="true">&#10003;</div>
-                        <div class="roadmap-content">
-                            <strong>Guided Breathwork Sessions</strong>
-                            <p>Three 5-minute breathing modes with voice guidance, animated visuals, and haptic feedback</p>
-                        </div>
-                    </div>
-                    <div class="roadmap-item cyan">
-                        <div class="roadmap-check cyan" aria-hidden="true">&#10003;</div>
-                        <div class="roadmap-content">
-                            <strong>Ambient Music & Sound Effects</strong>
-                            <p>14 ambient tracks with shuffle, volume control, and phase transition sounds</p>
-                        </div>
-                    </div>
-                    <div class="roadmap-item magenta">
-                        <div class="roadmap-check magenta" aria-hidden="true">&#10003;</div>
-                        <div class="roadmap-content">
-                            <strong>Daily Reminder Notifications</strong>
-                            <p>Streak-aware reminders with badge proximity alerts and auto-suppression</p>
-                        </div>
-                    </div>
-                    <div class="roadmap-item green">
-                        <div class="roadmap-check green" aria-hidden="true">&#10003;</div>
-                        <div class="roadmap-content">
-                            <strong>Light & Dark Theme System</strong>
-                            <p>Toggle between cyberpunk dark mode and clean light mode</p>
-                        </div>
-                    </div>
-                    <div class="roadmap-item purple">
-                        <div class="roadmap-check purple" aria-hidden="true">&#9675;</div>
-                        <div class="roadmap-content">
-                            <strong>Advanced Progress Analytics</strong>
-                            <p>Detailed charts and insights to visualize your improvement over time</p>
-                        </div>
-                    </div>
-                    <div class="roadmap-item purple">
-                        <div class="roadmap-check purple" aria-hidden="true">&#9675;</div>
-                        <div class="roadmap-content">
-                            <strong>Custom Workout Builder</strong>
-                            <p>Create and save your own exercise routines tailored to your goals</p>
-                        </div>
-                    </div>
-                    <div class="roadmap-item purple">
-                        <div class="roadmap-check purple" aria-hidden="true">&#9675;</div>
-                        <div class="roadmap-content">
-                            <strong>Apple Watch Integration</strong>
-                            <p>Discreet workout guidance right on your wrist</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-            
-            <section class="blog-section" aria-label="From the PulseKegel blog">
-                <h2 class="section-title">From the Blog</h2>
-                <div class="blog-grid">
-                    <a href="/blog/pelvic-floor-exercises-for-men" class="blog-card">
-                        <h3 class="blog-card-title">Pelvic Floor Exercises for Men: A Practical Beginner Plan</h3>
-                        <p class="blog-card-excerpt">Learn a simple pelvic floor routine for men. Build better control with short daily sessions and a 7-day starter plan.</p>
-                        <span class="blog-card-link">Read more</span>
-                    </a>
-                    <a href="/blog/bladder-control-exercises-over-40" class="blog-card">
-                        <h3 class="blog-card-title">Bladder Control Exercises for Adults Over 40</h3>
-                        <p class="blog-card-excerpt">Strengthen your pelvic floor after 40 with daily exercises designed for better bladder confidence and control.</p>
-                        <span class="blog-card-link">Read more</span>
-                    </a>
-                    <a href="/blog/pelvic-floor-recovery-after-childbirth" class="blog-card">
-                        <h3 class="blog-card-title">Pelvic Floor Recovery After Childbirth</h3>
-                        <p class="blog-card-excerpt">Practical daily steps to rebuild pelvic floor strength postpartum with gentle, progressive routines.</p>
-                        <span class="blog-card-link">Read more</span>
-                    </a>
-                </div>
-                <div class="blog-view-all">
-                    <a href="/blog">View all articles</a>
-                </div>
-            </section>
-
-            <section class="payoff-section" aria-label="Future state payoff">
-                <p class="payoff-statement">Feel in control again — without thinking about it.</p>
-            </section>
-
-            <section class="cta-section" id="pricing" aria-label="Download PulseKegel">
-                <div class="cta-card">
-                    <div class="price-badge">$4.99 for 12 months</div>
-                    <h2 class="cta-title">Build the Foundation. Own the Outcome.</h2>
-                    <p class="cta-subtitle">Start the 7-Day Control Challenge. Free for 7 days — no account, no fluff, just a structured program that works quietly in the background of your life.</p>
-                    <a href="https://apps.apple.com/us/app/pulsekegel/id6758308054" class="download-btn" target="_blank" rel="noopener" aria-label="Download PulseKegel on the Apple App Store">
-                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-                        Download on App Store
-                    </a>
-                </div>
-            </section>
-        </main>
-        
-        <footer>
-            <nav class="footer-links" aria-label="Footer navigation">
-                <a href="/blog">Blog</a>
-                <a href="/privacy">Privacy Policy</a>
-                <a href="mailto:info@pulsekegel.com">Contact</a>
-            </nav>
-            <p class="copyright">&copy; 2026 PulseKegel. All rights reserved.</p>
-        </footer>
+  <nav class="nav">
+    <div class="wordmark">
+      <span class="dot"></span>
+      PulseKegel
     </div>
+    <div class="menu">
+      <a href="/blog">Blog</a>
+      <a href="/privacy">Privacy</a>
+      <a href="/contact">Contact</a>
+    </div>
+  </nav>
+
+  <main class="hero">
+    <!-- CONTENT LEFT (top on mobile) -->
+    <div class="content-column">
+      <div class="eyebrow reveal-x">Train the muscle you're missing</div>
+      <h1 class="reveal">
+        It's not age.
+        <span class="accent">It's neglect.</span>
+      </h1>
+      <p class="subline reveal">
+        PulseKegel trains the one muscle most men never work — the one that runs control, performance, and core foundation. Five to ten minutes. No gym. No equipment.
+      </p>
+      <div class="meta-row reveal-stagger">
+        <div><span>●</span>5–10 min / day</div>
+        <div><span>●</span>Haptic-guided</div>
+        <div><span>●</span>$4.99 / yr</div>
+      </div>
+      <div class="cta-row reveal-stagger">
+        <a href="https://apps.apple.com/us/app/pulsekegel/id6758308054" target="_blank" rel="noopener" class="btn btn-primary">
+          Start the 7-Day Challenge <span class="arrow">→</span>
+        </a>
+        <a href="#how-it-works" class="btn btn-ghost">
+          How it works <span class="arrow">→</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- GAUGE RIGHT (below on mobile) -->
+    <div class="gauge-column">
+      <div class="gauge-label reveal-x">Control Signal</div>
+      <div class="gauge-assembly">
+        <div class="bar-frame">
+          <div class="bar hero-bar reveal-gauge" data-gauge="hero"></div>
+        </div>
+        <div class="scale reveal">
+          <div class="tick">0</div>
+          <div class="tick">25</div>
+          <div class="tick">50</div>
+          <div class="tick">75</div>
+          <div class="tick">MAX</div>
+        </div>
+      </div>
+      <div class="state reveal">
+        <span class="rep">REP <span data-rep="hero">01</span> / <span data-rep-total="hero">08</span></span>
+        <span class="divider">//</span>
+        <span class="phase" data-phase="hero">SQUEEZE</span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 02: INSTRUMENT                                        -->
+<!-- ============================================================ -->
+<section class="section" id="how-it-works">
+  <span class="bracket tl"></span>
+  <span class="bracket tr"></span>
+  <span class="bracket bl"></span>
+  <span class="bracket br"></span>
+  <div class="rail-left">02 / INSTRUMENT &nbsp; ▸ &nbsp; HUD DISPLAY</div>
+  <div class="rail-right">INPUT STREAM &nbsp; <span class="live">● LINKED</span> &nbsp; v1.0</div>
+
+  <div class="section-divider reveal-line">
+    <span>02 / Instrument</span>
+    <span>The app, live</span>
+  </div>
+
+  <div class="section-header">
+    <h2 class="reveal">
+      This is the<br />
+      <span class="accent">instrument.</span>
+    </h2>
+  </div>
+
+  <div class="instrument-grid">
+    <!-- PHONE LEFT (below copy on mobile) -->
+    <div class="phone-wrap reveal">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="phone-header">
+            <div class="app-title">TRAIN</div>
+            <div class="session">Session 01 · Day 03</div>
+          </div>
+
+          <div class="phone-gauge-label">Control Signal</div>
+
+          <div class="phone-gauge-row">
+            <div class="phone-bar-frame">
+              <div class="bar phone-bar reveal-gauge" data-gauge="phone"></div>
+            </div>
+            <div class="phone-scale">
+              <div>0</div>
+              <div>25</div>
+              <div>50</div>
+              <div>75</div>
+              <div>MAX</div>
+            </div>
+          </div>
+
+          <div class="phone-state">
+            <span>REP <span data-rep="phone">01</span> / <span data-rep-total="phone">06</span></span>
+            <span class="phase" data-phase="phone">SQUEEZE</span>
+          </div>
+
+          <div class="phone-pill">Pause Session</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COPY RIGHT (top on mobile) -->
+    <div class="instrument-copy reveal-stagger">
+      <p>
+        <strong>The gauge in the hero? That's the app.</strong> Hold your phone and it pulses you through each contraction — ramping up, holding steady, easing back — so you train by feel, not by guessing.
+      </p>
+      <p>
+        No sensors. No clinic. No gym. The bar rises, the haptics rise with it. You match the intensity with your body. Rep count scales as your program advances.
+      </p>
+
+      <div class="spec-list">
+        <div class="row"><span class="key">Cue</span><span class="val">Haptic intensity — ramped, held, released</span></div>
+        <div class="row"><span class="key">Reps</span><span class="val">Variable · shaped by your program</span></div>
+        <div class="row"><span class="key">Signal</span><span class="val">Phone vibration synced to the gauge</span></div>
+        <div class="row"><span class="key">Session</span><span class="val">5 to 10 mins, every day</span></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 03: WHY IT MATTERS                                    -->
+<!-- ============================================================ -->
+<section class="section">
+  <span class="bracket tl"></span>
+  <span class="bracket tr"></span>
+  <span class="bracket bl"></span>
+  <span class="bracket br"></span>
+  <div class="rail-left">03 / OUTCOMES &nbsp; ▸ &nbsp; THREE VECTORS</div>
+  <div class="rail-right">DATA LOG &nbsp; <span class="live">● NOMINAL</span> &nbsp; v1.0</div>
+
+  <div class="section-divider reveal-line">
+    <span>03 / Why it matters</span>
+    <span>Three things change</span>
+  </div>
+
+  <div class="section-header">
+    <h2 class="reveal">
+      This is what<br />
+      <span class="accent">changes.</span>
+    </h2>
+  </div>
+
+  <div class="outcomes-stack reveal-stagger">
+
+    <!-- Outcome 01 / CONTROL -->
+    <div class="outcome">
+      <div class="index">/ 01 &nbsp; Control</div>
+      <div class="body">
+        <h3>Control<span class="dot">.</span></h3>
+        <p>
+          The pelvic floor is the valve on everything below the belt. Train it and "holding on" stops being luck. You decide when things start. You decide when they end.
+        </p>
+      </div>
+      <div class="stats">
+        <div class="stat"><span class="label">Longer</span><span class="desc">More time, on your terms</span></div>
+        <div class="stat"><span class="label">Steadier</span><span class="desc">Less urgency, fewer surprises</span></div>
+        <div class="stat"><span class="label">Sharper</span><span class="desc">Reflex becomes choice</span></div>
+      </div>
+    </div>
+
+    <!-- Outcome 02 / PERFORMANCE -->
+    <div class="outcome">
+      <div class="index">/ 02 &nbsp; Performance</div>
+      <div class="body">
+        <h3>Performance<span class="dot">.</span></h3>
+        <p>
+          This is the part of the core most athletes never train — the one that transfers power between your torso and your legs, and the one that governs sexual function along with it. Strengthen it and you get more output, harder function, faster recovery. A measurable edge where most men never thought to look.
+        </p>
+      </div>
+      <div class="stats">
+        <div class="stat"><span class="label">Power</span><span class="desc">Transfer, not leakage</span></div>
+        <div class="stat"><span class="label">Recovery</span><span class="desc">Shorter, cleaner</span></div>
+        <div class="stat"><span class="label">Edge</span><span class="desc">Where no one else trains</span></div>
+      </div>
+    </div>
+
+    <!-- Outcome 03 / FOUNDATION -->
+    <div class="outcome">
+      <div class="index">/ 03 &nbsp; Foundation</div>
+      <div class="body">
+        <h3>Foundation<span class="dot">.</span></h3>
+        <p>
+          The pelvic floor is the floor of your core. Weak floor, weak everything — back pain, bad posture, compromised lifts. Strengthen it and the structure above it stabilizes. This is the muscle everyone assumes their ab work is already hitting. It isn't.
+        </p>
+      </div>
+      <div class="stats">
+        <div class="stat"><span class="label">Core</span><span class="desc">Actually engaged</span></div>
+        <div class="stat"><span class="label">Posture</span><span class="desc">Stacked, aligned</span></div>
+        <div class="stat"><span class="label">Lifts</span><span class="desc">Less lower-back cost</span></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 04: PROOF                                             -->
+<!-- ============================================================ -->
+<section class="section">
+  <span class="bracket tl"></span>
+  <span class="bracket tr"></span>
+  <span class="bracket bl"></span>
+  <span class="bracket br"></span>
+  <div class="rail-left">04 / PROOF &nbsp; ▸ &nbsp; FIELD REPORTS</div>
+  <div class="rail-right">FEED &nbsp; <span class="live">● STREAMING</span> &nbsp; v1.0</div>
+
+  <div class="section-divider reveal-line">
+    <span>04 / From the program</span>
+    <span>Early reports</span>
+  </div>
+
+  <div class="section-header">
+    <h2 class="reveal">
+      What it's<br />
+      <span class="accent">doing.</span>
+    </h2>
+  </div>
+
+  <!-- PLACEHOLDER QUOTES — swap with real, named reviews before launch -->
+  <div class="proof-grid reveal-stagger">
+    <article class="proof-card">
+      <div class="mark">/ Control</div>
+      <blockquote>"Three weeks in and I'm not second-guessing myself anymore. Didn't expect that to show up this fast."</blockquote>
+      <div class="attribution"><span class="name">Dan, 42</span> &nbsp;·&nbsp; Week 3</div>
+    </article>
+
+    <article class="proof-card">
+      <div class="mark">/ Performance</div>
+      <blockquote>"My girlfriend noticed before I did. Asked what changed. Couldn't hide the smirk."</blockquote>
+      <div class="attribution"><span class="name">Mike R., 36</span> &nbsp;·&nbsp; Day 28</div>
+    </article>
+
+    <article class="proof-card">
+      <div class="mark">/ Foundation</div>
+      <blockquote>"Lower back used to complain after deadlift day. Hasn't in a month. This was the gap."</blockquote>
+      <div class="attribution"><span class="name">J.C., 48</span> &nbsp;·&nbsp; Week 5</div>
+    </article>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 05: PRIVACY                                           -->
+<!-- ============================================================ -->
+<section class="section section-privacy">
+  <span class="bracket tl"></span>
+  <span class="bracket tr"></span>
+  <span class="bracket bl"></span>
+  <span class="bracket br"></span>
+  <div class="rail-left">05 / PRIVACY &nbsp; ▸ &nbsp; VAULT STATUS</div>
+  <div class="rail-right">CRYPTO &nbsp; <span class="live">● SEALED</span> &nbsp; v1.0</div>
+
+  <div class="section-divider reveal-line">
+    <span>05 / Private by design</span>
+    <span>Your data stays put</span>
+  </div>
+
+  <div class="privacy-content">
+    <div class="privacy-eyebrow reveal-x">Private by design</div>
+    <h2 class="reveal">
+      Your data never<br />
+      leaves your <span class="accent">device.</span>
+    </h2>
+    <p class="privacy-lead reveal">
+      No account. No sign-up. No health data uploaded anywhere. Everything stays on your phone — completely private by design. Your pelvic floor training is nobody else's business.
+    </p>
+
+    <div class="privacy-tags">
+      <span class="tag"><span class="dot">●</span> No account</span>
+      <span class="tag"><span class="dot">●</span> No sign-up</span>
+      <span class="tag"><span class="dot">●</span> No uploads</span>
+      <span class="tag"><span class="dot">●</span> On-device only</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 06: CLOSE / CTA                                       -->
+<!-- ============================================================ -->
+<section class="section section-close">
+  <span class="bracket tl"></span>
+  <span class="bracket tr"></span>
+  <span class="bracket bl"></span>
+  <span class="bracket br"></span>
+  <div class="rail-left">06 / NEXT REP &nbsp; ▸ &nbsp; COMMIT READY</div>
+  <div class="rail-right">SYSTEMS &nbsp; <span class="live">● GO</span> &nbsp; v1.0</div>
+
+  <div class="section-divider reveal-line">
+    <span>06 / Next rep</span>
+    <span>Start the program</span>
+  </div>
+
+  <div class="close-content">
+    <h2 class="reveal">
+      Stop skipping<br />
+      <span class="accent">the one muscle.</span>
+    </h2>
+    <p class="lead reveal">
+      Seven days, free. No credit card required, nothing to cancel. If you want a year of training after that, it's $4.99.
+    </p>
+
+    <div class="close-spec reveal">
+      <div class="row"><span class="k">Trial</span><span class="v">7 days · free</span></div>
+      <div class="row"><span class="k">Commitment</span><span class="v">None · No credit card</span></div>
+      <div class="row"><span class="k">Session</span><span class="v">5 to 10 mins / day</span></div>
+      <div class="row"><span class="k">Price</span><span class="v price">$4.99 / yr</span></div>
+    </div>
+
+    <p class="close-cta-headline reveal">
+      Start the <span class="accent">7-day challenge.</span>
+    </p>
+
+    <div class="close-cta-row reveal-stagger">
+      <a href="https://apps.apple.com/us/app/pulsekegel/id6758308054" target="_blank" rel="noopener" class="app-badge" aria-label="Download on the App Store">
+        <svg class="app-badge-logo" viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true">
+          <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zm-5.24-14.1c-.1-2.18 1.67-4 3.71-4.18.26 2.39-2.17 4.33-3.71 4.18z"/>
+        </svg>
+        <span class="app-badge-text">
+          <span class="small">Download on the</span>
+          <span class="big">App Store</span>
+        </span>
+      </a>
+
+      <span class="app-badge soon" aria-label="Google Play — Coming soon">
+        <svg class="app-badge-logo" viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true">
+          <path d="M3.6 2.5C3.3 2.8 3.2 3.2 3.2 3.7v16.6c0 .5.1.9.4 1.2l9.5-9.5L3.6 2.5zm11.1 10.1l2.7 2.7-10.1 5.7c-.3.2-.7.2-1 .1l8.4-8.5zm2.7-4.5l3.3 1.9c.7.4.7 1.3 0 1.7l-3.4 1.9L14.6 12l2.8-3.9zm-13.2-5l10.2 5.8-2.6 2.6-8.3-8.3c.3-.1.5-.1.7-.1z"/>
+        </svg>
+        <span class="app-badge-text">
+          <span class="small">Coming soon to</span>
+          <span class="big">Google Play</span>
+        </span>
+      </span>
+    </div>
+
+    <div class="trust-line reveal">
+      No upsells <span>●</span> No ads <span>●</span> No clinic required
+    </div>
+  </div>
+
+  <div class="end-tag reveal">
+    <span>Session complete</span>
+    <span><span class="end-live">●</span> Standby &nbsp;&nbsp; v1.0</span>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- FOOTER                                                        -->
+<!-- ============================================================ -->
+<footer class="page-footer">
+  <div class="footer-main">
+
+    <!-- BRAND -->
+    <div class="footer-col brand-col">
+      <div class="wordmark">
+        <span class="dot"></span>
+        PulseKegel
+      </div>
+      <p class="footer-tagline">
+        It's not age.<br />
+        <span>It's neglect.</span>
+      </p>
+    </div>
+
+    <!-- NAVIGATE -->
+    <div class="footer-col">
+      <h4>Navigate</h4>
+      <ul class="footer-links">
+        <li><a href="/blog">Blog</a></li>
+        <li><a href="/privacy">Privacy</a></li>
+        <li><a href="/contact">Contact</a></li>
+      </ul>
+    </div>
+
+    <!-- GET THE APP -->
+    <div class="footer-col">
+      <h4>Get the app</h4>
+      <ul class="footer-links">
+        <li><a href="https://apps.apple.com/us/app/pulsekegel/id6758308054" target="_blank" rel="noopener">App Store — iOS</a></li>
+        <li><span class="soon">Google Play <em>Soon</em></span></li>
+      </ul>
+    </div>
+
+    <!-- FOLLOW -->
+    <div class="footer-col">
+      <h4>Follow</h4>
+      <div class="footer-socials">
+        <a href="#" aria-label="Facebook">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+            <path d="M13.5 21v-8.25h2.78l.42-3.22h-3.2V7.49c0-.93.26-1.57 1.6-1.57l1.71-.01V3.13c-.3-.04-1.31-.13-2.49-.13-2.47 0-4.16 1.51-4.16 4.27v2.38H7.38v3.22h2.78V21h3.34z"/>
+          </svg>
+        </a>
+        <a href="#" aria-label="Instagram">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+            <rect x="3.2" y="3.2" width="17.6" height="17.6" rx="5" />
+            <circle cx="12" cy="12" r="3.8" />
+            <circle cx="17.4" cy="6.6" r="0.9" fill="currentColor" stroke="none" />
+          </svg>
+        </a>
+        <a href="#" aria-label="Threads">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+            <path d="M12.19 21.5c-3.02-.02-5.34-1.04-6.89-3.03-1.38-1.78-2.09-4.26-2.11-7.36v-.22c.02-3.1.73-5.58 2.11-7.36C6.85 1.54 9.17.52 12.19.5h.01c2.3.01 4.21.6 5.67 1.72 1.37 1.05 2.34 2.55 2.87 4.44l-1.95.55c-.45-1.58-1.21-2.77-2.26-3.56-1.08-.82-2.52-1.24-4.34-1.25-2.29.02-4.02.76-5.15 2.21-1.06 1.35-1.6 3.31-1.62 5.83v.22c.02 2.52.56 4.48 1.62 5.83 1.13 1.45 2.86 2.19 5.15 2.21 2.06-.01 3.42-.49 4.56-1.6.91-.88 1.4-2.05 1.4-3.37 0-.67-.13-1.27-.39-1.79-.33.72-.84 1.32-1.54 1.75-.95.6-2.14.88-3.55.82-1.25-.05-2.38-.36-3.25-.9-.97-.6-1.52-1.51-1.52-2.62 0-1.04.48-1.93 1.39-2.55.93-.63 2.17-.95 3.58-.92 1.19.03 2.3.29 3.26.77-.11-.71-.46-1.27-1.03-1.65-.51-.34-1.17-.52-1.93-.52h-.05c-.81.02-1.94.28-2.58 1.29l-1.65-1.12c.85-1.35 2.4-2.09 4.25-2.12h.08c1.59 0 2.91.48 3.83 1.39.53.53.92 1.21 1.14 2.02.63.26 1.19.58 1.65.95 1.09.85 1.69 2.14 1.69 3.62 0 2.85-2.16 4.82-4.55 5.58-1.04.33-2.21.5-3.5.5zm0-9.22c-.85 0-1.58.17-2.08.49-.48.31-.72.74-.72 1.29 0 .49.23.87.69 1.16.47.29 1.09.44 1.8.47 1.01.04 1.86-.16 2.45-.58.55-.39.86-.93.91-1.62-.7-.54-1.75-.93-2.96-1.1-.03-.04-.06-.06-.09-.11z"/>
+          </svg>
+        </a>
+        <a href="#" aria-label="TikTok">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+            <path d="M19.6 6.76c-1.41-.31-2.69-1.07-3.57-2.17A5.4 5.4 0 0 1 15 2.4h-3.13v12.51a2.54 2.54 0 1 1-1.77-2.42V9.3a5.67 5.67 0 1 0 4.9 5.61V9.03a8.46 8.46 0 0 0 4.6 1.43V7.29l-.03-.53z"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer-bottom">
+    <div class="left">© 2026 PulseKegel <span>● System nominal</span></div>
+    <div class="right">Train the muscle you're missing.</div>
+  </div>
+</footer>
+
+<script>
+  // ---------- SINGLE-BAR LED GAUGE ----------
+  // Runs a real squeeze cycle (SQUEEZE → HOLD → RELEASE → REST).
+  // Reusable: call runGauge(bar, phaseEl, repEl) for each instance.
+
+  const SEGMENTS = 24;
+  const PHASES = [
+    { name: 'SQUEEZE', cls: '',         dur: 1800, from: 0.00, to: 0.82 },
+    { name: 'HOLD',    cls: 'hold',     dur: 2400, from: 0.82, to: 0.82 },
+    { name: 'RELEASE', cls: 'release',  dur: 1600, from: 0.82, to: 0.05 },
+    { name: 'REST',    cls: 'rest',     dur: 1400, from: 0.05, to: 0.05 },
+  ];
+  const TOTAL = PHASES.reduce((a, p) => a + p.dur, 0);
+
+  function easeInOut(t) { return t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2)/2; }
+
+  function runGauge(barEl, phaseEl, repEl, repTarget = 10, startOffset = 0) {
+    const segs = [];
+    for (let i = 0; i < SEGMENTS; i++) {
+      const s = document.createElement('div');
+      s.className = 'seg';
+      // index from bottom (visually: segments stack bottom-up because .bar is flex-col-reverse)
+      // so --i: 0 is the bottom segment, --i: SEGMENTS-1 is the top — for staggered boot-up
+      s.style.setProperty('--i', i);
+      barEl.appendChild(s);
+      segs.push(s);
+    }
+
+    let rep = 1;
+    let start = null;
+    let lastPhase = null;
+
+    function tick(ts) {
+      if (!start) start = ts - startOffset;
+      const elapsed = (ts - start) % TOTAL;
+
+      let acc = 0;
+      let current = PHASES[0];
+      let phaseLocalTs = 0;
+      for (const p of PHASES) {
+        if (elapsed < acc + p.dur) {
+          current = p;
+          phaseLocalTs = (elapsed - acc) / p.dur;
+          break;
+        }
+        acc += p.dur;
+      }
+
+      if (lastPhase !== current.name) {
+        lastPhase = current.name;
+        phaseEl.textContent = current.name;
+        phaseEl.className = 'phase ' + current.cls;
+        if (current.name === 'SQUEEZE') {
+          rep = (rep % repTarget) + 1;
+          repEl.textContent = String(rep).padStart(2, '0');
+        }
+      }
+
+      let level = current.from + (current.to - current.from) * easeInOut(phaseLocalTs);
+      if (current.name === 'HOLD') {
+        level += Math.sin(ts / 120) * 0.015;
+      }
+      level = Math.max(0, Math.min(1, level));
+
+      const lit = Math.round(level * SEGMENTS);
+      for (let i = 0; i < SEGMENTS; i++) {
+        const el = segs[i];
+        if (i < lit) {
+          if (i >= SEGMENTS - 1)       el.className = 'seg on-red';
+          else if (i >= SEGMENTS - 3)  el.className = 'seg on-amber';
+          else                         el.className = 'seg on-teal';
+        } else {
+          el.className = 'seg';
+        }
+      }
+
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  // Instantiate both gauges. Rep totals differ to show that reps are
+  // variable (program-driven), not a fixed count. Phone offset so the
+  // two aren't synced — reads as "two instruments, alive."
+  runGauge(
+    document.querySelector('[data-gauge="hero"]'),
+    document.querySelector('[data-phase="hero"]'),
+    document.querySelector('[data-rep="hero"]'),
+    8,    // this session's rep target — varies by program phase
+    0
+  );
+  runGauge(
+    document.querySelector('[data-gauge="phone"]'),
+    document.querySelector('[data-phase="phone"]'),
+    document.querySelector('[data-rep="phone"]'),
+    6,    // different session, different target
+    3100
+  );
+
+  // ---------- SCROLL-REVEAL OBSERVER ----------
+  // One-shot reveals: add .in-view the first time an element crosses the
+  // viewport threshold, then stop watching it. Handles every reveal variant
+  // via a single shared class selector.
+  (function setupReveals() {
+    const selector = [
+      '.reveal',
+      '.reveal-x',
+      '.reveal-line',
+      '.reveal-stagger',
+      '.bar.reveal-gauge',
+      '.privacy-tags'
+    ].join(', ');
+
+    const targets = document.querySelectorAll(selector);
+    if (!('IntersectionObserver' in window) || !targets.length) {
+      // Fallback: just show everything immediately
+      targets.forEach(el => el.classList.add('in-view'));
+      return;
+    }
+
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in-view');
+          io.unobserve(entry.target);
+        }
+      });
+    }, {
+      threshold: 0.18,
+      rootMargin: '0px 0px -6% 0px'
+    });
+
+    targets.forEach(el => io.observe(el));
+  })();
+</script>
 </body>
 </html>
