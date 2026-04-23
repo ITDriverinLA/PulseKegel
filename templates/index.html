@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PulseKegel Transcoder</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 2rem;
+        max-width: 48rem;
+      }
+      .card {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 1.25rem;
+      }
+      .row {
+        margin-bottom: 1rem;
+      }
+      .flash {
+        margin-bottom: 1rem;
+        color: #b00020;
+      }
+      button {
+        cursor: pointer;
+        padding: 0.5rem 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Audio/Video Transcoder</h1>
+    <p>Upload a <code>.m4a</code>, <code>.mp3</code>, or <code>.mp4</code> and convert it with ffmpeg.</p>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash">
+          {% for message in messages %}
+            <div>{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="card">
+      <form method="post" enctype="multipart/form-data">
+        <div class="row">
+          <label for="media">Media file</label><br />
+          <input id="media" type="file" name="media" accept=".m4a,.mp3,.mp4" required />
+        </div>
+
+        <div class="row">
+          <label for="output_format">Output format</label><br />
+          <select id="output_format" name="output_format" required>
+            {% for fmt in output_formats %}
+              <option value="{{ fmt }}">{{ fmt }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <button type="submit">Transcode &amp; Download</button>
+      </form>
+    </div>
+  </body>
+</html>
