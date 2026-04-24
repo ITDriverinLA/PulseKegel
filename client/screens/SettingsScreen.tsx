@@ -644,6 +644,21 @@ export default function SettingsScreen() {
           </View>
         </Animated.View>
 
+        <Animated.View entering={FadeInDown.duration(400).delay(700)}>
+          <Text style={[styles.sectionTitle, { color: cp.neonCyan, textShadowColor: isDarkMode ? cp.neonCyan : 'transparent' }]}>RESOURCES</Text>
+          <View style={[styles.card, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
+            <Pressable
+              style={styles.settingsRow}
+              onPress={() => navigation.navigate('TechniqueGuide')}
+              testID="button-muscle-guide"
+            >
+              <Feather name="crosshair" size={20} color={cp.neonCyan} />
+              <Text style={[styles.settingsRowText, { color: cp.text }]}>Muscle Targeting Guide</Text>
+              <Feather name="chevron-right" size={18} color={cp.textMuted} />
+            </Pressable>
+          </View>
+        </Animated.View>
+
         <Animated.View entering={FadeInDown.duration(400).delay(600)}>
           <View style={styles.footer}>
             <Text style={[styles.footerText, { color: cp.textMuted }]}>PulseKegel v{Constants.expoConfig?.version ?? '—'}</Text>
@@ -830,6 +845,17 @@ const styles = StyleSheet.create({
   },
   musicNavTextContainer: {
     flex: 1,
+  },
+  settingsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+    gap: Spacing.md,
+  },
+  settingsRowText: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
   },
   dangerButton: {
     flexDirection: 'row',

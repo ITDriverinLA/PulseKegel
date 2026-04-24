@@ -50,6 +50,13 @@ const pages = [
       'This app is for wellness purposes only and is not medical advice. Stop immediately if you experience pain, urinary urgency, or pelvic pressure.',
   },
   {
+    type: 'guide',
+    image: require('../../assets/images/find-the-target.png'),
+    title: 'Find the Target',
+    description:
+      "The pelvic floor is the hidden control system at the base of your body. Lift, don't clench \u2014 think elevator, not fist.",
+  },
+  {
     type: 'name',
     title: "What's Your Name?",
     description:
@@ -99,6 +106,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   const isAnatomyPage = pages[currentPage].type === 'anatomy';
   const isNamePage = pages[currentPage].type === 'name';
   const isSettingsPage = pages[currentPage].type === 'settings';
+  const isGuidePage = pages[currentPage].type === 'guide';
 
   useEffect(() => {
     if (isSettingsPage) {
@@ -251,6 +259,30 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                   </LinearGradient>
                 </Pressable>
               </View>
+            </Animated.View>
+          ) : isGuidePage ? (
+            <Animated.View
+              key={currentPage}
+              entering={FadeIn.duration(300)}
+              style={styles.guideContainer}
+            >
+              <ScrollView
+                style={styles.guideScroll}
+                contentContainerStyle={styles.guideScrollContent}
+                showsVerticalScrollIndicator={false}
+              >
+                <Image
+                  source={(pages[currentPage] as any).image}
+                  style={styles.guideImage}
+                  resizeMode="contain"
+                />
+                <ThemedText type="h1" style={[styles.title, { color: cp.text }]}>
+                  {pages[currentPage].title}
+                </ThemedText>
+                <ThemedText type="body" style={[styles.description, { color: cp.textSecondary }]}>
+                  {pages[currentPage].description}
+                </ThemedText>
+              </ScrollView>
             </Animated.View>
           ) : isSettingsPage ? (
             <Animated.View
@@ -622,6 +654,22 @@ const styles = StyleSheet.create({
   anatomyButtonText: {
     fontWeight: '600',
     fontSize: 16,
+  },
+  guideContainer: {
+    flex: 1,
+  },
+  guideScroll: {
+    flex: 1,
+  },
+  guideScrollContent: {
+    alignItems: 'center',
+    paddingBottom: Spacing.lg,
+  },
+  guideImage: {
+    width: width * 0.9,
+    height: width * 0.9 * (1024 / 576),
+    marginBottom: Spacing.xl,
+    borderRadius: BorderRadius.xl,
   },
   nameContainer: {
     alignItems: 'center',

@@ -11,6 +11,7 @@ import MusicScreen from '@/screens/MusicScreen';
 import BreathworkModeSelectorScreen from '@/screens/BreathworkModeSelectorScreen';
 import BreathworkSessionScreen from '@/screens/BreathworkSessionScreen';
 import BreathworkSummaryScreen from '@/screens/BreathworkSummaryScreen';
+import TechniqueGuideScreen from '@/screens/TechniqueGuideScreen';
 import { useScreenOptions } from '@/hooks/useScreenOptions';
 import { storage } from '@/lib/storage';
 import { DayTemplate } from '@/data/workoutProgram';
@@ -31,6 +32,7 @@ export type RootStackParamList = {
   BreathworkModeSelector: undefined;
   BreathworkSession: { mode: BreathworkMode };
   BreathworkSummary: { mode: BreathworkMode; completed: boolean };
+  TechniqueGuide: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -134,6 +136,14 @@ export default function RootStackNavigator() {
           presentation: 'fullScreenModal',
           headerShown: false,
           gestureEnabled: false,
+        }}
+      />
+      <Stack.Screen
+        name="TechniqueGuide"
+        component={TechniqueGuideScreen}
+        options={{
+          presentation: 'modal',
+          headerShown: false,
         }}
       />
     </Stack.Navigator>
