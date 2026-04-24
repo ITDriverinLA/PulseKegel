@@ -645,7 +645,10 @@ export default function SettingsScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(400).delay(700)}>
-          <Text style={[styles.sectionTitle, { color: cp.neonCyan, textShadowColor: isDarkMode ? cp.neonCyan : 'transparent' }]}>RESOURCES</Text>
+          <View style={styles.sectionTitleRow}>
+            <Feather name="book-open" size={14} color={cp.neonCyan} />
+            <Text style={[styles.sectionTitle, { color: cp.neonCyan, textShadowColor: isDarkMode ? cp.neonCyan : 'transparent' }]}>RESOURCES</Text>
+          </View>
           <View style={[styles.card, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
             <Pressable
               style={styles.settingsRow}
@@ -845,6 +848,11 @@ const styles = StyleSheet.create({
   },
   musicNavTextContainer: {
     flex: 1,
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
   },
   settingsRow: {
     flexDirection: 'row',

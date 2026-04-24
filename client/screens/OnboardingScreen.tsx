@@ -36,7 +36,14 @@ interface OnboardingScreenProps {
 
 const { width } = Dimensions.get('window');
 
-const pages = [
+type PageEntry = {
+  type?: string;
+  title: string;
+  description: string;
+  image?: ReturnType<typeof require>;
+};
+
+const pages: PageEntry[] = [
   {
     image: require('../../assets/images/onboarding-welcome.png'),
     title: 'Welcome to PulseKegel',
@@ -272,7 +279,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                 showsVerticalScrollIndicator={false}
               >
                 <Image
-                  source={(pages[currentPage] as any).image}
+                  source={pages[currentPage].image!}
                   style={styles.guideImage}
                   resizeMode="contain"
                 />
