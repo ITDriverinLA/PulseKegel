@@ -16,6 +16,7 @@
  * they never need to touch either date field manually.
  *
  * Usage:
+ *   npm run sync-dates                                  # sync all via npm shortcut
  *   node scripts/sync-blog-dates.js                    # sync all, auto-detect dates
  *   node scripts/sync-blog-dates.js --date 2026-04-16  # force a specific date for all
  *   node scripts/sync-blog-dates.js [file ...]         # sync specific files
