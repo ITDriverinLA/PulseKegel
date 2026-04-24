@@ -38,6 +38,11 @@ const BLOG_SLUGS_TTL_MS = parseInt(process.env.BLOG_SLUGS_TTL_MS ?? '', 10) || 5
 
 let blogSlugsCache: { slugs: { slug: string; lastmod: string }[]; expiresAt: number } | null = null;
 
+/** Clears the in-memory sitemap cache so the next request re-scans the filesystem. */
+export function invalidateSitemapCache(): void {
+  blogSlugsCache = null;
+}
+
 function discoverBlogSlugs(): { slug: string; lastmod: string }[] {
   const now = Date.now();
   if (blogSlugsCache && now < blogSlugsCache.expiresAt) {
@@ -113,6 +118,23 @@ function buildFallback(daysWorkedOut: number, scheduledDays: number, weekNumber:
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Internal cache-invalidation endpoint — clears the sitemap slug cache immediately
+  // so a freshly published blog post appears on the next /sitemap.xml request
+  // without waiting for the TTL to expire.
+  // Accepts an optional bearer token via INVALIDATE_CACHE_TOKEN env var.
+  app.post("/api/invalidate-sitemap-cache", (req, res) => {
+    const token = process.env.INVALIDATE_CACHE_TOKEN;
+    if (token) {
+      const auth = req.headers.authorization ?? '';
+      if (auth !== `Bearer ${token}`) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+    }
+    invalidateSitemapCache();
+    res.json({ ok: true, message: 'Sitemap cache cleared' });
+  });
+
   // Weekly review AI endpoint
   app.post("/api/weekly-review", async (req, res) => {
     const { daysWorkedOut, weekNumber, totalMinutes, anatomyType, userName, currentStreak } = req.body;

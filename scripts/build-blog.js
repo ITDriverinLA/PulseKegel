@@ -1,5 +1,7 @@
 const fs = require("fs");
 const path = require("path");
+const http = require("http");
+const https = require("https");
 const { execSync } = require("child_process");
 const { syncAll } = require("./sync-blog-dates");
 
@@ -532,7 +534,60 @@ function checkBlog() {
   }
 }
 
-function buildBlog() {
+/**
+ * Calls POST /api/invalidate-sitemap-cache on the running server so the
+ * sitemap reflects new posts immediately (no need to wait for the TTL).
+ * If the server is not reachable the failure is logged but not fatal.
+ *
+ * Set SERVER_URL to override the default http://localhost:5000.
+ * Set INVALIDATE_CACHE_TOKEN to send a bearer-token header when the server
+ * requires authentication.
+ */
+function invalidateSitemapCache() {
+  const serverUrl = process.env.SERVER_URL || "http://localhost:5000";
+  const token = process.env.INVALIDATE_CACHE_TOKEN || "";
+  const endpoint = `${serverUrl}/api/invalidate-sitemap-cache`;
+
+  return new Promise((resolve) => {
+    try {
+      const url = new URL(endpoint);
+      const transport = url.protocol === "https:" ? https : http;
+      const headers = { "Content-Type": "application/json", "Content-Length": "0" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      const req = transport.request(
+        { hostname: url.hostname, port: url.port || (url.protocol === "https:" ? 443 : 80), path: url.pathname, method: "POST", headers },
+        (res) => {
+          let body = "";
+          res.on("data", (chunk) => { body += chunk; });
+          res.on("end", () => {
+            if (res.statusCode === 200) {
+              console.log("  sitemap cache invalidated — new posts will appear immediately.");
+            } else {
+              console.warn(`  sitemap cache invalidation returned HTTP ${res.statusCode}: ${body.trim()}`);
+            }
+            resolve();
+          });
+        }
+      );
+      req.on("error", (err) => {
+        console.warn(`  sitemap cache invalidation skipped (server not reachable): ${err.message}`);
+        resolve();
+      });
+      req.setTimeout(3000, () => {
+        req.destroy();
+        console.warn("  sitemap cache invalidation skipped (request timed out).");
+        resolve();
+      });
+      req.end();
+    } catch (err) {
+      console.warn(`  sitemap cache invalidation skipped: ${err.message}`);
+      resolve();
+    }
+  });
+}
+
+async function buildBlog() {
   console.log("Building blog...");
 
   console.log("Syncing lastmod dates...");
@@ -558,6 +613,8 @@ function buildBlog() {
     );
     process.exit(1);
   }
+
+  await invalidateSitemapCache();
 }
 
 function checkDates() {
@@ -642,5 +699,8 @@ if (process.argv.includes("--fix-dates")) {
 } else if (process.argv.includes("--check")) {
   checkBlog();
 } else {
-  buildBlog();
+  buildBlog().catch((err) => {
+    console.error("Build failed:", err);
+    process.exit(1);
+  });
 }
