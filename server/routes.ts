@@ -34,14 +34,24 @@ function readLastmod(filePath: string): string {
   return statSync(filePath).mtime.toISOString().slice(0, 10);
 }
 
+const BLOG_SLUGS_TTL_MS = parseInt(process.env.BLOG_SLUGS_TTL_MS ?? '', 10) || 5 * 60 * 1000;
+
+let blogSlugsCache: { slugs: { slug: string; lastmod: string }[]; expiresAt: number } | null = null;
+
 function discoverBlogSlugs(): { slug: string; lastmod: string }[] {
+  const now = Date.now();
+  if (blogSlugsCache && now < blogSlugsCache.expiresAt) {
+    return blogSlugsCache.slugs;
+  }
+
   const blogDirs = [
     join(process.cwd(), 'static-build', 'blog'),
     join(process.cwd(), 'blog-content'),
   ];
+  let slugs: { slug: string; lastmod: string }[] = [];
   for (const dir of blogDirs) {
     if (existsSync(dir)) {
-      return readdirSync(dir)
+      slugs = readdirSync(dir)
         .filter(f => f.endsWith('.html') && f !== 'index.html')
         .sort()
         .map(f => {
@@ -49,9 +59,12 @@ function discoverBlogSlugs(): { slug: string; lastmod: string }[] {
           const lastmod = readLastmod(join(dir, f));
           return { slug, lastmod };
         });
+      break;
     }
   }
-  return [];
+
+  blogSlugsCache = { slugs, expiresAt: now + BLOG_SLUGS_TTL_MS };
+  return slugs;
 }
 
 
