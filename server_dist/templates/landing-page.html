@@ -42,6 +42,37 @@
 }
 </script>
 
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "How to Find Your Pelvic Floor Muscle (Before Doing Kegels)",
+  "description": "Three quick cues to locate the pelvic floor muscle — the one most men have never actually felt fire on purpose.",
+  "totalTime": "PT30S",
+  "image": "https://www.pulsekegel.com/pk-find-the-target-web-male.png",
+  "step": [
+    {
+      "@type": "HowToStep",
+      "position": 1,
+      "name": "Stop the Stream",
+      "text": "Briefly stop the flow mid-stream while peeing — the lift-and-close feeling is the target muscle. Only use this to identify the feel, not to train."
+    },
+    {
+      "@type": "HowToStep",
+      "position": 2,
+      "name": "Hold Back Gas",
+      "text": "Imagine stopping gas without squeezing your glutes — you should feel a subtle inward lift, not a butt clench."
+    },
+    {
+      "@type": "HowToStep",
+      "position": 3,
+      "name": "Lift, Don't Crush",
+      "text": "Think elevator, not fist. Gently lift the muscle up and in, then release fully."
+    }
+  ]
+}
+</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://api.fontshare.com/v2/css?f[]=general-sans@700,800&display=swap" rel="stylesheet" />
@@ -1146,6 +1177,101 @@
   }
   .footer-bottom .left span { color: var(--teal); }
 
+  /* ---------- SECTION 02: LOCATE ---------- */
+  .locate-grid {
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(320px, 460px) 1fr;
+    gap: 72px;
+    align-items: center;
+  }
+  .infographic-frame {
+    position: relative;
+    border: 1px solid rgba(54, 231, 179, 0.22);
+    border-radius: 4px;
+    background: var(--navy);
+    padding: 14px;
+    box-shadow:
+      inset 0 2px 8px rgba(0,0,0,0.55),
+      0 0 48px rgba(54, 231, 179, 0.12);
+  }
+  .infographic-frame::before {
+    content: '';
+    position: absolute;
+    inset: 5px;
+    border: 1px solid rgba(255,255,255,0.03);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+  .infographic-frame img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 2px;
+  }
+  .infographic-placeholder {
+    aspect-ratio: 946 / 1555;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--unlit);
+    border-radius: 2px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    color: var(--gray-dim);
+    text-align: center;
+    padding: 20px;
+  }
+  .infographic-caption {
+    margin-top: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.28em;
+    color: var(--teal-dim);
+    text-transform: uppercase;
+    text-align: center;
+  }
+  .locate-copy .eyebrow { margin-bottom: 20px; }
+  .locate-copy p {
+    font-family: 'Poppins', sans-serif;
+    font-size: 17px;
+    font-weight: 400;
+    line-height: 1.6;
+    color: var(--gray);
+    margin-bottom: 20px;
+    max-width: 520px;
+  }
+  .locate-copy p strong { color: var(--white); font-weight: 600; }
+  .tip-callout {
+    margin-top: 32px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 18px 22px;
+    background: rgba(54, 231, 179, 0.06);
+    border: 1px solid rgba(54, 231, 179, 0.2);
+    border-radius: 4px;
+    max-width: 520px;
+  }
+  .tip-callout .tip-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    color: var(--teal);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .tip-callout .tip-body {
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--gray);
+  }
+
   /* ---------- RESPONSIVE ---------- */
   @media (max-width: 900px) {
     .hero {
@@ -1157,6 +1283,7 @@
     .hero-bar { height: 240px; width: 64px; }
     .rail-left, .rail-right { display: none; }
 
+    .locate-grid { grid-template-columns: 1fr; gap: 40px; }
     .instrument-grid {
       grid-template-columns: 1fr;
       gap: 60px;
@@ -1435,18 +1562,86 @@
 </div>
 
 <!-- ============================================================ -->
-<!-- SECTION 02: INSTRUMENT                                        -->
+<!-- SECTION 02: LOCATE                                            -->
+<!-- ============================================================ -->
+<section class="section" id="locate">
+  <span class="bracket tl"></span>
+  <span class="bracket tr"></span>
+  <span class="bracket bl"></span>
+  <span class="bracket br"></span>
+  <div class="rail-left">02 / LOCATE &nbsp; ▸ &nbsp; MUSCLE ACQUISITION</div>
+  <div class="rail-right">SIGNAL CHECK &nbsp; <span class="live">● ARMED</span> &nbsp; v1.0</div>
+
+  <div class="section-divider reveal-line">
+    <span>02 / Locate</span>
+    <span>Find your pelvic floor muscle</span>
+  </div>
+
+  <div class="section-header">
+    <h2 class="reveal">
+      Before you train it,<br />
+      <span class="accent">find it.</span>
+    </h2>
+  </div>
+
+  <div class="locate-grid">
+
+    <!-- INFOGRAPHIC LEFT -->
+    <div>
+      <div class="infographic-frame reveal">
+        <img src="/pk-find-the-target-web-male.png" alt="Find the Target — a 3-step guide to locating the pelvic floor muscle" onerror="this.outerHTML='<div class=&quot;infographic-placeholder&quot;>DROP pk-find-the-target-web-male.png<br/>INTO static-build/</div>';" />
+      </div>
+      <div class="infographic-caption">FIG. 02 / MUSCLE LOCATION GUIDE</div>
+    </div>
+
+    <!-- COPY RIGHT -->
+    <div class="locate-copy">
+      <div class="eyebrow reveal-x">Kegels for men · The part nobody shows you</div>
+
+      <p class="reveal">
+        Most men have never felt their pelvic floor muscle fire on purpose. Not because it's exotic — because nobody ever pointed at it. <strong>You can't train what you can't locate.</strong>
+      </p>
+
+      <p class="reveal">
+        Three cues, thirty seconds. No equipment. Your job isn't to work hard yet — it's just to find the signal and recognize the feel before you do a single kegel.
+      </p>
+
+      <div class="spec-list reveal-stagger">
+        <div class="row"><span class="key">01</span><span class="val">Stop the stream — the "lift and close" feeling</span></div>
+        <div class="row"><span class="key">02</span><span class="val">Hold back gas — subtle inward lift, not a clench</span></div>
+        <div class="row"><span class="key">03</span><span class="val">Lift, don't crush — elevator up, not a fist</span></div>
+      </div>
+
+      <div class="tip-callout reveal">
+        <div class="tip-label">▸ Tip</div>
+        <div class="tip-body">If your abs, glutes, or thighs take over, back off and go lighter. You're looking for a small signal, not a big effort.</div>
+      </div>
+
+      <div class="cta-row reveal-stagger">
+        <a href="https://apps.apple.com/us/app/pulsekegel/id6758308054" class="btn btn-primary">
+          Once you've found it, train it <span class="arrow">→</span>
+        </a>
+        <a href="#how-it-works" class="btn btn-ghost">
+          See the instrument <span class="arrow">→</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 03: INSTRUMENT                                        -->
 <!-- ============================================================ -->
 <section class="section" id="how-it-works">
   <span class="bracket tl"></span>
   <span class="bracket tr"></span>
   <span class="bracket bl"></span>
   <span class="bracket br"></span>
-  <div class="rail-left">02 / INSTRUMENT &nbsp; ▸ &nbsp; HUD DISPLAY</div>
+  <div class="rail-left">03 / INSTRUMENT &nbsp; ▸ &nbsp; HUD DISPLAY</div>
   <div class="rail-right">INPUT STREAM &nbsp; <span class="live">● LINKED</span> &nbsp; v1.0</div>
 
   <div class="section-divider reveal-line">
-    <span>02 / Instrument</span>
+    <span>03 / Instrument</span>
     <span>The app, live</span>
   </div>
 
@@ -1514,18 +1709,18 @@
 </section>
 
 <!-- ============================================================ -->
-<!-- SECTION 03: WHY IT MATTERS                                    -->
+<!-- SECTION 04: WHY IT MATTERS                                    -->
 <!-- ============================================================ -->
 <section class="section">
   <span class="bracket tl"></span>
   <span class="bracket tr"></span>
   <span class="bracket bl"></span>
   <span class="bracket br"></span>
-  <div class="rail-left">03 / OUTCOMES &nbsp; ▸ &nbsp; THREE VECTORS</div>
+  <div class="rail-left">04 / OUTCOMES &nbsp; ▸ &nbsp; THREE VECTORS</div>
   <div class="rail-right">DATA LOG &nbsp; <span class="live">● NOMINAL</span> &nbsp; v1.0</div>
 
   <div class="section-divider reveal-line">
-    <span>03 / Why it matters</span>
+    <span>04 / Why it matters</span>
     <span>Three things change</span>
   </div>
 
@@ -1590,18 +1785,18 @@
 </section>
 
 <!-- ============================================================ -->
-<!-- SECTION 04: PROOF                                             -->
+<!-- SECTION 05: PROOF                                             -->
 <!-- ============================================================ -->
 <section class="section">
   <span class="bracket tl"></span>
   <span class="bracket tr"></span>
   <span class="bracket bl"></span>
   <span class="bracket br"></span>
-  <div class="rail-left">04 / PROOF &nbsp; ▸ &nbsp; FIELD REPORTS</div>
+  <div class="rail-left">05 / PROOF &nbsp; ▸ &nbsp; FIELD REPORTS</div>
   <div class="rail-right">FEED &nbsp; <span class="live">● STREAMING</span> &nbsp; v1.0</div>
 
   <div class="section-divider reveal-line">
-    <span>04 / From the program</span>
+    <span>05 / From the program</span>
     <span>Early reports</span>
   </div>
 
@@ -1635,18 +1830,18 @@
 </section>
 
 <!-- ============================================================ -->
-<!-- SECTION 05: PRIVACY                                           -->
+<!-- SECTION 06: PRIVACY                                           -->
 <!-- ============================================================ -->
 <section class="section section-privacy">
   <span class="bracket tl"></span>
   <span class="bracket tr"></span>
   <span class="bracket bl"></span>
   <span class="bracket br"></span>
-  <div class="rail-left">05 / PRIVACY &nbsp; ▸ &nbsp; VAULT STATUS</div>
+  <div class="rail-left">06 / PRIVACY &nbsp; ▸ &nbsp; VAULT STATUS</div>
   <div class="rail-right">CRYPTO &nbsp; <span class="live">● SEALED</span> &nbsp; v1.0</div>
 
   <div class="section-divider reveal-line">
-    <span>05 / Private by design</span>
+    <span>06 / Private by design</span>
     <span>Your data stays put</span>
   </div>
 
@@ -1670,18 +1865,18 @@
 </section>
 
 <!-- ============================================================ -->
-<!-- SECTION 06: CLOSE / CTA                                       -->
+<!-- SECTION 07: CLOSE / CTA                                       -->
 <!-- ============================================================ -->
 <section class="section section-close">
   <span class="bracket tl"></span>
   <span class="bracket tr"></span>
   <span class="bracket bl"></span>
   <span class="bracket br"></span>
-  <div class="rail-left">06 / NEXT REP &nbsp; ▸ &nbsp; COMMIT READY</div>
+  <div class="rail-left">07 / NEXT REP &nbsp; ▸ &nbsp; COMMIT READY</div>
   <div class="rail-right">SYSTEMS &nbsp; <span class="live">● GO</span> &nbsp; v1.0</div>
 
   <div class="section-divider reveal-line">
-    <span>06 / Next rep</span>
+    <span>07 / Next rep</span>
     <span>Start the program</span>
   </div>
 
