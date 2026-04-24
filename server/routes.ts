@@ -54,7 +54,6 @@ function discoverBlogSlugs(): { slug: string; lastmod: string }[] {
   return [];
 }
 
-const BLOG_SITEMAP_ENTRIES = discoverBlogSlugs();
 
 const FEMALE_HEALTH_BENEFITS = [
   "stronger pelvic floor muscles and endurance",
@@ -213,7 +212,7 @@ Sitemap: https://pulsekegel.com/sitemap.xml
     <priority>0.7</priority>
   </url>`;
 
-    const blogUrls = BLOG_SITEMAP_ENTRIES
+    const blogUrls = discoverBlogSlugs()
       .map(
         ({ slug, lastmod }) => `  <url>
     <loc>https://pulsekegel.com/blog/${slug}</loc>
