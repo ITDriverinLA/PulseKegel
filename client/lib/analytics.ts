@@ -1,5 +1,5 @@
 import * as Crypto from "expo-crypto";
-import * as SecureStore from "expo-secure-store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Application from "expo-application";
 import { Platform } from "react-native";
 import { getApiUrl } from "./query-client";
@@ -8,35 +8,14 @@ const DEVICE_ID_KEY = "pulsekegel_analytics_device_id";
 
 async function getOrCreateDeviceId(): Promise<string> {
   try {
-    if (Platform.OS === "web") {
-      try {
-        const stored =
-          typeof localStorage !== "undefined"
-            ? localStorage.getItem(DEVICE_ID_KEY)
-            : null;
-        if (stored) return stored;
-        const uuid = Crypto.randomUUID();
-        const hashed = await Crypto.digestStringAsync(
-          Crypto.CryptoDigestAlgorithm.SHA256,
-          uuid,
-        );
-        try {
-          localStorage.setItem(DEVICE_ID_KEY, hashed);
-        } catch {}
-        return hashed;
-      } catch {
-        return "web-unknown";
-      }
-    }
-
-    let deviceId = await SecureStore.getItemAsync(DEVICE_ID_KEY);
+    let deviceId = await AsyncStorage.getItem(DEVICE_ID_KEY);
     if (!deviceId) {
       const uuid = Crypto.randomUUID();
       deviceId = await Crypto.digestStringAsync(
         Crypto.CryptoDigestAlgorithm.SHA256,
         uuid,
       );
-      await SecureStore.setItemAsync(DEVICE_ID_KEY, deviceId);
+      await AsyncStorage.setItem(DEVICE_ID_KEY, deviceId);
     }
     return deviceId;
   } catch {
