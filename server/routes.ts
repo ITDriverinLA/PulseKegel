@@ -5,6 +5,9 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import OpenAI from "openai";
 import { privacyPolicyHtml } from "./staticContent";
+import { db } from "./db";
+import { analyticsEvents } from "@shared/schema";
+import { sql, countDistinct } from "drizzle-orm";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -289,6 +292,94 @@ ${blogUrls}
   app.get("/privacy", (_req, res) => {
     res.setHeader('Content-Type', 'text/html');
     res.send(privacyPolicyHtml);
+  });
+
+  app.post("/api/analytics", async (req, res) => {
+    const { deviceId, events } = req.body ?? {};
+    if (!deviceId || !Array.isArray(events) || events.length === 0) {
+      res.status(400).json({ error: "deviceId and events are required" });
+      return;
+    }
+    try {
+      const rows = events.map((e: {
+        type: string;
+        data?: Record<string, unknown>;
+        platform?: string;
+        appVersion?: string;
+        occurredAt?: string;
+      }) => ({
+        deviceId: String(deviceId).slice(0, 64),
+        eventType: String(e.type ?? "unknown").slice(0, 50),
+        eventData: e.data ?? {},
+        platform: e.platform ? String(e.platform).slice(0, 10) : null,
+        appVersion: e.appVersion ? String(e.appVersion).slice(0, 20) : null,
+        createdAt: e.occurredAt ? new Date(e.occurredAt) : new Date(),
+      }));
+      await db.insert(analyticsEvents).values(rows);
+      res.json({ ok: true });
+    } catch (err) {
+      console.error("Analytics ingest error:", err);
+      res.status(500).json({ error: "Failed to record events" });
+    }
+  });
+
+  app.get("/api/analytics/summary", async (_req, res) => {
+    try {
+      const now = new Date();
+      const h24 = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const d7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const d30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+      const [totalDevices] = await db
+        .select({ count: countDistinct(analyticsEvents.deviceId) })
+        .from(analyticsEvents);
+
+      const [dau] = await db
+        .select({ count: countDistinct(analyticsEvents.deviceId) })
+        .from(analyticsEvents)
+        .where(sql`${analyticsEvents.createdAt} >= ${h24}`);
+
+      const [wau] = await db
+        .select({ count: countDistinct(analyticsEvents.deviceId) })
+        .from(analyticsEvents)
+        .where(sql`${analyticsEvents.createdAt} >= ${d7}`);
+
+      const [mau] = await db
+        .select({ count: countDistinct(analyticsEvents.deviceId) })
+        .from(analyticsEvents)
+        .where(sql`${analyticsEvents.createdAt} >= ${d30}`);
+
+      const eventCounts = await db
+        .select({
+          eventType: analyticsEvents.eventType,
+          count: sql<number>`count(*)::int`,
+        })
+        .from(analyticsEvents)
+        .groupBy(analyticsEvents.eventType)
+        .orderBy(sql`count(*) desc`);
+
+      const [newDevicesWeek] = await db
+        .select({ count: countDistinct(analyticsEvents.deviceId) })
+        .from(analyticsEvents)
+        .where(
+          sql`${analyticsEvents.deviceId} not in (
+            select distinct device_id from analytics_events
+            where created_at < ${d7}
+          )`,
+        );
+
+      res.json({
+        totalDevices: totalDevices?.count ?? 0,
+        dau: dau?.count ?? 0,
+        wau: wau?.count ?? 0,
+        mau: mau?.count ?? 0,
+        newDevicesLast7Days: newDevicesWeek?.count ?? 0,
+        eventsByType: eventCounts,
+      });
+    } catch (err) {
+      console.error("Analytics summary error:", err);
+      res.status(500).json({ error: "Failed to load analytics summary" });
+    }
   });
 
   const httpServer = createServer(app);

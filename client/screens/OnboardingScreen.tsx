@@ -26,6 +26,7 @@ import Slider from '@react-native-community/slider';
 import { ThemedText } from '@/components/ThemedText';
 import { Spacing, BorderRadius } from '@/constants/theme';
 import { storage, AnatomyType, defaultSettings } from '@/lib/storage';
+import { trackOnboardingComplete } from '@/lib/analytics';
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 import { useAudio } from '@/contexts/AudioContext';
 import { ALL_AMBIENT_TRACKS } from '@/lib/audioManager';
@@ -126,6 +127,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
 
   const handleNext = async () => {
     if (isLastPage) {
+      trackOnboardingComplete({ anatomyType: selectedAnatomy });
       onComplete();
     } else {
       setCurrentPage(prev => prev + 1);

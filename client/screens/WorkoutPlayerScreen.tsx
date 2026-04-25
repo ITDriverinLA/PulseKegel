@@ -33,6 +33,7 @@ import { useAudio } from '@/contexts/AudioContext';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { rescheduleAfterCompletion, sendBadgeEarnedNotification } from '@/lib/notifications';
 import { getBadgeById } from '@/data/badges';
+import { trackSessionComplete } from '@/lib/analytics';
 
 type RouteProps = RouteProp<RootStackParamList, 'WorkoutPlayer'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -166,7 +167,12 @@ export default function WorkoutPlayerScreen() {
         const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         const minutes = Math.ceil(seconds / 60);
         await storage.addCompletedDate(today, minutes);
-        
+        trackSessionComplete({
+          durationMinutes: minutes,
+          workoutType: workout.dayType,
+          weekNumber,
+        });
+
         const startDate = await storage.getProgramStartDate();
         if (!startDate) {
           await storage.setProgramStartDate(today);

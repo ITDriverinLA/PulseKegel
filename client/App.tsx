@@ -17,6 +17,7 @@ import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { ThemePreferenceProvider, useThemePreference } from "@/contexts/ThemePreferenceContext";
 import { storage } from "@/lib/storage";
 import { scheduleDailyReminder } from "@/lib/notifications";
+import { trackAppOpen } from "@/lib/analytics";
 
 function AppContent() {
   const { cp } = useThemePreference();
@@ -28,6 +29,28 @@ function AppContent() {
         if (settings.reminderEnabled) {
           await scheduleDailyReminder(settings.reminderTime);
         }
+      } catch {}
+    })();
+
+    (async () => {
+      try {
+        const [progress, settings, programStartDate] = await Promise.all([
+          storage.getProgress(),
+          storage.getSettings(),
+          storage.getProgramStartDate(),
+        ]);
+        let programWeek: number | undefined;
+        if (programStartDate) {
+          const startMs = new Date(programStartDate).getTime();
+          const diffDays = Math.floor((Date.now() - startMs) / (1000 * 60 * 60 * 24));
+          programWeek = Math.min(Math.floor(diffDays / 7) + 1, 12);
+        }
+        trackAppOpen({
+          programWeek,
+          streak: progress.currentStreak,
+          totalSessions: progress.totalSessions,
+          anatomyType: settings.anatomyType,
+        });
       } catch {}
     })();
   }, []);
