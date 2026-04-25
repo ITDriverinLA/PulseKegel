@@ -368,9 +368,8 @@ ${blogUrls}
           )`,
         );
 
-      const topWeeklyDevices = await db
+      const topWeeklyDevicesRaw = await db
         .select({
-          deviceId: analyticsEvents.deviceId,
           eventCount: sql<number>`count(*)::int`,
         })
         .from(analyticsEvents)
@@ -378,6 +377,10 @@ ${blogUrls}
         .groupBy(analyticsEvents.deviceId)
         .orderBy(sql`count(*) desc`)
         .limit(10);
+      const topWeeklyDevices = topWeeklyDevicesRaw.map((row, i) => ({
+        rank: i + 1,
+        eventCount: row.eventCount,
+      }));
 
       res.json({
         totalDevices: totalDevices?.count ?? 0,
