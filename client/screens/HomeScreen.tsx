@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { StyleSheet, View, Text, Pressable, RefreshControl, ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,9 +20,12 @@ import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 import {
   getTodaysWorkout,
   getWorkoutForRecoveryMode,
+  getScheduledDaysForWeek,
+  getWorkoutCompletionsForWeek,
   DayTemplate,
   Week,
 } from '@/data/workoutProgram';
+import { trackWeekComplete } from '@/lib/analytics';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -52,6 +55,7 @@ export default function HomeScreen() {
     daysWorkedOut: number;
   } | null>(null);
   const [pendingReviewMessage, setPendingReviewMessage] = useState<string>('');
+  const trackedWeekCompleteRef = useRef<number | null>(null);
 
   const loadData = useCallback(async () => {
     const startDate = await storage.getProgramStartDate();
@@ -75,11 +79,35 @@ export default function HomeScreen() {
     
     const reviewCheck = await storage.shouldShowWeeklyReview(userProgress.completedDates, startDate);
     if (reviewCheck.show) {
+      const scheduledDays = getScheduledDaysForWeek(reviewCheck.weekNumber);
+      const workoutCompletions = startDate
+        ? getWorkoutCompletionsForWeek(userProgress.completedDates, reviewCheck.weekNumber, startDate)
+        : 0;
+
       setWeeklyReviewData({
         weekNumber: reviewCheck.weekNumber,
         daysWorkedOut: reviewCheck.daysWorkedOut,
       });
       setShowWeeklyReview(true);
+
+      if (
+        scheduledDays > 0 &&
+        workoutCompletions >= scheduledDays &&
+        trackedWeekCompleteRef.current !== reviewCheck.weekNumber
+      ) {
+        const lastTracked = await storage.getLastWeekCompleteTracked();
+        if (lastTracked !== reviewCheck.weekNumber) {
+          trackedWeekCompleteRef.current = reviewCheck.weekNumber;
+          await storage.setLastWeekCompleteTracked(reviewCheck.weekNumber);
+          trackWeekComplete({
+            weekNumber: reviewCheck.weekNumber,
+            daysWorkedOut: workoutCompletions,
+            scheduledDays,
+          });
+        } else {
+          trackedWeekCompleteRef.current = reviewCheck.weekNumber;
+        }
+      }
     }
   }, []);
 

@@ -14,6 +14,7 @@ const STORAGE_KEYS = {
   REVIEW_HISTORY: 'pulsekegel_review_history',
   EARNED_BADGES: 'pulsekegel_earned_badges',
   AUDIO_SETTINGS: 'pulsekegel_audio_settings',
+  LAST_WEEK_COMPLETE_TRACKED: 'pulsekegel_last_week_complete_tracked',
 };
 
 export interface WeeklyReviewEntry {
@@ -344,6 +345,23 @@ export const storage = {
       await AsyncStorage.setItem(STORAGE_KEYS.LAST_WEEKLY_REVIEW, weekNumber.toString());
     } catch (error) {
       console.error('Error saving last weekly review:', error);
+    }
+  },
+
+  async getLastWeekCompleteTracked(): Promise<number | null> {
+    try {
+      const data = await AsyncStorage.getItem(STORAGE_KEYS.LAST_WEEK_COMPLETE_TRACKED);
+      return data ? parseInt(data) : null;
+    } catch {
+      return null;
+    }
+  },
+
+  async setLastWeekCompleteTracked(weekNumber: number): Promise<void> {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.LAST_WEEK_COMPLETE_TRACKED, weekNumber.toString());
+    } catch (error) {
+      console.error('Error saving last week complete tracked:', error);
     }
   },
 

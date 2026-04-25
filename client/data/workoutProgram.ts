@@ -479,6 +479,44 @@ export const workoutProgram: WorkoutProgram = {
   weeks: Array.from({ length: 12 }, (_, i) => generateWeek(i + 1)),
 };
 
+export const getScheduledDaysForWeek = (weekNumber: number): number => {
+  const week = workoutProgram.weeks.find(w => w.weekNumber === weekNumber);
+  if (!week) return 0;
+  return week.days.filter(d => !d.isRestDay).length;
+};
+
+export const getWorkoutCompletionsForWeek = (
+  completedDates: string[],
+  weekNumber: number,
+  programStartDate: string,
+): number => {
+  const week = workoutProgram.weeks.find(w => w.weekNumber === weekNumber);
+  if (!week || !programStartDate) return 0;
+
+  const startParts = programStartDate.split('-').map(Number);
+  const startDate = new Date(startParts[0], startParts[1] - 1, startParts[2]);
+  const weekStart = new Date(startDate);
+  weekStart.setDate(weekStart.getDate() + (weekNumber - 1) * 7);
+
+  const toDateStr = (d: Date): string => {
+    const y = d.getFullYear();
+    const mo = String(d.getMonth() + 1).padStart(2, '0');
+    const da = String(d.getDate()).padStart(2, '0');
+    return `${y}-${mo}-${da}`;
+  };
+
+  const workoutDates = new Set<string>();
+  week.days.forEach((day, idx) => {
+    if (!day.isRestDay) {
+      const d = new Date(weekStart);
+      d.setDate(d.getDate() + idx);
+      workoutDates.add(toDateStr(d));
+    }
+  });
+
+  return completedDates.filter(date => workoutDates.has(date)).length;
+};
+
 export const getTodaysWorkout = (
   completedDates: string[],
   startDate?: string

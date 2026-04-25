@@ -101,3 +101,11 @@ export function trackOnboardingComplete(data: {
 }): void {
   trackEvent("onboarding_complete", data as Record<string, unknown>);
 }
+
+export function trackWeekComplete(data: {
+  weekNumber: number;
+  daysWorkedOut: number;
+  scheduledDays: number;
+}): void {
+  trackEvent("week_complete", data as Record<string, unknown>);
+}
