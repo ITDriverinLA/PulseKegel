@@ -122,6 +122,26 @@ All data stored locally via AsyncStorage:
 - The app runs on port 8081 (Expo dev server)
 - Backend runs on port 5000
 
+## Operations
+
+### Rotating the cache-invalidation token
+`INVALIDATE_CACHE_TOKEN` is a bearer secret that protects the `/api/invalidate-sitemap-cache`
+endpoint used by `scripts/build-blog.js` to clear the sitemap cache after a new post is published.
+
+To rotate it without downtime run:
+```
+node scripts/rotate-cache-token.js
+```
+The script generates a fresh 32-byte cryptographically secure token, prints it, and walks through
+the exact steps needed (update the Replit Secret, restart the backend, update any CI consumers).
+
+To verify the existing token against the running server before rotating, add `--verify`:
+```
+INVALIDATE_CACHE_TOKEN=<current-token> node scripts/rotate-cache-token.js --verify
+```
+
+Rotate this token periodically (recommended: every 90 days) or immediately if it may have been exposed.
+
 ## User Preferences
 - Haptics: on/off, intensity (light/medium/heavy), rest cue style
 - Dynamic haptic intensity: Haptics match the power bar level (light at bottom, heavy at top)
