@@ -9,17 +9,19 @@ const SOURCE_DIR = path.join(process.cwd(), "blog-content");
 const OUTPUT_DIR = path.join(process.cwd(), "static-build", "blog");
 
 /**
- * Strict mode: pass --strict on the command line, or set BLOG_STRICT=1 in the
- * environment (e.g. in CI).  When enabled, any blog post that lacks git history
- * (and therefore has an unreliable datePublished) causes the build to exit with
- * a non-zero code instead of just printing a warning.
+ * Strict mode is ENABLED BY DEFAULT so that wrong dates are caught on every
+ * build — locally, in Replit's deploy pipeline, and in CI — without developers
+ * needing to remember any flags or environment variables.
  *
- * Usage:
+ * To opt out (e.g. a quick one-off test where git history is unavailable):
+ *   BLOG_STRICT=0 node scripts/build-blog.js
+ *
+ * The legacy opt-in forms still work as well:
  *   node scripts/build-blog.js --strict
  *   BLOG_STRICT=1 node scripts/build-blog.js
  */
 const STRICT_MODE =
-  process.argv.includes("--strict") || process.env.BLOG_STRICT === "1";
+  process.argv.includes("--strict") || process.env.BLOG_STRICT !== "0";
 
 /**
  * Returns the date of the very first git commit for a file (YYYY-MM-DD),
@@ -608,8 +610,10 @@ async function buildBlog() {
 
   if (STRICT_MODE && strictErrors.length > 0) {
     console.error(
-      `\nERROR: ${strictErrors.length} file(s) are missing git history (strict mode). Fix by committing the files first:\n` +
-        strictErrors.map((f) => `  - ${f}`).join("\n")
+      `\nERROR: ${strictErrors.length} file(s) are missing git history (strict mode).\n` +
+        `Fix by committing the files first:\n` +
+        strictErrors.map((f) => `  - ${f}`).join("\n") +
+        `\n\nTo skip this check during local experimentation, run:\n  BLOG_STRICT=0 node scripts/build-blog.js`
     );
     process.exit(1);
   }
