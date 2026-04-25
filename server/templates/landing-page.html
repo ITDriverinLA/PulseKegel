@@ -197,6 +197,91 @@
   }
   .menu > a:hover { color: var(--teal); border-bottom-color: var(--teal); }
 
+  /* ---------- HAMBURGER BUTTON ---------- */
+  .nav-toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 36px;
+    height: 36px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    z-index: 1001;
+    flex-shrink: 0;
+  }
+  .nav-toggle span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: var(--gray);
+    border-radius: 2px;
+    transition: transform 0.3s ease, opacity 0.3s ease, background 0.2s;
+  }
+  .nav-toggle:hover span { background: var(--teal); }
+  .nav-toggle.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .nav-toggle.open span:nth-child(2) { opacity: 0; }
+  .nav-toggle.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  /* ---------- MOBILE DRAWER ---------- */
+  .mobile-drawer {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    pointer-events: none;
+  }
+  .drawer-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(4, 10, 24, 0.75);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .drawer-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: min(80vw, 300px);
+    height: 100%;
+    background: var(--navy-deep, #080f24);
+    border-left: 1px solid rgba(54, 231, 179, 0.12);
+    display: flex;
+    flex-direction: column;
+    padding: 80px 32px 48px;
+    gap: 8px;
+    transform: translateX(100%);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .drawer-panel a {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gray);
+    text-decoration: none;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    transition: color 0.2s;
+  }
+  .drawer-panel a:last-child { border-bottom: none; }
+  .drawer-panel a:hover { color: var(--teal); }
+
+  .mobile-drawer.open {
+    pointer-events: auto;
+  }
+  .mobile-drawer.open .drawer-backdrop { opacity: 1; }
+  .mobile-drawer.open .drawer-panel { transform: translateX(0); }
+
+  @media (max-width: 767px) {
+    .menu { display: none; }
+    .nav-toggle { display: flex; }
+    .mobile-drawer { display: block; }
+  }
+
   /* ---------- SIDE READOUTS ---------- */
   .rail-left, .rail-right {
     position: absolute;
@@ -1511,7 +1596,24 @@
       <a href="/privacy">Privacy</a>
       <a href="mailto:info@pulsekegel.com">Contact</a>
     </div>
+    <button class="nav-toggle" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobile-drawer" id="nav-toggle">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
   </nav>
+
+  <!-- Mobile drawer (rendered outside the scroll-snapping chassis so it overlays everything) -->
+  <div class="mobile-drawer" id="mobile-drawer" role="dialog" aria-modal="true" aria-label="Navigation menu">
+    <div class="drawer-backdrop" id="drawer-backdrop"></div>
+    <div class="drawer-panel">
+      <a href="#locate" class="drawer-link">Locate</a>
+      <a href="#how-it-works" class="drawer-link">How It Works</a>
+      <a href="/blog" class="drawer-link">Blog</a>
+      <a href="/privacy" class="drawer-link">Privacy</a>
+      <a href="mailto:info@pulsekegel.com" class="drawer-link">Contact</a>
+    </div>
+  </div>
 
   <main class="hero">
     <!-- CONTENT LEFT (top on mobile) -->
@@ -2149,6 +2251,54 @@
     });
 
     targets.forEach(el => io.observe(el));
+  })();
+
+  // ---------- MOBILE NAV DRAWER ----------
+  (function () {
+    const toggle = document.getElementById('nav-toggle');
+    const drawer = document.getElementById('mobile-drawer');
+    const backdrop = document.getElementById('drawer-backdrop');
+    if (!toggle || !drawer) return;
+
+    function openDrawer() {
+      drawer.classList.add('open');
+      toggle.classList.add('open');
+      toggle.setAttribute('aria-expanded', 'true');
+      toggle.setAttribute('aria-label', 'Close navigation menu');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeDrawer() {
+      drawer.classList.remove('open');
+      toggle.classList.remove('open');
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.setAttribute('aria-label', 'Open navigation menu');
+      document.body.style.overflow = '';
+    }
+
+    toggle.addEventListener('click', function () {
+      drawer.classList.contains('open') ? closeDrawer() : openDrawer();
+    });
+
+    if (backdrop) backdrop.addEventListener('click', closeDrawer);
+
+    drawer.querySelectorAll('.drawer-link').forEach(function (link) {
+      link.addEventListener('click', closeDrawer);
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && drawer.classList.contains('open')) closeDrawer();
+    });
+
+    var mql = window.matchMedia('(min-width: 768px)');
+    function onBreakpoint(e) {
+      if (e.matches && drawer.classList.contains('open')) closeDrawer();
+    }
+    if (mql.addEventListener) {
+      mql.addEventListener('change', onBreakpoint);
+    } else {
+      mql.addListener(onBreakpoint);
+    }
   })();
 </script>
 </body>
