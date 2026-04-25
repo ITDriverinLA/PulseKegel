@@ -47,7 +47,7 @@ export default function WorkoutPlayerScreen() {
   const { playSfx, startAmbient, stopAmbient } = useAudio();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
-  const { workout, weekNumber, phase } = route.params;
+  const { workout, weekNumber, phase, dayNumber } = route.params;
 
   const [workoutState, setWorkoutState] = useState<WorkoutState | null>(null);
   const [currentSegment, setCurrentSegment] = useState<Segment | null>(null);
@@ -171,6 +171,7 @@ export default function WorkoutPlayerScreen() {
           durationMinutes: minutes,
           workoutType: workout.dayType,
           weekNumber,
+          dayNumber,
         });
 
         const startDate = await storage.getProgramStartDate();

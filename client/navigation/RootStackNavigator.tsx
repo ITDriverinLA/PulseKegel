@@ -23,6 +23,7 @@ export type RootStackParamList = {
     workout: DayTemplate;
     weekNumber: number;
     phase: string;
+    dayNumber?: number;
   };
   WorkoutPicker: undefined;
   Onboarding: undefined;

@@ -133,6 +133,7 @@ export default function HomeScreen() {
       workout,
       weekNumber: todaysWorkout.week.weekNumber,
       phase: todaysWorkout.week.phase,
+      dayNumber: todaysWorkout.dayIndex + 1,
     });
   };
 

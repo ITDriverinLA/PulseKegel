@@ -368,6 +368,17 @@ ${blogUrls}
           )`,
         );
 
+      const topWeeklyDevices = await db
+        .select({
+          deviceId: analyticsEvents.deviceId,
+          eventCount: sql<number>`count(*)::int`,
+        })
+        .from(analyticsEvents)
+        .where(sql`${analyticsEvents.createdAt} >= ${d7}`)
+        .groupBy(analyticsEvents.deviceId)
+        .orderBy(sql`count(*) desc`)
+        .limit(10);
+
       res.json({
         totalDevices: totalDevices?.count ?? 0,
         dau: dau?.count ?? 0,
@@ -375,6 +386,7 @@ ${blogUrls}
         mau: mau?.count ?? 0,
         newDevicesLast7Days: newDevicesWeek?.count ?? 0,
         eventsByType: eventCounts,
+        topWeeklyDevices,
       });
     } catch (err) {
       console.error("Analytics summary error:", err);

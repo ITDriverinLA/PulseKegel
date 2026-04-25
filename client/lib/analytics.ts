@@ -91,6 +91,7 @@ export function trackSessionComplete(data: {
   durationMinutes?: number;
   workoutType?: string;
   weekNumber?: number;
+  dayNumber?: number;
 }): void {
   trackEvent("session_complete", data as Record<string, unknown>);
 }
