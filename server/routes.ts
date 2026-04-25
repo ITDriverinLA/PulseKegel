@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import OpenAI from "openai";
 import { privacyPolicyHtml } from "./staticContent";
 import { db } from "./db";
-import { analyticsEvents } from "@shared/schema";
+import { analyticsEvents } from "../shared/schema";
 import { sql, countDistinct } from "drizzle-orm";
 
 const __filename = fileURLToPath(import.meta.url);
