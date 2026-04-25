@@ -480,7 +480,7 @@ function processFile(filename, strictErrors) {
   const description = extracted.description || getHeadValue(html, "description");
   const rawSlug = extracted.slug || getHeadValue(html, "canonical");
   const slug = rawSlug
-    ? rawSlug.replace(/^https?:\/\/pulsekegel\.com\/blog\//, "").replace(/^blog\//, "")
+    ? rawSlug.replace(/^https?:\/\/(www\.)?pulsekegel\.com\/blog\//, "").replace(/^blog\//, "")
     : filename.replace(".html", "");
   const headline = getH1(html) || metaTitle || slug;
   let datePublished = "2025-01-01";
