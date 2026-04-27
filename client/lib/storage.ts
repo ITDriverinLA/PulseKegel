@@ -639,11 +639,12 @@ export const storage = {
       this.getChallengeOptionalDates(),
     ]);
 
+    const totalCoreSessions: number = getScheduledDaysForWeek(1);
+
     if (!programStartDate) {
-      return { completedCoreSessions: 0, totalCoreSessions: 0, completedOptionalSessions: 0 };
+      return { completedCoreSessions: 0, totalCoreSessions, completedOptionalSessions: 0 };
     }
 
-    const totalCoreSessions: number = getScheduledDaysForWeek(1);
     const completedCoreSessions: number = getWorkoutCompletionsForWeek(
       completedDates,
       1,
