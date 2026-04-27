@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import Constants from 'expo-constants';
 
 import MainTabNavigator from '@/navigation/MainTabNavigator';
 import WorkoutPlayerScreen from '@/screens/WorkoutPlayerScreen';
@@ -12,8 +13,10 @@ import BreathworkModeSelectorScreen from '@/screens/BreathworkModeSelectorScreen
 import BreathworkSessionScreen from '@/screens/BreathworkSessionScreen';
 import BreathworkSummaryScreen from '@/screens/BreathworkSummaryScreen';
 import TechniqueGuideScreen from '@/screens/TechniqueGuideScreen';
+import ForceUpdateScreen from '@/screens/ForceUpdateScreen';
 import { useScreenOptions } from '@/hooks/useScreenOptions';
 import { storage } from '@/lib/storage';
+import { getApiUrl } from '@/lib/query-client';
 import { DayTemplate } from '@/data/workoutProgram';
 import { BreathworkMode } from '@/constants/breathworkModes';
 
@@ -36,21 +39,72 @@ export type RootStackParamList = {
   TechniqueGuide: undefined;
 };
 
+interface StoreUrls {
+  iosStoreUrl: string;
+  androidStoreUrl: string;
+}
+
+/**
+ * Returns true if `current` is strictly older than `minimum`.
+ * Compares semver segments left-to-right numerically.
+ */
+function isVersionOutdated(current: string, minimum: string): boolean {
+  const curr = current.split('.').map(n => parseInt(n, 10));
+  const min = minimum.split('.').map(n => parseInt(n, 10));
+  for (let i = 0; i < 3; i++) {
+    const c = curr[i] ?? 0;
+    const m = min[i] ?? 0;
+    if (c < m) return true;
+    if (c > m) return false;
+  }
+  return false;
+}
+
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootStackNavigator() {
   const screenOptions = useScreenOptions();
   const [isLoading, setIsLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [needsUpdate, setNeedsUpdate] = useState(false);
+  const [storeUrls, setStoreUrls] = useState<StoreUrls>({
+    iosStoreUrl: 'https://apps.apple.com/app/pulsekegel',
+    androidStoreUrl: 'https://play.google.com/store/apps/details?id=com.pulsekegel.app',
+  });
 
   useEffect(() => {
-    checkOnboarding();
+    initialize();
   }, []);
 
-  const checkOnboarding = async () => {
-    const isComplete = await storage.isOnboardingComplete();
-    setShowOnboarding(!isComplete);
+  const initialize = async () => {
+    const [onboardingComplete] = await Promise.all([
+      storage.isOnboardingComplete(),
+      checkVersion(),
+    ]);
+    setShowOnboarding(!onboardingComplete);
     setIsLoading(false);
+  };
+
+  const checkVersion = async () => {
+    try {
+      const url = new URL('/api/version-check', getApiUrl()).toString();
+      const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      if (!res.ok) return;
+      const data = await res.json();
+      const currentVersion = Constants.expoConfig?.version ?? '0.0.0';
+      const minimumVersion = typeof data.minimumVersion === 'string' ? data.minimumVersion : '0.0.0';
+      if (isVersionOutdated(currentVersion, minimumVersion)) {
+        setNeedsUpdate(true);
+        if (data.iosStoreUrl || data.androidStoreUrl) {
+          setStoreUrls({
+            iosStoreUrl: data.iosStoreUrl ?? storeUrls.iosStoreUrl,
+            androidStoreUrl: data.androidStoreUrl ?? storeUrls.androidStoreUrl,
+          });
+        }
+      }
+    } catch {
+      // Network error or timeout — fail open, never block the user
+    }
   };
 
   const handleOnboardingComplete = async () => {
@@ -60,6 +114,15 @@ export default function RootStackNavigator() {
 
   if (isLoading) {
     return null;
+  }
+
+  if (needsUpdate) {
+    return (
+      <ForceUpdateScreen
+        iosStoreUrl={storeUrls.iosStoreUrl}
+        androidStoreUrl={storeUrls.androidStoreUrl}
+      />
+    );
   }
 
   if (showOnboarding) {

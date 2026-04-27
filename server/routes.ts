@@ -12,6 +12,17 @@ import { sql, countDistinct } from "drizzle-orm";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Read the authoritative app version from app.json once at startup.
+// This becomes the minimum required version — any client older than this
+// will see the force-update screen.
+let APP_VERSION = '0.0.0';
+try {
+  const appJson = JSON.parse(readFileSync(join(process.cwd(), 'app.json'), 'utf8'));
+  APP_VERSION = appJson?.expo?.version ?? '0.0.0';
+} catch {
+  // fall back silently — clients will not be blocked
+}
+
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
@@ -292,6 +303,14 @@ ${blogUrls}
   app.get("/privacy", (_req, res) => {
     res.setHeader('Content-Type', 'text/html');
     res.send(privacyPolicyHtml);
+  });
+
+  app.get("/api/version-check", (_req, res) => {
+    res.json({
+      minimumVersion: APP_VERSION,
+      iosStoreUrl: 'https://apps.apple.com/app/pulsekegel',
+      androidStoreUrl: 'https://play.google.com/store/apps/details?id=com.pulsekegel.app',
+    });
   });
 
   app.post("/api/analytics", async (req, res) => {
