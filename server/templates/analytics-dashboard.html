@@ -376,6 +376,66 @@
     flex-shrink: 0;
   }
 
+  /* ---- CHALLENGE RESULTS ---- */
+  .challenge-section { margin-bottom: 56px; }
+  .challenge-wrap {
+    background: var(--navy);
+    border: 1px solid var(--line-strong);
+    border-radius: 4px;
+    padding: 28px 24px;
+  }
+  .challenge-rows { display: flex; flex-direction: column; gap: 18px; }
+  .challenge-row { display: flex; align-items: center; gap: 14px; }
+  .challenge-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gray);
+    width: 130px;
+    flex-shrink: 0;
+  }
+  .challenge-bar-bg {
+    flex: 1;
+    height: 6px;
+    background: var(--navy-soft);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .challenge-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--teal);
+    transition: width 0.4s ease;
+  }
+  .challenge-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--white);
+    width: 50px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .challenge-pct {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--gray-dim);
+    width: 46px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .challenge-empty {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--gray-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    text-align: center;
+    padding: 20px 0;
+  }
+
   /* ---- ERROR STATE ---- */
   .error-state {
     text-align: center;
@@ -450,12 +510,20 @@
   </div>
 
   <!-- Event type table -->
-  <div class="events-section">
+  <div class="events-section" style="margin-bottom:56px">
     <div class="section-label">Events by Type</div>
     <table class="events-table">
       <thead><tr><th>Event</th><th>All-time count</th></tr></thead>
       <tbody id="events-body"></tbody>
     </table>
+  </div>
+
+  <!-- Challenge result breakdown -->
+  <div class="challenge-section">
+    <div class="section-label">Challenge Result Distribution</div>
+    <div class="challenge-wrap">
+      <div class="challenge-rows" id="challenge-rows"></div>
+    </div>
   </div>
 
 </main>
@@ -496,6 +564,9 @@
 
       // Events table
       renderEvents(d.eventsByType || []);
+
+      // Challenge result breakdown
+      renderChallengeResults(d.challengeResultBreakdown || []);
 
     } catch (err) {
       document.querySelectorAll('.error-state').forEach(el => el.remove());
@@ -621,6 +692,48 @@
         <td>${Number(e.count).toLocaleString()}</td>
       </tr>`
     ).join('');
+  }
+
+  function renderChallengeResults(rows) {
+    const LABELS = {
+      not_started:   'Not Started',
+      first_step:    'First Step',
+      partial:       'Partial',
+      complete:      'Complete',
+      strong_finish: 'Strong Finish',
+    };
+    const ALL_RESULTS = ['not_started', 'first_step', 'partial', 'complete', 'strong_finish'];
+    const container = document.getElementById('challenge-rows');
+    container.innerHTML = '';
+
+    const dataMap = {};
+    rows.forEach(r => { dataMap[r.result] = Number(r.count) || 0; });
+    const total = rows.reduce((s, r) => s + (Number(r.count) || 0), 0);
+
+    if (total === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'challenge-empty';
+      empty.textContent = 'No challenge_result_viewed events recorded yet';
+      container.appendChild(empty);
+      return;
+    }
+
+    const max = Math.max(...ALL_RESULTS.map(k => dataMap[k] || 0), 1);
+
+    ALL_RESULTS.forEach(key => {
+      const count = dataMap[key] || 0;
+      const pct   = total > 0 ? (count / total * 100).toFixed(1) : '0.0';
+      const barW  = (count / max * 100).toFixed(1);
+      const label = LABELS[key] || esc(key);
+      const row = document.createElement('div');
+      row.className = 'challenge-row';
+      row.innerHTML =
+        '<div class="challenge-label">' + label + '</div>' +
+        '<div class="challenge-bar-bg"><div class="challenge-bar-fill" style="width:' + barW + '%"></div></div>' +
+        '<div class="challenge-count">' + count.toLocaleString() + '</div>' +
+        '<div class="challenge-pct">' + pct + '%</div>';
+      container.appendChild(row);
+    });
   }
 
   load();

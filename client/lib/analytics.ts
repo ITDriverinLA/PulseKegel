@@ -98,3 +98,12 @@ export function trackWeekComplete(data: {
 }): void {
   trackEvent("week_complete", data as Record<string, unknown>);
 }
+
+export function trackChallengeResult(data: {
+  result: "not_started" | "first_step" | "partial" | "complete" | "strong_finish";
+  completedCoreSessions: number;
+  totalCoreSessions: number;
+  completedOptionalSessions: number;
+}): void {
+  trackEvent("challenge_result_viewed", data as Record<string, unknown>);
+}

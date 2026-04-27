@@ -16,6 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { storage } from '@/lib/storage';
+import { trackChallengeResult } from '@/lib/analytics';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useAccessibility } from '@/contexts/AccessibilityContext';
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
@@ -124,6 +125,17 @@ export default function ChallengeCompleteScreen() {
   useEffect(() => {
     storage.getChallengeStats().then(setStats);
   }, []);
+
+  useEffect(() => {
+    if (stats === null) return;
+    const result = getChallengeResult(stats);
+    trackChallengeResult({
+      result,
+      completedCoreSessions: stats.completedCoreSessions,
+      totalCoreSessions: stats.totalCoreSessions,
+      completedOptionalSessions: stats.completedOptionalSessions,
+    });
+  }, [stats]);
 
   const handleContinue = () => {
     navigation.goBack();

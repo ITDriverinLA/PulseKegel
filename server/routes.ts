@@ -446,6 +446,19 @@ ${blogUrls}
         `
       );
 
+      const challengeResultBreakdownRaw = await db.execute<{ result: string; count: number }>(
+        sql`
+          SELECT
+            event_data->>'result' AS result,
+            COUNT(*)::int AS count
+          FROM analytics_events
+          WHERE event_type = 'challenge_result_viewed'
+            AND event_data->>'result' IS NOT NULL
+          GROUP BY event_data->>'result'
+          ORDER BY count DESC
+        `
+      );
+
       res.json({
         totalDevices: totalDevices?.count ?? 0,
         dau: dau?.count ?? 0,
@@ -456,6 +469,7 @@ ${blogUrls}
         topWeeklyDevices,
         dailyUniqueUsers: dailyUniqueUsersRaw.rows,
         devicesByPlatform: devicesByPlatformRaw.rows,
+        challengeResultBreakdown: challengeResultBreakdownRaw.rows,
       });
     } catch (err) {
       console.error("Analytics summary error:", err);
