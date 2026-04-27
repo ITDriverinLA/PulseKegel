@@ -86,9 +86,11 @@ export default function RootStackNavigator() {
   };
 
   const checkVersion = async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
     try {
       const url = new URL('/api/version-check', getApiUrl()).toString();
-      const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      const res = await fetch(url, { signal: controller.signal });
       if (!res.ok) return;
       const data = await res.json();
       const currentVersion = Constants.expoConfig?.version ?? '0.0.0';
@@ -104,6 +106,8 @@ export default function RootStackNavigator() {
       }
     } catch {
       // Network error or timeout — fail open, never block the user
+    } finally {
+      clearTimeout(timeoutId);
     }
   };
 
