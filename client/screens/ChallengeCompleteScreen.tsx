@@ -16,7 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { storage } from '@/lib/storage';
-import { trackChallengeResult } from '@/lib/analytics';
+import { trackChallengeResult, trackChallengeCta } from '@/lib/analytics';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useAccessibility } from '@/contexts/AccessibilityContext';
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
@@ -156,7 +156,10 @@ export default function ChallengeCompleteScreen() {
 
   const handlePrimary = () => {
     if (!stats) return;
-    if (config.primaryIsRestart) {
+    const result = getChallengeResult(stats);
+    const cfg = RESULT_CONFIGS[result];
+    trackChallengeCta({ result, button: 'primary', action: cfg.primaryIsRestart ? 'restart' : 'continue' });
+    if (cfg.primaryIsRestart) {
       setShowConfirm(true);
     } else {
       handleContinue();
@@ -165,7 +168,10 @@ export default function ChallengeCompleteScreen() {
 
   const handleSecondary = () => {
     if (!stats) return;
-    if (config.secondaryIsRestart) {
+    const result = getChallengeResult(stats);
+    const cfg = RESULT_CONFIGS[result];
+    trackChallengeCta({ result, button: 'secondary', action: cfg.secondaryIsRestart ? 'restart' : 'continue' });
+    if (cfg.secondaryIsRestart) {
       setShowConfirm(true);
     } else {
       handleContinue();

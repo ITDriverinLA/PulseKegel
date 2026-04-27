@@ -107,3 +107,11 @@ export function trackChallengeResult(data: {
 }): void {
   trackEvent("challenge_result_viewed", data as Record<string, unknown>);
 }
+
+export function trackChallengeCta(data: {
+  result: "not_started" | "first_step" | "partial" | "complete" | "strong_finish";
+  button: "primary" | "secondary";
+  action: "continue" | "restart";
+}): void {
+  trackEvent("challenge_cta_tapped", data as Record<string, unknown>);
+}
