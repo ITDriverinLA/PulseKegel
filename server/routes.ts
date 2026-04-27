@@ -450,7 +450,7 @@ ${blogUrls}
         sql`
           SELECT
             event_data->>'result' AS result,
-            COUNT(*)::int AS count
+            COUNT(DISTINCT device_id)::int AS count
           FROM analytics_events
           WHERE event_type = 'challenge_result_viewed'
             AND event_data->>'result' IS NOT NULL
