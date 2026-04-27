@@ -136,7 +136,7 @@ export default function HomeScreen() {
       const seen = await AsyncStorage.getItem('pulsekegel_challenge_shown');
       if (!seen) {
         await AsyncStorage.setItem('pulsekegel_challenge_shown', 'true');
-        navigation.navigate('ChallengeComplete');
+        navigation.navigate('Week1Review');
       } else {
         navigation.navigate('Paywall');
       }
