@@ -397,6 +397,7 @@
       renderEvents(d.eventsByType || []);
 
     } catch (err) {
+      document.querySelectorAll('.error-state').forEach(el => el.remove());
       const errDiv = document.createElement('div');
       errDiv.className = 'error-state';
       const strong = document.createElement('strong');
