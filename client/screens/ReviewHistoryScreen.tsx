@@ -20,6 +20,7 @@ export default function ReviewHistoryScreen() {
   const { cp, isDarkMode } = useThemePreference();
 
   function getPhaseForWeek(week: number): { name: string; color: string } {
+    if (week === 0) return { name: 'Trial Week', color: cp.neonPurple };
     if (week <= 2) return { name: 'Control Phase', color: cp.neonCyan };
     if (week <= 6) return { name: 'Strength Phase', color: cp.neonGreen };
     if (week <= 10) return { name: 'Power Phase', color: cp.neonPink };
@@ -110,12 +111,12 @@ export default function ReviewHistoryScreen() {
                       <View style={styles.cardHeaderLeft}>
                         <View style={[styles.weekBadge, { backgroundColor: `${accent}20` }]}>
                           <Text style={[styles.weekBadgeText, { color: accent, fontSize: 12 * fontScale }]}>
-                            W{review.weekNumber}
+                            {review.weekNumber === 0 ? 'T1' : `W${review.weekNumber}`}
                           </Text>
                         </View>
                         <View>
                           <Text style={[styles.cardTitle, { color: cp.text, fontSize: 15 * fontScale }]}>
-                            Week {review.weekNumber}
+                            {review.weekNumber === 0 ? 'Trial Week' : `Week ${review.weekNumber}`}
                           </Text>
                           <Text style={[styles.phaseLabel, { color: phase.color, fontSize: 11 * fontScale }]}>
                             {phase.name}

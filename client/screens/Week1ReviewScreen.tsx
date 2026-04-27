@@ -140,7 +140,16 @@ export default function Week1ReviewScreen() {
 
   const accentColor = getAccentColor();
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
+    if (message) {
+      await storage.saveWeeklyReviewToHistory({
+        weekNumber: 0,
+        daysWorkedOut: sessions,
+        totalMinutes: minutes,
+        message,
+        date: new Date().toISOString().split('T')[0],
+      });
+    }
     navigation.replace('ChallengeComplete');
   };
 
