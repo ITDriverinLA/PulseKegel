@@ -401,15 +401,23 @@ ${blogUrls}
         eventCount: row.eventCount,
       }));
 
-      const dailyUniqueUsersRaw = await db
-        .select({
-          date: sql<string>`to_char(date_trunc('day', ${analyticsEvents.createdAt}), 'YYYY-MM-DD')`,
-          count: sql<number>`count(distinct ${analyticsEvents.deviceId})::int`,
-        })
-        .from(analyticsEvents)
-        .where(sql`${analyticsEvents.createdAt} >= ${d30}`)
-        .groupBy(sql`date_trunc('day', ${analyticsEvents.createdAt})`)
-        .orderBy(sql`date_trunc('day', ${analyticsEvents.createdAt})`);
+      // Generate a full 30-day spine (UTC days) so every day appears even with 0 events.
+      const dailyUniqueUsersRaw = await db.execute<{ date: string; count: number }>(
+        sql`
+          SELECT
+            to_char(days.day, 'YYYY-MM-DD') AS date,
+            COUNT(DISTINCT ae.device_id)::int AS count
+          FROM generate_series(
+            date_trunc('day', NOW() AT TIME ZONE 'UTC') - INTERVAL '29 days',
+            date_trunc('day', NOW() AT TIME ZONE 'UTC'),
+            INTERVAL '1 day'
+          ) AS days(day)
+          LEFT JOIN analytics_events ae
+            ON date_trunc('day', ae.created_at AT TIME ZONE 'UTC') = days.day
+          GROUP BY days.day
+          ORDER BY days.day
+        `
+      );
 
       res.json({
         totalDevices: totalDevices?.count ?? 0,
@@ -419,7 +427,7 @@ ${blogUrls}
         newDevicesLast7Days: newDevicesWeek?.count ?? 0,
         eventsByType: eventCounts,
         topWeeklyDevices,
-        dailyUniqueUsers: dailyUniqueUsersRaw,
+        dailyUniqueUsers: dailyUniqueUsersRaw.rows,
       });
     } catch (err) {
       console.error("Analytics summary error:", err);
