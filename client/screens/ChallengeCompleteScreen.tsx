@@ -119,6 +119,7 @@ export default function ChallengeCompleteScreen() {
   const [stats, setStats] = useState<ChallengeStats | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isRestarting, setIsRestarting] = useState(false);
+  const [restartError, setRestartError] = useState(false);
 
   useEffect(() => {
     storage.getChallengeStats().then(setStats);
@@ -130,13 +131,14 @@ export default function ChallengeCompleteScreen() {
 
   const handleRestartConfirmed = async () => {
     setIsRestarting(true);
+    setRestartError(false);
     try {
       await storage.resetChallengeProgress();
       await checkSubscription();
       navigation.replace('Main');
     } catch {
       setIsRestarting(false);
-      setShowConfirm(false);
+      setRestartError(true);
     }
   };
 
@@ -315,6 +317,11 @@ export default function ChallengeCompleteScreen() {
             <Text style={[styles.modalMessage, { color: cp.textSecondary }]}>
               Your challenge progress, streaks, and session dates will be cleared. Your badges and lifetime session totals are kept.
             </Text>
+            {restartError ? (
+              <Text style={[styles.errorText, { color: '#FF6B6B' }]}>
+                Something went wrong. Please try again.
+              </Text>
+            ) : null}
             <View style={styles.modalButtons}>
               <Pressable
                 style={[styles.modalCancel, { borderColor: `${cp.textMuted}40` }]}
@@ -477,6 +484,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
     textAlign: 'center',
+  },
+  errorText: {
+    fontSize: 13,
+    textAlign: 'center',
+    fontWeight: '500',
   },
   modalButtons: {
     flexDirection: 'row',
