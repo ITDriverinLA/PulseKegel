@@ -6,6 +6,7 @@ import {
   Pressable,
   ScrollView,
   Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -22,7 +23,7 @@ import { Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-
+type FeatherIconName = React.ComponentProps<typeof Feather>['name'];
 type ChallengeResult = 'not_started' | 'first_step' | 'partial' | 'complete' | 'strong_finish';
 
 interface ChallengeStats {
@@ -33,14 +34,14 @@ interface ChallengeStats {
 
 function getChallengeResult(stats: ChallengeStats): ChallengeResult {
   if (stats.completedCoreSessions === 0) return 'not_started';
-  if (stats.completedCoreSessions < stats.totalCoreSessions - 1) return 'first_step';
+  if (stats.completedCoreSessions === 1) return 'first_step';
   if (stats.completedCoreSessions < stats.totalCoreSessions) return 'partial';
   if (stats.completedOptionalSessions > 0) return 'strong_finish';
   return 'complete';
 }
 
 interface ResultConfig {
-  icon: string;
+  icon: FeatherIconName;
   iconAccent: 'neonGreen' | 'neonCyan' | 'textMuted';
   title: string;
   message: string;
@@ -54,7 +55,7 @@ const RESULT_CONFIGS: Record<ChallengeResult, ResultConfig> = {
   not_started: {
     icon: 'alert-circle',
     iconAccent: 'textMuted',
-    title: 'A Fresh Start Awaits',
+    title: 'Challenge Not Started',
     message:
       'No sessions were completed during the challenge window — and that\'s okay. The program is still here, ready whenever you are. Restarting takes one tap.',
     primaryLabel: 'Restart Challenge',
@@ -65,7 +66,7 @@ const RESULT_CONFIGS: Record<ChallengeResult, ResultConfig> = {
   first_step: {
     icon: 'trending-up',
     iconAccent: 'neonCyan',
-    title: 'You Made a Start',
+    title: 'You Took the First Step.',
     message:
       'One session completed. You\'ve already proven you can show up. The full 12-week program is built on exactly that first step — keep going.',
     primaryLabel: 'Continue Training',
@@ -76,7 +77,7 @@ const RESULT_CONFIGS: Record<ChallengeResult, ResultConfig> = {
   partial: {
     icon: 'zap',
     iconAccent: 'neonCyan',
-    title: 'Solid Progress',
+    title: 'Good Start.',
     message:
       'Two of three core sessions done. You built a real habit this week. Carry that momentum into the full 12-week program and finish what you started.',
     primaryLabel: 'Continue Training',
@@ -87,7 +88,7 @@ const RESULT_CONFIGS: Record<ChallengeResult, ResultConfig> = {
   complete: {
     icon: 'award',
     iconAccent: 'neonGreen',
-    title: 'Challenge Complete',
+    title: 'Challenge Complete.',
     message:
       'Every session done, every rep counted. The 7-day challenge is the foundation of a 12-week program built for real, lasting pelvic floor strength. You\'ve done the hardest part — starting.',
     primaryLabel: 'Continue Training',
@@ -98,7 +99,7 @@ const RESULT_CONFIGS: Record<ChallengeResult, ResultConfig> = {
   strong_finish: {
     icon: 'star',
     iconAccent: 'neonGreen',
-    title: 'Strong Finish',
+    title: 'Strong Finish.',
     message:
       'All core sessions completed — plus extra work on rest days. That initiative is exactly what the 12-week program is built to reward. Keep that energy.',
     primaryLabel: 'Continue Training',
@@ -123,16 +124,6 @@ export default function ChallengeCompleteScreen() {
     storage.getChallengeStats().then(setStats);
   }, []);
 
-  const result: ChallengeResult = stats ? getChallengeResult(stats) : 'complete';
-  const config = RESULT_CONFIGS[result];
-
-  const iconColor =
-    config.iconAccent === 'neonGreen'
-      ? cp.neonGreen
-      : config.iconAccent === 'neonCyan'
-      ? cp.neonCyan
-      : cp.textMuted;
-
   const handleContinue = () => {
     navigation.goBack();
   };
@@ -150,6 +141,7 @@ export default function ChallengeCompleteScreen() {
   };
 
   const handlePrimary = () => {
+    if (!stats) return;
     if (config.primaryIsRestart) {
       setShowConfirm(true);
     } else {
@@ -158,12 +150,35 @@ export default function ChallengeCompleteScreen() {
   };
 
   const handleSecondary = () => {
+    if (!stats) return;
     if (config.secondaryIsRestart) {
       setShowConfirm(true);
     } else {
       handleContinue();
     }
   };
+
+  if (stats === null) {
+    return (
+      <LinearGradient
+        colors={cp.gradient as unknown as [string, string, ...string[]]}
+        style={styles.container}
+      >
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={cp.neonGreen} />
+        </View>
+      </LinearGradient>
+    );
+  }
+
+  const result = getChallengeResult(stats);
+  const config = RESULT_CONFIGS[result];
+  const iconColor =
+    config.iconAccent === 'neonGreen'
+      ? cp.neonGreen
+      : config.iconAccent === 'neonCyan'
+      ? cp.neonCyan
+      : cp.textMuted;
 
   return (
     <LinearGradient
@@ -185,7 +200,7 @@ export default function ChallengeCompleteScreen() {
               { backgroundColor: `${iconColor}26`, borderColor: `${iconColor}4D` },
             ]}
           >
-            <Feather name={config.icon as any} size={52} color={iconColor} />
+            <Feather name={config.icon} size={52} color={iconColor} />
           </View>
           <Text style={[styles.label, { color: iconColor }]}>7-DAY CONTROL CHALLENGE</Text>
           <Text style={[styles.title, { color: cp.text, fontSize: 32 * fontScale }]}>
@@ -193,40 +208,41 @@ export default function ChallengeCompleteScreen() {
           </Text>
         </Animated.View>
 
-        {stats !== null ? (
-          <Animated.View entering={FadeInDown.delay(200)} style={styles.progressSection}>
-            <View style={styles.progressDots}>
-              {Array.from({ length: stats.totalCoreSessions }).map((_, i) => {
-                const filled = i < stats.completedCoreSessions;
-                return (
-                  <View
-                    key={i}
-                    style={[
-                      styles.progressDot,
-                      {
-                        backgroundColor: filled ? iconColor : `${iconColor}30`,
-                        borderColor: filled ? iconColor : `${iconColor}50`,
-                      },
-                    ]}
-                  >
-                    {filled ? (
-                      <Feather name="check" size={14} color={cp.bg} />
-                    ) : null}
-                  </View>
-                );
-              })}
-            </View>
-            <Text style={[styles.progressLabel, { color: cp.textSecondary }]}>
-              {stats.completedCoreSessions} of {stats.totalCoreSessions} core sessions completed
+        <Animated.View entering={FadeInDown.delay(200)} style={styles.progressSection}>
+          <View style={styles.progressDots}>
+            {Array.from({ length: stats.totalCoreSessions }).map((_, i) => {
+              const filled = i < stats.completedCoreSessions;
+              return (
+                <View
+                  key={i}
+                  style={[
+                    styles.progressDot,
+                    {
+                      backgroundColor: filled ? iconColor : `${iconColor}30`,
+                      borderColor: filled ? iconColor : `${iconColor}50`,
+                    },
+                  ]}
+                >
+                  {filled ? <Feather name="check" size={14} color={cp.bg} /> : null}
+                </View>
+              );
+            })}
+          </View>
+          <Text style={[styles.progressLabel, { color: cp.textSecondary }]}>
+            {'You completed '}
+            <Text style={{ color: cp.text, fontWeight: '700' }}>
+              {stats.completedCoreSessions}
             </Text>
-            {stats.completedOptionalSessions > 0 ? (
-              <Text style={[styles.optionalLabel, { color: cp.neonCyan }]}>
-                + {stats.completedOptionalSessions} optional{' '}
-                {stats.completedOptionalSessions === 1 ? 'session' : 'sessions'} on rest days
-              </Text>
-            ) : null}
-          </Animated.View>
-        ) : null}
+            {` of ${stats.totalCoreSessions} core sessions`}
+          </Text>
+          {stats.completedOptionalSessions > 0 ? (
+            <Text style={[styles.optionalLabel, { color: cp.neonCyan }]}>
+              {`and ${stats.completedOptionalSessions} optional recovery ${
+                stats.completedOptionalSessions === 1 ? 'session' : 'sessions'
+              }.`}
+            </Text>
+          ) : null}
+        </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(300)}>
           <View
@@ -295,9 +311,7 @@ export default function ChallengeCompleteScreen() {
             <View style={[styles.modalIconRow, { backgroundColor: `${cp.neonCyan}20` }]}>
               <Feather name="refresh-cw" size={28} color={cp.neonCyan} />
             </View>
-            <Text style={[styles.modalTitle, { color: cp.text }]}>
-              Restart the Challenge?
-            </Text>
+            <Text style={[styles.modalTitle, { color: cp.text }]}>Restart the Challenge?</Text>
             <Text style={[styles.modalMessage, { color: cp.textSecondary }]}>
               Your challenge progress, streaks, and session dates will be cleared. Your badges and lifetime session totals are kept.
             </Text>
@@ -330,6 +344,11 @@ export default function ChallengeCompleteScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scrollView: {
     flex: 1,
