@@ -10,6 +10,7 @@ import { getModeConfig, BreathworkMode, getBreathworkColors } from '@/constants/
 import { useTheme } from '@/hooks/useTheme';
 import { storage } from '@/lib/storage';
 import { rescheduleAfterCompletion } from '@/lib/notifications';
+import { isRestDayForDate } from '@/data/workoutProgram';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
 type SummaryRoute = RouteProp<RootStackParamList, 'BreathworkSummary'>;
@@ -26,10 +27,25 @@ export default function BreathworkSummaryScreen() {
   const bwColors = getBreathworkColors(isDark);
 
   const handleLogSession = async () => {
-    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
     await storage.addCompletedDate(today, 5);
     setLogged(true);
     await rescheduleAfterCompletion();
+
+    const programStartDate = await storage.getProgramStartDate();
+    if (programStartDate) {
+      const startParts = programStartDate.split('-').map(Number);
+      const startDateObj = new Date(startParts[0], startParts[1] - 1, startParts[2]);
+      const daysSinceStart = Math.floor(
+        (new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() -
+          startDateObj.getTime()) /
+          (1000 * 60 * 60 * 24),
+      );
+      if (daysSinceStart < 7 && isRestDayForDate(now, programStartDate)) {
+        await storage.markChallengeOptionalSession(today);
+      }
+    }
   };
 
   const handleDismiss = () => {

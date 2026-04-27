@@ -15,6 +15,7 @@ const STORAGE_KEYS = {
   EARNED_BADGES: 'pulsekegel_earned_badges',
   AUDIO_SETTINGS: 'pulsekegel_audio_settings',
   LAST_WEEK_COMPLETE_TRACKED: 'pulsekegel_last_week_complete_tracked',
+  CHALLENGE_OPTIONAL_DATES: 'pulsekegel_challenge_optional_dates',
 };
 
 export interface WeeklyReviewEntry {
@@ -599,6 +600,73 @@ export const storage = {
       await AsyncStorage.setItem(STORAGE_KEYS.AUDIO_SETTINGS, JSON.stringify(settings));
     } catch (error) {
       console.error('Error saving audio settings:', error);
+    }
+  },
+
+  async getChallengeOptionalDates(): Promise<string[]> {
+    try {
+      const data = await AsyncStorage.getItem(STORAGE_KEYS.CHALLENGE_OPTIONAL_DATES);
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  async markChallengeOptionalSession(date: string): Promise<void> {
+    try {
+      const dates = await this.getChallengeOptionalDates();
+      if (!dates.includes(date)) {
+        dates.push(date);
+        await AsyncStorage.setItem(
+          STORAGE_KEYS.CHALLENGE_OPTIONAL_DATES,
+          JSON.stringify(dates),
+        );
+      }
+    } catch (error) {
+      console.error('Error marking challenge optional session:', error);
+    }
+  },
+
+  async getChallengeStats(): Promise<{
+    completedCoreSessions: number;
+    totalCoreSessions: number;
+    completedOptionalSessions: number;
+  }> {
+    const { getWorkoutCompletionsForWeek, getScheduledDaysForWeek } = require('@/data/workoutProgram');
+    const [completedDates, programStartDate, optionalDates] = await Promise.all([
+      this.getCompletedDates(),
+      this.getProgramStartDate(),
+      this.getChallengeOptionalDates(),
+    ]);
+
+    const totalCoreSessions: number = getScheduledDaysForWeek(1);
+    const completedCoreSessions: number = programStartDate
+      ? getWorkoutCompletionsForWeek(completedDates, 1, programStartDate)
+      : 0;
+
+    return {
+      completedCoreSessions,
+      totalCoreSessions,
+      completedOptionalSessions: optionalDates.length,
+    };
+  },
+
+  async resetChallengeProgress(): Promise<void> {
+    try {
+      const today = new Date().toISOString();
+      await AsyncStorage.multiRemove([
+        STORAGE_KEYS.COMPLETED_DATES,
+        STORAGE_KEYS.REST_DATES,
+        STORAGE_KEYS.PROGRAM_START_DATE,
+        STORAGE_KEYS.CHALLENGE_OPTIONAL_DATES,
+        STORAGE_KEYS.LAST_WEEKLY_REVIEW,
+        STORAGE_KEYS.LAST_WEEK_COMPLETE_TRACKED,
+        STORAGE_KEYS.REVIEW_HISTORY,
+        'pulsekegel_challenge_shown',
+      ]);
+      await AsyncStorage.setItem('pulsekegel_install_date', today);
+    } catch (error) {
+      console.error('Error resetting challenge progress:', error);
     }
   },
 };

@@ -25,7 +25,7 @@ import { BadgeToast } from '@/components/BadgeToast';
 import { useTheme } from '@/hooks/useTheme';
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 import { Spacing, BorderRadius, Typography } from '@/constants/theme';
-import { DayTemplate, Segment } from '@/data/workoutProgram';
+import { DayTemplate, Segment, isRestDayForDate } from '@/data/workoutProgram';
 import { WorkoutEngine, WorkoutState, WorkoutPhase } from '@/lib/workoutEngine';
 import { hapticsManager, HapticPulseController } from '@/lib/hapticsManager';
 import { storage, UserSettings, defaultSettings } from '@/lib/storage';
@@ -177,6 +177,17 @@ export default function WorkoutPlayerScreen() {
         const startDate = await storage.getProgramStartDate();
         if (!startDate) {
           await storage.setProgramStartDate(today);
+        }
+
+        const effectiveStartDate = startDate || today;
+        const startParts = effectiveStartDate.split('-').map(Number);
+        const startDateObj = new Date(startParts[0], startParts[1] - 1, startParts[2]);
+        const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const daysSinceStart = Math.floor(
+          (todayDate.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24),
+        );
+        if (daysSinceStart < 7 && isRestDayForDate(now, effectiveStartDate)) {
+          await storage.markChallengeOptionalSession(today);
         }
 
         await rescheduleAfterCompletion();

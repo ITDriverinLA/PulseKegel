@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, Text, Pressable, ScrollView } from 'react-native';
+import {
+  StyleSheet,
+  View,
+  Text,
+  Pressable,
+  ScrollView,
+  Modal,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
@@ -7,7 +14,8 @@ import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import { storage, UserProgress } from '@/lib/storage';
+import { storage } from '@/lib/storage';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useAccessibility } from '@/contexts/AccessibilityContext';
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 import { Spacing, BorderRadius } from '@/constants/theme';
@@ -15,23 +23,146 @@ import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
+type ChallengeResult = 'not_started' | 'first_step' | 'partial' | 'complete' | 'strong_finish';
+
+interface ChallengeStats {
+  completedCoreSessions: number;
+  totalCoreSessions: number;
+  completedOptionalSessions: number;
+}
+
+function getChallengeResult(stats: ChallengeStats): ChallengeResult {
+  if (stats.completedCoreSessions === 0) return 'not_started';
+  if (stats.completedCoreSessions < stats.totalCoreSessions - 1) return 'first_step';
+  if (stats.completedCoreSessions < stats.totalCoreSessions) return 'partial';
+  if (stats.completedOptionalSessions > 0) return 'strong_finish';
+  return 'complete';
+}
+
+interface ResultConfig {
+  icon: string;
+  iconAccent: 'neonGreen' | 'neonCyan' | 'textMuted';
+  title: string;
+  message: string;
+  primaryLabel: string;
+  primaryIsRestart: boolean;
+  secondaryLabel: string;
+  secondaryIsRestart: boolean;
+}
+
+const RESULT_CONFIGS: Record<ChallengeResult, ResultConfig> = {
+  not_started: {
+    icon: 'alert-circle',
+    iconAccent: 'textMuted',
+    title: 'A Fresh Start Awaits',
+    message:
+      'No sessions were completed during the challenge window — and that\'s okay. The program is still here, ready whenever you are. Restarting takes one tap.',
+    primaryLabel: 'Restart Challenge',
+    primaryIsRestart: true,
+    secondaryLabel: 'Continue Training',
+    secondaryIsRestart: false,
+  },
+  first_step: {
+    icon: 'trending-up',
+    iconAccent: 'neonCyan',
+    title: 'You Made a Start',
+    message:
+      'One session completed. You\'ve already proven you can show up. The full 12-week program is built on exactly that first step — keep going.',
+    primaryLabel: 'Continue Training',
+    primaryIsRestart: false,
+    secondaryLabel: 'Restart the Challenge',
+    secondaryIsRestart: true,
+  },
+  partial: {
+    icon: 'zap',
+    iconAccent: 'neonCyan',
+    title: 'Solid Progress',
+    message:
+      'Two of three core sessions done. You built a real habit this week. Carry that momentum into the full 12-week program and finish what you started.',
+    primaryLabel: 'Continue Training',
+    primaryIsRestart: false,
+    secondaryLabel: 'Restart the Challenge',
+    secondaryIsRestart: true,
+  },
+  complete: {
+    icon: 'award',
+    iconAccent: 'neonGreen',
+    title: 'Challenge Complete',
+    message:
+      'Every session done, every rep counted. The 7-day challenge is the foundation of a 12-week program built for real, lasting pelvic floor strength. You\'ve done the hardest part — starting.',
+    primaryLabel: 'Continue Training',
+    primaryIsRestart: false,
+    secondaryLabel: 'Restart the Challenge',
+    secondaryIsRestart: true,
+  },
+  strong_finish: {
+    icon: 'star',
+    iconAccent: 'neonGreen',
+    title: 'Strong Finish',
+    message:
+      'All core sessions completed — plus extra work on rest days. That initiative is exactly what the 12-week program is built to reward. Keep that energy.',
+    primaryLabel: 'Continue Training',
+    primaryIsRestart: false,
+    secondaryLabel: 'Restart the Challenge',
+    secondaryIsRestart: true,
+  },
+};
+
 export default function ChallengeCompleteScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const { fontScale } = useAccessibility();
   const { cp, isDarkMode } = useThemePreference();
-  const [progress, setProgress] = useState<UserProgress | null>(null);
+  const { checkSubscription } = useSubscription();
+
+  const [stats, setStats] = useState<ChallengeStats | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [isRestarting, setIsRestarting] = useState(false);
 
   useEffect(() => {
-    storage.getProgress().then(setProgress);
+    storage.getChallengeStats().then(setStats);
   }, []);
 
+  const result: ChallengeResult = stats ? getChallengeResult(stats) : 'complete';
+  const config = RESULT_CONFIGS[result];
+
+  const iconColor =
+    config.iconAccent === 'neonGreen'
+      ? cp.neonGreen
+      : config.iconAccent === 'neonCyan'
+      ? cp.neonCyan
+      : cp.textMuted;
+
   const handleContinue = () => {
-    navigation.replace('Paywall');
+    navigation.goBack();
   };
 
-  const handleDismiss = () => {
-    navigation.goBack();
+  const handleRestartConfirmed = async () => {
+    setIsRestarting(true);
+    try {
+      await storage.resetChallengeProgress();
+      await checkSubscription();
+      navigation.replace('Main');
+    } catch {
+      setIsRestarting(false);
+      setShowConfirm(false);
+    }
+  };
+
+  const handlePrimary = () => {
+    if (config.primaryIsRestart) {
+      setShowConfirm(true);
+    } else {
+      handleContinue();
+    }
+  };
+
+  const handleSecondary = () => {
+    if (config.secondaryIsRestart) {
+      setShowConfirm(true);
+    } else {
+      handleContinue();
+    }
   };
 
   return (
@@ -50,72 +181,65 @@ export default function ChallengeCompleteScreen() {
         <Animated.View entering={FadeInDown.delay(100)} style={styles.header}>
           <View
             style={[
-              styles.trophyContainer,
-              { backgroundColor: `${cp.neonGreen}26`, borderColor: `${cp.neonGreen}4D` },
+              styles.iconContainer,
+              { backgroundColor: `${iconColor}26`, borderColor: `${iconColor}4D` },
             ]}
           >
-            <Feather name="award" size={52} color={cp.neonGreen} />
+            <Feather name={config.icon as any} size={52} color={iconColor} />
           </View>
-          <Text style={[styles.label, { color: cp.neonGreen }]}>7-DAY CONTROL CHALLENGE</Text>
+          <Text style={[styles.label, { color: iconColor }]}>7-DAY CONTROL CHALLENGE</Text>
           <Text style={[styles.title, { color: cp.text, fontSize: 32 * fontScale }]}>
-            Challenge Complete
-          </Text>
-          <Text style={[styles.subtitle, { color: cp.textSecondary }]}>
-            You showed up. That's what this is about.
+            {config.title}
           </Text>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(200)} style={styles.statsRow}>
-          <View
-            style={[
-              styles.statCard,
-              { backgroundColor: cp.cardBg, borderColor: `${cp.neonGreen}33` },
-            ]}
-          >
-            <Feather name="check-circle" size={22} color={cp.neonGreen} />
-            <Text style={[styles.statValue, { color: cp.text, fontSize: 28 * fontScale }]}>
-              {progress != null ? progress.totalSessions : '—'}
+        {stats !== null ? (
+          <Animated.View entering={FadeInDown.delay(200)} style={styles.progressSection}>
+            <View style={styles.progressDots}>
+              {Array.from({ length: stats.totalCoreSessions }).map((_, i) => {
+                const filled = i < stats.completedCoreSessions;
+                return (
+                  <View
+                    key={i}
+                    style={[
+                      styles.progressDot,
+                      {
+                        backgroundColor: filled ? iconColor : `${iconColor}30`,
+                        borderColor: filled ? iconColor : `${iconColor}50`,
+                      },
+                    ]}
+                  >
+                    {filled ? (
+                      <Feather name="check" size={14} color={cp.bg} />
+                    ) : null}
+                  </View>
+                );
+              })}
+            </View>
+            <Text style={[styles.progressLabel, { color: cp.textSecondary }]}>
+              {stats.completedCoreSessions} of {stats.totalCoreSessions} core sessions completed
             </Text>
-            <Text style={[styles.statLabel, { color: cp.textSecondary }]}>Sessions</Text>
-          </View>
-          <View
-            style={[
-              styles.statCard,
-              { backgroundColor: cp.cardBg, borderColor: `${cp.neonCyan}33` },
-            ]}
-          >
-            <Feather name="clock" size={22} color={cp.neonCyan} />
-            <Text style={[styles.statValue, { color: cp.text, fontSize: 28 * fontScale }]}>
-              {progress != null ? progress.totalMinutes : '—'}
-            </Text>
-            <Text style={[styles.statLabel, { color: cp.textSecondary }]}>Minutes</Text>
-          </View>
-          <View
-            style={[
-              styles.statCard,
-              { backgroundColor: cp.cardBg, borderColor: `${cp.neonPurple}33` },
-            ]}
-          >
-            <Feather name="zap" size={22} color={cp.neonPurple} />
-            <Text style={[styles.statValue, { color: cp.text, fontSize: 28 * fontScale }]}>
-              {progress != null ? progress.currentStreak : '—'}
-            </Text>
-            <Text style={[styles.statLabel, { color: cp.textSecondary }]}>Day Streak</Text>
-          </View>
-        </Animated.View>
+            {stats.completedOptionalSessions > 0 ? (
+              <Text style={[styles.optionalLabel, { color: cp.neonCyan }]}>
+                + {stats.completedOptionalSessions} optional{' '}
+                {stats.completedOptionalSessions === 1 ? 'session' : 'sessions'} on rest days
+              </Text>
+            ) : null}
+          </Animated.View>
+        ) : null}
 
         <Animated.View entering={FadeInDown.delay(300)}>
           <View
             style={[
-              styles.bridgeCard,
+              styles.messageCard,
               {
                 backgroundColor: isDarkMode ? 'rgba(26, 26, 46, 0.6)' : 'rgba(255,255,255,0.7)',
-                borderColor: `${cp.neonGreen}26`,
+                borderColor: `${iconColor}26`,
               },
             ]}
           >
-            <Text style={[styles.bridgeText, { color: cp.textSecondary }]}>
-              The 7-day challenge is the foundation of a 12-week program built for real, lasting pelvic floor strength. You've done the hardest part — starting.
+            <Text style={[styles.messageText, { color: cp.textSecondary }]}>
+              {config.message}
             </Text>
           </View>
         </Animated.View>
@@ -123,27 +247,82 @@ export default function ChallengeCompleteScreen() {
         <Animated.View entering={FadeInUp.delay(400)} style={styles.ctaSection}>
           <Pressable
             style={[
-              styles.continueButton,
-              { backgroundColor: cp.neonGreen, shadowColor: cp.neonGreen },
+              styles.primaryButton,
+              { backgroundColor: iconColor, shadowColor: iconColor },
             ]}
-            onPress={handleContinue}
-            testID="button-continue-program"
+            onPress={handlePrimary}
+            testID="button-challenge-primary"
           >
-            <Feather name="arrow-right" size={20} color={cp.bg} />
-            <Text style={[styles.continueButtonText, { color: cp.bg }]}>
-              Continue into the Full Program
+            <Feather
+              name={config.primaryIsRestart ? 'refresh-cw' : 'arrow-right'}
+              size={20}
+              color={cp.bg}
+            />
+            <Text style={[styles.primaryButtonText, { color: cp.bg }]}>
+              {config.primaryLabel}
             </Text>
           </Pressable>
 
           <Pressable
-            style={styles.dismissButton}
-            onPress={handleDismiss}
-            testID="button-not-now"
+            style={styles.secondaryButton}
+            onPress={handleSecondary}
+            testID="button-challenge-secondary"
           >
-            <Text style={[styles.dismissButtonText, { color: cp.textMuted }]}>Not now</Text>
+            <Text style={[styles.secondaryButtonText, { color: cp.textMuted }]}>
+              {config.secondaryLabel}
+            </Text>
           </Pressable>
         </Animated.View>
       </ScrollView>
+
+      <Modal
+        visible={showConfirm}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowConfirm(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <Animated.View
+            entering={FadeInDown.duration(250)}
+            style={[
+              styles.modalCard,
+              {
+                backgroundColor: isDarkMode ? '#1A1A2E' : '#FFFFFF',
+                borderColor: `${cp.neonGreen}33`,
+              },
+            ]}
+          >
+            <View style={[styles.modalIconRow, { backgroundColor: `${cp.neonCyan}20` }]}>
+              <Feather name="refresh-cw" size={28} color={cp.neonCyan} />
+            </View>
+            <Text style={[styles.modalTitle, { color: cp.text }]}>
+              Restart the Challenge?
+            </Text>
+            <Text style={[styles.modalMessage, { color: cp.textSecondary }]}>
+              Your challenge progress, streaks, and session dates will be cleared. Your badges and lifetime session totals are kept.
+            </Text>
+            <View style={styles.modalButtons}>
+              <Pressable
+                style={[styles.modalCancel, { borderColor: `${cp.textMuted}40` }]}
+                onPress={() => setShowConfirm(false)}
+                testID="button-restart-cancel"
+              >
+                <Text style={[styles.modalCancelText, { color: cp.textSecondary }]}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.modalConfirm, { backgroundColor: cp.neonCyan }]}
+                onPress={handleRestartConfirmed}
+                disabled={isRestarting}
+                testID="button-restart-confirm"
+              >
+                <Text style={[styles.modalConfirmText, { color: cp.bg }]}>
+                  {isRestarting ? 'Restarting...' : 'Restart'}
+                </Text>
+              </Pressable>
+            </View>
+          </Animated.View>
+        </View>
+      </Modal>
     </LinearGradient>
   );
 }
@@ -162,7 +341,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Spacing.xl,
   },
-  trophyContainer: {
+  iconContainer: {
     width: 96,
     height: 96,
     borderRadius: 48,
@@ -176,47 +355,46 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 2,
     marginBottom: Spacing.sm,
+    textAlign: 'center',
   },
   title: {
     fontWeight: '800',
     textAlign: 'center',
-    marginBottom: Spacing.sm,
     lineHeight: 40,
   },
-  subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-    lineHeight: 24,
-    paddingHorizontal: Spacing.md,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-    marginBottom: Spacing.xl,
-  },
-  statCard: {
-    flex: 1,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    padding: Spacing.md,
+  progressSection: {
     alignItems: 'center',
-    gap: Spacing.xs,
+    marginBottom: Spacing.xl,
+    gap: Spacing.sm,
   },
-  statValue: {
-    fontWeight: '700',
-    lineHeight: 34,
+  progressDots: {
+    flexDirection: 'row',
+    gap: Spacing.md,
   },
-  statLabel: {
-    fontSize: 12,
+  progressDot: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  progressLabel: {
+    fontSize: 14,
     textAlign: 'center',
   },
-  bridgeCard: {
+  optionalLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  messageCard: {
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
     padding: Spacing.lg,
     marginBottom: Spacing.xl,
   },
-  bridgeText: {
+  messageText: {
     fontSize: 15,
     lineHeight: 24,
     textAlign: 'center',
@@ -224,7 +402,7 @@ const styles = StyleSheet.create({
   ctaSection: {
     gap: Spacing.md,
   },
-  continueButton: {
+  primaryButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -236,16 +414,76 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 8,
   },
-  continueButtonText: {
+  primaryButtonText: {
     fontWeight: '700',
     fontSize: 17,
   },
-  dismissButton: {
+  secondaryButton: {
     alignItems: 'center',
     paddingVertical: Spacing.md,
   },
-  dismissButtonText: {
+  secondaryButtonText: {
     fontSize: 14,
     fontWeight: '500',
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.xl,
+  },
+  modalCard: {
+    width: '100%',
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1,
+    padding: Spacing.xl,
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  modalIconRow: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.xs,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  modalMessage: {
+    fontSize: 14,
+    lineHeight: 22,
+    textAlign: 'center',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    marginTop: Spacing.sm,
+    width: '100%',
+  },
+  modalCancel: {
+    flex: 1,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    paddingVertical: Spacing.md,
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    fontWeight: '600',
+    fontSize: 15,
+  },
+  modalConfirm: {
+    flex: 1,
+    borderRadius: BorderRadius.full,
+    paddingVertical: Spacing.md,
+    alignItems: 'center',
+  },
+  modalConfirmText: {
+    fontWeight: '700',
+    fontSize: 15,
   },
 });
