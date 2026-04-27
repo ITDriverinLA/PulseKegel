@@ -9,7 +9,15 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
-import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  ZoomIn,
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  runOnJS,
+} from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
@@ -35,6 +43,8 @@ export default function Week1ReviewScreen() {
   const [buttonDisabled, setButtonDisabled] = useState(false);
 
   const pulseAnim = useRef(new RNAnimated.Value(0.4)).current;
+  const screenOpacity = useSharedValue(1);
+  const screenAnimatedStyle = useAnimatedStyle(() => ({ opacity: screenOpacity.value }));
 
   useEffect(() => {
     loadStatsAndMessage();
@@ -140,6 +150,10 @@ export default function Week1ReviewScreen() {
 
   const accentColor = getAccentColor();
 
+  const doNavigate = () => {
+    navigation.replace('ChallengeComplete');
+  };
+
   const handleContinue = async () => {
     if (message) {
       await storage.saveWeeklyReviewToHistory({
@@ -150,10 +164,15 @@ export default function Week1ReviewScreen() {
         date: new Date().toISOString().split('T')[0],
       });
     }
-    navigation.replace('ChallengeComplete');
+    screenOpacity.value = withTiming(0, { duration: 250 }, (finished) => {
+      if (finished) {
+        runOnJS(doNavigate)();
+      }
+    });
   };
 
   return (
+    <Animated.View style={[{ flex: 1 }, screenAnimatedStyle]}>
     <LinearGradient
       colors={isDarkMode ? ['#0f0f23', '#16213e', '#1a1a2e'] : ['#f0f2f7', '#e8eaf0', '#dde0e8']}
       style={styles.root}
@@ -248,6 +267,7 @@ export default function Week1ReviewScreen() {
         </Animated.View>
       </ScrollView>
     </LinearGradient>
+    </Animated.View>
   );
 }
 

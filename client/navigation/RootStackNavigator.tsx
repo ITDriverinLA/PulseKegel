@@ -179,8 +179,9 @@ export default function RootStackNavigator() {
         name="ChallengeComplete"
         component={ChallengeCompleteScreen}
         options={{
-          presentation: 'fullScreenModal',
           headerShown: false,
+          animation: 'fade',
+          animationDuration: 350,
         }}
       />
       <Stack.Screen
