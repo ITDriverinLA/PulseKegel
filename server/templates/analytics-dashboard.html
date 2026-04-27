@@ -363,6 +363,16 @@
 </main>
 
 <script>
+  // Escape all untrusted strings before inserting into innerHTML.
+  function esc(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   async function load() {
     document.getElementById('ts').textContent = '—';
     try {
@@ -387,9 +397,14 @@
       renderEvents(d.eventsByType || []);
 
     } catch (err) {
-      const main = document.querySelector('main');
-      main.insertAdjacentHTML('afterbegin',
-        '<div class="error-state"><strong>Failed to load</strong>' + err.message + '</div>');
+      const errDiv = document.createElement('div');
+      errDiv.className = 'error-state';
+      const strong = document.createElement('strong');
+      strong.textContent = 'Failed to load';
+      const msg = document.createTextNode(String(err.message));
+      errDiv.appendChild(strong);
+      errDiv.appendChild(msg);
+      document.querySelector('main').prepend(errDiv);
     }
   }
 
@@ -402,37 +417,50 @@
   function renderChart(days) {
     const bars = document.getElementById('chart-bars');
     const xAxis = document.getElementById('chart-x');
-    if (!days.length) { bars.innerHTML = '<div class="error-state" style="flex:1">No data</div>'; return; }
+    if (!days.length) {
+      bars.textContent = 'No data';
+      return;
+    }
 
     const max = Math.max(...days.map(d => d.count), 1);
 
+    // Build with safe numeric/date values only — no user-controlled strings go into HTML.
     bars.innerHTML = days.map(d => {
-      const pct = d.count > 0 ? Math.max((d.count / max) * 100, 4) : 0;
-      const hasData = d.count > 0;
-      const tip = d.date + ': ' + d.count + (d.count === 1 ? ' device' : ' devices');
-      if (hasData) {
-        return `<div class="bar-col"><div class="bar has-data" style="height:${pct}%" data-tip="${tip}"></div></div>`;
-      }
-      return `<div class="bar-col"><div class="bar" style="height:2px" data-tip="${tip}"></div></div>`;
+      const count  = Number(d.count) || 0;
+      // date is always YYYY-MM-DD from the server (safe, but we escape anyway)
+      const date   = esc(String(d.date ?? ''));
+      const tip    = date + ': ' + count + (count === 1 ? ' device' : ' devices');
+      const pct    = count > 0 ? Math.max((count / max) * 100, 4) : 0;
+      const cls    = count > 0 ? 'bar has-data' : 'bar';
+      const height = count > 0 ? pct + '%' : '2px';
+      return `<div class="bar-col"><div class="${cls}" style="height:${height}" data-tip="${tip}"></div></div>`;
     }).join('');
 
-    // Show first, middle, last dates as x-axis labels
-    const first  = days[0]?.date?.slice(5) ?? '';
-    const mid    = days[Math.floor(days.length / 2)]?.date?.slice(5) ?? '';
-    const last   = days[days.length - 1]?.date?.slice(5) ?? '';
+    // X-axis labels — date strings from server, escaped
+    const first = esc((days[0]?.date ?? '').slice(5));
+    const mid   = esc((days[Math.floor(days.length / 2)]?.date ?? '').slice(5));
+    const last  = esc((days[days.length - 1]?.date ?? '').slice(5));
     xAxis.innerHTML = `<span>${first}</span><span>${mid}</span><span>${last}</span>`;
   }
 
   function renderEvents(events) {
     const tbody = document.getElementById('events-body');
     if (!events.length) {
-      tbody.innerHTML = '<tr><td colspan="2" style="color:var(--gray-dim);padding:20px 0">No events recorded yet</td></tr>';
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      td.colSpan = 2;
+      td.style.cssText = 'color:var(--gray-dim);padding:20px 0';
+      td.textContent = 'No events recorded yet';
+      tr.appendChild(td);
+      tbody.innerHTML = '';
+      tbody.appendChild(tr);
       return;
     }
+    // eventType comes from client-submitted analytics — must be escaped.
     tbody.innerHTML = events.map(e =>
       `<tr>
-        <td><span class="event-type-badge">${e.eventType}</span></td>
-        <td>${e.count.toLocaleString()}</td>
+        <td><span class="event-type-badge">${esc(e.eventType)}</span></td>
+        <td>${Number(e.count).toLocaleString()}</td>
       </tr>`
     ).join('');
   }
