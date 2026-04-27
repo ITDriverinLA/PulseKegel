@@ -149,6 +149,12 @@ export default function ReviewHistoryScreen() {
                               {review.daysWorkedOut} days active
                             </Text>
                           </View>
+                          <View style={[styles.statPill, { borderColor: `${accent}30` }]}>
+                            <Feather name="activity" size={14} color={accent} />
+                            <Text style={[styles.statPillText, { color: cp.textSecondary, fontSize: 12 * fontScale }]}>
+                              {review.totalMinutes} min
+                            </Text>
+                          </View>
                           <View style={[styles.statPill, { borderColor: cp.cardBorder }]}>
                             <Feather name="clock" size={14} color={cp.textSecondary} />
                             <Text style={[styles.statPillText, { color: cp.textSecondary, fontSize: 12 * fontScale }]}>
