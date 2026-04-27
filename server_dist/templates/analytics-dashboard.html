@@ -302,6 +302,80 @@
     color: var(--gray);
   }
 
+  /* ---- PLATFORM SPLIT ---- */
+  .platform-section { margin-bottom: 56px; }
+  .platform-wrap {
+    background: var(--navy);
+    border: 1px solid var(--line-strong);
+    border-radius: 4px;
+    padding: 28px 24px;
+  }
+  .platform-split-bar {
+    display: flex;
+    height: 10px;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    background: var(--navy-soft);
+  }
+  .split-segment {
+    height: 100%;
+    transition: width 0.4s ease;
+  }
+  .split-ios     { background: var(--teal); }
+  .split-android { background: #6C8EFF; }
+  .split-unknown { background: var(--gray-dim); }
+  .platform-rows { display: flex; flex-direction: column; gap: 14px; }
+  .platform-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .platform-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .platform-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--gray);
+    width: 90px;
+    flex-shrink: 0;
+  }
+  .platform-bar-bg {
+    flex: 1;
+    height: 4px;
+    background: var(--navy-soft);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .platform-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+  .platform-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--white);
+    width: 50px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .platform-pct {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--gray-dim);
+    width: 40px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
   /* ---- ERROR STATE ---- */
   .error-state {
     text-align: center;
@@ -334,6 +408,30 @@
     <div class="stat-card"><div class="stat-label">DAU (24 h)</div><div class="stat-value loading" id="s-dau">—</div></div>
     <div class="stat-card"><div class="stat-label">WAU (7 d)</div><div class="stat-value loading" id="s-wau">—</div></div>
     <div class="stat-card"><div class="stat-label">MAU (30 d)</div><div class="stat-value loading" id="s-mau">—</div></div>
+  </div>
+
+  <!-- Platform breakdown -->
+  <div class="platform-section">
+    <div class="section-label">Devices by Platform</div>
+    <div class="platform-wrap">
+      <div class="platform-split-bar" id="platform-split-bar"></div>
+      <div class="platform-rows" id="platform-rows">
+        <div class="platform-row">
+          <div class="platform-dot" style="background:var(--teal)"></div>
+          <div class="platform-name">iOS</div>
+          <div class="platform-bar-bg"><div class="platform-bar-fill split-ios" style="width:0%"></div></div>
+          <div class="platform-count" id="p-ios-count">—</div>
+          <div class="platform-pct" id="p-ios-pct"></div>
+        </div>
+        <div class="platform-row">
+          <div class="platform-dot" style="background:#6C8EFF"></div>
+          <div class="platform-name">Android</div>
+          <div class="platform-bar-bg"><div class="platform-bar-fill split-android" style="width:0%"></div></div>
+          <div class="platform-count" id="p-android-count">—</div>
+          <div class="platform-pct" id="p-android-pct"></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- 30-day chart -->
@@ -390,6 +488,9 @@
       setValue('s-wau',   d.wau ?? 0);
       setValue('s-mau',   d.mau ?? 0);
 
+      // Platform breakdown
+      renderPlatform(d.devicesByPlatform || []);
+
       // Chart
       renderChart(d.dailyUniqueUsers || []);
 
@@ -413,6 +514,62 @@
     const el = document.getElementById(id);
     el.textContent = val;
     el.classList.remove('loading');
+  }
+
+  function renderPlatform(rows) {
+    const COLORS = { ios: 'var(--teal)', android: '#6C8EFF', unknown: 'var(--gray-dim)' };
+    const total = rows.reduce((s, r) => s + (Number(r.count) || 0), 0);
+
+    // Split bar at top
+    const splitBar = document.getElementById('platform-split-bar');
+    splitBar.innerHTML = '';
+    rows.forEach(r => {
+      const pct = total > 0 ? (Number(r.count) / total * 100).toFixed(1) : 0;
+      const key = String(r.platform).toLowerCase();
+      const color = COLORS[key] || COLORS.unknown;
+      const seg = document.createElement('div');
+      seg.className = 'split-segment split-' + esc(key);
+      seg.style.cssText = 'width:' + pct + '%;background:' + color;
+      splitBar.appendChild(seg);
+    });
+
+    // Inline rows for ios / android (already in HTML); handle unknown dynamically
+    const known = { ios: null, android: null };
+    const extras = [];
+    rows.forEach(r => {
+      const key = String(r.platform).toLowerCase();
+      if (key === 'ios' || key === 'android') known[key] = r;
+      else extras.push(r);
+    });
+
+    ['ios', 'android'].forEach(key => {
+      const r = known[key];
+      const count = r ? Number(r.count) : 0;
+      const pct   = total > 0 ? (count / total * 100).toFixed(1) : '0.0';
+      const fill = document.querySelector('.platform-row .split-' + key);
+      if (fill) fill.style.width = pct + '%';
+      const countEl = document.getElementById('p-' + key + '-count');
+      const pctEl   = document.getElementById('p-' + key + '-pct');
+      if (countEl) countEl.textContent = count.toLocaleString();
+      if (pctEl)   pctEl.textContent   = pct + '%';
+    });
+
+    // Add rows for any unexpected platform values (e.g. "web", "unknown")
+    const container = document.getElementById('platform-rows');
+    container.querySelectorAll('.platform-row-extra').forEach(el => el.remove());
+    extras.forEach(r => {
+      const count = Number(r.count);
+      const pct   = total > 0 ? (count / total * 100).toFixed(1) : '0.0';
+      const row = document.createElement('div');
+      row.className = 'platform-row platform-row-extra';
+      row.innerHTML =
+        '<div class="platform-dot" style="background:var(--gray-dim)"></div>' +
+        '<div class="platform-name">' + esc(r.platform) + '</div>' +
+        '<div class="platform-bar-bg"><div class="platform-bar-fill" style="width:' + pct + '%;background:var(--gray-dim)"></div></div>' +
+        '<div class="platform-count">' + count.toLocaleString() + '</div>' +
+        '<div class="platform-pct">' + pct + '%</div>';
+      container.appendChild(row);
+    });
   }
 
   function renderChart(days) {

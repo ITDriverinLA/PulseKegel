@@ -435,6 +435,17 @@ ${blogUrls}
         `
       );
 
+      const devicesByPlatformRaw = await db.execute<{ platform: string; count: number }>(
+        sql`
+          SELECT
+            COALESCE(platform, 'unknown') AS platform,
+            COUNT(DISTINCT device_id)::int AS count
+          FROM analytics_events
+          GROUP BY COALESCE(platform, 'unknown')
+          ORDER BY count DESC
+        `
+      );
+
       res.json({
         totalDevices: totalDevices?.count ?? 0,
         dau: dau?.count ?? 0,
@@ -444,6 +455,7 @@ ${blogUrls}
         eventsByType: eventCounts,
         topWeeklyDevices,
         dailyUniqueUsers: dailyUniqueUsersRaw.rows,
+        devicesByPlatform: devicesByPlatformRaw.rows,
       });
     } catch (err) {
       console.error("Analytics summary error:", err);
