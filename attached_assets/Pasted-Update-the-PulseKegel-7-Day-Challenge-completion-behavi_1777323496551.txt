@@ -1,0 +1,229 @@
+Update the PulseKegel 7-Day Challenge completion behavior.
+
+Current issue:
+At the end of the 7-day challenge, the app shows a generic “congrats / move on” message regardless of whether the user completed any sessions. This needs to become result-aware.
+
+Goal:
+When the user reaches the end of the 7-day challenge, show a personalized result screen based on how many challenge sessions they actually completed. Also implement the ability to restart the challenge.
+
+Requirements:
+
+1. Track challenge progress
+Identify the existing data model/state used to track the 7-day challenge.
+
+We need to know:
+- Total core/required sessions in the challenge
+- Number of core/required sessions completed
+- Number of optional rest-day activities completed, if available
+- Total challenge days elapsed
+- Whether the challenge window has ended
+- Whether the challenge is complete
+
+If this data already exists, use it.
+If it does not exist, add the minimum required fields to support the logic.
+
+Suggested fields:
+- challengeStartDate
+- challengeEndDate
+- challengeCompletedCoreSessions
+- challengeTotalCoreSessions
+- challengeCompletedOptionalSessions
+- challengeStatus: "not_started" | "active" | "completed" | "expired" | "restarted"
+
+2. Replace generic completion message
+Replace the existing end-of-challenge message with a result-aware screen.
+
+The screen should display:
+
+Headline:
+"Your 7-Day Challenge Result"
+
+Progress summary:
+"You completed {completedCoreSessions} of {totalCoreSessions} core sessions"
+If optional sessions exist:
+"and {completedOptionalSessions} optional recovery sessions."
+
+Then show one of these result states:
+
+A) 0 completed core sessions
+
+Title:
+"Challenge Not Started"
+
+Message:
+"You reached the end of the 7-day challenge window, but no sessions were completed. No judgment. Life happens. But the muscle does not train itself. Restart the challenge and give yourself a clean run."
+
+Primary CTA:
+"Restart Challenge"
+
+Secondary CTA:
+"Explore How It Works" if that screen exists, otherwise omit.
+
+B) 1 completed core session
+
+Title:
+"You Took the First Step"
+
+Message:
+"You completed your first session. That is a start, but one session is not enough to build control. Restart the 7-Day Challenge and aim for consistency this time."
+
+Primary CTA:
+"Restart Challenge"
+
+Secondary CTA:
+"Continue Training"
+
+C) Partial completion
+
+Use this when completedCoreSessions is greater than 1 but less than totalCoreSessions.
+
+Title:
+"Good Start"
+
+Message:
+"You started the challenge, and that matters. But you have not completed enough sessions to unlock the full benefit yet. Pelvic floor control improves through repetition, not wishful clenching. Restart the challenge or continue training from where you left off."
+
+Primary CTA:
+"Restart Challenge"
+
+Secondary CTA:
+"Continue Training"
+
+D) Completed all required/core sessions
+
+Use this when completedCoreSessions equals totalCoreSessions.
+
+Title:
+"Challenge Complete"
+
+Message:
+"You completed the core 7-Day Challenge. Rest days count, and consistency beats overdoing it. You’ve built the foundation. Now keep the signal strong with regular guided training."
+
+Primary CTA:
+"Continue Training"
+
+Secondary CTA:
+"Restart Challenge"
+
+E) Strong finish
+
+Use this when completedCoreSessions equals totalCoreSessions AND completedOptionalSessions is greater than 0.
+
+Title:
+"Strong Finish"
+
+Message:
+"You completed the 7-Day Challenge and added recovery work along the way. That is real training momentum. Your pelvic floor is no longer some mystery muscle hiding in the basement. Keep going with guided sessions to build more control, strength, and confidence."
+
+Primary CTA:
+"Continue Training"
+
+Secondary CTA:
+"Restart Challenge"
+
+3. Completion logic
+Create a helper function for determining the challenge result.
+
+Example:
+
+function getChallengeResult({
+  completedCoreSessions,
+  totalCoreSessions,
+  completedOptionalSessions = 0
+}) {
+  if (completedCoreSessions === 0) return "not_started";
+  if (completedCoreSessions === 1) return "first_step";
+  if (completedCoreSessions < totalCoreSessions) return "partial";
+  if (completedCoreSessions >= totalCoreSessions && completedOptionalSessions > 0) return "strong_finish";
+  return "complete";
+}
+
+Use this helper wherever the completion screen is rendered.
+
+4. Restart challenge behavior
+Implement a restart challenge action.
+
+When the user taps "Restart Challenge":
+
+- Confirm with the user before resetting progress.
+
+Confirmation modal:
+
+Title:
+"Restart 7-Day Challenge?"
+
+Message:
+"This will reset your current 7-Day Challenge progress and start a fresh challenge today."
+
+Buttons:
+- Cancel
+- Restart Challenge
+
+On confirm:
+- Reset the 7-day challenge progress
+- Set challengeStartDate to today
+- Set challengeEndDate to 7 days from today, or use the app’s existing challenge duration logic
+- Reset completed core sessions to 0
+- Reset completed optional sessions to 0
+- Set challengeStatus to "active"
+- Clear any day-level completed flags for the challenge
+- Preserve lifetime stats, total sessions, streaks, subscription status, and user settings
+- Navigate the user back to the Day 1 challenge screen or the main challenge screen
+
+Important:
+Restarting the challenge should only reset the challenge-specific progress.
+Do not reset:
+- Lifetime session count
+- App streaks unless the app currently treats challenge streaks separately
+- Subscription state
+- User profile/settings
+- Any global achievements unrelated to this specific 7-day challenge
+
+5. Continue Training behavior
+When the user taps "Continue Training":
+- Navigate to the normal training/home screen
+- Do not reset challenge progress
+- If the app has a post-challenge phase, route them there
+
+6. Edge cases
+Handle these safely:
+
+- totalCoreSessions is missing or 0:
+  Use the known challenge definition to calculate total required/core sessions.
+  Do not divide by zero.
+  Show a safe default message if needed.
+
+- Optional rest-day activity does not exist in the current data model:
+  Hide the optional recovery session line.
+  Do not block implementation.
+
+- User restarts challenge after completing it:
+  Allow restart after confirmation.
+
+- User restarts challenge before completing it:
+  Allow restart after confirmation.
+
+- User opens the completion screen multiple times:
+  The result should remain consistent based on saved progress.
+
+7. UI tone
+Keep the tone premium, direct, masculine, and slightly playful.
+Avoid clinical or shame-heavy wording.
+Do not over-celebrate users who did not complete sessions.
+Use “Challenge Complete” only when the user completed the required/core sessions.
+
+8. Acceptance criteria
+
+- A user with 0 completed sessions does NOT see “Congrats.”
+- A user with 0 completed sessions sees “Challenge Not Started” and a Restart Challenge CTA.
+- A user with 1 completed session sees “You Took the First Step.”
+- A user with partial completion sees “Good Start.”
+- A user who completed all required sessions sees “Challenge Complete.”
+- A user who completed all required sessions and optional recovery work sees “Strong Finish.”
+- Restart Challenge resets only challenge-specific progress.
+- Lifetime stats and user settings are preserved.
+- The app routes correctly after restart.
+- The app routes correctly after Continue Training.
+- No crashes if optional session data is unavailable.
+
+Please inspect the existing codebase first, find the current challenge completion screen and progress state, then implement this cleanly using existing project patterns.
