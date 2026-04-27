@@ -23,6 +23,16 @@ try {
   // fall back silently — clients will not be blocked
 }
 
+let analyticsDashboardHtml = '';
+try {
+  analyticsDashboardHtml = readFileSync(
+    join(__dirname, 'templates', 'analytics-dashboard.html'),
+    'utf8',
+  );
+} catch {
+  analyticsDashboardHtml = '<h1>Analytics dashboard template not found.</h1>';
+}
+
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
@@ -303,6 +313,12 @@ ${blogUrls}
   app.get("/privacy", (_req, res) => {
     res.setHeader('Content-Type', 'text/html');
     res.send(privacyPolicyHtml);
+  });
+
+  app.get("/analytics", (_req, res) => {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+    res.send(analyticsDashboardHtml);
   });
 
   app.get("/api/version-check", (_req, res) => {
