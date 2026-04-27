@@ -401,6 +401,16 @@ ${blogUrls}
         eventCount: row.eventCount,
       }));
 
+      const dailyUniqueUsersRaw = await db
+        .select({
+          date: sql<string>`to_char(date_trunc('day', ${analyticsEvents.createdAt}), 'YYYY-MM-DD')`,
+          count: sql<number>`count(distinct ${analyticsEvents.deviceId})::int`,
+        })
+        .from(analyticsEvents)
+        .where(sql`${analyticsEvents.createdAt} >= ${d30}`)
+        .groupBy(sql`date_trunc('day', ${analyticsEvents.createdAt})`)
+        .orderBy(sql`date_trunc('day', ${analyticsEvents.createdAt})`);
+
       res.json({
         totalDevices: totalDevices?.count ?? 0,
         dau: dau?.count ?? 0,
@@ -409,6 +419,7 @@ ${blogUrls}
         newDevicesLast7Days: newDevicesWeek?.count ?? 0,
         eventsByType: eventCounts,
         topWeeklyDevices,
+        dailyUniqueUsers: dailyUniqueUsersRaw,
       });
     } catch (err) {
       console.error("Analytics summary error:", err);

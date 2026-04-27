@@ -6,6 +6,12 @@ import { getApiUrl } from "./query-client";
 
 const DEVICE_ID_KEY = "pulsekegel_analytics_device_id";
 
+// Module-level set: tracks event types already sent this JS runtime session.
+// app_open is guarded here so StrictMode double-mounts and same-session
+// app re-opens don't produce duplicate rows.
+const SESSION_SENT = new Set<string>();
+const ONCE_PER_SESSION_EVENTS = new Set(["app_open"]);
+
 async function getOrCreateDeviceId(): Promise<string> {
   try {
     let deviceId = await AsyncStorage.getItem(DEVICE_ID_KEY);
@@ -27,6 +33,10 @@ export function trackEvent(
   type: string,
   data?: Record<string, unknown>,
 ): void {
+  if (ONCE_PER_SESSION_EVENTS.has(type)) {
+    if (SESSION_SENT.has(type)) return;
+    SESSION_SENT.add(type);
+  }
   (async () => {
     try {
       const deviceId = await getOrCreateDeviceId();
