@@ -6,7 +6,6 @@ import Animated, {
   withTiming,
   withRepeat,
   withSequence,
-  Easing,
   cancelAnimation,
   interpolateColor,
   SharedValue,
@@ -19,6 +18,9 @@ import {
   ANIM_DURATION_COLOR_CYCLE,
   ANIM_DURATION_HOLD_PULSE,
   ANIM_DURATION_HOLD_PULSE_BOTTOM,
+  ANIM_EASING_LINEAR,
+  ANIM_EASING_BREATH,
+  ANIM_EASING_PULSE,
 } from '@/constants/animation';
 
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
@@ -146,14 +148,14 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
     }
 
     pulse.value = withRepeat(
-      withTiming(pulse.value + 1, { duration: ANIM_DURATION_PULSE, easing: Easing.linear }),
+      withTiming(pulse.value + 1, { duration: ANIM_DURATION_PULSE, easing: ANIM_EASING_LINEAR }),
       -1,
       false,
     );
 
     colorCycle.value = 0;
     colorCycle.value = withRepeat(
-      withTiming(1, { duration: ANIM_DURATION_COLOR_CYCLE, easing: Easing.linear }),
+      withTiming(1, { duration: ANIM_DURATION_COLOR_CYCLE, easing: ANIM_EASING_LINEAR }),
       -1,
       false,
     );
@@ -165,7 +167,7 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
       case 'sigh_inhale':
         progress.value = withTiming(1, {
           duration: dur,
-          easing: Easing.inOut(Easing.quad),
+          easing: ANIM_EASING_BREATH,
         });
         break;
 
@@ -173,8 +175,8 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
         progress.value = 1;
         progress.value = withRepeat(
           withSequence(
-            withTiming(0.96, { duration: ANIM_DURATION_HOLD_PULSE, easing: Easing.inOut(Easing.ease) }),
-            withTiming(1, { duration: ANIM_DURATION_HOLD_PULSE, easing: Easing.inOut(Easing.ease) }),
+            withTiming(0.96, { duration: ANIM_DURATION_HOLD_PULSE, easing: ANIM_EASING_PULSE }),
+            withTiming(1, { duration: ANIM_DURATION_HOLD_PULSE, easing: ANIM_EASING_PULSE }),
           ),
           -1,
           true,
@@ -185,7 +187,7 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
       case 'sigh_exhale':
         progress.value = withTiming(0, {
           duration: dur,
-          easing: Easing.inOut(Easing.quad),
+          easing: ANIM_EASING_BREATH,
         });
         break;
 
@@ -193,8 +195,8 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
         progress.value = 0;
         progress.value = withRepeat(
           withSequence(
-            withTiming(0.06, { duration: ANIM_DURATION_HOLD_PULSE_BOTTOM, easing: Easing.inOut(Easing.ease) }),
-            withTiming(0, { duration: ANIM_DURATION_HOLD_PULSE_BOTTOM, easing: Easing.inOut(Easing.ease) }),
+            withTiming(0.06, { duration: ANIM_DURATION_HOLD_PULSE_BOTTOM, easing: ANIM_EASING_PULSE }),
+            withTiming(0, { duration: ANIM_DURATION_HOLD_PULSE_BOTTOM, easing: ANIM_EASING_PULSE }),
           ),
           -1,
           true,

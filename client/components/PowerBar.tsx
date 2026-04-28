@@ -8,13 +8,18 @@ import Animated, {
   withSequence,
   withDelay,
   cancelAnimation,
-  Easing,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { SegmentType } from '@/data/workoutProgram';
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
-import { ANIM_DURATION_MICRO, ANIM_DURATION_PROGRESS_DRAIN } from '@/constants/animation';
+import {
+  ANIM_DURATION_MICRO,
+  ANIM_DURATION_PROGRESS_DRAIN,
+  ANIM_EASING_LINEAR,
+  ANIM_EASING_DRAIN,
+  ANIM_EASING_PROGRESS,
+} from '@/constants/animation';
 
 interface PowerBarProps {
   phase: 'squeeze' | 'rest';
@@ -149,7 +154,7 @@ export function PowerBar({
         case 'quickFlicks':
           progress.value = withTiming(1.05, { 
             duration: ANIM_DURATION_MICRO,
-            easing: Easing.out(Easing.cubic),
+            easing: ANIM_EASING_DRAIN,
           });
           break;
 
@@ -158,7 +163,7 @@ export function PowerBar({
             const stepDuration = durationMs / rampSteps.length;
             let animation = withTiming(rampSteps[0], { 
               duration: stepDuration * 0.25,
-              easing: Easing.out(Easing.cubic),
+              easing: ANIM_EASING_DRAIN,
             });
             
             for (let i = 1; i < rampSteps.length; i++) {
@@ -169,7 +174,7 @@ export function PowerBar({
                   stepDuration * 0.75,
                   withTiming(targetValue, { 
                     duration: stepDuration * 0.25,
-                    easing: Easing.out(Easing.cubic),
+                    easing: ANIM_EASING_DRAIN,
                   })
                 )
               );
@@ -178,7 +183,7 @@ export function PowerBar({
           } else {
             progress.value = withTiming(1.05, { 
               duration: durationMs,
-              easing: Easing.linear,
+              easing: ANIM_EASING_LINEAR,
             });
           }
           break;
@@ -186,7 +191,7 @@ export function PowerBar({
         case 'contractRelax':
           progress.value = withTiming(1.05, { 
             duration: Math.min(durationMs * 0.5, 500),
-            easing: Easing.out(Easing.cubic),
+            easing: ANIM_EASING_DRAIN,
           });
           break;
 
@@ -200,7 +205,7 @@ export function PowerBar({
         default:
           progress.value = withTiming(1.05, { 
             duration: durationMs * 0.95,
-            easing: Easing.out(Easing.quad),
+            easing: ANIM_EASING_PROGRESS,
           });
           break;
       }
@@ -208,7 +213,7 @@ export function PowerBar({
       cancelAnimation(progress);
       progress.value = withTiming(0, {
         duration: ANIM_DURATION_PROGRESS_DRAIN,
-        easing: Easing.out(Easing.cubic),
+        easing: ANIM_EASING_DRAIN,
       });
     }
   }, [phase, segmentType, durationSeconds, isActive, progress, rampSteps]);

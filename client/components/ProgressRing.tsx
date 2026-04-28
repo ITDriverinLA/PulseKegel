@@ -4,11 +4,10 @@ import Svg, { Circle } from 'react-native-svg';
 import Animated, {
   useAnimatedProps,
   withTiming,
-  Easing,
 } from 'react-native-reanimated';
 
 import { useTheme } from '@/hooks/useTheme';
-import { ANIM_DURATION_ENTER } from '@/constants/animation';
+import { ANIM_DURATION_ENTER, ANIM_EASING_ENTER } from '@/constants/animation';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -39,7 +38,7 @@ export function ProgressRing({
     return {
       strokeDashoffset: withTiming(strokeDashoffset, {
         duration: ANIM_DURATION_ENTER,
-        easing: Easing.out(Easing.ease),
+        easing: ANIM_EASING_ENTER,
       }),
     };
   }, [progress, circumference]);

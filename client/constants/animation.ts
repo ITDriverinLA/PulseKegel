@@ -1,3 +1,33 @@
+import { Easing } from 'react-native-reanimated';
+
+// ---------------------------------------------------------------------------
+// Easing curve constants
+// ---------------------------------------------------------------------------
+
+// Linear — used for repeating animations (pulse counter, colour cycle)
+export const ANIM_EASING_LINEAR = Easing.linear;
+
+// Enter — smooth deceleration used for UI ring / progress ring updates
+export const ANIM_EASING_ENTER = Easing.out(Easing.ease);
+
+// Breath — symmetric ease-in-out used for breathwork inhale / exhale
+export const ANIM_EASING_BREATH = Easing.inOut(Easing.quad);
+
+// Pulse — symmetric ease-in-out used for hold-top / hold-bottom oscillation
+export const ANIM_EASING_PULSE = Easing.inOut(Easing.ease);
+
+// Drain — fast deceleration used for draining / resetting progress and quick
+//         contract movements (quickFlicks, elevator steps, contractRelax)
+export const ANIM_EASING_DRAIN = Easing.out(Easing.cubic);
+
+// Progress — gentle deceleration used for filling the ring/bar on slow holds
+//            and reverse segments
+export const ANIM_EASING_PROGRESS = Easing.out(Easing.quad);
+
+// ---------------------------------------------------------------------------
+// Animation duration constants
+// ---------------------------------------------------------------------------
+
 // Screen / Navigation transitions
 export const ANIM_DURATION_ENTER = 300;
 export const ANIM_DURATION_EXIT = 175;
