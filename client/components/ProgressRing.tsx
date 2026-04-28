@@ -1,13 +1,13 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
+import React from "react";
+import { View, StyleSheet } from "react-native";
+import Svg, { Circle } from "react-native-svg";
 import Animated, {
   useAnimatedProps,
   withTiming,
-} from 'react-native-reanimated';
+} from "react-native-reanimated";
 
-import { useTheme } from '@/hooks/useTheme';
-import { ANIM_DURATION_ENTER, ANIM_EASING_ENTER } from '@/constants/animation';
+import { useTheme } from "@/hooks/useTheme";
+import { ANIM_DURATION_ENTER, ANIM_EASING_ENTER } from "@/constants/animation";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -29,12 +29,13 @@ export function ProgressRing({
   children,
 }: ProgressRingProps) {
   const { theme } = useTheme();
-  
+
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  
+
   const animatedProps = useAnimatedProps(() => {
-    const strokeDashoffset = circumference * (1 - Math.min(Math.max(progress, 0), 1));
+    const strokeDashoffset =
+      circumference * (1 - Math.min(Math.max(progress, 0), 1));
     return {
       strokeDashoffset: withTiming(strokeDashoffset, {
         duration: ANIM_DURATION_ENTER,
@@ -78,14 +79,14 @@ export function ProgressRing({
 
 const styles = StyleSheet.create({
   container: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   svg: {
-    position: 'absolute',
+    position: "absolute",
   },
   childrenContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

@@ -1,18 +1,24 @@
-import React from 'react';
-import { StyleSheet, View, Pressable, ScrollView } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Feather } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import React from "react";
+import { StyleSheet, View, Pressable, ScrollView } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Feather } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import Animated, { FadeInDown } from "react-native-reanimated";
 
-import { ThemedText } from '@/components/ThemedText';
-import { Spacing, BorderRadius } from '@/constants/theme';
-import { ANIM_DURATION_CONTENT, ANIM_DELAY_STAGGER_SM } from '@/constants/animation';
-import { standaloneWorkouts, StandaloneWorkout } from '@/data/standaloneWorkouts';
-import { RootStackParamList } from '@/navigation/RootStackNavigator';
-import { useThemePreference } from '@/contexts/ThemePreferenceContext';
+import { ThemedText } from "@/components/ThemedText";
+import { Spacing, BorderRadius } from "@/constants/theme";
+import {
+  ANIM_DURATION_CONTENT,
+  ANIM_DELAY_STAGGER_SM,
+} from "@/constants/animation";
+import {
+  standaloneWorkouts,
+  StandaloneWorkout,
+} from "@/data/standaloneWorkouts";
+import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { useThemePreference } from "@/contexts/ThemePreferenceContext";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -22,10 +28,10 @@ export default function WorkoutPickerScreen() {
   const { cp, isDarkMode } = useThemePreference();
 
   const handleSelectWorkout = (workout: StandaloneWorkout) => {
-    navigation.navigate('WorkoutPlayer', {
+    navigation.navigate("WorkoutPlayer", {
       workout: workout.workout,
       weekNumber: 0,
-      phase: 'Quick Workout',
+      phase: "Quick Workout",
     });
   };
 
@@ -39,18 +45,33 @@ export default function WorkoutPickerScreen() {
         colors={cp.gradient as unknown as [string, string, ...string[]]}
         style={StyleSheet.absoluteFill}
       />
-      
+
       <View style={[styles.header, { paddingTop: insets.top + Spacing.md }]}>
-        <Pressable onPress={handleClose} style={[styles.closeButton, { backgroundColor: cp.cardBorder }]}>
+        <Pressable
+          onPress={handleClose}
+          style={[styles.closeButton, { backgroundColor: cp.cardBorder }]}
+        >
           <Feather name="x" size={24} color={cp.text} />
         </Pressable>
-        <ThemedText type="h2" style={[styles.title, { color: cp.text, textShadowColor: isDarkMode ? cp.neonGreen : 'transparent' }]}>
+        <ThemedText
+          type="h2"
+          style={[
+            styles.title,
+            {
+              color: cp.text,
+              textShadowColor: isDarkMode ? cp.neonGreen : "transparent",
+            },
+          ]}
+        >
           Quick Workout
         </ThemedText>
         <View style={styles.placeholder} />
       </View>
 
-      <ThemedText type="body" style={[styles.subtitle, { color: cp.textSecondary }]}>
+      <ThemedText
+        type="body"
+        style={[styles.subtitle, { color: cp.textSecondary }]}
+      >
         Choose a workout to start right now
       </ThemedText>
 
@@ -65,13 +86,18 @@ export default function WorkoutPickerScreen() {
         {standaloneWorkouts.map((workout, index) => (
           <Animated.View
             key={workout.id}
-            entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(index * ANIM_DELAY_STAGGER_SM)}
+            entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(
+              index * ANIM_DELAY_STAGGER_SM,
+            )}
           >
             <Pressable
               style={({ pressed }) => [
                 styles.workoutCard,
                 { backgroundColor: cp.cardBg, borderColor: cp.cardBorder },
-                pressed && { backgroundColor: cp.cardBorder, borderColor: cp.neonCyan },
+                pressed && {
+                  backgroundColor: cp.cardBorder,
+                  borderColor: cp.neonCyan,
+                },
               ]}
               onPress={() => handleSelectWorkout(workout)}
             >
@@ -87,19 +113,30 @@ export default function WorkoutPickerScreen() {
                   color={workout.accentColor}
                 />
               </View>
-              
+
               <View style={styles.workoutInfo}>
-                <ThemedText type="body" style={[styles.workoutName, { color: cp.text }]}>
+                <ThemedText
+                  type="body"
+                  style={[styles.workoutName, { color: cp.text }]}
+                >
                   {workout.name}
                 </ThemedText>
-                <ThemedText type="small" style={[styles.workoutDescription, { color: cp.textMuted }]}>
+                <ThemedText
+                  type="small"
+                  style={[styles.workoutDescription, { color: cp.textMuted }]}
+                >
                   {workout.description}
                 </ThemedText>
               </View>
 
-              <View style={[styles.durationBadge, { backgroundColor: cp.inputBg }]}>
+              <View
+                style={[styles.durationBadge, { backgroundColor: cp.inputBg }]}
+              >
                 <Feather name="clock" size={12} color={cp.textSecondary} />
-                <ThemedText type="small" style={[styles.durationText, { color: cp.textSecondary }]}>
+                <ThemedText
+                  type="small"
+                  style={[styles.durationText, { color: cp.textSecondary }]}
+                >
                   {workout.estimatedMinutes}m
                 </ThemedText>
               </View>
@@ -118,9 +155,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing.md,
   },
@@ -128,8 +165,8 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   title: {
     textShadowOffset: { width: 0, height: 0 },
@@ -139,7 +176,7 @@ const styles = StyleSheet.create({
     width: 40,
   },
   subtitle: {
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: Spacing.xl,
     paddingHorizontal: Spacing.lg,
   },
@@ -151,8 +188,8 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   workoutCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
     borderWidth: 1,
@@ -161,23 +198,23 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: Spacing.md,
   },
   workoutInfo: {
     flex: 1,
   },
   workoutName: {
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 2,
   },
   workoutDescription: {
     fontSize: 12,
   },
   durationBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: Spacing.sm,
     paddingVertical: 4,
     borderRadius: BorderRadius.full,

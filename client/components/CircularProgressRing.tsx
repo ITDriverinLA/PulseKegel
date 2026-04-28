@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from "react";
+import { View, StyleSheet } from "react-native";
 import Animated, {
   useAnimatedProps,
   useSharedValue,
@@ -9,22 +9,22 @@ import Animated, {
   cancelAnimation,
   interpolateColor,
   useAnimatedStyle,
-} from 'react-native-reanimated';
-import Svg, { Circle, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
+} from "react-native-reanimated";
+import Svg, { Circle } from "react-native-svg";
 
-import { SegmentType } from '@/data/workoutProgram';
+import { SegmentType } from "@/data/workoutProgram";
 import {
   ANIM_DURATION_MICRO,
   ANIM_DURATION_PROGRESS_DRAIN,
   ANIM_EASING_LINEAR,
   ANIM_EASING_DRAIN,
   ANIM_EASING_PROGRESS,
-} from '@/constants/animation';
+} from "@/constants/animation";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 interface CircularProgressRingProps {
-  phase: 'squeeze' | 'rest';
+  phase: "squeeze" | "rest";
   segmentType: SegmentType;
   durationSeconds: number;
   isActive: boolean;
@@ -34,11 +34,11 @@ interface CircularProgressRingProps {
   children?: React.ReactNode;
 }
 
-const TRACK_COLOR = 'rgba(0, 0, 0, 0.06)';
+const TRACK_COLOR = "rgba(0, 0, 0, 0.06)";
 
-const RING_COLORS_START = '#10B981';
-const RING_COLORS_MID = '#F59E0B';
-const RING_COLORS_END = '#EF4444';
+const RING_COLORS_START = "#10B981";
+const RING_COLORS_MID = "#F59E0B";
+const RING_COLORS_END = "#EF4444";
 
 export function CircularProgressRing({
   phase,
@@ -65,19 +65,19 @@ export function CircularProgressRing({
 
     phaseKeyRef.current += 1;
 
-    if (phase === 'squeeze') {
+    if (phase === "squeeze") {
       const durationMs = durationSeconds * 1000;
       progress.value = 0;
 
       switch (segmentType) {
-        case 'quickFlicks':
+        case "quickFlicks":
           progress.value = withTiming(1, {
             duration: ANIM_DURATION_MICRO,
             easing: ANIM_EASING_DRAIN,
           });
           break;
 
-        case 'elevator':
+        case "elevator":
           if (rampSteps && rampSteps.length > 0) {
             const stepDuration = durationMs / rampSteps.length;
             let animation = withTiming(rampSteps[0], {
@@ -94,8 +94,8 @@ export function CircularProgressRing({
                   withTiming(targetValue, {
                     duration: stepDuration * 0.25,
                     easing: ANIM_EASING_DRAIN,
-                  })
-                )
+                  }),
+                ),
               );
             }
             progress.value = animation;
@@ -107,20 +107,20 @@ export function CircularProgressRing({
           }
           break;
 
-        case 'contractRelax':
+        case "contractRelax":
           progress.value = withTiming(1, {
             duration: Math.min(durationMs * 0.5, 500),
             easing: ANIM_EASING_DRAIN,
           });
           break;
 
-        case 'breathing':
-        case 'blockRest':
+        case "breathing":
+        case "blockRest":
           progress.value = 0;
           break;
 
-        case 'reverse':
-        case 'slowHolds':
+        case "reverse":
+        case "slowHolds":
         default:
           progress.value = withTiming(1, {
             duration: durationMs * 0.95,
@@ -144,7 +144,7 @@ export function CircularProgressRing({
       stroke: interpolateColor(
         progress.value,
         [0, 0.5, 1],
-        [RING_COLORS_START, RING_COLORS_MID, RING_COLORS_END]
+        [RING_COLORS_START, RING_COLORS_MID, RING_COLORS_END],
       ),
     };
   });
@@ -156,13 +156,15 @@ export function CircularProgressRing({
       shadowColor: interpolateColor(
         progress.value,
         [0, 0.5, 1],
-        [RING_COLORS_START, RING_COLORS_MID, RING_COLORS_END]
+        [RING_COLORS_START, RING_COLORS_MID, RING_COLORS_END],
       ),
     };
   });
 
   return (
-    <Animated.View style={[styles.container, { width: size, height: size }, glowStyle]}>
+    <Animated.View
+      style={[styles.container, { width: size, height: size }, glowStyle]}
+    >
       <Svg width={size} height={size} style={styles.svg}>
         <Circle
           cx={center}
@@ -184,24 +186,22 @@ export function CircularProgressRing({
           transform={`rotate(-90 ${center} ${center})`}
         />
       </Svg>
-      <View style={styles.childrenContainer}>
-        {children}
-      </View>
+      <View style={styles.childrenContainer}>{children}</View>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     shadowOffset: { width: 0, height: 0 },
   },
   svg: {
-    position: 'absolute',
+    position: "absolute",
   },
   childrenContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

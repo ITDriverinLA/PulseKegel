@@ -1,20 +1,28 @@
-import React, { useState } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-import { getModeConfig, BreathworkMode, getBreathworkColors } from '@/constants/breathworkModes';
-import { useTheme } from '@/hooks/useTheme';
-import { ANIM_DURATION_CONTENT_SLOW, ANIM_DELAY_SHORT, ANIM_DELAY_MED, ANIM_DELAY_LONG } from '@/constants/animation';
-import { storage } from '@/lib/storage';
-import { rescheduleAfterCompletion } from '@/lib/notifications';
-import { isRestDayForDate } from '@/data/workoutProgram';
-import { RootStackParamList } from '@/navigation/RootStackNavigator';
+import React, { useState } from "react";
+import { View, Text, Pressable, StyleSheet } from "react-native";
+import { Feather } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import Animated, { FadeInDown } from "react-native-reanimated";
+import {
+  getModeConfig,
+  getBreathworkColors,
+} from "@/constants/breathworkModes";
+import { useTheme } from "@/hooks/useTheme";
+import {
+  ANIM_DURATION_CONTENT_SLOW,
+  ANIM_DELAY_SHORT,
+  ANIM_DELAY_MED,
+  ANIM_DELAY_LONG,
+} from "@/constants/animation";
+import { storage } from "@/lib/storage";
+import { rescheduleAfterCompletion } from "@/lib/notifications";
+import { isRestDayForDate } from "@/data/workoutProgram";
+import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
-type SummaryRoute = RouteProp<RootStackParamList, 'BreathworkSummary'>;
+type SummaryRoute = RouteProp<RootStackParamList, "BreathworkSummary">;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function BreathworkSummaryScreen() {
@@ -29,15 +37,19 @@ export default function BreathworkSummaryScreen() {
 
   const handleLogSession = async () => {
     const now = new Date();
-    const today = now.toISOString().split('T')[0];
+    const today = now.toISOString().split("T")[0];
     await storage.addCompletedDate(today, 5);
     setLogged(true);
     await rescheduleAfterCompletion();
 
     const programStartDate = await storage.getProgramStartDate();
     if (programStartDate) {
-      const startParts = programStartDate.split('-').map(Number);
-      const startDateObj = new Date(startParts[0], startParts[1] - 1, startParts[2]);
+      const startParts = programStartDate.split("-").map(Number);
+      const startDateObj = new Date(
+        startParts[0],
+        startParts[1] - 1,
+        startParts[2],
+      );
       const daysSinceStart = Math.floor(
         (new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() -
           startDateObj.getTime()) /
@@ -54,43 +66,103 @@ export default function BreathworkSummaryScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: bwColors.bg_session, paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }]}>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: bwColors.bg_session,
+          paddingTop: insets.top + 20,
+          paddingBottom: insets.bottom + 20,
+        },
+      ]}
+    >
       <View style={styles.content}>
-        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT_SLOW)} style={styles.iconContainer}>
-          <View style={[styles.iconCircle, { backgroundColor: bwColors.accentSoft }]}>
+        <Animated.View
+          entering={FadeInDown.duration(ANIM_DURATION_CONTENT_SLOW)}
+          style={styles.iconContainer}
+        >
+          <View
+            style={[
+              styles.iconCircle,
+              { backgroundColor: bwColors.accentSoft },
+            ]}
+          >
             <Feather name="check-circle" size={64} color={bwColors.accent} />
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT_SLOW).delay(ANIM_DELAY_SHORT)}>
-          <Text style={[styles.title, { color: bwColors.phase_label }]}>Session Complete</Text>
-          <Text style={[styles.modeName, { color: bwColors.accent }]}>{config.name}</Text>
+        <Animated.View
+          entering={FadeInDown.duration(ANIM_DURATION_CONTENT_SLOW).delay(
+            ANIM_DELAY_SHORT,
+          )}
+        >
+          <Text style={[styles.title, { color: bwColors.phase_label }]}>
+            Session Complete
+          </Text>
+          <Text style={[styles.modeName, { color: bwColors.accent }]}>
+            {config.name}
+          </Text>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT_SLOW).delay(ANIM_DELAY_MED)} style={[styles.statsRow, { backgroundColor: bwColors.accentSoft }]}>
+        <Animated.View
+          entering={FadeInDown.duration(ANIM_DURATION_CONTENT_SLOW).delay(
+            ANIM_DELAY_MED,
+          )}
+          style={[styles.statsRow, { backgroundColor: bwColors.accentSoft }]}
+        >
           <View style={styles.statItem}>
             <Feather name="clock" size={20} color={bwColors.accent} />
-            <Text style={[styles.statValue, { color: bwColors.phase_label }]}>5:00</Text>
-            <Text style={[styles.statLabel, { color: bwColors.timer_text }]}>Duration</Text>
+            <Text style={[styles.statValue, { color: bwColors.phase_label }]}>
+              5:00
+            </Text>
+            <Text style={[styles.statLabel, { color: bwColors.timer_text }]}>
+              Duration
+            </Text>
           </View>
-          <View style={[styles.statDivider, { backgroundColor: bwColors.accentSoft }]} />
+          <View
+            style={[
+              styles.statDivider,
+              { backgroundColor: bwColors.accentSoft },
+            ]}
+          />
           <View style={styles.statItem}>
             <Feather name="wind" size={20} color={bwColors.accent} />
-            <Text style={[styles.statValue, { color: bwColors.phase_label }]}>{config.subtitle}</Text>
-            <Text style={[styles.statLabel, { color: bwColors.timer_text }]}>Technique</Text>
+            <Text style={[styles.statValue, { color: bwColors.phase_label }]}>
+              {config.subtitle}
+            </Text>
+            <Text style={[styles.statLabel, { color: bwColors.timer_text }]}>
+              Technique
+            </Text>
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT_SLOW).delay(ANIM_DELAY_LONG)} style={styles.buttonsContainer}>
+        <Animated.View
+          entering={FadeInDown.duration(ANIM_DURATION_CONTENT_SLOW).delay(
+            ANIM_DELAY_LONG,
+          )}
+          style={styles.buttonsContainer}
+        >
           {logged ? (
-            <View style={[styles.loggedContainer, { backgroundColor: bwColors.accentSoft }]}>
+            <View
+              style={[
+                styles.loggedContainer,
+                { backgroundColor: bwColors.accentSoft },
+              ]}
+            >
               <Feather name="check" size={20} color={bwColors.accent} />
-              <Text style={[styles.loggedText, { color: bwColors.accent }]}>Session logged to your streak</Text>
+              <Text style={[styles.loggedText, { color: bwColors.accent }]}>
+                Session logged to your streak
+              </Text>
             </View>
           ) : (
-            <Pressable onPress={handleLogSession} testID="breathwork-log-button">
+            <Pressable
+              onPress={handleLogSession}
+              testID="breathwork-log-button"
+            >
               <LinearGradient
-                colors={isDark ? ['#00B4C5', '#0090A0'] : ['#00ACC1', '#00838F']}
+                colors={
+                  isDark ? ["#00B4C5", "#0090A0"] : ["#00ACC1", "#00838F"]
+                }
                 style={styles.logButton}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
@@ -101,8 +173,14 @@ export default function BreathworkSummaryScreen() {
             </Pressable>
           )}
 
-          <Pressable onPress={handleDismiss} style={styles.dismissButton} testID="breathwork-dismiss-button">
-            <Text style={[styles.dismissText, { color: bwColors.timer_text }]}>{logged ? 'Done' : 'Skip'}</Text>
+          <Pressable
+            onPress={handleDismiss}
+            style={styles.dismissButton}
+            testID="breathwork-dismiss-button"
+          >
+            <Text style={[styles.dismissText, { color: bwColors.timer_text }]}>
+              {logged ? "Done" : "Skip"}
+            </Text>
           </Pressable>
         </Animated.View>
       </View>
@@ -116,8 +194,8 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 32,
     gap: 32,
   },
@@ -128,36 +206,36 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   title: {
     fontSize: 28,
-    fontWeight: '700',
-    textAlign: 'center',
+    fontWeight: "700",
+    textAlign: "center",
   },
   modeName: {
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: 4,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderRadius: 16,
     padding: 20,
-    width: '100%',
+    width: "100%",
   },
   statItem: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
     gap: 6,
   },
   statValue: {
     fontSize: 16,
-    fontWeight: '700',
-    textAlign: 'center',
+    fontWeight: "700",
+    textAlign: "center",
   },
   statLabel: {
     fontSize: 12,
@@ -167,40 +245,40 @@ const styles = StyleSheet.create({
     height: 40,
   },
   buttonsContainer: {
-    width: '100%',
+    width: "100%",
     gap: 12,
   },
   logButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
     paddingVertical: 16,
     borderRadius: 14,
   },
   logButtonText: {
     fontSize: 17,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
   loggedContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
     paddingVertical: 16,
     borderRadius: 14,
   },
   loggedText: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   dismissButton: {
     paddingVertical: 14,
-    alignItems: 'center',
+    alignItems: "center",
   },
   dismissText: {
     fontSize: 15,
-    fontWeight: '500',
+    fontWeight: "500",
   },
 });

@@ -14,7 +14,10 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
 import { AudioProvider } from "@/contexts/AudioContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
-import { ThemePreferenceProvider, useThemePreference } from "@/contexts/ThemePreferenceContext";
+import {
+  ThemePreferenceProvider,
+  useThemePreference,
+} from "@/contexts/ThemePreferenceContext";
 import { storage } from "@/lib/storage";
 import { scheduleDailyReminder } from "@/lib/notifications";
 import { trackAppOpen } from "@/lib/analytics";
@@ -42,7 +45,9 @@ function AppContent() {
         let programWeek: number | undefined;
         if (programStartDate) {
           const startMs = new Date(programStartDate).getTime();
-          const diffDays = Math.floor((Date.now() - startMs) / (1000 * 60 * 60 * 24));
+          const diffDays = Math.floor(
+            (Date.now() - startMs) / (1000 * 60 * 60 * 24),
+          );
           programWeek = Math.min(Math.floor(diffDays / 7) + 1, 12);
         }
         trackAppOpen({
@@ -62,7 +67,7 @@ function AppContent() {
           <NavigationContainer>
             <RootStackNavigator />
           </NavigationContainer>
-          <StatusBar style={cp.statusBarStyle === 'light' ? 'light' : 'dark'} />
+          <StatusBar style={cp.statusBarStyle === "light" ? "light" : "dark"} />
         </KeyboardProvider>
       </GestureHandlerRootView>
     </SafeAreaProvider>

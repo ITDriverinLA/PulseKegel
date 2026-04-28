@@ -1,9 +1,9 @@
-import React from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import React from "react";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-import HomeScreen from '@/screens/HomeScreen';
-import { HeaderTitle } from '@/components/HeaderTitle';
-import { useScreenOptions } from '@/hooks/useScreenOptions';
+import HomeScreen from "@/screens/HomeScreen";
+import { HeaderTitle } from "@/components/HeaderTitle";
+import { useScreenOptions } from "@/hooks/useScreenOptions";
 
 export type HomeStackParamList = {
   Home: undefined;

@@ -29,10 +29,7 @@ async function getOrCreateDeviceId(): Promise<string> {
   }
 }
 
-export function trackEvent(
-  type: string,
-  data?: Record<string, unknown>,
-): void {
+export function trackEvent(type: string, data?: Record<string, unknown>): void {
   if (ONCE_PER_SESSION_EVENTS.has(type)) {
     if (SESSION_SENT.has(type)) return;
     SESSION_SENT.add(type);
@@ -42,8 +39,7 @@ export function trackEvent(
       const deviceId = await getOrCreateDeviceId();
       const baseUrl = getApiUrl();
       const url = new URL("/api/analytics", baseUrl);
-      const appVersion =
-        Application.nativeApplicationVersion ?? "1.0.0";
+      const appVersion = Application.nativeApplicationVersion ?? "1.0.0";
 
       await fetch(url.toString(), {
         method: "POST",
@@ -100,7 +96,12 @@ export function trackWeekComplete(data: {
 }
 
 export function trackChallengeResult(data: {
-  result: "not_started" | "first_step" | "partial" | "complete" | "strong_finish";
+  result:
+    | "not_started"
+    | "first_step"
+    | "partial"
+    | "complete"
+    | "strong_finish";
   completedCoreSessions: number;
   totalCoreSessions: number;
   completedOptionalSessions: number;
@@ -109,7 +110,12 @@ export function trackChallengeResult(data: {
 }
 
 export function trackChallengeCta(data: {
-  result: "not_started" | "first_step" | "partial" | "complete" | "strong_finish";
+  result:
+    | "not_started"
+    | "first_step"
+    | "partial"
+    | "complete"
+    | "strong_finish";
   button: "primary" | "secondary";
   action: "continue" | "restart";
 }): void {

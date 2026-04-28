@@ -1,6 +1,14 @@
-import React, { createContext, useContext, useCallback, useEffect, useState, useRef, ReactNode } from 'react';
-import { useAudioPlayer, setAudioModeAsync } from 'expo-audio';
-import { storage } from '@/lib/storage';
+import React, {
+  createContext,
+  useContext,
+  useCallback,
+  useEffect,
+  useState,
+  useRef,
+  ReactNode,
+} from "react";
+import { useAudioPlayer, setAudioModeAsync } from "expo-audio";
+import { storage } from "@/lib/storage";
 import {
   SoundEffect,
   AmbientTrack,
@@ -9,8 +17,7 @@ import {
   defaultAudioSettings,
   SOUND_SOURCES,
   AMBIENT_SOURCES,
-  ALL_AMBIENT_TRACKS,
-} from '@/lib/audioManager';
+} from "@/lib/audioManager";
 
 interface AudioContextType {
   audioSettings: AudioSettings;
@@ -31,17 +38,19 @@ const AudioContext = createContext<AudioContextType>({
   stopAmbient: () => {},
   previewTrack: () => {},
   stopPreview: () => {},
-  previewingTrack: 'none',
+  previewingTrack: "none",
 });
 
 export function AudioProvider({ children }: { children: ReactNode }) {
-  const [audioSettings, setAudioSettings] = useState<AudioSettings>(defaultAudioSettings);
-  const [currentAmbientTrack, setCurrentAmbientTrack] = useState<AmbientTrack>('none');
-  const [previewingTrack, setPreviewingTrack] = useState<AmbientTrack>('none');
+  const [audioSettings, setAudioSettings] =
+    useState<AudioSettings>(defaultAudioSettings);
+  const [currentAmbientTrack, setCurrentAmbientTrack] =
+    useState<AmbientTrack>("none");
+  const [previewingTrack, setPreviewingTrack] = useState<AmbientTrack>("none");
   const isWorkoutActiveRef = useRef(false);
   const audioSettingsRef = useRef<AudioSettings>(defaultAudioSettings);
   const currentTrackIndexRef = useRef(0);
-  const lastPlayedTrackRef = useRef<AmbientTrack>('none');
+  const lastPlayedTrackRef = useRef<AmbientTrack>("none");
   const audioSettingsLoadedRef = useRef(false);
   const pendingAmbientStartRef = useRef(false);
 
@@ -67,8 +76,12 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const onMyKneesPlayer = useAudioPlayer(AMBIENT_SOURCES.on_my_knees);
   const takeMePlayer = useAudioPlayer(AMBIENT_SOURCES.take_me);
   const velvetTidesPlayer = useAudioPlayer(AMBIENT_SOURCES.velvet_tides);
-  const riversOfSurrenderPlayer = useAudioPlayer(AMBIENT_SOURCES.rivers_of_surrender);
-  const architectOfSurrenderPlayer = useAudioPlayer(AMBIENT_SOURCES.architect_of_surrender);
+  const riversOfSurrenderPlayer = useAudioPlayer(
+    AMBIENT_SOURCES.rivers_of_surrender,
+  );
+  const architectOfSurrenderPlayer = useAudioPlayer(
+    AMBIENT_SOURCES.architect_of_surrender,
+  );
 
   const sfxPlayers: Record<SoundEffect, typeof squeezePlayer> = {
     squeeze: squeezePlayer,
@@ -99,7 +112,10 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        await setAudioModeAsync({ playsInSilentMode: true, shouldRouteThroughEarpiece: false });
+        await setAudioModeAsync({
+          playsInSilentMode: true,
+          shouldRouteThroughEarpiece: false,
+        });
       } catch {}
       const settings = await storage.getAudioSettings();
       const merged = { ...defaultAudioSettings, ...settings } as AudioSettings;
@@ -196,7 +212,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
 
     if (settings.shuffleEnabled) {
       if (tracks.length === 1) return tracks[0];
-      const filtered = tracks.filter(t => t !== lastPlayedTrackRef.current);
+      const filtered = tracks.filter((t) => t !== lastPlayedTrackRef.current);
       const candidates = filtered.length > 0 ? filtered : tracks;
       return candidates[Math.floor(Math.random() * candidates.length)];
     } else {
@@ -215,37 +231,50 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     const checkInterval = setInterval(() => {
       if (!isWorkoutActiveRef.current) return;
       const current = lastPlayedTrackRef.current;
-      if (current === 'none') return;
+      if (current === "none") return;
       const player = ambientPlayers[current as TrackKey];
       if (player && !player.playing && player.currentTime > 0) {
         const next = pickNextTrack();
         if (next) {
           stopAllAmbient();
-          playTrackByKey(next, audioSettingsRef.current.selectedTracks.length === 1);
+          playTrackByKey(
+            next,
+            audioSettingsRef.current.selectedTracks.length === 1,
+          );
         }
       }
     }, 1000);
 
     return () => clearInterval(checkInterval);
-  }, [audioSettings.selectedTracks, audioSettings.shuffleEnabled, currentAmbientTrack]);
+  }, [
+    audioSettings.selectedTracks,
+    audioSettings.shuffleEnabled,
+    currentAmbientTrack,
+  ]);
 
-  const updateAudioSettings = useCallback(async (updates: Partial<AudioSettings>) => {
-    const newSettings = { ...audioSettings, ...updates };
-    setAudioSettings(newSettings);
-    await storage.saveAudioSettings(newSettings);
-  }, [audioSettings]);
+  const updateAudioSettings = useCallback(
+    async (updates: Partial<AudioSettings>) => {
+      const newSettings = { ...audioSettings, ...updates };
+      setAudioSettings(newSettings);
+      await storage.saveAudioSettings(newSettings);
+    },
+    [audioSettings],
+  );
 
-  const playSfx = useCallback((effect: SoundEffect) => {
-    if (!audioSettings.sfxEnabled) return;
-    const player = sfxPlayers[effect];
-    if (player) {
-      try {
-        player.seekTo(0);
-        player.volume = audioSettings.sfxVolume;
-        player.play();
-      } catch {}
-    }
-  }, [audioSettings.sfxEnabled, audioSettings.sfxVolume]);
+  const playSfx = useCallback(
+    (effect: SoundEffect) => {
+      if (!audioSettings.sfxEnabled) return;
+      const player = sfxPlayers[effect];
+      if (player) {
+        try {
+          player.seekTo(0);
+          player.volume = audioSettings.sfxVolume;
+          player.play();
+        } catch {}
+      }
+    },
+    [audioSettings.sfxEnabled, audioSettings.sfxVolume],
+  );
 
   const startAmbient = useCallback(() => {
     isWorkoutActiveRef.current = true;
@@ -276,34 +305,37 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     isWorkoutActiveRef.current = false;
     pendingAmbientStartRef.current = false;
     stopAllAmbient();
-    setCurrentAmbientTrack('none');
-    lastPlayedTrackRef.current = 'none';
+    setCurrentAmbientTrack("none");
+    lastPlayedTrackRef.current = "none";
     currentTrackIndexRef.current = 0;
   }, []);
 
-  const previewTrack = useCallback((track: TrackKey) => {
-    stopAllAmbient();
+  const previewTrack = useCallback(
+    (track: TrackKey) => {
+      stopAllAmbient();
 
-    if (previewingTrack === track) {
-      setPreviewingTrack('none');
-      return;
-    }
+      if (previewingTrack === track) {
+        setPreviewingTrack("none");
+        return;
+      }
 
-    const player = ambientPlayers[track];
-    if (player) {
-      try {
-        player.volume = audioSettings.ambientVolume;
-        player.loop = false;
-        player.seekTo(0);
-        player.play();
-        setPreviewingTrack(track);
-      } catch {}
-    }
-  }, [previewingTrack, audioSettings.ambientVolume]);
+      const player = ambientPlayers[track];
+      if (player) {
+        try {
+          player.volume = audioSettings.ambientVolume;
+          player.loop = false;
+          player.seekTo(0);
+          player.play();
+          setPreviewingTrack(track);
+        } catch {}
+      }
+    },
+    [previewingTrack, audioSettings.ambientVolume],
+  );
 
   const stopPreview = useCallback(() => {
     stopAllAmbient();
-    setPreviewingTrack('none');
+    setPreviewingTrack("none");
   }, []);
 
   return (

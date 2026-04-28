@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   View,
@@ -9,9 +9,9 @@ import {
   ScrollView,
   Text,
   Switch,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
   useAnimatedStyle,
   withSpring,
@@ -21,24 +21,27 @@ import Animated, {
   SlideOutLeft,
   useSharedValue,
   WithSpringConfig,
-} from 'react-native-reanimated';
-import { Feather } from '@expo/vector-icons';
-import Slider from '@react-native-community/slider';
+} from "react-native-reanimated";
+import { Feather } from "@expo/vector-icons";
+import Slider from "@react-native-community/slider";
 
-import { ThemedText } from '@/components/ThemedText';
-import { Spacing, BorderRadius } from '@/constants/theme';
-import { ANIM_DURATION_ENTER, ANIM_DURATION_EXIT_COMPLETE } from '@/constants/animation';
-import { storage, AnatomyType, defaultSettings } from '@/lib/storage';
-import { trackOnboardingComplete } from '@/lib/analytics';
-import { useThemePreference } from '@/contexts/ThemePreferenceContext';
-import { useAudio } from '@/contexts/AudioContext';
-import { ALL_AMBIENT_TRACKS } from '@/lib/audioManager';
+import { ThemedText } from "@/components/ThemedText";
+import { Spacing, BorderRadius } from "@/constants/theme";
+import {
+  ANIM_DURATION_ENTER,
+  ANIM_DURATION_EXIT_COMPLETE,
+} from "@/constants/animation";
+import { storage, AnatomyType, defaultSettings } from "@/lib/storage";
+import { trackOnboardingComplete } from "@/lib/analytics";
+import { useThemePreference } from "@/contexts/ThemePreferenceContext";
+import { useAudio } from "@/contexts/AudioContext";
+import { ALL_AMBIENT_TRACKS } from "@/lib/audioManager";
 
 interface OnboardingScreenProps {
   onComplete: () => void;
 }
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 
 type PageEntry = {
   type?: string;
@@ -49,47 +52,47 @@ type PageEntry = {
 
 const pages: PageEntry[] = [
   {
-    image: require('../../assets/images/onboarding-welcome.png'),
-    title: 'Welcome to PulseKegel',
+    image: require("../../assets/images/onboarding-welcome.png"),
+    title: "Welcome to PulseKegel",
     description:
-      'Build pelvic floor strength with guided daily workouts. Visual cues and haptic feedback help you train effectively.',
+      "Build pelvic floor strength with guided daily workouts. Visual cues and haptic feedback help you train effectively.",
   },
   {
-    image: require('../../assets/images/onboarding-safety.png'),
-    title: 'Safety First',
+    image: require("../../assets/images/onboarding-safety.png"),
+    title: "Safety First",
     description:
-      'This app is for wellness purposes only and is not medical advice. Stop immediately if you experience pain, urinary urgency, or pelvic pressure.',
+      "This app is for wellness purposes only and is not medical advice. Stop immediately if you experience pain, urinary urgency, or pelvic pressure.",
   },
   {
-    type: 'guide',
-    image: require('../../assets/images/find-the-target.png'),
-    title: 'Find the Target',
+    type: "guide",
+    image: require("../../assets/images/find-the-target.png"),
+    title: "Find the Target",
     description:
       "The pelvic floor is the hidden control system at the base of your body. Lift, don't clench \u2014 think elevator, not fist.",
   },
   {
-    type: 'name',
+    type: "name",
     title: "What's Your Name?",
     description:
       "We'll use your name to personalize your weekly progress updates.",
   },
   {
-    type: 'anatomy',
-    title: 'Personalize Your Experience',
+    type: "anatomy",
+    title: "Personalize Your Experience",
     description:
-      'Select your anatomy type to receive tailored health insights and exercise guidance.',
+      "Select your anatomy type to receive tailored health insights and exercise guidance.",
   },
   {
-    type: 'settings',
-    title: 'Set Your Preferences',
+    type: "settings",
+    title: "Set Your Preferences",
     description:
-      'Customize the experience to match how you like to train. You can always adjust these in Settings later.',
+      "Customize the experience to match how you like to train. You can always adjust these in Settings later.",
   },
   {
-    image: require('../../assets/images/icon.png'),
-    title: 'Your 12-Week Journey',
+    image: require("../../assets/images/icon.png"),
+    title: "Your 12-Week Journey",
     description:
-      'Progress through phases of control, strength, power, and maintenance. Each workout adapts to your current level.',
+      "Progress through phases of control, strength, power, and maintenance. Each workout adapts to your current level.",
   },
 ];
 
@@ -103,12 +106,18 @@ const springConfig: WithSpringConfig = {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
+export default function OnboardingScreen({
+  onComplete,
+}: OnboardingScreenProps) {
   const [currentPage, setCurrentPage] = useState(0);
   const [selectedAnatomy, setSelectedAnatomy] = useState<AnatomyType>(null);
-  const [userName, setUserName] = useState('');
-  const [restDuration, setRestDuration] = useState(defaultSettings.restDuration);
-  const [blockRestDuration, setBlockRestDuration] = useState(defaultSettings.blockRestDuration);
+  const [userName, setUserName] = useState("");
+  const [restDuration, setRestDuration] = useState(
+    defaultSettings.restDuration,
+  );
+  const [blockRestDuration, setBlockRestDuration] = useState(
+    defaultSettings.blockRestDuration,
+  );
   const insets = useSafeAreaInsets();
   const { cp, isDarkMode, toggleDarkMode } = useThemePreference();
   const { audioSettings, updateAudioSettings } = useAudio();
@@ -124,10 +133,10 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   }, []);
 
   const isLastPage = currentPage === pages.length - 1;
-  const isAnatomyPage = pages[currentPage].type === 'anatomy';
-  const isNamePage = pages[currentPage].type === 'name';
-  const isSettingsPage = pages[currentPage].type === 'settings';
-  const isGuidePage = pages[currentPage].type === 'guide';
+  const isAnatomyPage = pages[currentPage].type === "anatomy";
+  const isNamePage = pages[currentPage].type === "name";
+  const isSettingsPage = pages[currentPage].type === "settings";
+  const isGuidePage = pages[currentPage].type === "guide";
 
   useEffect(() => {
     if (isSettingsPage) {
@@ -141,13 +150,17 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   const handleNext = async () => {
     if (isLastPage) {
       trackOnboardingComplete({ anatomyType: selectedAnatomy });
-      screenOpacity.value = withTiming(0, { duration: ANIM_DURATION_ENTER }, (finished) => {
-        if (finished) {
-          runOnJS(onComplete)();
-        }
-      });
+      screenOpacity.value = withTiming(
+        0,
+        { duration: ANIM_DURATION_ENTER },
+        (finished) => {
+          if (finished) {
+            runOnJS(onComplete)();
+          }
+        },
+      );
     } else {
-      setCurrentPage(prev => prev + 1);
+      setCurrentPage((prev) => prev + 1);
     }
   };
 
@@ -155,13 +168,13 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
     if (userName.trim()) {
       await storage.saveSettings({ userName: userName.trim() });
     }
-    setCurrentPage(prev => prev + 1);
+    setCurrentPage((prev) => prev + 1);
   };
 
   const handleAnatomySelect = async (type: AnatomyType) => {
     setSelectedAnatomy(type);
     await storage.saveSettings({ anatomyType: type });
-    setCurrentPage(prev => prev + 1);
+    setCurrentPage((prev) => prev + 1);
   };
 
   const handleSelectTheme = async (wantDark: boolean) => {
@@ -200,7 +213,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
         style={[
           styles.content,
           {
-            paddingTop: insets.top + Spacing['3xl'],
+            paddingTop: insets.top + Spacing["3xl"],
             paddingBottom: insets.bottom + Spacing.xl,
           },
         ]}
@@ -213,16 +226,31 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
               exiting={SlideOutLeft.duration(ANIM_DURATION_EXIT_COMPLETE)}
               style={styles.nameContainer}
             >
-              <Feather name="user" size={64} color={cp.neonGreen} style={styles.nameIcon} />
+              <Feather
+                name="user"
+                size={64}
+                color={cp.neonGreen}
+                style={styles.nameIcon}
+              />
               <ThemedText type="h1" style={[styles.title, { color: cp.text }]}>
                 {pages[currentPage].title}
               </ThemedText>
-              <ThemedText type="body" style={[styles.description, { color: cp.textSecondary }]}>
+              <ThemedText
+                type="body"
+                style={[styles.description, { color: cp.textSecondary }]}
+              >
                 {pages[currentPage].description}
               </ThemedText>
 
               <TextInput
-                style={[styles.nameInput, { backgroundColor: cp.cardBorder, color: cp.text, borderColor: `${cp.neonGreen}4D` }]}
+                style={[
+                  styles.nameInput,
+                  {
+                    backgroundColor: cp.cardBorder,
+                    color: cp.text,
+                    borderColor: `${cp.neonGreen}4D`,
+                  },
+                ]}
                 placeholder="Enter your name"
                 placeholderTextColor={cp.textMuted}
                 value={userName}
@@ -241,7 +269,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                   style={styles.nameButtonGradient}
                 >
                   <ThemedText style={styles.nameButtonText}>
-                    {userName.trim() ? 'Continue' : 'Skip'}
+                    {userName.trim() ? "Continue" : "Skip"}
                   </ThemedText>
                 </LinearGradient>
               </Pressable>
@@ -256,34 +284,45 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
               <ThemedText type="h1" style={[styles.title, { color: cp.text }]}>
                 {pages[currentPage].title}
               </ThemedText>
-              <ThemedText type="body" style={[styles.description, { color: cp.textSecondary }]}>
+              <ThemedText
+                type="body"
+                style={[styles.description, { color: cp.textSecondary }]}
+              >
                 {pages[currentPage].description}
               </ThemedText>
 
               <View style={styles.anatomyButtons}>
                 <Pressable
                   style={styles.anatomyButton}
-                  onPress={() => handleAnatomySelect('female')}
+                  onPress={() => handleAnatomySelect("female")}
                 >
                   <LinearGradient
-                    colors={[cp.neonPink, '#FF6699']}
+                    colors={[cp.neonPink, "#FF6699"]}
                     style={styles.anatomyButtonGradient}
                   >
                     <Feather name="heart" size={32} color={cp.text} />
-                    <ThemedText style={[styles.anatomyButtonText, { color: cp.text }]}>Female</ThemedText>
+                    <ThemedText
+                      style={[styles.anatomyButtonText, { color: cp.text }]}
+                    >
+                      Female
+                    </ThemedText>
                   </LinearGradient>
                 </Pressable>
 
                 <Pressable
                   style={styles.anatomyButton}
-                  onPress={() => handleAnatomySelect('male')}
+                  onPress={() => handleAnatomySelect("male")}
                 >
                   <LinearGradient
-                    colors={[cp.neonCyan, '#00CCFF']}
+                    colors={[cp.neonCyan, "#00CCFF"]}
                     style={styles.anatomyButtonGradient}
                   >
                     <Feather name="shield" size={32} color={cp.text} />
-                    <ThemedText style={[styles.anatomyButtonText, { color: cp.text }]}>Male</ThemedText>
+                    <ThemedText
+                      style={[styles.anatomyButtonText, { color: cp.text }]}
+                    >
+                      Male
+                    </ThemedText>
                   </LinearGradient>
                 </Pressable>
               </View>
@@ -305,10 +344,16 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                   style={styles.guideImage}
                   resizeMode="contain"
                 />
-                <ThemedText type="h1" style={[styles.title, { color: cp.text }]}>
+                <ThemedText
+                  type="h1"
+                  style={[styles.title, { color: cp.text }]}
+                >
                   {pages[currentPage].title}
                 </ThemedText>
-                <ThemedText type="body" style={[styles.description, { color: cp.textSecondary }]}>
+                <ThemedText
+                  type="body"
+                  style={[styles.description, { color: cp.textSecondary }]}
+                >
                   {pages[currentPage].description}
                 </ThemedText>
               </ScrollView>
@@ -323,7 +368,10 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
               <ThemedText type="h1" style={[styles.title, { color: cp.text }]}>
                 {pages[currentPage].title}
               </ThemedText>
-              <ThemedText type="body" style={[styles.description, { color: cp.textSecondary }]}>
+              <ThemedText
+                type="body"
+                style={[styles.description, { color: cp.textSecondary }]}
+              >
                 {pages[currentPage].description}
               </ThemedText>
 
@@ -332,36 +380,67 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                 contentContainerStyle={styles.settingsScrollContent}
                 showsVerticalScrollIndicator={false}
               >
-                <View style={[styles.settingsCard, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
+                <View
+                  style={[
+                    styles.settingsCard,
+                    { backgroundColor: cp.cardBg, borderColor: cp.cardBorder },
+                  ]}
+                >
                   <View style={styles.settingsSectionHeader}>
                     <Feather name="sun" size={16} color={cp.neonCyan} />
-                    <Text style={[styles.settingsSectionLabel, { color: cp.neonCyan }]}>THEME</Text>
+                    <Text
+                      style={[
+                        styles.settingsSectionLabel,
+                        { color: cp.neonCyan },
+                      ]}
+                    >
+                      THEME
+                    </Text>
                   </View>
                   <View style={styles.themeCards}>
                     <Pressable
                       style={[
                         styles.themeCard,
                         {
-                          backgroundColor: isDarkMode ? `${cp.neonGreen}22` : cp.cardBorder,
+                          backgroundColor: isDarkMode
+                            ? `${cp.neonGreen}22`
+                            : cp.cardBorder,
                           borderColor: isDarkMode ? cp.neonGreen : cp.divider,
                         },
                       ]}
                       onPress={() => handleSelectTheme(true)}
                     >
-                      <View style={[styles.themePreview, styles.themePreviewDark]}>
+                      <View
+                        style={[styles.themePreview, styles.themePreviewDark]}
+                      >
                         <View style={styles.themePreviewBar} />
-                        <View style={[styles.themePreviewBar, { opacity: 0.6, width: '70%' }]} />
+                        <View
+                          style={[
+                            styles.themePreviewBar,
+                            { opacity: 0.6, width: "70%" },
+                          ]}
+                        />
                       </View>
                       <Feather
                         name="moon"
                         size={18}
                         color={isDarkMode ? cp.neonGreen : cp.textMuted}
                       />
-                      <Text style={[styles.themeCardLabel, { color: isDarkMode ? cp.neonGreen : cp.textMuted }]}>
+                      <Text
+                        style={[
+                          styles.themeCardLabel,
+                          { color: isDarkMode ? cp.neonGreen : cp.textMuted },
+                        ]}
+                      >
                         Dark
                       </Text>
                       {isDarkMode ? (
-                        <View style={[styles.themeCheckmark, { backgroundColor: cp.neonGreen }]}>
+                        <View
+                          style={[
+                            styles.themeCheckmark,
+                            { backgroundColor: cp.neonGreen },
+                          ]}
+                        >
                           <Feather name="check" size={10} color="#000" />
                         </View>
                       ) : null}
@@ -371,26 +450,53 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                       style={[
                         styles.themeCard,
                         {
-                          backgroundColor: !isDarkMode ? `${cp.neonGreen}22` : cp.cardBorder,
+                          backgroundColor: !isDarkMode
+                            ? `${cp.neonGreen}22`
+                            : cp.cardBorder,
                           borderColor: !isDarkMode ? cp.neonGreen : cp.divider,
                         },
                       ]}
                       onPress={() => handleSelectTheme(false)}
                     >
-                      <View style={[styles.themePreview, styles.themePreviewLight]}>
-                        <View style={[styles.themePreviewBar, { backgroundColor: 'rgba(0,0,0,0.2)' }]} />
-                        <View style={[styles.themePreviewBar, { backgroundColor: 'rgba(0,0,0,0.12)', width: '70%' }]} />
+                      <View
+                        style={[styles.themePreview, styles.themePreviewLight]}
+                      >
+                        <View
+                          style={[
+                            styles.themePreviewBar,
+                            { backgroundColor: "rgba(0,0,0,0.2)" },
+                          ]}
+                        />
+                        <View
+                          style={[
+                            styles.themePreviewBar,
+                            {
+                              backgroundColor: "rgba(0,0,0,0.12)",
+                              width: "70%",
+                            },
+                          ]}
+                        />
                       </View>
                       <Feather
                         name="sun"
                         size={18}
                         color={!isDarkMode ? cp.neonGreen : cp.textMuted}
                       />
-                      <Text style={[styles.themeCardLabel, { color: !isDarkMode ? cp.neonGreen : cp.textMuted }]}>
+                      <Text
+                        style={[
+                          styles.themeCardLabel,
+                          { color: !isDarkMode ? cp.neonGreen : cp.textMuted },
+                        ]}
+                      >
                         Light
                       </Text>
                       {!isDarkMode ? (
-                        <View style={[styles.themeCheckmark, { backgroundColor: cp.neonGreen }]}>
+                        <View
+                          style={[
+                            styles.themeCheckmark,
+                            { backgroundColor: cp.neonGreen },
+                          ]}
+                        >
                           <Feather name="check" size={10} color="#000" />
                         </View>
                       ) : null}
@@ -398,16 +504,34 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                   </View>
                 </View>
 
-                <View style={[styles.settingsCard, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
+                <View
+                  style={[
+                    styles.settingsCard,
+                    { backgroundColor: cp.cardBg, borderColor: cp.cardBorder },
+                  ]}
+                >
                   <View style={styles.settingsSectionHeader}>
                     <Feather name="clock" size={16} color={cp.neonCyan} />
-                    <Text style={[styles.settingsSectionLabel, { color: cp.neonCyan }]}>WORKOUT TIMINGS</Text>
+                    <Text
+                      style={[
+                        styles.settingsSectionLabel,
+                        { color: cp.neonCyan },
+                      ]}
+                    >
+                      WORKOUT TIMINGS
+                    </Text>
                   </View>
 
                   <View style={styles.sliderBlock}>
                     <View style={styles.sliderRow}>
-                      <Text style={[styles.sliderLabel, { color: cp.text }]}>Rest between reps</Text>
-                      <Text style={[styles.sliderValue, { color: cp.neonGreen }]}>{restDuration}s</Text>
+                      <Text style={[styles.sliderLabel, { color: cp.text }]}>
+                        Rest between reps
+                      </Text>
+                      <Text
+                        style={[styles.sliderValue, { color: cp.neonGreen }]}
+                      >
+                        {restDuration}s
+                      </Text>
                     </View>
                     <Slider
                       style={styles.slider}
@@ -421,15 +545,28 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                       maximumTrackTintColor={cp.inputBg}
                       thumbTintColor={cp.neonGreen}
                     />
-                    <Text style={[styles.sliderHint, { color: cp.textMuted }]}>2 – 10 seconds</Text>
+                    <Text style={[styles.sliderHint, { color: cp.textMuted }]}>
+                      2 – 10 seconds
+                    </Text>
                   </View>
 
-                  <View style={[styles.sliderDivider, { backgroundColor: cp.divider }]} />
+                  <View
+                    style={[
+                      styles.sliderDivider,
+                      { backgroundColor: cp.divider },
+                    ]}
+                  />
 
                   <View style={styles.sliderBlock}>
                     <View style={styles.sliderRow}>
-                      <Text style={[styles.sliderLabel, { color: cp.text }]}>Rest between blocks</Text>
-                      <Text style={[styles.sliderValue, { color: cp.neonCyan }]}>{blockRestDuration}s</Text>
+                      <Text style={[styles.sliderLabel, { color: cp.text }]}>
+                        Rest between blocks
+                      </Text>
+                      <Text
+                        style={[styles.sliderValue, { color: cp.neonCyan }]}
+                      >
+                        {blockRestDuration}s
+                      </Text>
                     </View>
                     <Slider
                       style={styles.slider}
@@ -437,39 +574,70 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                       maximumValue={45}
                       step={5}
                       value={blockRestDuration}
-                      onValueChange={(value: number) => setBlockRestDuration(value)}
+                      onValueChange={(value: number) =>
+                        setBlockRestDuration(value)
+                      }
                       onSlidingComplete={handleBlockRestDurationChange}
                       minimumTrackTintColor={cp.neonCyan}
                       maximumTrackTintColor={cp.inputBg}
                       thumbTintColor={cp.neonCyan}
                     />
-                    <Text style={[styles.sliderHint, { color: cp.textMuted }]}>10 – 45 seconds</Text>
+                    <Text style={[styles.sliderHint, { color: cp.textMuted }]}>
+                      10 – 45 seconds
+                    </Text>
                   </View>
                 </View>
 
-                <View style={[styles.settingsCard, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
+                <View
+                  style={[
+                    styles.settingsCard,
+                    { backgroundColor: cp.cardBg, borderColor: cp.cardBorder },
+                  ]}
+                >
                   <View style={styles.settingsSectionHeader}>
                     <Feather name="music" size={16} color={cp.neonCyan} />
-                    <Text style={[styles.settingsSectionLabel, { color: cp.neonCyan }]}>AMBIENT MUSIC</Text>
+                    <Text
+                      style={[
+                        styles.settingsSectionLabel,
+                        { color: cp.neonCyan },
+                      ]}
+                    >
+                      AMBIENT MUSIC
+                    </Text>
                   </View>
                   <View style={styles.musicToggleRow}>
                     <View style={styles.musicToggleText}>
                       <Text style={[styles.sliderLabel, { color: cp.text }]}>
                         Play music during workouts
                       </Text>
-                      <Text style={[styles.sliderHint, { color: cp.textMuted, marginTop: 2 }]}>
-                        {musicEnabled ? `All ${ALL_AMBIENT_TRACKS.length} tracks enabled` : 'Off'}
+                      <Text
+                        style={[
+                          styles.sliderHint,
+                          { color: cp.textMuted, marginTop: 2 },
+                        ]}
+                      >
+                        {musicEnabled
+                          ? `All ${ALL_AMBIENT_TRACKS.length} tracks enabled`
+                          : "Off"}
                       </Text>
                     </View>
                     <Switch
                       value={musicEnabled}
                       onValueChange={handleMusicToggle}
-                      trackColor={{ false: cp.inputBg, true: `${cp.neonGreen}66` }}
+                      trackColor={{
+                        false: cp.inputBg,
+                        true: `${cp.neonGreen}66`,
+                      }}
                       thumbColor={musicEnabled ? cp.neonGreen : cp.textMuted}
                       ios_backgroundColor={cp.inputBg}
                     />
                   </View>
-                  <Text style={[styles.musicHint, { color: cp.textMuted, borderTopColor: cp.divider }]}>
+                  <Text
+                    style={[
+                      styles.musicHint,
+                      { color: cp.textMuted, borderTopColor: cp.divider },
+                    ]}
+                  >
                     Manage individual tracks in Settings after setup.
                   </Text>
                 </View>
@@ -491,7 +659,10 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
               </View>
 
               <View style={styles.textContainer}>
-                <ThemedText type="h1" style={[styles.title, { color: cp.text }]}>
+                <ThemedText
+                  type="h1"
+                  style={[styles.title, { color: cp.text }]}
+                >
                   {pages[currentPage].title}
                 </ThemedText>
                 <ThemedText
@@ -518,7 +689,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
 
           {!isAnatomyPage && !isNamePage ? (
             <NeonButton onPress={handleNext} cp={cp}>
-              {isLastPage ? 'Get Started' : 'Continue'}
+              {isLastPage ? "Get Started" : "Continue"}
             </NeonButton>
           ) : null}
         </View>
@@ -536,17 +707,21 @@ function PageDot({ active, color }: { active: boolean; color: string }) {
   return (
     <View style={active ? [styles.dotGlow, { shadowColor: color }] : undefined}>
       <Animated.View
-        style={[
-          styles.dot,
-          { backgroundColor: color },
-          animatedStyle,
-        ]}
+        style={[styles.dot, { backgroundColor: color }, animatedStyle]}
       />
     </View>
   );
 }
 
-function NeonButton({ onPress, children, cp }: { onPress: () => void; children: React.ReactNode; cp: { neonGreen: string; neonCyan: string } }) {
+function NeonButton({
+  onPress,
+  children,
+  cp,
+}: {
+  onPress: () => void;
+  children: React.ReactNode;
+  cp: { neonGreen: string; neonCyan: string };
+}) {
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -594,15 +769,15 @@ const styles = StyleSheet.create({
   },
   pageContent: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   defaultPageContainer: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   imageContainer: {
-    alignItems: 'center',
-    marginBottom: Spacing['4xl'],
+    alignItems: "center",
+    marginBottom: Spacing["4xl"],
   },
   image: {
     width: width * 0.6,
@@ -610,14 +785,14 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.xl,
   },
   textContainer: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   title: {
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: Spacing.lg,
   },
   description: {
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 24,
     paddingHorizontal: Spacing.lg,
   },
@@ -625,10 +800,10 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.lg,
   },
   pagination: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: Spacing['2xl'],
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: Spacing["2xl"],
     gap: Spacing.sm,
   },
   dot: {
@@ -642,7 +817,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   buttonWrapper: {
-    width: '100%',
+    width: "100%",
   },
   buttonGlow: {
     shadowOffset: { width: 0, height: 0 },
@@ -653,36 +828,36 @@ const styles = StyleSheet.create({
   button: {
     height: Spacing.buttonHeight,
     borderRadius: BorderRadius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   buttonText: {
-    fontWeight: '600',
-    color: '#000',
+    fontWeight: "600",
+    color: "#000",
   },
   anatomyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   anatomyButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: Spacing.lg,
-    marginTop: Spacing['3xl'],
+    marginTop: Spacing["3xl"],
   },
   anatomyButton: {
     borderRadius: BorderRadius.xl,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   anatomyButtonGradient: {
-    paddingVertical: Spacing['2xl'],
-    paddingHorizontal: Spacing['2xl'],
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingVertical: Spacing["2xl"],
+    paddingHorizontal: Spacing["2xl"],
+    alignItems: "center",
+    justifyContent: "center",
     gap: Spacing.md,
     minWidth: 120,
   },
   anatomyButtonText: {
-    fontWeight: '600',
+    fontWeight: "600",
     fontSize: 16,
   },
   guideContainer: {
@@ -692,7 +867,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   guideScrollContent: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingBottom: Spacing.lg,
   },
   guideImage: {
@@ -702,36 +877,36 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.xl,
   },
   nameContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: Spacing.lg,
   },
   nameIcon: {
     marginBottom: Spacing.xl,
   },
   nameInput: {
-    width: '100%',
+    width: "100%",
     height: 56,
     borderRadius: BorderRadius.lg,
     paddingHorizontal: Spacing.lg,
-    marginTop: Spacing['2xl'],
+    marginTop: Spacing["2xl"],
     fontSize: 18,
     borderWidth: 1,
   },
   nameButton: {
-    width: '100%',
+    width: "100%",
     marginTop: Spacing.xl,
     borderRadius: BorderRadius.full,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   nameButtonGradient: {
     height: Spacing.buttonHeight,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   nameButtonText: {
-    color: '#000',
-    fontWeight: '600',
+    color: "#000",
+    fontWeight: "600",
     fontSize: 16,
   },
   settingsContainer: {
@@ -751,18 +926,18 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
   },
   settingsSectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: Spacing.sm,
     marginBottom: Spacing.lg,
   },
   settingsSectionLabel: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: "700",
     letterSpacing: 1.2,
   },
   themeCards: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: Spacing.md,
   },
   themeCard: {
@@ -770,63 +945,63 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     borderWidth: 1.5,
     padding: Spacing.md,
-    alignItems: 'center',
+    alignItems: "center",
     gap: Spacing.sm,
-    position: 'relative',
+    position: "relative",
   },
   themePreview: {
-    width: '100%',
+    width: "100%",
     height: 48,
     borderRadius: BorderRadius.md,
     padding: Spacing.sm,
     gap: Spacing.xs,
     marginBottom: Spacing.xs,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   themePreviewDark: {
-    backgroundColor: '#0a0a1a',
+    backgroundColor: "#0a0a1a",
   },
   themePreviewLight: {
-    backgroundColor: '#f0f2f7',
+    backgroundColor: "#f0f2f7",
   },
   themePreviewBar: {
     height: 6,
     borderRadius: 3,
-    backgroundColor: 'rgba(0,255,136,0.6)',
-    width: '85%',
+    backgroundColor: "rgba(0,255,136,0.6)",
+    width: "85%",
   },
   themeCardLabel: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   themeCheckmark: {
-    position: 'absolute',
+    position: "absolute",
     top: 8,
     right: 8,
     width: 18,
     height: 18,
     borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   sliderBlock: {
     gap: Spacing.xs,
   },
   sliderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   sliderLabel: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   sliderValue: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   slider: {
-    width: '100%',
+    width: "100%",
     height: 36,
   },
   sliderHint: {
@@ -837,9 +1012,9 @@ const styles = StyleSheet.create({
     marginVertical: Spacing.md,
   },
   musicToggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: Spacing.md,
   },
   musicToggleText: {

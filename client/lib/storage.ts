@@ -1,21 +1,21 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { isRestDayForDate } from '@/data/workoutProgram';
-import type { EarnedBadge } from '@/data/badges';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { isRestDayForDate } from "@/data/workoutProgram";
+import type { EarnedBadge } from "@/data/badges";
 
 const STORAGE_KEYS = {
-  COMPLETED_DATES: 'pulsekegel_completed_dates',
-  REST_DATES: 'pulsekegel_rest_dates',
-  TOTAL_SESSIONS: 'pulsekegel_total_sessions',
-  TOTAL_MINUTES: 'pulsekegel_total_minutes',
-  SETTINGS: 'pulsekegel_settings',
-  ONBOARDING_COMPLETE: 'pulsekegel_onboarding_complete',
-  PROGRAM_START_DATE: 'pulsekegel_program_start_date',
-  LAST_WEEKLY_REVIEW: 'pulsekegel_last_weekly_review',
-  REVIEW_HISTORY: 'pulsekegel_review_history',
-  EARNED_BADGES: 'pulsekegel_earned_badges',
-  AUDIO_SETTINGS: 'pulsekegel_audio_settings',
-  LAST_WEEK_COMPLETE_TRACKED: 'pulsekegel_last_week_complete_tracked',
-  CHALLENGE_OPTIONAL_DATES: 'pulsekegel_challenge_optional_dates',
+  COMPLETED_DATES: "pulsekegel_completed_dates",
+  REST_DATES: "pulsekegel_rest_dates",
+  TOTAL_SESSIONS: "pulsekegel_total_sessions",
+  TOTAL_MINUTES: "pulsekegel_total_minutes",
+  SETTINGS: "pulsekegel_settings",
+  ONBOARDING_COMPLETE: "pulsekegel_onboarding_complete",
+  PROGRAM_START_DATE: "pulsekegel_program_start_date",
+  LAST_WEEKLY_REVIEW: "pulsekegel_last_weekly_review",
+  REVIEW_HISTORY: "pulsekegel_review_history",
+  EARNED_BADGES: "pulsekegel_earned_badges",
+  AUDIO_SETTINGS: "pulsekegel_audio_settings",
+  LAST_WEEK_COMPLETE_TRACKED: "pulsekegel_last_week_complete_tracked",
+  CHALLENGE_OPTIONAL_DATES: "pulsekegel_challenge_optional_dates",
 };
 
 export interface WeeklyReviewEntry {
@@ -26,12 +26,12 @@ export interface WeeklyReviewEntry {
   date: string;
 }
 
-export type AnatomyType = 'male' | 'female' | null;
+export type AnatomyType = "male" | "female" | null;
 
 export interface UserSettings {
   hapticsEnabled: boolean;
-  hapticIntensity: 'light' | 'medium' | 'heavy';
-  restCueStyle: 'none' | 'light' | 'normal';
+  hapticIntensity: "light" | "medium" | "heavy";
+  restCueStyle: "none" | "light" | "normal";
   highContrastMode: boolean;
   largeTextMode: boolean;
   recoveryMode: boolean;
@@ -47,8 +47,8 @@ export interface UserSettings {
 
 export const defaultSettings: UserSettings = {
   hapticsEnabled: true,
-  hapticIntensity: 'medium',
-  restCueStyle: 'light',
+  hapticIntensity: "medium",
+  restCueStyle: "light",
   highContrastMode: false,
   largeTextMode: false,
   recoveryMode: false,
@@ -56,10 +56,10 @@ export const defaultSettings: UserSettings = {
   blockRestDuration: 25,
   cooldownEnabled: true,
   anatomyType: null,
-  userName: '',
+  userName: "",
   darkMode: true,
   reminderEnabled: false,
-  reminderTime: '08:00',
+  reminderTime: "08:00",
 };
 
 export interface UserProgress {
@@ -73,37 +73,37 @@ export interface UserProgress {
 
 const formatDate = (date: Date): string => {
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 };
 
 const calculateStreak = (completedDates: string[]): number => {
   if (completedDates.length === 0) return 0;
-  
+
   const sortedDates = [...completedDates].sort().reverse();
   const today = formatDate(new Date());
   const yesterday = formatDate(new Date(Date.now() - 86400000));
-  
+
   if (sortedDates[0] !== today && sortedDates[0] !== yesterday) {
     return 0;
   }
-  
+
   let streak = 1;
   for (let i = 1; i < sortedDates.length; i++) {
     const currentDate = new Date(sortedDates[i - 1]);
     const prevDate = new Date(sortedDates[i]);
     const diffDays = Math.floor(
-      (currentDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24)
+      (currentDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24),
     );
-    
+
     if (diffDays === 1) {
       streak++;
     } else {
       break;
     }
   }
-  
+
   return streak;
 };
 
@@ -124,23 +124,23 @@ export const storage = {
         dates.push(date);
         await AsyncStorage.setItem(
           STORAGE_KEYS.COMPLETED_DATES,
-          JSON.stringify(dates)
+          JSON.stringify(dates),
         );
       }
-      
+
       const totalSessions = await this.getTotalSessions();
       await AsyncStorage.setItem(
         STORAGE_KEYS.TOTAL_SESSIONS,
-        String(totalSessions + 1)
+        String(totalSessions + 1),
       );
-      
+
       const totalMinutes = await this.getTotalMinutes();
       await AsyncStorage.setItem(
         STORAGE_KEYS.TOTAL_MINUTES,
-        String(totalMinutes + minutes)
+        String(totalMinutes + minutes),
       );
     } catch (error) {
-      console.error('Error saving completed date:', error);
+      console.error("Error saving completed date:", error);
     }
   },
 
@@ -167,18 +167,18 @@ export const storage = {
     const totalSessions = await this.getTotalSessions();
     const totalMinutes = await this.getTotalMinutes();
     const currentStreak = calculateStreak(completedDates);
-    
+
     const sortedDates = [...completedDates].sort().reverse();
-    
+
     let longestStreak = currentStreak;
     let tempStreak = 1;
     for (let i = 1; i < sortedDates.length; i++) {
       const currentDate = new Date(sortedDates[i - 1]);
       const prevDate = new Date(sortedDates[i]);
       const diffDays = Math.floor(
-        (currentDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24)
+        (currentDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24),
       );
-      
+
       if (diffDays === 1) {
         tempStreak++;
         longestStreak = Math.max(longestStreak, tempStreak);
@@ -213,7 +213,7 @@ export const storage = {
         dates.push(date);
         await AsyncStorage.setItem(
           STORAGE_KEYS.COMPLETED_DATES,
-          JSON.stringify(dates)
+          JSON.stringify(dates),
         );
       }
       const restDates = await this.getRestDates();
@@ -221,11 +221,11 @@ export const storage = {
         restDates.push(date);
         await AsyncStorage.setItem(
           STORAGE_KEYS.REST_DATES,
-          JSON.stringify(restDates)
+          JSON.stringify(restDates),
         );
       }
     } catch (error) {
-      console.error('Error marking rest day:', error);
+      console.error("Error marking rest day:", error);
     }
   },
 
@@ -261,11 +261,11 @@ export const storage = {
     if (changed) {
       await AsyncStorage.setItem(
         STORAGE_KEYS.COMPLETED_DATES,
-        JSON.stringify(completedDates)
+        JSON.stringify(completedDates),
       );
       await AsyncStorage.setItem(
         STORAGE_KEYS.REST_DATES,
-        JSON.stringify(restDates)
+        JSON.stringify(restDates),
       );
     }
 
@@ -275,7 +275,9 @@ export const storage = {
   async getSettings(): Promise<UserSettings> {
     try {
       const data = await AsyncStorage.getItem(STORAGE_KEYS.SETTINGS);
-      return data ? { ...defaultSettings, ...JSON.parse(data) } : defaultSettings;
+      return data
+        ? { ...defaultSettings, ...JSON.parse(data) }
+        : defaultSettings;
     } catch {
       return defaultSettings;
     }
@@ -285,16 +287,19 @@ export const storage = {
     try {
       const current = await this.getSettings();
       const updated = { ...current, ...settings };
-      await AsyncStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(updated));
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.SETTINGS,
+        JSON.stringify(updated),
+      );
     } catch (error) {
-      console.error('Error saving settings:', error);
+      console.error("Error saving settings:", error);
     }
   },
 
   async isOnboardingComplete(): Promise<boolean> {
     try {
       const data = await AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING_COMPLETE);
-      return data === 'true';
+      return data === "true";
     } catch {
       return false;
     }
@@ -302,9 +307,9 @@ export const storage = {
 
   async setOnboardingComplete(): Promise<void> {
     try {
-      await AsyncStorage.setItem(STORAGE_KEYS.ONBOARDING_COMPLETE, 'true');
+      await AsyncStorage.setItem(STORAGE_KEYS.ONBOARDING_COMPLETE, "true");
     } catch (error) {
-      console.error('Error saving onboarding state:', error);
+      console.error("Error saving onboarding state:", error);
     }
   },
 
@@ -320,7 +325,7 @@ export const storage = {
     try {
       await AsyncStorage.setItem(STORAGE_KEYS.PROGRAM_START_DATE, date);
     } catch (error) {
-      console.error('Error saving program start date:', error);
+      console.error("Error saving program start date:", error);
     }
   },
 
@@ -328,7 +333,7 @@ export const storage = {
     try {
       await AsyncStorage.multiRemove(Object.values(STORAGE_KEYS));
     } catch (error) {
-      console.error('Error clearing data:', error);
+      console.error("Error clearing data:", error);
     }
   },
 
@@ -343,15 +348,20 @@ export const storage = {
 
   async setLastWeeklyReview(weekNumber: number): Promise<void> {
     try {
-      await AsyncStorage.setItem(STORAGE_KEYS.LAST_WEEKLY_REVIEW, weekNumber.toString());
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.LAST_WEEKLY_REVIEW,
+        weekNumber.toString(),
+      );
     } catch (error) {
-      console.error('Error saving last weekly review:', error);
+      console.error("Error saving last weekly review:", error);
     }
   },
 
   async getLastWeekCompleteTracked(): Promise<number | null> {
     try {
-      const data = await AsyncStorage.getItem(STORAGE_KEYS.LAST_WEEK_COMPLETE_TRACKED);
+      const data = await AsyncStorage.getItem(
+        STORAGE_KEYS.LAST_WEEK_COMPLETE_TRACKED,
+      );
       return data ? parseInt(data) : null;
     } catch {
       return null;
@@ -360,29 +370,40 @@ export const storage = {
 
   async setLastWeekCompleteTracked(weekNumber: number): Promise<void> {
     try {
-      await AsyncStorage.setItem(STORAGE_KEYS.LAST_WEEK_COMPLETE_TRACKED, weekNumber.toString());
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.LAST_WEEK_COMPLETE_TRACKED,
+        weekNumber.toString(),
+      );
     } catch (error) {
-      console.error('Error saving last week complete tracked:', error);
+      console.error("Error saving last week complete tracked:", error);
     }
   },
 
-  async shouldShowWeeklyReview(completedDates: string[], programStartDate: string | null): Promise<{ show: boolean; weekNumber: number; daysWorkedOut: number }> {
+  async shouldShowWeeklyReview(
+    completedDates: string[],
+    programStartDate: string | null,
+  ): Promise<{ show: boolean; weekNumber: number; daysWorkedOut: number }> {
     if (!programStartDate || completedDates.length === 0) {
       return { show: false, weekNumber: 0, daysWorkedOut: 0 };
     }
 
-    const toDateStr = (d: Date) => d.toISOString().split('T')[0];
-    const startParts = programStartDate.split('-').map(Number);
+    const toDateStr = (d: Date) => d.toISOString().split("T")[0];
+    const startParts = programStartDate.split("-").map(Number);
     const startDate = new Date(startParts[0], startParts[1] - 1, startParts[2]);
 
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const daysSinceStart = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const daysSinceStart = Math.floor(
+      (today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+    );
     const completedWeeks = Math.floor(daysSinceStart / 7);
 
     const lastReviewedWeek = await this.getLastWeeklyReview();
 
-    if (completedWeeks >= 1 && (lastReviewedWeek === null || completedWeeks > (lastReviewedWeek))) {
+    if (
+      completedWeeks >= 1 &&
+      (lastReviewedWeek === null || completedWeeks > lastReviewedWeek)
+    ) {
       const weekToReview = lastReviewedWeek === null ? 1 : lastReviewedWeek + 1;
 
       const weekStart = new Date(startDate);
@@ -393,7 +414,7 @@ export const storage = {
       const weekStartStr = toDateStr(weekStart);
       const weekEndStr = toDateStr(weekEnd);
 
-      const daysWorkedOut = completedDates.filter(dateStr => {
+      const daysWorkedOut = completedDates.filter((dateStr) => {
         return dateStr >= weekStartStr && dateStr <= weekEndStr;
       }).length;
 
@@ -404,10 +425,14 @@ export const storage = {
     return { show: false, weekNumber: currentWeek, daysWorkedOut: 0 };
   },
 
-  async getWeeklyReviewDataForWeek(weekNumber: number, completedDates: string[], programStartDate: string): Promise<{ daysWorkedOut: number; totalMinutes: number }> {
-    const startParts = programStartDate.split('-').map(Number);
+  async getWeeklyReviewDataForWeek(
+    weekNumber: number,
+    completedDates: string[],
+    programStartDate: string,
+  ): Promise<{ daysWorkedOut: number; totalMinutes: number }> {
+    const startParts = programStartDate.split("-").map(Number);
     const startDate = new Date(startParts[0], startParts[1] - 1, startParts[2]);
-    const toDateStr = (d: Date) => d.toISOString().split('T')[0];
+    const toDateStr = (d: Date) => d.toISOString().split("T")[0];
 
     const weekStart = new Date(startDate);
     weekStart.setDate(weekStart.getDate() + (weekNumber - 1) * 7);
@@ -417,21 +442,26 @@ export const storage = {
     const weekStartStr = toDateStr(weekStart);
     const weekEndStr = toDateStr(weekEnd);
 
-    const daysWorkedOut = completedDates.filter(dateStr => {
+    const daysWorkedOut = completedDates.filter((dateStr) => {
       return dateStr >= weekStartStr && dateStr <= weekEndStr;
     }).length;
 
     return { daysWorkedOut, totalMinutes: 0 };
   },
 
-  async getMissedWeeklyReviews(completedDates: string[], programStartDate: string | null): Promise<number[]> {
+  async getMissedWeeklyReviews(
+    completedDates: string[],
+    programStartDate: string | null,
+  ): Promise<number[]> {
     if (!programStartDate || completedDates.length === 0) return [];
 
-    const startParts = programStartDate.split('-').map(Number);
+    const startParts = programStartDate.split("-").map(Number);
     const startDate = new Date(startParts[0], startParts[1] - 1, startParts[2]);
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const daysSinceStart = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const daysSinceStart = Math.floor(
+      (today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+    );
     const completedWeeks = Math.floor(daysSinceStart / 7);
 
     const lastReviewedWeek = await this.getLastWeeklyReview();
@@ -447,16 +477,21 @@ export const storage = {
   async saveWeeklyReviewToHistory(entry: WeeklyReviewEntry): Promise<void> {
     try {
       const history = await this.getReviewHistory();
-      const existingIndex = history.findIndex(h => h.weekNumber === entry.weekNumber);
+      const existingIndex = history.findIndex(
+        (h) => h.weekNumber === entry.weekNumber,
+      );
       if (existingIndex >= 0) {
         history[existingIndex] = entry;
       } else {
         history.push(entry);
       }
       history.sort((a, b) => a.weekNumber - b.weekNumber);
-      await AsyncStorage.setItem(STORAGE_KEYS.REVIEW_HISTORY, JSON.stringify(history));
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.REVIEW_HISTORY,
+        JSON.stringify(history),
+      );
     } catch (error) {
-      console.error('Error saving review history:', error);
+      console.error("Error saving review history:", error);
     }
   },
 
@@ -481,13 +516,16 @@ export const storage = {
   async earnBadge(badgeId: string): Promise<void> {
     try {
       const badges = await this.getEarnedBadges();
-      if (badges.some(b => b.badgeId === badgeId)) return;
+      if (badges.some((b) => b.badgeId === badgeId)) return;
       const now = new Date();
-      const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
       badges.push({ badgeId, earnedDate: date });
-      await AsyncStorage.setItem(STORAGE_KEYS.EARNED_BADGES, JSON.stringify(badges));
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.EARNED_BADGES,
+        JSON.stringify(badges),
+      );
     } catch (error) {
-      console.error('Error earning badge:', error);
+      console.error("Error earning badge:", error);
     }
   },
 
@@ -498,10 +536,10 @@ export const storage = {
       this.getProgramStartDate(),
     ]);
 
-    const earnedIds = new Set(earnedBadges.map(b => b.badgeId));
+    const earnedIds = new Set(earnedBadges.map((b) => b.badgeId));
     const newBadgeIds: string[] = [];
 
-    const { BADGE_DEFINITIONS } = require('@/data/badges');
+    const { BADGE_DEFINITIONS } = require("@/data/badges");
 
     for (const badge of BADGE_DEFINITIONS) {
       if (earnedIds.has(badge.id)) continue;
@@ -509,47 +547,80 @@ export const storage = {
       let earned = false;
 
       switch (badge.criteria.type) {
-        case 'sessions':
+        case "sessions":
           earned = progress.totalSessions >= badge.criteria.value;
           break;
-        case 'streak':
-          earned = progress.currentStreak >= badge.criteria.value ||
-                   progress.longestStreak >= badge.criteria.value;
+        case "streak":
+          earned =
+            progress.currentStreak >= badge.criteria.value ||
+            progress.longestStreak >= badge.criteria.value;
           break;
-        case 'minutes':
+        case "minutes":
           earned = progress.totalMinutes >= badge.criteria.value;
           break;
-        case 'phase': {
+        case "phase": {
           if (programStartDate) {
-            const startParts = programStartDate.split('-').map(Number);
-            const start = new Date(startParts[0], startParts[1] - 1, startParts[2]);
+            const startParts = programStartDate.split("-").map(Number);
+            const start = new Date(
+              startParts[0],
+              startParts[1] - 1,
+              startParts[2],
+            );
             const now = new Date();
-            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            const daysSinceStart = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+            const today = new Date(
+              now.getFullYear(),
+              now.getMonth(),
+              now.getDate(),
+            );
+            const daysSinceStart = Math.floor(
+              (today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
+            );
             const completedWeeks = Math.floor(daysSinceStart / 7);
-            earned = completedWeeks >= badge.criteria.value && progress.completedDates.length > 0;
+            earned =
+              completedWeeks >= badge.criteria.value &&
+              progress.completedDates.length > 0;
           }
           break;
         }
-        case 'program_complete': {
+        case "program_complete": {
           if (programStartDate) {
-            const startParts = programStartDate.split('-').map(Number);
-            const start = new Date(startParts[0], startParts[1] - 1, startParts[2]);
+            const startParts = programStartDate.split("-").map(Number);
+            const start = new Date(
+              startParts[0],
+              startParts[1] - 1,
+              startParts[2],
+            );
             const now = new Date();
-            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            const daysSinceStart = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+            const today = new Date(
+              now.getFullYear(),
+              now.getMonth(),
+              now.getDate(),
+            );
+            const daysSinceStart = Math.floor(
+              (today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
+            );
             const completedWeeks = Math.floor(daysSinceStart / 7);
             earned = completedWeeks >= 12 && progress.completedDates.length > 0;
           }
           break;
         }
-        case 'perfect_week': {
+        case "perfect_week": {
           if (programStartDate && progress.completedDates.length > 0) {
-            const startParts = programStartDate.split('-').map(Number);
-            const start = new Date(startParts[0], startParts[1] - 1, startParts[2]);
+            const startParts = programStartDate.split("-").map(Number);
+            const start = new Date(
+              startParts[0],
+              startParts[1] - 1,
+              startParts[2],
+            );
             const now = new Date();
-            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            const daysSinceStart = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+            const today = new Date(
+              now.getFullYear(),
+              now.getMonth(),
+              now.getDate(),
+            );
+            const daysSinceStart = Math.floor(
+              (today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
+            );
             const completedWeeks = Math.floor(daysSinceStart / 7);
 
             for (let w = 0; w < completedWeeks; w++) {
@@ -597,15 +668,20 @@ export const storage = {
 
   async saveAudioSettings(settings: Record<string, unknown>): Promise<void> {
     try {
-      await AsyncStorage.setItem(STORAGE_KEYS.AUDIO_SETTINGS, JSON.stringify(settings));
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.AUDIO_SETTINGS,
+        JSON.stringify(settings),
+      );
     } catch (error) {
-      console.error('Error saving audio settings:', error);
+      console.error("Error saving audio settings:", error);
     }
   },
 
   async getChallengeOptionalDates(): Promise<string[]> {
     try {
-      const data = await AsyncStorage.getItem(STORAGE_KEYS.CHALLENGE_OPTIONAL_DATES);
+      const data = await AsyncStorage.getItem(
+        STORAGE_KEYS.CHALLENGE_OPTIONAL_DATES,
+      );
       return data ? JSON.parse(data) : [];
     } catch {
       return [];
@@ -623,7 +699,7 @@ export const storage = {
         );
       }
     } catch (error) {
-      console.error('Error marking challenge optional session:', error);
+      console.error("Error marking challenge optional session:", error);
     }
   },
 
@@ -632,17 +708,26 @@ export const storage = {
     totalCoreSessions: number;
     completedOptionalSessions: number;
   }> {
-    const { getWorkoutCompletionsForWeek, getScheduledDaysForWeek } = require('@/data/workoutProgram');
-    const [completedDates, programStartDate, optionalDates] = await Promise.all([
-      this.getCompletedDates(),
-      this.getProgramStartDate(),
-      this.getChallengeOptionalDates(),
-    ]);
+    const {
+      getWorkoutCompletionsForWeek,
+      getScheduledDaysForWeek,
+    } = require("@/data/workoutProgram");
+    const [completedDates, programStartDate, optionalDates] = await Promise.all(
+      [
+        this.getCompletedDates(),
+        this.getProgramStartDate(),
+        this.getChallengeOptionalDates(),
+      ],
+    );
 
     const totalCoreSessions: number = getScheduledDaysForWeek(1);
 
     if (!programStartDate) {
-      return { completedCoreSessions: 0, totalCoreSessions, completedOptionalSessions: 0 };
+      return {
+        completedCoreSessions: 0,
+        totalCoreSessions,
+        completedOptionalSessions: 0,
+      };
     }
 
     const completedCoreSessions: number = getWorkoutCompletionsForWeek(
@@ -669,11 +754,11 @@ export const storage = {
         STORAGE_KEYS.LAST_WEEKLY_REVIEW,
         STORAGE_KEYS.LAST_WEEK_COMPLETE_TRACKED,
         STORAGE_KEYS.REVIEW_HISTORY,
-        'pulsekegel_challenge_shown',
+        "pulsekegel_challenge_shown",
       ]);
-      await AsyncStorage.setItem('pulsekegel_install_date', today);
+      await AsyncStorage.setItem("pulsekegel_install_date", today);
     } catch (error) {
-      console.error('Error resetting challenge progress:', error);
+      console.error("Error resetting challenge progress:", error);
     }
   },
 };

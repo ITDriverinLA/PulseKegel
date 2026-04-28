@@ -1,6 +1,6 @@
-import { DayTemplate, Segment } from '@/data/workoutProgram';
+import { DayTemplate, Segment } from "@/data/workoutProgram";
 
-export type WorkoutPhase = 'squeeze' | 'rest';
+export type WorkoutPhase = "squeeze" | "rest";
 
 export interface WorkoutSettings {
   restDuration: number;
@@ -50,18 +50,24 @@ export class WorkoutEngine {
   private segments: Segment[];
   private settings: WorkoutSettings;
 
-  constructor(workout: DayTemplate, callbacks: WorkoutEngineCallbacks, settings?: WorkoutSettings) {
+  constructor(
+    workout: DayTemplate,
+    callbacks: WorkoutEngineCallbacks,
+    settings?: WorkoutSettings,
+  ) {
     this.workout = workout;
     this.callbacks = callbacks;
     this.settings = settings || defaultWorkoutSettings;
-    
+
     // Filter out cooldown segment if disabled (cooldown segments have 'cooldown' in their ID)
     let filteredSegments = workout.segments;
     if (!this.settings.cooldownEnabled) {
-      filteredSegments = workout.segments.filter(s => !s.id.includes('cooldown'));
+      filteredSegments = workout.segments.filter(
+        (s) => !s.id.includes("cooldown"),
+      );
     }
     this.segments = filteredSegments;
-    
+
     this.state = {
       isRunning: false,
       isPaused: false,
@@ -69,7 +75,7 @@ export class WorkoutEngine {
       segmentIndex: 0,
       setIndex: 0,
       repIndex: 0,
-      phase: 'squeeze',
+      phase: "squeeze",
       secondsRemaining: 0,
       totalElapsedSeconds: 0,
       phaseStartTime: null,
@@ -84,7 +90,7 @@ export class WorkoutEngine {
   }
 
   private getSegmentDuration(segment: Segment): number {
-    if (segment.type === 'blockRest') {
+    if (segment.type === "blockRest") {
       return this.settings.blockRestDuration;
     }
     return segment.squeezeSeconds;
@@ -108,7 +114,7 @@ export class WorkoutEngine {
       } else if (i === this.state.segmentIndex) {
         completedReps +=
           this.state.setIndex * segment.repsPerSet + this.state.repIndex;
-        if (this.state.phase === 'rest') {
+        if (this.state.phase === "rest") {
           completedReps += 0.5;
         }
       }
@@ -119,11 +125,11 @@ export class WorkoutEngine {
 
   start(): void {
     if (this.state.isComplete) return;
-    
+
     this.state.isRunning = true;
     this.state.isPaused = false;
     this.state.phaseStartTime = Date.now();
-    
+
     const segment = this.getCurrentSegment();
     if (segment) {
       this.state.secondsRemaining = this.getSegmentDuration(segment);
@@ -132,14 +138,14 @@ export class WorkoutEngine {
       this.callbacks.onRepChange(this.state.repIndex + 1, segment.repsPerSet);
       this.callbacks.onPhaseChange(this.state.phase, segment);
     }
-    
+
     this.callbacks.onStateChange(this.getState());
     this.startTicking();
   }
 
   pause(): void {
     if (!this.state.isRunning || this.state.isPaused) return;
-    
+
     this.state.isPaused = true;
     this.state.pauseStartTime = Date.now();
     this.stopTicking();
@@ -148,11 +154,11 @@ export class WorkoutEngine {
 
   resume(): void {
     if (!this.state.isRunning || !this.state.isPaused) return;
-    
+
     if (this.state.pauseStartTime) {
       this.state.totalPausedTime += Date.now() - this.state.pauseStartTime;
     }
-    
+
     this.state.isPaused = false;
     this.state.pauseStartTime = null;
     this.callbacks.onStateChange(this.getState());
@@ -161,7 +167,7 @@ export class WorkoutEngine {
 
   skipSegment(): void {
     if (!this.state.isRunning || this.state.isComplete) return;
-    
+
     this.advanceToNextSegment();
   }
 
@@ -174,33 +180,40 @@ export class WorkoutEngine {
   }
 
   handleAppForeground(): void {
-    if (!this.state.isRunning || this.state.isPaused || !this.state.phaseStartTime) {
+    if (
+      !this.state.isRunning ||
+      this.state.isPaused ||
+      !this.state.phaseStartTime
+    ) {
       return;
     }
 
     const now = Date.now();
-    const elapsedSincePhaseStart = (now - this.state.phaseStartTime - this.state.totalPausedTime) / 1000;
+    const elapsedSincePhaseStart =
+      (now - this.state.phaseStartTime - this.state.totalPausedTime) / 1000;
     const segment = this.getCurrentSegment();
-    
+
     if (!segment) return;
 
     const phaseDuration =
-      this.state.phase === 'squeeze'
+      this.state.phase === "squeeze"
         ? segment.squeezeSeconds
         : segment.restSeconds;
 
     if (elapsedSincePhaseStart >= phaseDuration) {
       const overflow = elapsedSincePhaseStart - phaseDuration;
       this.advancePhase();
-      
+
       if (overflow > 0 && !this.state.isComplete) {
         this.state.secondsRemaining = Math.max(
           0,
-          this.state.secondsRemaining - Math.floor(overflow)
+          this.state.secondsRemaining - Math.floor(overflow),
         );
       }
     } else {
-      this.state.secondsRemaining = Math.ceil(phaseDuration - elapsedSincePhaseStart);
+      this.state.secondsRemaining = Math.ceil(
+        phaseDuration - elapsedSincePhaseStart,
+      );
     }
 
     this.callbacks.onStateChange(this.getState());
@@ -208,19 +221,19 @@ export class WorkoutEngine {
 
   private startTicking(): void {
     this.stopTicking();
-    
+
     this.tickInterval = setInterval(() => {
       if (this.state.isPaused || !this.state.isRunning) return;
-      
+
       this.state.secondsRemaining--;
       this.state.totalElapsedSeconds++;
-      
+
       this.callbacks.onTick(this.state.secondsRemaining);
-      
+
       if (this.state.secondsRemaining <= 0) {
         this.advancePhase();
       }
-      
+
       this.callbacks.onStateChange(this.getState());
     }, 1000);
   }
@@ -239,9 +252,9 @@ export class WorkoutEngine {
       return;
     }
 
-    if (this.state.phase === 'squeeze') {
+    if (this.state.phase === "squeeze") {
       // Block rest segments should never have a rest phase after them - go straight to next segment
-      if (segment.type === 'blockRest') {
+      if (segment.type === "blockRest") {
         this.advanceRep();
         return;
       }
@@ -250,25 +263,28 @@ export class WorkoutEngine {
       const isLastRep = this.state.repIndex === segment.repsPerSet - 1;
       const isLastSet = this.state.setIndex === segment.sets - 1;
       const nextSegment = this.segments[this.state.segmentIndex + 1];
-      const nextIsBlockRestOrEnd = !nextSegment || nextSegment.type === 'blockRest' || nextSegment.id.includes('cooldown');
-      
+      const nextIsBlockRestOrEnd =
+        !nextSegment ||
+        nextSegment.type === "blockRest" ||
+        nextSegment.id.includes("cooldown");
+
       if (isLastRep && isLastSet && nextIsBlockRestOrEnd) {
         // Skip rest and go directly to next segment
         this.advanceRep();
       } else {
         // Normal rest between reps - use custom rest duration
-        this.state.phase = 'rest';
+        this.state.phase = "rest";
         this.state.secondsRemaining = this.settings.restDuration;
         this.state.phaseStartTime = Date.now();
-        this.callbacks.onPhaseChange('rest', segment);
+        this.callbacks.onPhaseChange("rest", segment);
       }
     } else if (this.state.isSetRest) {
       this.state.isSetRest = false;
-      this.state.phase = 'squeeze';
+      this.state.phase = "squeeze";
       this.state.secondsRemaining = this.getSegmentDuration(segment);
       this.state.phaseStartTime = Date.now();
       this.callbacks.onRepChange(1, segment.repsPerSet);
-      this.callbacks.onPhaseChange('squeeze', segment);
+      this.callbacks.onPhaseChange("squeeze", segment);
     } else {
       this.advanceRep();
     }
@@ -288,11 +304,11 @@ export class WorkoutEngine {
       return;
     }
 
-    this.state.phase = 'squeeze';
+    this.state.phase = "squeeze";
     this.state.secondsRemaining = this.getSegmentDuration(segment);
     this.state.phaseStartTime = Date.now();
     this.callbacks.onRepChange(this.state.repIndex + 1, segment.repsPerSet);
-    this.callbacks.onPhaseChange('squeeze', segment);
+    this.callbacks.onPhaseChange("squeeze", segment);
   }
 
   private advanceSet(): void {
@@ -311,11 +327,11 @@ export class WorkoutEngine {
     }
 
     this.state.isSetRest = true;
-    this.state.phase = 'rest';
+    this.state.phase = "rest";
     this.state.secondsRemaining = SET_REST_SECONDS;
     this.state.phaseStartTime = Date.now();
     this.callbacks.onSetChange(this.state.setIndex + 1, segment.sets);
-    this.callbacks.onPhaseChange('rest', segment);
+    this.callbacks.onPhaseChange("rest", segment);
   }
 
   private advanceToNextSegment(): void {
@@ -334,14 +350,14 @@ export class WorkoutEngine {
       return;
     }
 
-    this.state.phase = 'squeeze';
+    this.state.phase = "squeeze";
     this.state.secondsRemaining = this.getSegmentDuration(newSegment);
     this.state.phaseStartTime = Date.now();
-    
+
     this.callbacks.onSegmentChange(newSegment, this.state.segmentIndex);
     this.callbacks.onSetChange(1, newSegment.sets);
     this.callbacks.onRepChange(1, newSegment.repsPerSet);
-    this.callbacks.onPhaseChange('squeeze', newSegment);
+    this.callbacks.onPhaseChange("squeeze", newSegment);
   }
 
   destroy(): void {

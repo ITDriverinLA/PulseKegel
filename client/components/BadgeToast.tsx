@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, Text, Pressable, Dimensions, Modal } from 'react-native';
+import React, { useEffect, useState } from "react";
+import { StyleSheet, View, Text, Pressable, Modal } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -8,14 +8,14 @@ import Animated, {
   withDelay,
   withRepeat,
   withSpring,
-} from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Feather } from '@expo/vector-icons';
+} from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
+import { Feather } from "@expo/vector-icons";
 
-import { getBadgeById } from '@/data/badges';
-import { useThemePreference } from '@/contexts/ThemePreferenceContext';
-import { useAudio } from '@/contexts/AudioContext';
-import { Spacing, BorderRadius } from '@/constants/theme';
+import { getBadgeById } from "@/data/badges";
+import { useThemePreference } from "@/contexts/ThemePreferenceContext";
+import { useAudio } from "@/contexts/AudioContext";
+import { Spacing } from "@/constants/theme";
 import {
   ANIM_DURATION_MICRO,
   ANIM_DURATION_MICRO_SETTLE,
@@ -27,9 +27,7 @@ import {
   ANIM_DELAY_LONG,
   ANIM_DELAY_XL,
   ANIM_DELAY_2XL,
-} from '@/constants/animation';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+} from "@/constants/animation";
 
 interface BadgeToastProps {
   badgeIds: string[];
@@ -37,7 +35,7 @@ interface BadgeToastProps {
 }
 
 export function BadgeToast({ badgeIds, onDismiss }: BadgeToastProps) {
-  const { cp, isDarkMode } = useThemePreference();
+  const { isDarkMode } = useThemePreference();
   const { playSfx } = useAudio();
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -47,13 +45,14 @@ export function BadgeToast({ badgeIds, onDismiss }: BadgeToastProps) {
   const shimmer = useSharedValue(0);
   const glowPulse = useSharedValue(0);
 
-  const currentBadge = badgeIds.length > 0 ? getBadgeById(badgeIds[currentIndex]) : undefined;
+  const currentBadge =
+    badgeIds.length > 0 ? getBadgeById(badgeIds[currentIndex]) : undefined;
   const hasMore = currentIndex < badgeIds.length - 1;
 
   useEffect(() => {
     if (!currentBadge) return;
 
-    playSfx('badge');
+    playSfx("badge");
 
     iconScale.value = 0;
     iconRotate.value = 0;
@@ -61,23 +60,41 @@ export function BadgeToast({ badgeIds, onDismiss }: BadgeToastProps) {
     shimmer.value = 0;
     glowPulse.value = 0;
 
-    iconScale.value = withDelay(ANIM_DELAY_MED, withSpring(1, { damping: 8, stiffness: 120 }));
-    iconRotate.value = withDelay(ANIM_DELAY_MED, withSequence(
-      withTiming(-10, { duration: ANIM_DURATION_MICRO }),
-      withTiming(10, { duration: ANIM_DURATION_MICRO }),
-      withTiming(0, { duration: ANIM_DURATION_MICRO_SETTLE })
-    ));
-    contentOpacity.value = withDelay(ANIM_DELAY_2XL, withTiming(1, { duration: ANIM_DURATION_BADGE_APPEAR }));
-    shimmer.value = withDelay(ANIM_DELAY_LONG, withRepeat(
-      withTiming(1, { duration: ANIM_DURATION_BADGE_SHIMMER, easing: ANIM_EASING_PULSE }),
-      -1,
-      true
-    ));
-    glowPulse.value = withDelay(ANIM_DELAY_XL, withRepeat(
-      withTiming(1, { duration: ANIM_DURATION_BADGE_GLOW }),
-      -1,
-      true
-    ));
+    iconScale.value = withDelay(
+      ANIM_DELAY_MED,
+      withSpring(1, { damping: 8, stiffness: 120 }),
+    );
+    iconRotate.value = withDelay(
+      ANIM_DELAY_MED,
+      withSequence(
+        withTiming(-10, { duration: ANIM_DURATION_MICRO }),
+        withTiming(10, { duration: ANIM_DURATION_MICRO }),
+        withTiming(0, { duration: ANIM_DURATION_MICRO_SETTLE }),
+      ),
+    );
+    contentOpacity.value = withDelay(
+      ANIM_DELAY_2XL,
+      withTiming(1, { duration: ANIM_DURATION_BADGE_APPEAR }),
+    );
+    shimmer.value = withDelay(
+      ANIM_DELAY_LONG,
+      withRepeat(
+        withTiming(1, {
+          duration: ANIM_DURATION_BADGE_SHIMMER,
+          easing: ANIM_EASING_PULSE,
+        }),
+        -1,
+        true,
+      ),
+    );
+    glowPulse.value = withDelay(
+      ANIM_DELAY_XL,
+      withRepeat(
+        withTiming(1, { duration: ANIM_DURATION_BADGE_GLOW }),
+        -1,
+        true,
+      ),
+    );
   }, [currentIndex, currentBadge]);
 
   const iconAnimatedStyle = useAnimatedStyle(() => ({
@@ -99,7 +116,7 @@ export function BadgeToast({ badgeIds, onDismiss }: BadgeToastProps) {
 
   const handleNext = () => {
     if (hasMore) {
-      setCurrentIndex(prev => prev + 1);
+      setCurrentIndex((prev) => prev + 1);
     } else {
       onDismiss();
     }
@@ -108,17 +125,17 @@ export function BadgeToast({ badgeIds, onDismiss }: BadgeToastProps) {
   if (!currentBadge || badgeIds.length === 0) return null;
 
   const badgeColor = currentBadge.color;
-  const overlayBg = isDarkMode ? 'rgba(5, 5, 15, 0.92)' : 'rgba(0, 0, 0, 0.6)';
+  const overlayBg = isDarkMode ? "rgba(5, 5, 15, 0.92)" : "rgba(0, 0, 0, 0.6)";
   const cardGradient = isDarkMode
-    ? ['rgba(20, 15, 40, 0.98)', 'rgba(10, 15, 35, 0.98)'] as const
-    : ['rgba(255, 255, 255, 0.98)', 'rgba(245, 247, 252, 0.98)'] as const;
+    ? (["rgba(20, 15, 40, 0.98)", "rgba(10, 15, 35, 0.98)"] as const)
+    : (["rgba(255, 255, 255, 0.98)", "rgba(245, 247, 252, 0.98)"] as const);
   const cardBorder = isDarkMode ? `rgba(255,255,255,0.08)` : `rgba(0,0,0,0.08)`;
-  const congratsColor = isDarkMode ? '#FFFFFF' : '#1a1a2e';
+  const congratsColor = isDarkMode ? "#FFFFFF" : "#1a1a2e";
   const nameColor = badgeColor;
-  const descColor = isDarkMode ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)';
-  const labelColor = isDarkMode ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)';
-  const buttonTextColor = '#FFFFFF';
-  const counterColor = isDarkMode ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)';
+  const descColor = isDarkMode ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.6)";
+  const labelColor = isDarkMode ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.35)";
+  const buttonTextColor = "#FFFFFF";
+  const counterColor = isDarkMode ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.4)";
 
   return (
     <Modal transparent animationType="fade" visible>
@@ -129,14 +146,31 @@ export function BadgeToast({ badgeIds, onDismiss }: BadgeToastProps) {
             style={[styles.card, { borderColor: cardBorder }]}
           >
             <Animated.View style={[styles.glowCircle, glowAnimatedStyle]}>
-              <View style={[styles.glowInner, { backgroundColor: badgeColor, shadowColor: badgeColor }]} />
+              <View
+                style={[
+                  styles.glowInner,
+                  { backgroundColor: badgeColor, shadowColor: badgeColor },
+                ]}
+              />
             </Animated.View>
 
-            <Text style={[styles.congratsLabel, { color: labelColor }]}>BADGE EARNED</Text>
+            <Text style={[styles.congratsLabel, { color: labelColor }]}>
+              BADGE EARNED
+            </Text>
 
             <Animated.View style={[styles.iconOuter, iconAnimatedStyle]}>
-              <View style={[styles.iconRing, { borderColor: badgeColor, shadowColor: badgeColor }]}>
-                <View style={[styles.iconBg, { backgroundColor: `${badgeColor}18` }]}>
+              <View
+                style={[
+                  styles.iconRing,
+                  { borderColor: badgeColor, shadowColor: badgeColor },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.iconBg,
+                    { backgroundColor: `${badgeColor}18` },
+                  ]}
+                >
                   <Feather
                     name={currentBadge.icon as any}
                     size={44}
@@ -157,9 +191,18 @@ export function BadgeToast({ badgeIds, onDismiss }: BadgeToastProps) {
                 {currentBadge.description}
               </Text>
 
-              <View style={[styles.categoryPill, { backgroundColor: `${badgeColor}15`, borderColor: `${badgeColor}30` }]}>
+              <View
+                style={[
+                  styles.categoryPill,
+                  {
+                    backgroundColor: `${badgeColor}15`,
+                    borderColor: `${badgeColor}30`,
+                  },
+                ]}
+              >
                 <Text style={[styles.categoryText, { color: badgeColor }]}>
-                  {currentBadge.category.charAt(0).toUpperCase() + currentBadge.category.slice(1)}
+                  {currentBadge.category.charAt(0).toUpperCase() +
+                    currentBadge.category.slice(1)}
                 </Text>
               </View>
             </Animated.View>
@@ -173,10 +216,14 @@ export function BadgeToast({ badgeIds, onDismiss }: BadgeToastProps) {
                   style={styles.button}
                 >
                   <Text style={[styles.buttonText, { color: buttonTextColor }]}>
-                    {hasMore ? 'Next Badge' : 'Continue'}
+                    {hasMore ? "Next Badge" : "Continue"}
                   </Text>
                   {hasMore ? (
-                    <Feather name="arrow-right" size={18} color={buttonTextColor} />
+                    <Feather
+                      name="arrow-right"
+                      size={18}
+                      color={buttonTextColor}
+                    />
                   ) : null}
                 </LinearGradient>
               </Pressable>
@@ -199,30 +246,30 @@ export function BadgeToast({ badgeIds, onDismiss }: BadgeToastProps) {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     padding: Spacing.xl,
   },
   modalContent: {
-    width: '100%',
+    width: "100%",
     maxWidth: 340,
   },
   card: {
     borderRadius: 24,
     borderWidth: 1,
-    alignItems: 'center',
+    alignItems: "center",
     paddingTop: 36,
     paddingBottom: 28,
     paddingHorizontal: 28,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   glowCircle: {
-    position: 'absolute',
+    position: "absolute",
     top: -40,
     width: 200,
     height: 200,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   glowInner: {
     width: 140,
@@ -235,7 +282,7 @@ const styles = StyleSheet.create({
   },
   congratsLabel: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: "700",
     letterSpacing: 3,
     marginBottom: 20,
   },
@@ -247,8 +294,8 @@ const styles = StyleSheet.create({
     height: 96,
     borderRadius: 48,
     borderWidth: 2.5,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.5,
     shadowRadius: 20,
@@ -257,28 +304,28 @@ const styles = StyleSheet.create({
     width: 84,
     height: 84,
     borderRadius: 42,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   textContent: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 28,
   },
   congratsText: {
     fontSize: 24,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: 8,
   },
   badgeName: {
     fontSize: 20,
-    fontWeight: '800',
+    fontWeight: "800",
     marginBottom: 10,
-    textAlign: 'center',
+    textAlign: "center",
   },
   badgeDescription: {
     fontSize: 14,
     lineHeight: 20,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 14,
   },
   categoryPill: {
@@ -289,32 +336,32 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: "700",
     letterSpacing: 1,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
   buttonPressable: {
-    width: '100%',
+    width: "100%",
   },
   button: {
     height: 50,
     borderRadius: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
     gap: 8,
   },
   buttonText: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   counter: {
     fontSize: 12,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: 12,
   },
   glowBar: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,

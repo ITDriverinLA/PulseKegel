@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -7,26 +7,37 @@ import {
   ScrollView,
   Modal,
   ActivityIndicator,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Feather } from '@expo/vector-icons';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
+import { Feather } from "@expo/vector-icons";
+import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-import { storage } from '@/lib/storage';
-import { trackChallengeResult, trackChallengeCta } from '@/lib/analytics';
-import { useSubscription } from '@/contexts/SubscriptionContext';
-import { useAccessibility } from '@/contexts/AccessibilityContext';
-import { useThemePreference } from '@/contexts/ThemePreferenceContext';
-import { Spacing, BorderRadius } from '@/constants/theme';
-import { ANIM_DURATION_EXIT_COMPLETE, ANIM_DELAY_SHORT, ANIM_DELAY_MED, ANIM_DELAY_LONG, ANIM_DELAY_XL } from '@/constants/animation';
-import { RootStackParamList } from '@/navigation/RootStackNavigator';
+import { storage } from "@/lib/storage";
+import { trackChallengeResult, trackChallengeCta } from "@/lib/analytics";
+import { useSubscription } from "@/contexts/SubscriptionContext";
+import { useAccessibility } from "@/contexts/AccessibilityContext";
+import { useThemePreference } from "@/contexts/ThemePreferenceContext";
+import { Spacing, BorderRadius } from "@/constants/theme";
+import {
+  ANIM_DURATION_EXIT_COMPLETE,
+  ANIM_DELAY_SHORT,
+  ANIM_DELAY_MED,
+  ANIM_DELAY_LONG,
+  ANIM_DELAY_XL,
+} from "@/constants/animation";
+import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-type FeatherIconName = React.ComponentProps<typeof Feather>['name'];
-type ChallengeResult = 'not_started' | 'first_step' | 'partial' | 'complete' | 'strong_finish';
+type FeatherIconName = React.ComponentProps<typeof Feather>["name"];
+type ChallengeResult =
+  | "not_started"
+  | "first_step"
+  | "partial"
+  | "complete"
+  | "strong_finish";
 
 interface ChallengeStats {
   completedCoreSessions: number;
@@ -35,16 +46,16 @@ interface ChallengeStats {
 }
 
 function getChallengeResult(stats: ChallengeStats): ChallengeResult {
-  if (stats.completedCoreSessions === 0) return 'not_started';
-  if (stats.completedCoreSessions === 1) return 'first_step';
-  if (stats.completedCoreSessions < stats.totalCoreSessions) return 'partial';
-  if (stats.completedOptionalSessions > 0) return 'strong_finish';
-  return 'complete';
+  if (stats.completedCoreSessions === 0) return "not_started";
+  if (stats.completedCoreSessions === 1) return "first_step";
+  if (stats.completedCoreSessions < stats.totalCoreSessions) return "partial";
+  if (stats.completedOptionalSessions > 0) return "strong_finish";
+  return "complete";
 }
 
 interface ResultConfig {
   icon: FeatherIconName;
-  iconAccent: 'neonGreen' | 'neonCyan' | 'textMuted';
+  iconAccent: "neonGreen" | "neonCyan" | "textMuted";
   title: string;
   message: string;
   primaryLabel: string;
@@ -55,58 +66,58 @@ interface ResultConfig {
 
 const RESULT_CONFIGS: Record<ChallengeResult, ResultConfig> = {
   not_started: {
-    icon: 'alert-circle',
-    iconAccent: 'textMuted',
-    title: 'Challenge Not Started',
+    icon: "alert-circle",
+    iconAccent: "textMuted",
+    title: "Challenge Not Started",
     message:
-      'No sessions were completed during the challenge window — and that\'s okay. The program is still here, ready whenever you are. Restarting takes one tap.',
-    primaryLabel: 'Restart Challenge',
+      "No sessions were completed during the challenge window — and that's okay. The program is still here, ready whenever you are. Restarting takes one tap.",
+    primaryLabel: "Restart Challenge",
     primaryIsRestart: true,
-    secondaryLabel: 'Continue Training',
+    secondaryLabel: "Continue Training",
     secondaryIsRestart: false,
   },
   first_step: {
-    icon: 'trending-up',
-    iconAccent: 'neonCyan',
-    title: 'You Took the First Step.',
+    icon: "trending-up",
+    iconAccent: "neonCyan",
+    title: "You Took the First Step.",
     message:
-      'One session completed. You\'ve already proven you can show up. The full 12-week program is built on exactly that first step — keep going.',
-    primaryLabel: 'Continue Training',
+      "One session completed. You've already proven you can show up. The full 12-week program is built on exactly that first step — keep going.",
+    primaryLabel: "Continue Training",
     primaryIsRestart: false,
-    secondaryLabel: 'Restart the Challenge',
+    secondaryLabel: "Restart the Challenge",
     secondaryIsRestart: true,
   },
   partial: {
-    icon: 'zap',
-    iconAccent: 'neonCyan',
-    title: 'Good Start.',
+    icon: "zap",
+    iconAccent: "neonCyan",
+    title: "Good Start.",
     message:
-      'Two of three core sessions done. You built a real habit this week. Carry that momentum into the full 12-week program and finish what you started.',
-    primaryLabel: 'Continue Training',
+      "Two of three core sessions done. You built a real habit this week. Carry that momentum into the full 12-week program and finish what you started.",
+    primaryLabel: "Continue Training",
     primaryIsRestart: false,
-    secondaryLabel: 'Restart the Challenge',
+    secondaryLabel: "Restart the Challenge",
     secondaryIsRestart: true,
   },
   complete: {
-    icon: 'award',
-    iconAccent: 'neonGreen',
-    title: 'Challenge Complete.',
+    icon: "award",
+    iconAccent: "neonGreen",
+    title: "Challenge Complete.",
     message:
-      'Every session done, every rep counted. The 7-day challenge is the foundation of a 12-week program built for real, lasting pelvic floor strength. You\'ve done the hardest part — starting.',
-    primaryLabel: 'Continue Training',
+      "Every session done, every rep counted. The 7-day challenge is the foundation of a 12-week program built for real, lasting pelvic floor strength. You've done the hardest part — starting.",
+    primaryLabel: "Continue Training",
     primaryIsRestart: false,
-    secondaryLabel: 'Restart the Challenge',
+    secondaryLabel: "Restart the Challenge",
     secondaryIsRestart: true,
   },
   strong_finish: {
-    icon: 'star',
-    iconAccent: 'neonGreen',
-    title: 'Strong Finish.',
+    icon: "star",
+    iconAccent: "neonGreen",
+    title: "Strong Finish.",
     message:
-      'All core sessions completed — plus extra work on rest days. That initiative is exactly what the 12-week program is built to reward. Keep that energy.',
-    primaryLabel: 'Continue Training',
+      "All core sessions completed — plus extra work on rest days. That initiative is exactly what the 12-week program is built to reward. Keep that energy.",
+    primaryLabel: "Continue Training",
     primaryIsRestart: false,
-    secondaryLabel: 'Restart the Challenge',
+    secondaryLabel: "Restart the Challenge",
     secondaryIsRestart: true,
   },
 };
@@ -148,7 +159,7 @@ export default function ChallengeCompleteScreen() {
     try {
       await storage.resetChallengeProgress();
       await checkSubscription();
-      navigation.replace('Main');
+      navigation.replace("Main");
     } catch {
       setIsRestarting(false);
       setRestartError(true);
@@ -159,7 +170,11 @@ export default function ChallengeCompleteScreen() {
     if (!stats) return;
     const result = getChallengeResult(stats);
     const cfg = RESULT_CONFIGS[result];
-    trackChallengeCta({ result, button: 'primary', action: cfg.primaryIsRestart ? 'restart' : 'continue' });
+    trackChallengeCta({
+      result,
+      button: "primary",
+      action: cfg.primaryIsRestart ? "restart" : "continue",
+    });
     if (cfg.primaryIsRestart) {
       setShowConfirm(true);
     } else {
@@ -171,7 +186,11 @@ export default function ChallengeCompleteScreen() {
     if (!stats) return;
     const result = getChallengeResult(stats);
     const cfg = RESULT_CONFIGS[result];
-    trackChallengeCta({ result, button: 'secondary', action: cfg.secondaryIsRestart ? 'restart' : 'continue' });
+    trackChallengeCta({
+      result,
+      button: "secondary",
+      action: cfg.secondaryIsRestart ? "restart" : "continue",
+    });
     if (cfg.secondaryIsRestart) {
       setShowConfirm(true);
     } else {
@@ -195,11 +214,11 @@ export default function ChallengeCompleteScreen() {
   const result = getChallengeResult(stats);
   const config = RESULT_CONFIGS[result];
   const iconColor =
-    config.iconAccent === 'neonGreen'
+    config.iconAccent === "neonGreen"
       ? cp.neonGreen
-      : config.iconAccent === 'neonCyan'
-      ? cp.neonCyan
-      : cp.textMuted;
+      : config.iconAccent === "neonCyan"
+        ? cp.neonCyan
+        : cp.textMuted;
 
   return (
     <LinearGradient
@@ -210,26 +229,42 @@ export default function ChallengeCompleteScreen() {
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + Spacing.xl * 2, paddingBottom: insets.bottom + Spacing.xl },
+          {
+            paddingTop: insets.top + Spacing.xl * 2,
+            paddingBottom: insets.bottom + Spacing.xl,
+          },
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View entering={FadeInDown.delay(ANIM_DELAY_SHORT)} style={styles.header}>
+        <Animated.View
+          entering={FadeInDown.delay(ANIM_DELAY_SHORT)}
+          style={styles.header}
+        >
           <View
             style={[
               styles.iconContainer,
-              { backgroundColor: `${iconColor}26`, borderColor: `${iconColor}4D` },
+              {
+                backgroundColor: `${iconColor}26`,
+                borderColor: `${iconColor}4D`,
+              },
             ]}
           >
             <Feather name={config.icon} size={52} color={iconColor} />
           </View>
-          <Text style={[styles.label, { color: iconColor }]}>7-DAY CONTROL CHALLENGE</Text>
-          <Text style={[styles.title, { color: cp.text, fontSize: 32 * fontScale }]}>
+          <Text style={[styles.label, { color: iconColor }]}>
+            7-DAY CONTROL CHALLENGE
+          </Text>
+          <Text
+            style={[styles.title, { color: cp.text, fontSize: 32 * fontScale }]}
+          >
             {config.title}
           </Text>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(ANIM_DELAY_MED)} style={styles.progressSection}>
+        <Animated.View
+          entering={FadeInDown.delay(ANIM_DELAY_MED)}
+          style={styles.progressSection}
+        >
           <View style={styles.progressDots}>
             {Array.from({ length: stats.totalCoreSessions }).map((_, i) => {
               const filled = i < stats.completedCoreSessions;
@@ -244,14 +279,16 @@ export default function ChallengeCompleteScreen() {
                     },
                   ]}
                 >
-                  {filled ? <Feather name="check" size={14} color={cp.bg} /> : null}
+                  {filled ? (
+                    <Feather name="check" size={14} color={cp.bg} />
+                  ) : null}
                 </View>
               );
             })}
           </View>
           <Text style={[styles.progressLabel, { color: cp.textSecondary }]}>
-            {'You completed '}
-            <Text style={{ color: cp.text, fontWeight: '700' }}>
+            {"You completed "}
+            <Text style={{ color: cp.text, fontWeight: "700" }}>
               {stats.completedCoreSessions}
             </Text>
             {` of ${stats.totalCoreSessions} core sessions`}
@@ -259,7 +296,7 @@ export default function ChallengeCompleteScreen() {
           {stats.completedOptionalSessions > 0 ? (
             <Text style={[styles.optionalLabel, { color: cp.neonCyan }]}>
               {`and ${stats.completedOptionalSessions} optional recovery ${
-                stats.completedOptionalSessions === 1 ? 'session' : 'sessions'
+                stats.completedOptionalSessions === 1 ? "session" : "sessions"
               }.`}
             </Text>
           ) : null}
@@ -270,7 +307,9 @@ export default function ChallengeCompleteScreen() {
             style={[
               styles.messageCard,
               {
-                backgroundColor: isDarkMode ? 'rgba(26, 26, 46, 0.6)' : 'rgba(255,255,255,0.7)',
+                backgroundColor: isDarkMode
+                  ? "rgba(26, 26, 46, 0.6)"
+                  : "rgba(255,255,255,0.7)",
                 borderColor: `${iconColor}26`,
               },
             ]}
@@ -281,7 +320,10 @@ export default function ChallengeCompleteScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInUp.delay(ANIM_DELAY_XL)} style={styles.ctaSection}>
+        <Animated.View
+          entering={FadeInUp.delay(ANIM_DELAY_XL)}
+          style={styles.ctaSection}
+        >
           <Pressable
             style={[
               styles.primaryButton,
@@ -291,7 +333,7 @@ export default function ChallengeCompleteScreen() {
             testID="button-challenge-primary"
           >
             <Feather
-              name={config.primaryIsRestart ? 'refresh-cw' : 'arrow-right'}
+              name={config.primaryIsRestart ? "refresh-cw" : "arrow-right"}
               size={20}
               color={cp.bg}
             />
@@ -324,30 +366,45 @@ export default function ChallengeCompleteScreen() {
             style={[
               styles.modalCard,
               {
-                backgroundColor: isDarkMode ? '#1A1A2E' : '#FFFFFF',
+                backgroundColor: isDarkMode ? "#1A1A2E" : "#FFFFFF",
                 borderColor: `${cp.neonGreen}33`,
               },
             ]}
           >
-            <View style={[styles.modalIconRow, { backgroundColor: `${cp.neonCyan}20` }]}>
+            <View
+              style={[
+                styles.modalIconRow,
+                { backgroundColor: `${cp.neonCyan}20` },
+              ]}
+            >
               <Feather name="refresh-cw" size={28} color={cp.neonCyan} />
             </View>
-            <Text style={[styles.modalTitle, { color: cp.text }]}>Restart the Challenge?</Text>
+            <Text style={[styles.modalTitle, { color: cp.text }]}>
+              Restart the Challenge?
+            </Text>
             <Text style={[styles.modalMessage, { color: cp.textSecondary }]}>
-              Your challenge progress, streaks, and session dates will be cleared. Your badges and lifetime session totals are kept.
+              Your challenge progress, streaks, and session dates will be
+              cleared. Your badges and lifetime session totals are kept.
             </Text>
             {restartError ? (
-              <Text style={[styles.errorText, { color: '#FF6B6B' }]}>
+              <Text style={[styles.errorText, { color: "#FF6B6B" }]}>
                 Something went wrong. Please try again.
               </Text>
             ) : null}
             <View style={styles.modalButtons}>
               <Pressable
-                style={[styles.modalCancel, { borderColor: `${cp.textMuted}40` }]}
+                style={[
+                  styles.modalCancel,
+                  { borderColor: `${cp.textMuted}40` },
+                ]}
                 onPress={() => setShowConfirm(false)}
                 testID="button-restart-cancel"
               >
-                <Text style={[styles.modalCancelText, { color: cp.textSecondary }]}>Cancel</Text>
+                <Text
+                  style={[styles.modalCancelText, { color: cp.textSecondary }]}
+                >
+                  Cancel
+                </Text>
               </Pressable>
               <Pressable
                 style={[styles.modalConfirm, { backgroundColor: cp.neonCyan }]}
@@ -356,7 +413,7 @@ export default function ChallengeCompleteScreen() {
                 testID="button-restart-confirm"
               >
                 <Text style={[styles.modalConfirmText, { color: cp.bg }]}>
-                  {isRestarting ? 'Restarting...' : 'Restart'}
+                  {isRestarting ? "Restarting..." : "Restart"}
                 </Text>
               </Pressable>
             </View>
@@ -373,8 +430,8 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   scrollView: {
     flex: 1,
@@ -383,37 +440,37 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
   },
   header: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: Spacing.xl,
   },
   iconContainer: {
     width: 96,
     height: 96,
     borderRadius: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: Spacing.xl,
     borderWidth: 2,
   },
   label: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: "700",
     letterSpacing: 2,
     marginBottom: Spacing.sm,
-    textAlign: 'center',
+    textAlign: "center",
   },
   title: {
-    fontWeight: '800',
-    textAlign: 'center',
+    fontWeight: "800",
+    textAlign: "center",
     lineHeight: 40,
   },
   progressSection: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: Spacing.xl,
     gap: Spacing.sm,
   },
   progressDots: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: Spacing.md,
   },
   progressDot: {
@@ -421,17 +478,17 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   progressLabel: {
     fontSize: 14,
-    textAlign: 'center',
+    textAlign: "center",
   },
   optionalLabel: {
     fontSize: 13,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontWeight: "600",
+    textAlign: "center",
   },
   messageCard: {
     borderRadius: BorderRadius.lg,
@@ -442,15 +499,15 @@ const styles = StyleSheet.create({
   messageText: {
     fontSize: 15,
     lineHeight: 24,
-    textAlign: 'center',
+    textAlign: "center",
   },
   ctaSection: {
     gap: Spacing.md,
   },
   primaryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: Spacing.sm,
     paddingVertical: Spacing.md + 4,
     borderRadius: BorderRadius.full,
@@ -460,80 +517,80 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   primaryButtonText: {
-    fontWeight: '700',
+    fontWeight: "700",
     fontSize: 17,
   },
   secondaryButton: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: Spacing.md,
   },
   secondaryButtonText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: Spacing.xl,
   },
   modalCard: {
-    width: '100%',
+    width: "100%",
     borderRadius: BorderRadius.xl,
     borderWidth: 1,
     padding: Spacing.xl,
-    alignItems: 'center',
+    alignItems: "center",
     gap: Spacing.md,
   },
   modalIconRow: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: Spacing.xs,
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: '700',
-    textAlign: 'center',
+    fontWeight: "700",
+    textAlign: "center",
   },
   modalMessage: {
     fontSize: 14,
     lineHeight: 22,
-    textAlign: 'center',
+    textAlign: "center",
   },
   errorText: {
     fontSize: 13,
-    textAlign: 'center',
-    fontWeight: '500',
+    textAlign: "center",
+    fontWeight: "500",
   },
   modalButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: Spacing.sm,
     marginTop: Spacing.sm,
-    width: '100%',
+    width: "100%",
   },
   modalCancel: {
     flex: 1,
     borderRadius: BorderRadius.full,
     borderWidth: 1,
     paddingVertical: Spacing.md,
-    alignItems: 'center',
+    alignItems: "center",
   },
   modalCancelText: {
-    fontWeight: '600',
+    fontWeight: "600",
     fontSize: 15,
   },
   modalConfirm: {
     flex: 1,
     borderRadius: BorderRadius.full,
     paddingVertical: Spacing.md,
-    alignItems: 'center',
+    alignItems: "center",
   },
   modalConfirmText: {
-    fontWeight: '700',
+    fontWeight: "700",
     fontSize: 15,
   },
 });

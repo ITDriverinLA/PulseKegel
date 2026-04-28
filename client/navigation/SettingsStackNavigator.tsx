@@ -1,8 +1,8 @@
-import React from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import React from "react";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-import SettingsScreen from '@/screens/SettingsScreen';
-import { useScreenOptions } from '@/hooks/useScreenOptions';
+import SettingsScreen from "@/screens/SettingsScreen";
+import { useScreenOptions } from "@/hooks/useScreenOptions";
 
 export type SettingsStackParamList = {
   Settings: undefined;
@@ -19,7 +19,7 @@ export default function SettingsStackNavigator() {
         name="Settings"
         component={SettingsScreen}
         options={{
-          title: 'Settings',
+          title: "Settings",
         }}
       />
     </Stack.Navigator>

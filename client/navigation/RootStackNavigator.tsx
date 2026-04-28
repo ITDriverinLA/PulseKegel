@@ -1,31 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import Constants from 'expo-constants';
+import React, { useState, useEffect } from "react";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import Constants from "expo-constants";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-} from 'react-native-reanimated';
+} from "react-native-reanimated";
 
-import MainTabNavigator from '@/navigation/MainTabNavigator';
-import WorkoutPlayerScreen from '@/screens/WorkoutPlayerScreen';
-import WorkoutPickerScreen from '@/screens/WorkoutPickerScreen';
-import OnboardingScreen from '@/screens/OnboardingScreen';
-import PaywallScreen from '@/screens/PaywallScreen';
-import ChallengeCompleteScreen from '@/screens/ChallengeCompleteScreen';
-import Week1ReviewScreen from '@/screens/Week1ReviewScreen';
-import MusicScreen from '@/screens/MusicScreen';
-import BreathworkModeSelectorScreen from '@/screens/BreathworkModeSelectorScreen';
-import BreathworkSessionScreen from '@/screens/BreathworkSessionScreen';
-import BreathworkSummaryScreen from '@/screens/BreathworkSummaryScreen';
-import TechniqueGuideScreen from '@/screens/TechniqueGuideScreen';
-import ForceUpdateScreen from '@/screens/ForceUpdateScreen';
-import { useScreenOptions } from '@/hooks/useScreenOptions';
-import { ANIM_DURATION_ENTER } from '@/constants/animation';
-import { storage } from '@/lib/storage';
-import { getApiUrl } from '@/lib/query-client';
-import { DayTemplate } from '@/data/workoutProgram';
-import { BreathworkMode } from '@/constants/breathworkModes';
+import MainTabNavigator from "@/navigation/MainTabNavigator";
+import WorkoutPlayerScreen from "@/screens/WorkoutPlayerScreen";
+import WorkoutPickerScreen from "@/screens/WorkoutPickerScreen";
+import OnboardingScreen from "@/screens/OnboardingScreen";
+import PaywallScreen from "@/screens/PaywallScreen";
+import ChallengeCompleteScreen from "@/screens/ChallengeCompleteScreen";
+import Week1ReviewScreen from "@/screens/Week1ReviewScreen";
+import MusicScreen from "@/screens/MusicScreen";
+import BreathworkModeSelectorScreen from "@/screens/BreathworkModeSelectorScreen";
+import BreathworkSessionScreen from "@/screens/BreathworkSessionScreen";
+import BreathworkSummaryScreen from "@/screens/BreathworkSummaryScreen";
+import TechniqueGuideScreen from "@/screens/TechniqueGuideScreen";
+import ForceUpdateScreen from "@/screens/ForceUpdateScreen";
+import { useScreenOptions } from "@/hooks/useScreenOptions";
+import { ANIM_DURATION_ENTER } from "@/constants/animation";
+import { storage } from "@/lib/storage";
+import { getApiUrl } from "@/lib/query-client";
+import { DayTemplate } from "@/data/workoutProgram";
+import { BreathworkMode } from "@/constants/breathworkModes";
 
 export type RootStackParamList = {
   Main: undefined;
@@ -57,8 +57,8 @@ interface StoreUrls {
  * Compares semver segments left-to-right numerically.
  */
 function isVersionOutdated(current: string, minimum: string): boolean {
-  const curr = current.split('.').map(n => parseInt(n, 10));
-  const min = minimum.split('.').map(n => parseInt(n, 10));
+  const curr = current.split(".").map((n) => parseInt(n, 10));
+  const min = minimum.split(".").map((n) => parseInt(n, 10));
   for (let i = 0; i < 3; i++) {
     const c = curr[i] ?? 0;
     const m = min[i] ?? 0;
@@ -77,8 +77,9 @@ export default function RootStackNavigator() {
   const [needsUpdate, setNeedsUpdate] = useState(false);
   const fadeOpacity = useSharedValue(0);
   const [storeUrls, setStoreUrls] = useState<StoreUrls>({
-    iosStoreUrl: 'https://apps.apple.com/app/pulsekegel',
-    androidStoreUrl: 'https://play.google.com/store/apps/details?id=com.pulsekegel.app',
+    iosStoreUrl: "https://apps.apple.com/app/pulsekegel",
+    androidStoreUrl:
+      "https://play.google.com/store/apps/details?id=com.pulsekegel.app",
   });
 
   useEffect(() => {
@@ -98,12 +99,13 @@ export default function RootStackNavigator() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
     try {
-      const url = new URL('/api/version-check', getApiUrl()).toString();
+      const url = new URL("/api/version-check", getApiUrl()).toString();
       const res = await fetch(url, { signal: controller.signal });
       if (!res.ok) return;
       const data = await res.json();
-      const currentVersion = Constants.expoConfig?.version ?? '0.0.0';
-      const minimumVersion = typeof data.minimumVersion === 'string' ? data.minimumVersion : '0.0.0';
+      const currentVersion = Constants.expoConfig?.version ?? "0.0.0";
+      const minimumVersion =
+        typeof data.minimumVersion === "string" ? data.minimumVersion : "0.0.0";
       if (isVersionOutdated(currentVersion, minimumVersion)) {
         setNeedsUpdate(true);
         if (data.iosStoreUrl || data.androidStoreUrl) {
@@ -156,97 +158,97 @@ export default function RootStackNavigator() {
 
   return (
     <Animated.View style={fadeStyle}>
-    <Stack.Navigator screenOptions={screenOptions}>
-      <Stack.Screen
-        name="Main"
-        component={MainTabNavigator}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="WorkoutPlayer"
-        component={WorkoutPlayerScreen}
-        options={{
-          presentation: 'fullScreenModal',
-          headerShown: false,
-          gestureEnabled: false,
-        }}
-      />
-      <Stack.Screen
-        name="WorkoutPicker"
-        component={WorkoutPickerScreen}
-        options={{
-          presentation: 'modal',
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
-        name="Paywall"
-        component={PaywallScreen}
-        options={{
-          presentation: 'modal',
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
-        name="Week1Review"
-        component={Week1ReviewScreen}
-        options={{
-          presentation: 'fullScreenModal',
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
-        name="ChallengeComplete"
-        component={ChallengeCompleteScreen}
-        options={{
-          headerShown: false,
-          animation: 'fade',
-          animationDuration: 350,
-        }}
-      />
-      <Stack.Screen
-        name="Music"
-        component={MusicScreen}
-        options={{
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
-        name="BreathworkModeSelector"
-        component={BreathworkModeSelectorScreen}
-        options={{
-          presentation: 'modal',
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
-        name="BreathworkSession"
-        component={BreathworkSessionScreen}
-        options={{
-          presentation: 'fullScreenModal',
-          headerShown: false,
-          gestureEnabled: false,
-        }}
-      />
-      <Stack.Screen
-        name="BreathworkSummary"
-        component={BreathworkSummaryScreen}
-        options={{
-          headerShown: false,
-          gestureEnabled: false,
-          animation: 'fade',
-          animationDuration: 350,
-        }}
-      />
-      <Stack.Screen
-        name="TechniqueGuide"
-        component={TechniqueGuideScreen}
-        options={{
-          presentation: 'modal',
-          headerShown: false,
-        }}
-      />
-    </Stack.Navigator>
+      <Stack.Navigator screenOptions={screenOptions}>
+        <Stack.Screen
+          name="Main"
+          component={MainTabNavigator}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="WorkoutPlayer"
+          component={WorkoutPlayerScreen}
+          options={{
+            presentation: "fullScreenModal",
+            headerShown: false,
+            gestureEnabled: false,
+          }}
+        />
+        <Stack.Screen
+          name="WorkoutPicker"
+          component={WorkoutPickerScreen}
+          options={{
+            presentation: "modal",
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="Paywall"
+          component={PaywallScreen}
+          options={{
+            presentation: "modal",
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="Week1Review"
+          component={Week1ReviewScreen}
+          options={{
+            presentation: "fullScreenModal",
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="ChallengeComplete"
+          component={ChallengeCompleteScreen}
+          options={{
+            headerShown: false,
+            animation: "fade",
+            animationDuration: 350,
+          }}
+        />
+        <Stack.Screen
+          name="Music"
+          component={MusicScreen}
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="BreathworkModeSelector"
+          component={BreathworkModeSelectorScreen}
+          options={{
+            presentation: "modal",
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="BreathworkSession"
+          component={BreathworkSessionScreen}
+          options={{
+            presentation: "fullScreenModal",
+            headerShown: false,
+            gestureEnabled: false,
+          }}
+        />
+        <Stack.Screen
+          name="BreathworkSummary"
+          component={BreathworkSummaryScreen}
+          options={{
+            headerShown: false,
+            gestureEnabled: false,
+            animation: "fade",
+            animationDuration: 350,
+          }}
+        />
+        <Stack.Screen
+          name="TechniqueGuide"
+          component={TechniqueGuideScreen}
+          options={{
+            presentation: "modal",
+            headerShown: false,
+          }}
+        />
+      </Stack.Navigator>
     </Animated.View>
   );
 }

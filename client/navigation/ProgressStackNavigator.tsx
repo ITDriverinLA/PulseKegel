@@ -1,10 +1,10 @@
-import React from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import React from "react";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-import ProgressScreen from '@/screens/ProgressScreen';
-import ProgramOverviewScreen from '@/screens/ProgramOverviewScreen';
-import ReviewHistoryScreen from '@/screens/ReviewHistoryScreen';
-import { useScreenOptions } from '@/hooks/useScreenOptions';
+import ProgressScreen from "@/screens/ProgressScreen";
+import ProgramOverviewScreen from "@/screens/ProgramOverviewScreen";
+import ReviewHistoryScreen from "@/screens/ReviewHistoryScreen";
+import { useScreenOptions } from "@/hooks/useScreenOptions";
 
 export type ProgressStackParamList = {
   Progress: undefined;
@@ -23,21 +23,21 @@ export default function ProgressStackNavigator() {
         name="Progress"
         component={ProgressScreen}
         options={{
-          title: 'Progress',
+          title: "Progress",
         }}
       />
       <Stack.Screen
         name="ProgramOverview"
         component={ProgramOverviewScreen}
         options={{
-          title: 'Program',
+          title: "Program",
         }}
       />
       <Stack.Screen
         name="ReviewHistory"
         component={ReviewHistoryScreen}
         options={{
-          title: 'AI Reviews',
+          title: "AI Reviews",
         }}
       />
     </Stack.Navigator>

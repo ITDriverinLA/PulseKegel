@@ -1,9 +1,9 @@
-import React, { useMemo } from 'react';
-import { StyleSheet, View, Pressable, Text } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import React, { useMemo } from "react";
+import { StyleSheet, View, Pressable, Text } from "react-native";
+import { Feather } from "@expo/vector-icons";
 
-import { useThemePreference } from '@/contexts/ThemePreferenceContext';
-import { Spacing, BorderRadius } from '@/constants/theme';
+import { useThemePreference } from "@/contexts/ThemePreferenceContext";
+import { Spacing, BorderRadius } from "@/constants/theme";
 
 interface CalendarGridProps {
   completedDates: string[];
@@ -12,7 +12,7 @@ interface CalendarGridProps {
   onMonthChange: (date: Date) => void;
 }
 
-const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
 
 export function CalendarGrid({
   completedDates,
@@ -25,29 +25,29 @@ export function CalendarGrid({
   const { days, monthLabel } = useMemo(() => {
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
-    
+
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
     const startDayOfWeek = firstDay.getDay();
 
     const daysArray: (number | null)[] = [];
-    
+
     for (let i = 0; i < startDayOfWeek; i++) {
       daysArray.push(null);
     }
-    
+
     for (let i = 1; i <= daysInMonth; i++) {
       daysArray.push(i);
     }
-    
+
     while (daysArray.length % 7 !== 0) {
       daysArray.push(null);
     }
 
-    const label = firstDay.toLocaleDateString('en-US', {
-      month: 'long',
-      year: 'numeric',
+    const label = firstDay.toLocaleDateString("en-US", {
+      month: "long",
+      year: "numeric",
     });
 
     return { days: daysArray, monthLabel: label };
@@ -57,7 +57,7 @@ export function CalendarGrid({
   const restSet = useMemo(() => new Set(restDates), [restDates]);
 
   const getDateStr = (day: number): string => {
-    return `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
   };
 
   const isCompleted = (day: number): boolean => {
@@ -97,11 +97,16 @@ export function CalendarGrid({
     if (rest) {
       return {
         circle: {
-          backgroundColor: cp.neonCyan + '30',
+          backgroundColor: cp.neonCyan + "30",
           borderWidth: 1,
-          borderColor: cp.neonCyan + '60',
+          borderColor: cp.neonCyan + "60",
         },
-        text: { color: cp.neonCyan, fontWeight: '500' as const, fontSize: 12, textAlign: 'center' as const },
+        text: {
+          color: cp.neonCyan,
+          fontWeight: "500" as const,
+          fontSize: 12,
+          textAlign: "center" as const,
+        },
       };
     }
     if (completed) {
@@ -114,18 +119,27 @@ export function CalendarGrid({
           shadowRadius: 8,
           elevation: 8,
         },
-        text: { color: '#FFFFFF', fontWeight: '600' as const, fontSize: 12, textAlign: 'center' as const },
+        text: {
+          color: "#FFFFFF",
+          fontWeight: "600" as const,
+          fontSize: 12,
+          textAlign: "center" as const,
+        },
       };
     }
     if (today) {
       return {
         circle: { borderWidth: 2, borderColor: cp.neonCyan },
-        text: { color: cp.text, fontSize: 12, textAlign: 'center' as const },
+        text: { color: cp.text, fontSize: 12, textAlign: "center" as const },
       };
     }
     return {
       circle: undefined,
-      text: { color: isDarkMode ? 'rgba(255,255,255,0.8)' : cp.text, fontSize: 12, textAlign: 'center' as const },
+      text: {
+        color: isDarkMode ? "rgba(255,255,255,0.8)" : cp.text,
+        fontSize: 12,
+        textAlign: "center" as const,
+      },
     };
   };
 
@@ -134,27 +148,47 @@ export function CalendarGrid({
       <View style={[styles.legendContainer, { borderTopColor: cp.cardBorder }]}>
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: cp.neonGreen }]} />
-          <Text style={[styles.legendText, { color: cp.textMuted }]}>Workout</Text>
+          <Text style={[styles.legendText, { color: cp.textMuted }]}>
+            Workout
+          </Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: cp.neonCyan, opacity: 0.6 }]} />
-          <Text style={[styles.legendText, { color: cp.textMuted }]}>Rest Day</Text>
+          <View
+            style={[
+              styles.legendDot,
+              { backgroundColor: cp.neonCyan, opacity: 0.6 },
+            ]}
+          />
+          <Text style={[styles.legendText, { color: cp.textMuted }]}>
+            Rest Day
+          </Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDotOutline, { borderColor: cp.neonCyan }]} />
-          <Text style={[styles.legendText, { color: cp.textMuted }]}>Today</Text>
+          <View
+            style={[styles.legendDotOutline, { borderColor: cp.neonCyan }]}
+          />
+          <Text style={[styles.legendText, { color: cp.textMuted }]}>
+            Today
+          </Text>
         </View>
       </View>
     );
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: cp.cardBg, borderColor: cp.cardBorder },
+      ]}
+    >
       <View style={styles.header}>
         <Pressable onPress={goToPrevMonth} style={styles.navButton}>
           <Feather name="chevron-left" size={24} color={cp.text} />
         </Pressable>
-        <Text style={[styles.monthLabel, { color: cp.text }]}>{monthLabel}</Text>
+        <Text style={[styles.monthLabel, { color: cp.text }]}>
+          {monthLabel}
+        </Text>
         <Pressable onPress={goToNextMonth} style={styles.navButton}>
           <Feather name="chevron-right" size={24} color={cp.text} />
         </Pressable>
@@ -179,9 +213,7 @@ export function CalendarGrid({
           return (
             <View key={index} style={styles.dayCell}>
               <View style={[styles.dayContent, dayStyle.circle]}>
-                <Text style={dayStyle.text}>
-                  {day}
-                </Text>
+                <Text style={dayStyle.text}>{day}</Text>
               </View>
             </View>
           );
@@ -200,9 +232,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: Spacing.lg,
   },
   navButton: {
@@ -210,49 +242,49 @@ const styles = StyleSheet.create({
   },
   monthLabel: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   weekdayRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: Spacing.sm,
   },
   weekdayCell: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
   },
   weekdayText: {
-    fontWeight: '600',
+    fontWeight: "600",
     fontSize: 14,
   },
   grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
   },
   dayCell: {
-    width: '14.28%',
+    width: "14.28%",
     aspectRatio: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: Spacing.xs,
   },
   dayContent: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   legendContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     gap: Spacing.lg,
     marginTop: Spacing.md,
     paddingTop: Spacing.md,
     borderTopWidth: 1,
   },
   legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: Spacing.xs,
   },
   legendDot: {

@@ -1,36 +1,41 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, Pressable, StyleSheet, Modal } from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
-import { useKeepAwake } from 'expo-keep-awake';
-import { useAudioPlayer, setAudioModeAsync } from 'expo-audio';
-import BreathCircle from '@/components/breathwork/BreathCircle';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { View, Text, Pressable, StyleSheet, Modal } from "react-native";
+import { Feather } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import * as Haptics from "expo-haptics";
+import { useKeepAwake } from "expo-keep-awake";
+import { useAudioPlayer } from "expo-audio";
+import BreathCircle from "@/components/breathwork/BreathCircle";
 import {
-  BreathworkMode,
   BreathPhase,
   PhaseStep,
   BREATHWORK_AUDIO_SOURCES,
   getBreathworkColors,
   getModeConfig,
   ENERGIZE_SIGH_PHASES,
-} from '@/constants/breathworkModes';
-import { useTheme } from '@/hooks/useTheme';
+} from "@/constants/breathworkModes";
+import { useTheme } from "@/hooks/useTheme";
 import {
   ANIM_DURATION_ENTER,
   ANIM_DURATION_CONTENT,
   ANIM_DURATION_INTRO,
   ANIM_DURATION_MICRO_SETTLE,
-} from '@/constants/animation';
-import { RootStackParamList } from '@/navigation/RootStackNavigator';
+} from "@/constants/animation";
+import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
-type SessionRoute = RouteProp<RootStackParamList, 'BreathworkSession'>;
+type SessionRoute = RouteProp<RootStackParamList, "BreathworkSession">;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-type SessionState = 'intro' | 'breathing' | 'sigh_phase' | 'transition' | 'outro' | 'complete';
+type SessionState =
+  | "intro"
+  | "breathing"
+  | "sigh_phase"
+  | "transition"
+  | "outro"
+  | "complete";
 
 export default function BreathworkSessionScreen() {
   useKeepAwake();
@@ -42,14 +47,16 @@ export default function BreathworkSessionScreen() {
   const { isDark } = useTheme();
   const bwColors = getBreathworkColors(isDark);
 
-  const [sessionState, setSessionState] = useState<SessionState>('intro');
-  const [currentPhase, setCurrentPhase] = useState<BreathPhase>('inhale');
-  const [phaseLabel, setPhaseLabel] = useState('GET READY');
+  const [sessionState, setSessionState] = useState<SessionState>("intro");
+  const [currentPhase, setCurrentPhase] = useState<BreathPhase>("inhale");
+  const [phaseLabel, setPhaseLabel] = useState("GET READY");
   const [phaseDuration, setPhaseDuration] = useState(4);
-  const [totalSecondsLeft, setTotalSecondsLeft] = useState(config.totalDuration);
+  const [totalSecondsLeft, setTotalSecondsLeft] = useState(
+    config.totalDuration,
+  );
   const [cyclesCompleted, setCyclesCompleted] = useState(0);
   const [showExitModal, setShowExitModal] = useState(false);
-  const [midpointPlayed, setMidpointPlayed] = useState(false);
+  const [, setMidpointPlayed] = useState(false);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -58,139 +65,212 @@ export default function BreathworkSessionScreen() {
   const phaseIndexRef = useRef(0);
   const isRunningRef = useRef(true);
   const sighCountRef = useRef(0);
-  const sessionStateRef = useRef<SessionState>('intro');
+  const sessionStateRef = useRef<SessionState>("intro");
   const clipPlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const introPlayer = useAudioPlayer(BREATHWORK_AUDIO_SOURCES[config.introClip]);
-  const outroPlayer = useAudioPlayer(BREATHWORK_AUDIO_SOURCES[config.outroClip]);
+  const introPlayer = useAudioPlayer(
+    BREATHWORK_AUDIO_SOURCES[config.introClip],
+  );
+  const outroPlayer = useAudioPlayer(
+    BREATHWORK_AUDIO_SOURCES[config.outroClip],
+  );
 
   const calmInhalePlayer = useAudioPlayer(BREATHWORK_AUDIO_SOURCES.calm_inhale);
-  const calmHoldTopPlayer = useAudioPlayer(BREATHWORK_AUDIO_SOURCES.calm_hold_top);
+  const calmHoldTopPlayer = useAudioPlayer(
+    BREATHWORK_AUDIO_SOURCES.calm_hold_top,
+  );
   const calmExhalePlayer = useAudioPlayer(BREATHWORK_AUDIO_SOURCES.calm_exhale);
-  const calmHoldBottomPlayer = useAudioPlayer(BREATHWORK_AUDIO_SOURCES.calm_hold_bottom);
+  const calmHoldBottomPlayer = useAudioPlayer(
+    BREATHWORK_AUDIO_SOURCES.calm_hold_bottom,
+  );
 
-  const energizeSighInhalePlayer = useAudioPlayer(BREATHWORK_AUDIO_SOURCES.energize_sigh_inhale);
-  const energizeSighExhalePlayer = useAudioPlayer(BREATHWORK_AUDIO_SOURCES.energize_sigh_exhale);
-  const energizeTransitionPlayer = useAudioPlayer(BREATHWORK_AUDIO_SOURCES.energize_transition);
-  const energizeInhalePlayer = useAudioPlayer(BREATHWORK_AUDIO_SOURCES.energize_inhale);
-  const energizeExhalePlayer = useAudioPlayer(BREATHWORK_AUDIO_SOURCES.energize_exhale);
+  const energizeSighInhalePlayer = useAudioPlayer(
+    BREATHWORK_AUDIO_SOURCES.energize_sigh_inhale,
+  );
+  const energizeSighExhalePlayer = useAudioPlayer(
+    BREATHWORK_AUDIO_SOURCES.energize_sigh_exhale,
+  );
+  const energizeTransitionPlayer = useAudioPlayer(
+    BREATHWORK_AUDIO_SOURCES.energize_transition,
+  );
+  const energizeInhalePlayer = useAudioPlayer(
+    BREATHWORK_AUDIO_SOURCES.energize_inhale,
+  );
+  const energizeExhalePlayer = useAudioPlayer(
+    BREATHWORK_AUDIO_SOURCES.energize_exhale,
+  );
 
   const pfInhalePlayer = useAudioPlayer(BREATHWORK_AUDIO_SOURCES.pf_inhale);
   const pfExhalePlayer = useAudioPlayer(BREATHWORK_AUDIO_SOURCES.pf_exhale);
   const pfMidpointPlayer = useAudioPlayer(BREATHWORK_AUDIO_SOURCES.pf_midpoint);
 
   const allPhasePlayers = useRef([
-    calmInhalePlayer, calmHoldTopPlayer, calmExhalePlayer, calmHoldBottomPlayer,
-    energizeSighInhalePlayer, energizeSighExhalePlayer, energizeTransitionPlayer,
-    energizeInhalePlayer, energizeExhalePlayer,
-    pfInhalePlayer, pfExhalePlayer, pfMidpointPlayer,
+    calmInhalePlayer,
+    calmHoldTopPlayer,
+    calmExhalePlayer,
+    calmHoldBottomPlayer,
+    energizeSighInhalePlayer,
+    energizeSighExhalePlayer,
+    energizeTransitionPlayer,
+    energizeInhalePlayer,
+    energizeExhalePlayer,
+    pfInhalePlayer,
+    pfExhalePlayer,
+    pfMidpointPlayer,
   ]);
 
   useEffect(() => {
     allPhasePlayers.current = [
-      calmInhalePlayer, calmHoldTopPlayer, calmExhalePlayer, calmHoldBottomPlayer,
-      energizeSighInhalePlayer, energizeSighExhalePlayer, energizeTransitionPlayer,
-      energizeInhalePlayer, energizeExhalePlayer,
-      pfInhalePlayer, pfExhalePlayer, pfMidpointPlayer,
+      calmInhalePlayer,
+      calmHoldTopPlayer,
+      calmExhalePlayer,
+      calmHoldBottomPlayer,
+      energizeSighInhalePlayer,
+      energizeSighExhalePlayer,
+      energizeTransitionPlayer,
+      energizeInhalePlayer,
+      energizeExhalePlayer,
+      pfInhalePlayer,
+      pfExhalePlayer,
+      pfMidpointPlayer,
     ];
   }, [
-    calmInhalePlayer, calmHoldTopPlayer, calmExhalePlayer, calmHoldBottomPlayer,
-    energizeSighInhalePlayer, energizeSighExhalePlayer, energizeTransitionPlayer,
-    energizeInhalePlayer, energizeExhalePlayer,
-    pfInhalePlayer, pfExhalePlayer, pfMidpointPlayer,
+    calmInhalePlayer,
+    calmHoldTopPlayer,
+    calmExhalePlayer,
+    calmHoldBottomPlayer,
+    energizeSighInhalePlayer,
+    energizeSighExhalePlayer,
+    energizeTransitionPlayer,
+    energizeInhalePlayer,
+    energizeExhalePlayer,
+    pfInhalePlayer,
+    pfExhalePlayer,
+    pfMidpointPlayer,
   ]);
 
   const stopAllAudio = useCallback(() => {
     introPlayer.pause();
     outroPlayer.pause();
     for (const p of allPhasePlayers.current) {
-      try { p.pause(); } catch {}
+      try {
+        p.pause();
+      } catch {}
     }
   }, [introPlayer, outroPlayer]);
 
-  const playClip = useCallback(async (clipKey: keyof typeof BREATHWORK_AUDIO_SOURCES | null) => {
-    if (!clipKey || !isRunningRef.current) return;
-    const playerMap: Record<string, ReturnType<typeof useAudioPlayer>> = {
-      calm_inhale: calmInhalePlayer,
-      calm_hold_top: calmHoldTopPlayer,
-      calm_exhale: calmExhalePlayer,
-      calm_hold_bottom: calmHoldBottomPlayer,
-      energize_sigh_inhale: energizeSighInhalePlayer,
-      energize_sigh_exhale: energizeSighExhalePlayer,
-      energize_transition: energizeTransitionPlayer,
-      energize_inhale: energizeInhalePlayer,
-      energize_exhale: energizeExhalePlayer,
-      pf_inhale: pfInhalePlayer,
-      pf_exhale: pfExhalePlayer,
-      pf_midpoint: pfMidpointPlayer,
-    };
-    const player = playerMap[clipKey];
-    if (player) {
-      try {
-        if (clipPlayTimerRef.current) clearTimeout(clipPlayTimerRef.current);
-        player.pause();
-        player.seekTo(0);
-        clipPlayTimerRef.current = setTimeout(() => {
-          if (!isRunningRef.current) return;
-          try { player.play(); } catch (e) { console.warn('[Breathwork] play error:', e); }
-        }, 150);
-      } catch (e) { console.warn('[Breathwork] clip error:', e); }
-    }
-  }, [
-    calmInhalePlayer, calmHoldTopPlayer, calmExhalePlayer, calmHoldBottomPlayer,
-    energizeSighInhalePlayer, energizeSighExhalePlayer, energizeTransitionPlayer,
-    energizeInhalePlayer, energizeExhalePlayer, pfInhalePlayer, pfExhalePlayer,
-    pfMidpointPlayer,
-  ]);
+  const playClip = useCallback(
+    async (clipKey: keyof typeof BREATHWORK_AUDIO_SOURCES | null) => {
+      if (!clipKey || !isRunningRef.current) return;
+      const playerMap: Record<string, ReturnType<typeof useAudioPlayer>> = {
+        calm_inhale: calmInhalePlayer,
+        calm_hold_top: calmHoldTopPlayer,
+        calm_exhale: calmExhalePlayer,
+        calm_hold_bottom: calmHoldBottomPlayer,
+        energize_sigh_inhale: energizeSighInhalePlayer,
+        energize_sigh_exhale: energizeSighExhalePlayer,
+        energize_transition: energizeTransitionPlayer,
+        energize_inhale: energizeInhalePlayer,
+        energize_exhale: energizeExhalePlayer,
+        pf_inhale: pfInhalePlayer,
+        pf_exhale: pfExhalePlayer,
+        pf_midpoint: pfMidpointPlayer,
+      };
+      const player = playerMap[clipKey];
+      if (player) {
+        try {
+          if (clipPlayTimerRef.current) clearTimeout(clipPlayTimerRef.current);
+          player.pause();
+          player.seekTo(0);
+          clipPlayTimerRef.current = setTimeout(() => {
+            if (!isRunningRef.current) return;
+            try {
+              player.play();
+            } catch (e) {
+              console.warn("[Breathwork] play error:", e);
+            }
+          }, 150);
+        } catch (e) {
+          console.warn("[Breathwork] clip error:", e);
+        }
+      }
+    },
+    [
+      calmInhalePlayer,
+      calmHoldTopPlayer,
+      calmExhalePlayer,
+      calmHoldBottomPlayer,
+      energizeSighInhalePlayer,
+      energizeSighExhalePlayer,
+      energizeTransitionPlayer,
+      energizeInhalePlayer,
+      energizeExhalePlayer,
+      pfInhalePlayer,
+      pfExhalePlayer,
+      pfMidpointPlayer,
+    ],
+  );
 
   const breathHapticTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const clearBreathHaptics = useCallback(() => {
-    breathHapticTimers.current.forEach(t => clearTimeout(t));
+    breathHapticTimers.current.forEach((t) => clearTimeout(t));
     breathHapticTimers.current = [];
   }, []);
 
-  const triggerPhaseHaptic = useCallback((phase: BreathPhase, duration: number) => {
-    clearBreathHaptics();
+  const triggerPhaseHaptic = useCallback(
+    (phase: BreathPhase, duration: number) => {
+      clearBreathHaptics();
 
-    if (phase === 'inhale' || phase === 'exhale' || phase === 'sigh_inhale' || phase === 'sigh_exhale') {
-      const totalMs = duration * 1000;
-      const pulseCount = 8;
-      let elapsed = 0;
+      if (
+        phase === "inhale" ||
+        phase === "exhale" ||
+        phase === "sigh_inhale" ||
+        phase === "sigh_exhale"
+      ) {
+        const totalMs = duration * 1000;
+        const pulseCount = 8;
+        let elapsed = 0;
 
-      for (let i = 0; i < pulseCount; i++) {
-        const progress = i / (pulseCount - 1);
-        const interval = 80 + progress * progress * 420;
-        const timer = setTimeout(() => {
-          if (!isRunningRef.current) return;
-          const intensity = progress < 0.5
-            ? Haptics.ImpactFeedbackStyle.Medium
-            : Haptics.ImpactFeedbackStyle.Light;
-          Haptics.impactAsync(intensity);
-        }, elapsed);
-        breathHapticTimers.current.push(timer);
-        elapsed += interval;
-        if (elapsed > totalMs * 0.85) break;
+        for (let i = 0; i < pulseCount; i++) {
+          const progress = i / (pulseCount - 1);
+          const interval = 80 + progress * progress * 420;
+          const timer = setTimeout(() => {
+            if (!isRunningRef.current) return;
+            const intensity =
+              progress < 0.5
+                ? Haptics.ImpactFeedbackStyle.Medium
+                : Haptics.ImpactFeedbackStyle.Light;
+            Haptics.impactAsync(intensity);
+          }, elapsed);
+          breathHapticTimers.current.push(timer);
+          elapsed += interval;
+          if (elapsed > totalMs * 0.85) break;
+        }
+      } else {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
-    } else {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-  }, [clearBreathHaptics]);
+    },
+    [clearBreathHaptics],
+  );
 
-  const startPhase = useCallback((phases: PhaseStep[], index: number) => {
-    if (!isRunningRef.current) return;
-    const step = phases[index];
-    setCurrentPhase(step.phase);
-    setPhaseDuration(step.duration);
-    setPhaseLabel(step.label);
-    triggerPhaseHaptic(step.phase, step.duration);
-    playClip(step.audioClip);
-  }, [triggerPhaseHaptic, playClip]);
+  const startPhase = useCallback(
+    (phases: PhaseStep[], index: number) => {
+      if (!isRunningRef.current) return;
+      const step = phases[index];
+      setCurrentPhase(step.phase);
+      setPhaseDuration(step.duration);
+      setPhaseLabel(step.label);
+      triggerPhaseHaptic(step.phase, step.duration);
+      playClip(step.audioClip);
+    },
+    [triggerPhaseHaptic, playClip],
+  );
 
   const advancePhase = useCallback(() => {
     if (!isRunningRef.current) return;
 
-    const inSighPhase = mode === 'energize' && sighCountRef.current < 4;
+    const inSighPhase = mode === "energize" && sighCountRef.current < 4;
     const phases = inSighPhase ? ENERGIZE_SIGH_PHASES : config.phases;
 
     const nextIndex = (phaseIndexRef.current + 1) % phases.length;
@@ -199,30 +279,36 @@ export default function BreathworkSessionScreen() {
     if (inSighPhase && isNewCycle) {
       sighCountRef.current += 1;
       if (sighCountRef.current >= 4) {
-        setSessionState('transition');
-        sessionStateRef.current = 'transition';
-        playClip('energize_transition');
+        setSessionState("transition");
+        sessionStateRef.current = "transition";
+        playClip("energize_transition");
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        setPhaseLabel('FIND YOUR RHYTHM');
+        setPhaseLabel("FIND YOUR RHYTHM");
         transitionTimerRef.current = setTimeout(() => {
           if (!isRunningRef.current) return;
-          setSessionState('breathing');
-          sessionStateRef.current = 'breathing';
+          setSessionState("breathing");
+          sessionStateRef.current = "breathing";
           phaseIndexRef.current = 0;
           startPhase(config.phases, 0);
-          phaseTimerRef.current = setTimeout(advancePhase, config.phases[0].duration * 1000);
+          phaseTimerRef.current = setTimeout(
+            advancePhase,
+            config.phases[0].duration * 1000,
+          );
         }, 5000);
         return;
       }
     }
 
     if (isNewCycle) {
-      setCyclesCompleted(prev => prev + 1);
+      setCyclesCompleted((prev) => prev + 1);
     }
 
     phaseIndexRef.current = nextIndex;
     startPhase(phases, nextIndex);
-    phaseTimerRef.current = setTimeout(advancePhase, phases[nextIndex].duration * 1000);
+    phaseTimerRef.current = setTimeout(
+      advancePhase,
+      phases[nextIndex].duration * 1000,
+    );
   }, [mode, config.phases, playClip, startPhase]);
 
   useEffect(() => {
@@ -232,18 +318,24 @@ export default function BreathworkSessionScreen() {
     const introTimeout = setTimeout(() => {
       if (!isRunningRef.current) return;
 
-      if (mode === 'energize') {
-        setSessionState('sigh_phase');
-        sessionStateRef.current = 'sigh_phase';
+      if (mode === "energize") {
+        setSessionState("sigh_phase");
+        sessionStateRef.current = "sigh_phase";
         phaseIndexRef.current = 0;
         startPhase(ENERGIZE_SIGH_PHASES, 0);
-        phaseTimerRef.current = setTimeout(advancePhase, ENERGIZE_SIGH_PHASES[0].duration * 1000);
+        phaseTimerRef.current = setTimeout(
+          advancePhase,
+          ENERGIZE_SIGH_PHASES[0].duration * 1000,
+        );
       } else {
-        setSessionState('breathing');
-        sessionStateRef.current = 'breathing';
+        setSessionState("breathing");
+        sessionStateRef.current = "breathing";
         phaseIndexRef.current = 0;
         startPhase(config.phases, 0);
-        phaseTimerRef.current = setTimeout(advancePhase, config.phases[0].duration * 1000);
+        phaseTimerRef.current = setTimeout(
+          advancePhase,
+          config.phases[0].duration * 1000,
+        );
       }
     }, config.introDuration * 1000);
 
@@ -256,15 +348,20 @@ export default function BreathworkSessionScreen() {
     timerRef.current = setInterval(() => {
       if (!isRunningRef.current) return;
 
-      setTotalSecondsLeft(prev => {
+      setTotalSecondsLeft((prev) => {
         const next = prev - 1;
 
-        if (next <= config.outroDuration && sessionStateRef.current !== 'outro' && sessionStateRef.current !== 'complete') {
+        if (
+          next <= config.outroDuration &&
+          sessionStateRef.current !== "outro" &&
+          sessionStateRef.current !== "complete"
+        ) {
           if (phaseTimerRef.current) clearTimeout(phaseTimerRef.current);
-          if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
-          setSessionState('outro');
-          sessionStateRef.current = 'outro';
-          setPhaseLabel('');
+          if (transitionTimerRef.current)
+            clearTimeout(transitionTimerRef.current);
+          setSessionState("outro");
+          sessionStateRef.current = "outro";
+          setPhaseLabel("");
           stopAllAudio();
           outroPlayer.play();
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -274,9 +371,9 @@ export default function BreathworkSessionScreen() {
           outroTimerRef.current = setTimeout(() => {
             if (!isRunningRef.current) return;
             isRunningRef.current = false;
-            sessionStateRef.current = 'complete';
-            setSessionState('complete');
-            navigation.replace('BreathworkSummary', { mode, completed: true });
+            sessionStateRef.current = "complete";
+            setSessionState("complete");
+            navigation.replace("BreathworkSummary", { mode, completed: true });
           }, config.outroDuration * 1000);
         }
 
@@ -287,8 +384,11 @@ export default function BreathworkSessionScreen() {
 
         if (config.midpointClip && config.midpointTime) {
           const elapsed = config.totalDuration - next;
-          if (elapsed >= config.midpointTime && elapsed < config.midpointTime + 2) {
-            setMidpointPlayed(prev => {
+          if (
+            elapsed >= config.midpointTime &&
+            elapsed < config.midpointTime + 2
+          ) {
+            setMidpointPlayed((prev) => {
               if (!prev) {
                 playClip(config.midpointClip!);
               }
@@ -331,48 +431,111 @@ export default function BreathworkSessionScreen() {
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
+    return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
   const totalCycles = config.cyclesEstimate;
   const progressDots = Math.min(totalCycles, 20);
-  const filledDots = Math.min(Math.round((cyclesCompleted / totalCycles) * progressDots), progressDots);
+  const filledDots = Math.min(
+    Math.round((cyclesCompleted / totalCycles) * progressDots),
+    progressDots,
+  );
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: bwColors.bg_session }]}>
+    <View
+      style={[
+        styles.container,
+        { paddingTop: insets.top, backgroundColor: bwColors.bg_session },
+      ]}
+    >
       <View style={styles.topBar}>
-        <Pressable onPress={handleExit} style={styles.exitButton} testID="breathwork-exit-button">
+        <Pressable
+          onPress={handleExit}
+          style={styles.exitButton}
+          testID="breathwork-exit-button"
+        >
           <Feather name="x" size={24} color={bwColors.timer_text} />
         </Pressable>
-        <Text style={[styles.timer, { color: bwColors.timer_text }]} testID="breathwork-timer">{formatTime(totalSecondsLeft)}</Text>
+        <Text
+          style={[styles.timer, { color: bwColors.timer_text }]}
+          testID="breathwork-timer"
+        >
+          {formatTime(totalSecondsLeft)}
+        </Text>
       </View>
 
       <View style={styles.centerContent}>
-        {sessionState === 'intro' ? (
-          <Animated.View entering={FadeIn.duration(ANIM_DURATION_INTRO)} style={styles.introContainer}>
-            <View style={[styles.introCirclePlaceholder, { backgroundColor: bwColors.accentSoft }]}>
-              <Feather name={config.icon as any} size={48} color={bwColors.accent} />
+        {sessionState === "intro" ? (
+          <Animated.View
+            entering={FadeIn.duration(ANIM_DURATION_INTRO)}
+            style={styles.introContainer}
+          >
+            <View
+              style={[
+                styles.introCirclePlaceholder,
+                { backgroundColor: bwColors.accentSoft },
+              ]}
+            >
+              <Feather
+                name={config.icon as any}
+                size={48}
+                color={bwColors.accent}
+              />
             </View>
-            <Text style={[styles.introTitle, { color: bwColors.phase_label }]}>{config.name}</Text>
-            <Text style={[styles.introTechnique, { color: bwColors.accent }]}>{config.subtitle}</Text>
-            <Text style={[styles.introDescription, { color: bwColors.timer_text }]}>{config.description}</Text>
-            <Text style={[styles.introSubtitle, { color: bwColors.timer_text }]}>Listen and relax...</Text>
+            <Text style={[styles.introTitle, { color: bwColors.phase_label }]}>
+              {config.name}
+            </Text>
+            <Text style={[styles.introTechnique, { color: bwColors.accent }]}>
+              {config.subtitle}
+            </Text>
+            <Text
+              style={[styles.introDescription, { color: bwColors.timer_text }]}
+            >
+              {config.description}
+            </Text>
+            <Text
+              style={[styles.introSubtitle, { color: bwColors.timer_text }]}
+            >
+              Listen and relax...
+            </Text>
           </Animated.View>
-        ) : sessionState === 'transition' ? (
-          <Animated.View entering={FadeIn.duration(ANIM_DURATION_CONTENT)} style={styles.introContainer}>
+        ) : sessionState === "transition" ? (
+          <Animated.View
+            entering={FadeIn.duration(ANIM_DURATION_CONTENT)}
+            style={styles.introContainer}
+          >
             <BreathCircle phase="hold_top" phaseDuration={5} />
-            <Text style={[styles.phaseText, { color: bwColors.phase_label }]}>{phaseLabel}</Text>
+            <Text style={[styles.phaseText, { color: bwColors.phase_label }]}>
+              {phaseLabel}
+            </Text>
           </Animated.View>
-        ) : sessionState === 'outro' ? (
-          <Animated.View entering={FadeIn.duration(ANIM_DURATION_CONTENT)} style={styles.introContainer}>
-            <BreathCircle phase="hold_bottom" phaseDuration={config.outroDuration} />
-            <Text style={[styles.outroText, { color: bwColors.accent }]}>Session Complete</Text>
+        ) : sessionState === "outro" ? (
+          <Animated.View
+            entering={FadeIn.duration(ANIM_DURATION_CONTENT)}
+            style={styles.introContainer}
+          >
+            <BreathCircle
+              phase="hold_bottom"
+              phaseDuration={config.outroDuration}
+            />
+            <Text style={[styles.outroText, { color: bwColors.accent }]}>
+              Session Complete
+            </Text>
           </Animated.View>
         ) : (
           <>
             <BreathCircle phase={currentPhase} phaseDuration={phaseDuration} />
-            <Animated.View key={phaseLabel} entering={FadeIn.duration(ANIM_DURATION_ENTER)} exiting={FadeOut.duration(ANIM_DURATION_MICRO_SETTLE)}>
-              <Text style={[styles.phaseText, { color: bwColors.phase_label }]} testID="breathwork-phase-label">{phaseLabel}</Text>
+            <Animated.View
+              key={phaseLabel}
+              entering={FadeIn.duration(ANIM_DURATION_ENTER)}
+              exiting={FadeOut.duration(ANIM_DURATION_MICRO_SETTLE)}
+            >
+              <Text
+                style={[styles.phaseText, { color: bwColors.phase_label }]}
+                testID="breathwork-phase-label"
+              >
+                {phaseLabel}
+              </Text>
             </Animated.View>
           </>
         )}
@@ -385,26 +548,55 @@ export default function BreathworkSessionScreen() {
               key={i}
               style={[
                 styles.dot,
-                { backgroundColor: i < filledDots ? bwColors.accent : bwColors.accentSoft },
+                {
+                  backgroundColor:
+                    i < filledDots ? bwColors.accent : bwColors.accentSoft,
+                },
               ]}
             />
           ))}
         </View>
         <Text style={[styles.cycleText, { color: bwColors.timer_text }]}>
-          {cyclesCompleted > 0 ? `${cyclesCompleted} / ${totalCycles} cycles` : ''}
+          {cyclesCompleted > 0
+            ? `${cyclesCompleted} / ${totalCycles} cycles`
+            : ""}
         </Text>
       </View>
 
       <Modal visible={showExitModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: bwColors.modalBg }]}>
-            <Text style={[styles.modalTitle, { color: bwColors.phase_label }]}>End session?</Text>
-            <Text style={[styles.modalMessage, { color: bwColors.timer_text }]}>Your progress won't be logged.</Text>
+          <View
+            style={[styles.modalContent, { backgroundColor: bwColors.modalBg }]}
+          >
+            <Text style={[styles.modalTitle, { color: bwColors.phase_label }]}>
+              End session?
+            </Text>
+            <Text style={[styles.modalMessage, { color: bwColors.timer_text }]}>
+              {"Your progress won't be logged."}
+            </Text>
             <View style={styles.modalButtons}>
-              <Pressable onPress={() => setShowExitModal(false)} style={[styles.modalButton, { backgroundColor: bwColors.accentSoft }]} testID="breathwork-continue-button">
-                <Text style={[styles.modalButtonTextPrimary, { color: bwColors.accent }]}>Continue</Text>
+              <Pressable
+                onPress={() => setShowExitModal(false)}
+                style={[
+                  styles.modalButton,
+                  { backgroundColor: bwColors.accentSoft },
+                ]}
+                testID="breathwork-continue-button"
+              >
+                <Text
+                  style={[
+                    styles.modalButtonTextPrimary,
+                    { color: bwColors.accent },
+                  ]}
+                >
+                  Continue
+                </Text>
               </Pressable>
-              <Pressable onPress={confirmExit} style={[styles.modalButton, styles.modalButtonDanger]} testID="breathwork-end-button">
+              <Pressable
+                onPress={confirmExit}
+                style={[styles.modalButton, styles.modalButtonDanger]}
+                testID="breathwork-end-button"
+              >
                 <Text style={styles.modalButtonTextDanger}>End</Text>
               </Pressable>
             </View>
@@ -420,51 +612,51 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 12,
   },
   exitButton: {
     width: 40,
     height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   timer: {
     fontSize: 16,
-    fontWeight: '600',
-    fontVariant: ['tabular-nums'],
+    fontWeight: "600",
+    fontVariant: ["tabular-nums"],
   },
   centerContent: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   introContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: 24,
   },
   introCirclePlaceholder: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   introTitle: {
     fontSize: 24,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   introTechnique: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     marginTop: -12,
   },
   introDescription: {
     fontSize: 14,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 20,
     paddingHorizontal: 24,
   },
@@ -474,27 +666,27 @@ const styles = StyleSheet.create({
   },
   phaseText: {
     fontSize: 22,
-    fontWeight: '700',
-    textAlign: 'center',
+    fontWeight: "700",
+    textAlign: "center",
     marginTop: 24,
     letterSpacing: 2,
   },
   outroText: {
     fontSize: 22,
-    fontWeight: '700',
-    textAlign: 'center',
+    fontWeight: "700",
+    textAlign: "center",
     marginTop: 24,
   },
   bottomBar: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: 8,
     paddingHorizontal: 40,
   },
   dotsContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 4,
-    flexWrap: 'wrap',
-    justifyContent: 'center',
+    flexWrap: "wrap",
+    justifyContent: "center",
   },
   dot: {
     width: 8,
@@ -506,27 +698,27 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(0,0,0,0.7)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   modalContent: {
     borderRadius: 16,
     padding: 24,
-    width: '80%',
-    alignItems: 'center',
+    width: "80%",
+    alignItems: "center",
     gap: 12,
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   modalMessage: {
     fontSize: 14,
-    textAlign: 'center',
+    textAlign: "center",
   },
   modalButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
     marginTop: 8,
   },
@@ -534,18 +726,18 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     borderRadius: 10,
-    alignItems: 'center',
+    alignItems: "center",
   },
   modalButtonDanger: {
-    backgroundColor: 'rgba(255, 51, 102, 0.15)',
+    backgroundColor: "rgba(255, 51, 102, 0.15)",
   },
   modalButtonTextPrimary: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   modalButtonTextDanger: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#FF3366',
+    fontWeight: "600",
+    color: "#FF3366",
   },
 });

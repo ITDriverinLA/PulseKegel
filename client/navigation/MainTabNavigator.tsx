@@ -1,13 +1,13 @@
-import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Feather } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
-import { Platform, StyleSheet } from 'react-native';
+import React from "react";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { Feather } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
+import { Platform, StyleSheet } from "react-native";
 
-import HomeStackNavigator from '@/navigation/HomeStackNavigator';
-import ProgressStackNavigator from '@/navigation/ProgressStackNavigator';
-import SettingsStackNavigator from '@/navigation/SettingsStackNavigator';
-import { useTheme } from '@/hooks/useTheme';
+import HomeStackNavigator from "@/navigation/HomeStackNavigator";
+import ProgressStackNavigator from "@/navigation/ProgressStackNavigator";
+import SettingsStackNavigator from "@/navigation/SettingsStackNavigator";
+import { useTheme } from "@/hooks/useTheme";
 
 export type MainTabParamList = {
   TodayTab: undefined;
@@ -27,19 +27,19 @@ export default function MainTabNavigator() {
         tabBarActiveTintColor: theme.tabIconSelected,
         tabBarInactiveTintColor: theme.tabIconDefault,
         tabBarStyle: {
-          position: 'absolute',
+          position: "absolute",
           backgroundColor: Platform.select({
-            ios: 'transparent',
+            ios: "transparent",
             android: theme.backgroundRoot,
           }),
           borderTopWidth: 0,
           elevation: 0,
         },
         tabBarBackground: () =>
-          Platform.OS === 'ios' ? (
+          Platform.OS === "ios" ? (
             <BlurView
               intensity={100}
-              tint={isDark ? 'dark' : 'light'}
+              tint={isDark ? "dark" : "light"}
               style={StyleSheet.absoluteFill}
             />
           ) : null,
@@ -50,7 +50,7 @@ export default function MainTabNavigator() {
         name="TodayTab"
         component={HomeStackNavigator}
         options={{
-          title: 'Today',
+          title: "Today",
           tabBarIcon: ({ color, size }) => (
             <Feather name="play-circle" size={size} color={color} />
           ),
@@ -60,7 +60,7 @@ export default function MainTabNavigator() {
         name="ProgressTab"
         component={ProgressStackNavigator}
         options={{
-          title: 'Progress',
+          title: "Progress",
           tabBarIcon: ({ color, size }) => (
             <Feather name="calendar" size={size} color={color} />
           ),
@@ -70,7 +70,7 @@ export default function MainTabNavigator() {
         name="SettingsTab"
         component={SettingsStackNavigator}
         options={{
-          title: 'Settings',
+          title: "Settings",
           tabBarIcon: ({ color, size }) => (
             <Feather name="settings" size={size} color={color} />
           ),

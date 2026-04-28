@@ -1,14 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 import {
   StyleSheet,
   View,
   Pressable,
   ScrollView,
   Animated as RNAnimated,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Feather } from '@expo/vector-icons';
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
+import { Feather } from "@expo/vector-icons";
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -17,17 +17,25 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   runOnJS,
-} from 'react-native-reanimated';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+} from "react-native-reanimated";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-import { ThemedText } from '@/components/ThemedText';
-import { Spacing } from '@/constants/theme';
-import { ANIM_DURATION_EXIT_COMPLETE, ANIM_DURATION_ZOOM, ANIM_DURATION_PULSE_LOADING, ANIM_DELAY_150, ANIM_DELAY_250, ANIM_DELAY_350, ANIM_DELAY_450 } from '@/constants/animation';
-import { storage } from '@/lib/storage';
-import { getApiUrl } from '@/lib/query-client';
-import { useThemePreference } from '@/contexts/ThemePreferenceContext';
-import { RootStackParamList } from '@/navigation/RootStackNavigator';
+import { ThemedText } from "@/components/ThemedText";
+import { Spacing } from "@/constants/theme";
+import {
+  ANIM_DURATION_EXIT_COMPLETE,
+  ANIM_DURATION_ZOOM,
+  ANIM_DURATION_PULSE_LOADING,
+  ANIM_DELAY_150,
+  ANIM_DELAY_250,
+  ANIM_DELAY_350,
+  ANIM_DELAY_450,
+} from "@/constants/animation";
+import { storage } from "@/lib/storage";
+import { getApiUrl } from "@/lib/query-client";
+import { useThemePreference } from "@/contexts/ThemePreferenceContext";
+import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -39,13 +47,15 @@ export default function Week1ReviewScreen() {
   const [sessions, setSessions] = useState(0);
   const [minutes, setMinutes] = useState(0);
   const [streak, setStreak] = useState(0);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [buttonDisabled, setButtonDisabled] = useState(false);
 
   const pulseAnim = useRef(new RNAnimated.Value(0.4)).current;
   const screenOpacity = useSharedValue(1);
-  const screenAnimatedStyle = useAnimatedStyle(() => ({ opacity: screenOpacity.value }));
+  const screenAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: screenOpacity.value,
+  }));
 
   useEffect(() => {
     loadStatsAndMessage();
@@ -55,9 +65,17 @@ export default function Week1ReviewScreen() {
     if (loading) {
       const pulse = RNAnimated.loop(
         RNAnimated.sequence([
-          RNAnimated.timing(pulseAnim, { toValue: 1, duration: ANIM_DURATION_PULSE_LOADING, useNativeDriver: true }),
-          RNAnimated.timing(pulseAnim, { toValue: 0.4, duration: ANIM_DURATION_PULSE_LOADING, useNativeDriver: true }),
-        ])
+          RNAnimated.timing(pulseAnim, {
+            toValue: 1,
+            duration: ANIM_DURATION_PULSE_LOADING,
+            useNativeDriver: true,
+          }),
+          RNAnimated.timing(pulseAnim, {
+            toValue: 0.4,
+            duration: ANIM_DURATION_PULSE_LOADING,
+            useNativeDriver: true,
+          }),
+        ]),
       );
       pulse.start();
       return () => pulse.stop();
@@ -79,10 +97,18 @@ export default function Week1ReviewScreen() {
       setMinutes(totalMinutes);
       setStreak(currentStreak);
 
-      await fetchMessage(totalSessions, totalMinutes, currentStreak, settings.anatomyType, settings.userName);
+      await fetchMessage(
+        totalSessions,
+        totalMinutes,
+        currentStreak,
+        settings.anatomyType,
+        settings.userName,
+      );
     } catch {
       setLoading(false);
-      setMessage('Week 1 is behind you. The foundation is set — now it is time to go further.');
+      setMessage(
+        "Week 1 is behind you. The foundation is set — now it is time to go further.",
+      );
       setButtonDisabled(true);
       setTimeout(() => setButtonDisabled(false), 1500);
     }
@@ -96,10 +122,10 @@ export default function Week1ReviewScreen() {
     userName: string,
   ) => {
     try {
-      const apiUrl = getApiUrl().replace(/\/$/, '');
+      const apiUrl = getApiUrl().replace(/\/$/, "");
       const response = await fetch(`${apiUrl}/api/weekly-review`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           weekNumber: 1,
           daysWorkedOut: totalSessions,
@@ -110,7 +136,7 @@ export default function Week1ReviewScreen() {
         }),
       });
 
-      if (!response.ok) throw new Error('API error');
+      if (!response.ok) throw new Error("API error");
 
       const data = await response.json();
       setMessage(data.message);
@@ -126,10 +152,10 @@ export default function Week1ReviewScreen() {
 
   const buildFallbackMessage = (completedSessions: number): string => {
     if (completedSessions === 0) {
-      return 'Week 1 passed without a session. That is okay — the 12-week program is still ahead. One session is all it takes to get started.';
+      return "Week 1 passed without a session. That is okay — the 12-week program is still ahead. One session is all it takes to get started.";
     }
     if (completedSessions === 1) {
-      return 'You took the first step. That single session is evidence you can do this. The full program is waiting for you.';
+      return "You took the first step. That single session is evidence you can do this. The full program is waiting for you.";
     }
     if (completedSessions >= 3) {
       return `${completedSessions} sessions in week 1 — solid work. Carry that consistency into the full program and the results will follow.`;
@@ -143,16 +169,16 @@ export default function Week1ReviewScreen() {
     return cp.neonPurple;
   };
 
-  const getIcon = (): React.ComponentProps<typeof Feather>['name'] => {
-    if (sessions >= 3) return 'award';
-    if (sessions >= 1) return 'trending-up';
-    return 'heart';
+  const getIcon = (): React.ComponentProps<typeof Feather>["name"] => {
+    if (sessions >= 3) return "award";
+    if (sessions >= 1) return "trending-up";
+    return "heart";
   };
 
   const accentColor = getAccentColor();
 
   const doNavigate = () => {
-    navigation.replace('ChallengeComplete');
+    navigation.replace("ChallengeComplete");
   };
 
   const handleContinue = async () => {
@@ -162,112 +188,184 @@ export default function Week1ReviewScreen() {
         daysWorkedOut: sessions,
         totalMinutes: minutes,
         message,
-        date: new Date().toISOString().split('T')[0],
+        date: new Date().toISOString().split("T")[0],
       });
     }
-    screenOpacity.value = withTiming(0, { duration: ANIM_DURATION_EXIT_COMPLETE }, (finished) => {
-      if (finished) {
-        runOnJS(doNavigate)();
-      }
-    });
+    screenOpacity.value = withTiming(
+      0,
+      { duration: ANIM_DURATION_EXIT_COMPLETE },
+      (finished) => {
+        if (finished) {
+          runOnJS(doNavigate)();
+        }
+      },
+    );
   };
 
   return (
     <Animated.View style={[{ flex: 1 }, screenAnimatedStyle]}>
-    <LinearGradient
-      colors={isDarkMode ? ['#0f0f23', '#16213e', '#1a1a2e'] : ['#f0f2f7', '#e8eaf0', '#dde0e8']}
-      style={styles.root}
-    >
-      <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          { paddingTop: insets.top + Spacing['2xl'], paddingBottom: insets.bottom + Spacing['2xl'] },
-        ]}
-        showsVerticalScrollIndicator={false}
+      <LinearGradient
+        colors={
+          isDarkMode
+            ? ["#0f0f23", "#16213e", "#1a1a2e"]
+            : ["#f0f2f7", "#e8eaf0", "#dde0e8"]
+        }
+        style={styles.root}
       >
-        <Animated.View entering={ZoomIn.duration(ANIM_DURATION_ZOOM)} style={styles.iconWrapper}>
-          <LinearGradient
-            colors={[accentColor, cp.neonPink]}
-            style={styles.iconGradient}
-          >
-            <Feather name={getIcon()} size={56} color="#000" />
-          </LinearGradient>
-        </Animated.View>
-
-        <Animated.View entering={FadeIn.delay(ANIM_DELAY_150)} style={styles.titleBlock}>
-          <ThemedText type="h1" style={[styles.title, { color: accentColor }]}>
-            Week 1 Complete
-          </ThemedText>
-          <ThemedText type="small" style={[styles.subtitle, { color: cp.textSecondary }]}>
-            Here is how your first week went
-          </ThemedText>
-        </Animated.View>
-
-        <Animated.View entering={FadeInDown.delay(ANIM_DELAY_250)} style={[styles.statsRow, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
-          <View style={styles.statItem}>
-            <ThemedText type="h2" style={[styles.statValue, { color: accentColor }]}>
-              {sessions}
-            </ThemedText>
-            <ThemedText type="small" style={[styles.statLabel, { color: cp.textSecondary }]}>
-              Sessions
-            </ThemedText>
-          </View>
-
-          <View style={[styles.divider, { backgroundColor: cp.cardBorder }]} />
-
-          <View style={styles.statItem}>
-            <ThemedText type="h2" style={[styles.statValue, { color: accentColor }]}>
-              {minutes}
-            </ThemedText>
-            <ThemedText type="small" style={[styles.statLabel, { color: cp.textSecondary }]}>
-              Minutes
-            </ThemedText>
-          </View>
-
-          <View style={[styles.divider, { backgroundColor: cp.cardBorder }]} />
-
-          <View style={styles.statItem}>
-            <ThemedText type="h2" style={[styles.statValue, { color: accentColor }]}>
-              {streak}
-            </ThemedText>
-            <ThemedText type="small" style={[styles.statLabel, { color: cp.textSecondary }]}>
-              Day Streak
-            </ThemedText>
-          </View>
-        </Animated.View>
-
-        <Animated.View entering={FadeInDown.delay(ANIM_DELAY_350)} style={[styles.messageCard, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
-          {loading ? (
-            <RNAnimated.Text style={[styles.loadingText, { color: accentColor, opacity: pulseAnim }]}>
-              Reviewing your progress...
-            </RNAnimated.Text>
-          ) : (
-            <ThemedText type="body" style={[styles.message, { color: cp.textSecondary }]}>
-              {message}
-            </ThemedText>
-          )}
-        </Animated.View>
-
-        <Animated.View entering={FadeInDown.delay(ANIM_DELAY_450)} style={styles.buttonWrapper}>
-          <Pressable
-            testID="button-continue-week1-review"
-            onPress={loading || buttonDisabled ? undefined : handleContinue}
-            style={loading || buttonDisabled ? { opacity: 0.5 } : null}
+        <ScrollView
+          contentContainerStyle={[
+            styles.content,
+            {
+              paddingTop: insets.top + Spacing["2xl"],
+              paddingBottom: insets.bottom + Spacing["2xl"],
+            },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          <Animated.View
+            entering={ZoomIn.duration(ANIM_DURATION_ZOOM)}
+            style={styles.iconWrapper}
           >
             <LinearGradient
-              colors={loading ? [cp.cardBorder, cp.cardBorder] : [accentColor, cp.neonCyan]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.button}
+              colors={[accentColor, cp.neonPink]}
+              style={styles.iconGradient}
             >
-              <ThemedText type="body" style={styles.buttonText}>
-                {loading ? 'One moment...' : 'Continue'}
-              </ThemedText>
+              <Feather name={getIcon()} size={56} color="#000" />
             </LinearGradient>
-          </Pressable>
-        </Animated.View>
-      </ScrollView>
-    </LinearGradient>
+          </Animated.View>
+
+          <Animated.View
+            entering={FadeIn.delay(ANIM_DELAY_150)}
+            style={styles.titleBlock}
+          >
+            <ThemedText
+              type="h1"
+              style={[styles.title, { color: accentColor }]}
+            >
+              Week 1 Complete
+            </ThemedText>
+            <ThemedText
+              type="small"
+              style={[styles.subtitle, { color: cp.textSecondary }]}
+            >
+              Here is how your first week went
+            </ThemedText>
+          </Animated.View>
+
+          <Animated.View
+            entering={FadeInDown.delay(ANIM_DELAY_250)}
+            style={[
+              styles.statsRow,
+              { backgroundColor: cp.cardBg, borderColor: cp.cardBorder },
+            ]}
+          >
+            <View style={styles.statItem}>
+              <ThemedText
+                type="h2"
+                style={[styles.statValue, { color: accentColor }]}
+              >
+                {sessions}
+              </ThemedText>
+              <ThemedText
+                type="small"
+                style={[styles.statLabel, { color: cp.textSecondary }]}
+              >
+                Sessions
+              </ThemedText>
+            </View>
+
+            <View
+              style={[styles.divider, { backgroundColor: cp.cardBorder }]}
+            />
+
+            <View style={styles.statItem}>
+              <ThemedText
+                type="h2"
+                style={[styles.statValue, { color: accentColor }]}
+              >
+                {minutes}
+              </ThemedText>
+              <ThemedText
+                type="small"
+                style={[styles.statLabel, { color: cp.textSecondary }]}
+              >
+                Minutes
+              </ThemedText>
+            </View>
+
+            <View
+              style={[styles.divider, { backgroundColor: cp.cardBorder }]}
+            />
+
+            <View style={styles.statItem}>
+              <ThemedText
+                type="h2"
+                style={[styles.statValue, { color: accentColor }]}
+              >
+                {streak}
+              </ThemedText>
+              <ThemedText
+                type="small"
+                style={[styles.statLabel, { color: cp.textSecondary }]}
+              >
+                Day Streak
+              </ThemedText>
+            </View>
+          </Animated.View>
+
+          <Animated.View
+            entering={FadeInDown.delay(ANIM_DELAY_350)}
+            style={[
+              styles.messageCard,
+              { backgroundColor: cp.cardBg, borderColor: cp.cardBorder },
+            ]}
+          >
+            {loading ? (
+              <RNAnimated.Text
+                style={[
+                  styles.loadingText,
+                  { color: accentColor, opacity: pulseAnim },
+                ]}
+              >
+                Reviewing your progress...
+              </RNAnimated.Text>
+            ) : (
+              <ThemedText
+                type="body"
+                style={[styles.message, { color: cp.textSecondary }]}
+              >
+                {message}
+              </ThemedText>
+            )}
+          </Animated.View>
+
+          <Animated.View
+            entering={FadeInDown.delay(ANIM_DELAY_450)}
+            style={styles.buttonWrapper}
+          >
+            <Pressable
+              testID="button-continue-week1-review"
+              onPress={loading || buttonDisabled ? undefined : handleContinue}
+              style={loading || buttonDisabled ? { opacity: 0.5 } : null}
+            >
+              <LinearGradient
+                colors={
+                  loading
+                    ? [cp.cardBorder, cp.cardBorder]
+                    : [accentColor, cp.neonCyan]
+                }
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.button}
+              >
+                <ThemedText type="body" style={styles.buttonText}>
+                  {loading ? "One moment..." : "Continue"}
+                </ThemedText>
+              </LinearGradient>
+            </Pressable>
+          </Animated.View>
+        </ScrollView>
+      </LinearGradient>
     </Animated.View>
   );
 }
@@ -278,7 +376,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flexGrow: 1,
-    alignItems: 'center',
+    alignItems: "center",
     paddingHorizontal: Spacing.xl,
   },
   iconWrapper: {
@@ -288,40 +386,40 @@ const styles = StyleSheet.create({
     width: 112,
     height: 112,
     borderRadius: 56,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   titleBlock: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: Spacing.xl,
   },
   title: {
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: Spacing.xs,
   },
   subtitle: {
-    textAlign: 'center',
+    textAlign: "center",
   },
   statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderRadius: 20,
     borderWidth: 1,
     paddingVertical: Spacing.xl,
     paddingHorizontal: Spacing.lg,
     marginBottom: Spacing.xl,
-    width: '100%',
+    width: "100%",
   },
   statItem: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
   },
   statValue: {
-    fontWeight: '700',
+    fontWeight: "700",
   },
   statLabel: {
     marginTop: Spacing.xs,
-    textAlign: 'center',
+    textAlign: "center",
   },
   divider: {
     width: 1,
@@ -332,31 +430,31 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     padding: Spacing.xl,
-    marginBottom: Spacing['2xl'],
-    width: '100%',
+    marginBottom: Spacing["2xl"],
+    width: "100%",
     minHeight: 80,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   message: {
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 24,
   },
   loadingText: {
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   buttonWrapper: {
-    width: '100%',
+    width: "100%",
   },
   button: {
     paddingVertical: Spacing.md,
     borderRadius: 14,
-    alignItems: 'center',
+    alignItems: "center",
   },
   buttonText: {
-    color: '#000',
-    fontWeight: '700',
+    color: "#000",
+    fontWeight: "700",
     fontSize: 16,
   },
 });

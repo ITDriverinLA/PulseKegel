@@ -1,20 +1,28 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, Image, RefreshControl, ScrollView, Text, Pressable } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useHeaderHeight } from '@react-navigation/elements';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Feather } from '@expo/vector-icons';
-import { ProgressStackParamList } from '@/navigation/ProgressStackNavigator';
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  StyleSheet,
+  View,
+  Image,
+  RefreshControl,
+  ScrollView,
+  Text,
+  Pressable,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useHeaderHeight } from "@react-navigation/elements";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import Animated, { FadeInDown } from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
+import { Feather } from "@expo/vector-icons";
+import { ProgressStackParamList } from "@/navigation/ProgressStackNavigator";
 
-import { StatCard } from '@/components/StatCard';
-import { CalendarGrid } from '@/components/CalendarGrid';
-import { WeeklyReviewModal } from '@/components/WeeklyReviewModal';
-import { BadgesSection } from '@/components/BadgesSection';
-import { Spacing, BorderRadius } from '@/constants/theme';
+import { StatCard } from "@/components/StatCard";
+import { CalendarGrid } from "@/components/CalendarGrid";
+import { WeeklyReviewModal } from "@/components/WeeklyReviewModal";
+import { BadgesSection } from "@/components/BadgesSection";
+import { Spacing, BorderRadius } from "@/constants/theme";
 import {
   ANIM_DURATION_CONTENT,
   ANIM_DELAY_SHORT,
@@ -24,18 +32,19 @@ import {
   ANIM_DELAY_350,
   ANIM_DELAY_XL,
   ANIM_DELAY_450,
-} from '@/constants/animation';
-import { storage, UserProgress } from '@/lib/storage';
-import { useAccessibility } from '@/contexts/AccessibilityContext';
-import { useThemePreference } from '@/contexts/ThemePreferenceContext';
+} from "@/constants/animation";
+import { storage, UserProgress } from "@/lib/storage";
+import { useAccessibility } from "@/contexts/AccessibilityContext";
+import { useThemePreference } from "@/contexts/ThemePreferenceContext";
 
 export default function ProgressScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
-  const navigation = useNavigation<NativeStackNavigationProp<ProgressStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<ProgressStackParamList>>();
   const { fontScale, colors, highContrast } = useAccessibility();
-  const { cp, isDarkMode } = useThemePreference();
+  const { cp } = useThemePreference();
 
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [restDates, setRestDates] = useState<string[]>([]);
@@ -46,9 +55,12 @@ export default function ProgressScreen() {
   const [reviewWeekNumber, setReviewWeekNumber] = useState(1);
   const [reviewDaysWorkedOut, setReviewDaysWorkedOut] = useState(0);
   const [reviewTotalMinutes, setReviewTotalMinutes] = useState(0);
-  const [pendingReviewMessage, setPendingReviewMessage] = useState('');
+  const [pendingReviewMessage, setPendingReviewMessage] = useState("");
   const [hasReviewHistory, setHasReviewHistory] = useState(false);
-  const [settings, setSettings] = useState<{ anatomyType: 'male' | 'female' | null; userName: string }>({ anatomyType: null, userName: '' });
+  const [settings, setSettings] = useState<{
+    anatomyType: "male" | "female" | null;
+    userName: string;
+  }>({ anatomyType: null, userName: "" });
 
   const loadData = useCallback(async () => {
     const startDate = await storage.getProgramStartDate();
@@ -60,9 +72,15 @@ export default function ProgressScreen() {
     ]);
     setProgress(userProgress);
     setRestDates(userRestDates);
-    setSettings({ anatomyType: userSettings.anatomyType, userName: userSettings.userName });
+    setSettings({
+      anatomyType: userSettings.anatomyType,
+      userName: userSettings.userName,
+    });
 
-    const missed = await storage.getMissedWeeklyReviews(userProgress.completedDates, startDate);
+    const missed = await storage.getMissedWeeklyReviews(
+      userProgress.completedDates,
+      startDate,
+    );
     setMissedWeeks(missed);
 
     const history = await storage.getReviewHistory();
@@ -74,7 +92,7 @@ export default function ProgressScreen() {
   }, [loadData]);
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', loadData);
+    const unsubscribe = navigation.addListener("focus", loadData);
     return unsubscribe;
   }, [navigation, loadData]);
 
@@ -87,7 +105,11 @@ export default function ProgressScreen() {
   const handleViewReview = async (weekNumber: number) => {
     const startDate = await storage.getProgramStartDate();
     if (!startDate || !progress) return;
-    const data = await storage.getWeeklyReviewDataForWeek(weekNumber, progress.completedDates, startDate);
+    const data = await storage.getWeeklyReviewDataForWeek(
+      weekNumber,
+      progress.completedDates,
+      startDate,
+    );
     setReviewWeekNumber(weekNumber);
     setReviewDaysWorkedOut(data.daysWorkedOut);
     setReviewTotalMinutes(progress.totalMinutes);
@@ -101,19 +123,24 @@ export default function ProgressScreen() {
         daysWorkedOut: reviewDaysWorkedOut,
         totalMinutes: reviewTotalMinutes,
         message: pendingReviewMessage,
-        date: new Date().toISOString().split('T')[0],
+        date: new Date().toISOString().split("T")[0],
       });
       setHasReviewHistory(true);
     }
-    const remaining = missedWeeks.filter(w => w !== reviewWeekNumber).sort((a, b) => a - b);
-    const highestConsecutive = remaining.length > 0 ? Math.min(reviewWeekNumber, remaining[0] - 1) : reviewWeekNumber;
+    const remaining = missedWeeks
+      .filter((w) => w !== reviewWeekNumber)
+      .sort((a, b) => a - b);
+    const highestConsecutive =
+      remaining.length > 0
+        ? Math.min(reviewWeekNumber, remaining[0] - 1)
+        : reviewWeekNumber;
     const lastReviewed = await storage.getLastWeeklyReview();
     if (lastReviewed === null || highestConsecutive > lastReviewed) {
       await storage.setLastWeeklyReview(highestConsecutive);
     }
     setShowReviewModal(false);
     setMissedWeeks(remaining);
-    setPendingReviewMessage('');
+    setPendingReviewMessage("");
   };
 
   const hasProgress = progress && progress.completedDates.length > 0;
@@ -144,7 +171,9 @@ export default function ProgressScreen() {
         {hasProgress ? (
           <>
             <Animated.View
-              entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(ANIM_DELAY_SHORT)}
+              entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(
+                ANIM_DELAY_SHORT,
+              )}
               style={styles.statsContainer}
             >
               <StatCard
@@ -169,7 +198,11 @@ export default function ProgressScreen() {
               />
             </Animated.View>
 
-            <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(ANIM_DELAY_MED)}>
+            <Animated.View
+              entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(
+                ANIM_DELAY_MED,
+              )}
+            >
               <CalendarGrid
                 completedDates={progress.completedDates}
                 restDates={restDates}
@@ -179,23 +212,46 @@ export default function ProgressScreen() {
             </Animated.View>
 
             <Animated.View
-              entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(ANIM_DELAY_LONG)}
+              entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(
+                ANIM_DELAY_LONG,
+              )}
               style={styles.programButtonContainer}
             >
               <Pressable
-                style={[styles.programButton, { backgroundColor: cp.cardBg, borderColor: `${cp.neonCyan}26` }]}
-                onPress={() => navigation.navigate('ProgramOverview')}
+                style={[
+                  styles.programButton,
+                  {
+                    backgroundColor: cp.cardBg,
+                    borderColor: `${cp.neonCyan}26`,
+                  },
+                ]}
+                onPress={() => navigation.navigate("ProgramOverview")}
                 testID="button-view-program"
               >
                 <View style={styles.programButtonLeft}>
-                  <View style={[styles.programButtonIcon, { backgroundColor: cp.cardBorder }]}>
+                  <View
+                    style={[
+                      styles.programButtonIcon,
+                      { backgroundColor: cp.cardBorder },
+                    ]}
+                  >
                     <Feather name="layers" size={18} color={cp.neonCyan} />
                   </View>
                   <View>
-                    <Text style={[styles.programButtonTitle, { fontSize: 14 * fontScale, color: cp.text }]}>
+                    <Text
+                      style={[
+                        styles.programButtonTitle,
+                        { fontSize: 14 * fontScale, color: cp.text },
+                      ]}
+                    >
                       12-Week Program
                     </Text>
-                    <Text style={[styles.programButtonSubtitle, { color: cp.textMuted }]}>
+                    <Text
+                      style={[
+                        styles.programButtonSubtitle,
+                        { color: cp.textMuted },
+                      ]}
+                    >
                       Preview schedule & track progress
                     </Text>
                   </View>
@@ -206,82 +262,177 @@ export default function ProgressScreen() {
 
             {hasReviewHistory ? (
               <Animated.View
-                entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(ANIM_DELAY_320)}
+                entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(
+                  ANIM_DELAY_320,
+                )}
                 style={{ marginTop: Spacing.sm }}
               >
                 <Pressable
-                  style={[styles.programButton, { backgroundColor: cp.cardBg, borderColor: `${cp.neonCyan}26` }]}
-                  onPress={() => navigation.navigate('ReviewHistory')}
+                  style={[
+                    styles.programButton,
+                    {
+                      backgroundColor: cp.cardBg,
+                      borderColor: `${cp.neonCyan}26`,
+                    },
+                  ]}
+                  onPress={() => navigation.navigate("ReviewHistory")}
                   testID="button-review-history"
                 >
                   <View style={styles.programButtonLeft}>
-                    <View style={[styles.programButtonIcon, { backgroundColor: `${cp.neonPurple}1A` }]}>
-                      <Feather name="book-open" size={18} color={cp.neonPurple} />
+                    <View
+                      style={[
+                        styles.programButtonIcon,
+                        { backgroundColor: `${cp.neonPurple}1A` },
+                      ]}
+                    >
+                      <Feather
+                        name="book-open"
+                        size={18}
+                        color={cp.neonPurple}
+                      />
                     </View>
                     <View>
-                      <Text style={[styles.programButtonTitle, { fontSize: 14 * fontScale, color: cp.text }]}>
+                      <Text
+                        style={[
+                          styles.programButtonTitle,
+                          { fontSize: 14 * fontScale, color: cp.text },
+                        ]}
+                      >
                         AI Review History
                       </Text>
-                      <Text style={[styles.programButtonSubtitle, { color: cp.textMuted }]}>
+                      <Text
+                        style={[
+                          styles.programButtonSubtitle,
+                          { color: cp.textMuted },
+                        ]}
+                      >
                         Reread past tips & insights
                       </Text>
                     </View>
                   </View>
-                  <Feather name="chevron-right" size={20} color={cp.textMuted} />
+                  <Feather
+                    name="chevron-right"
+                    size={20}
+                    color={cp.textMuted}
+                  />
                 </Pressable>
               </Animated.View>
             ) : null}
 
             {missedWeeks.length > 0 ? (
               <Animated.View
-                entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(ANIM_DELAY_350)}
+                entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(
+                  ANIM_DELAY_350,
+                )}
                 style={styles.missedReviewsContainer}
               >
-                <Text style={[styles.missedReviewsTitle, { fontSize: 13 * fontScale, color: cp.neonPurple }]}>
+                <Text
+                  style={[
+                    styles.missedReviewsTitle,
+                    { fontSize: 13 * fontScale, color: cp.neonPurple },
+                  ]}
+                >
                   Missed AI Reviews
                 </Text>
                 {missedWeeks.map((week) => (
                   <Pressable
                     key={week}
-                    style={[styles.missedReviewButton, { backgroundColor: `${cp.neonPurple}0F`, borderColor: `${cp.neonPurple}33` }]}
+                    style={[
+                      styles.missedReviewButton,
+                      {
+                        backgroundColor: `${cp.neonPurple}0F`,
+                        borderColor: `${cp.neonPurple}33`,
+                      },
+                    ]}
                     onPress={() => handleViewReview(week)}
                     testID={`button-missed-review-week-${week}`}
                   >
                     <View style={styles.programButtonLeft}>
-                      <View style={[styles.programButtonIcon, { backgroundColor: `${cp.neonPurple}26` }]}>
-                        <Feather name="message-circle" size={16} color={cp.neonPurple} />
+                      <View
+                        style={[
+                          styles.programButtonIcon,
+                          { backgroundColor: `${cp.neonPurple}26` },
+                        ]}
+                      >
+                        <Feather
+                          name="message-circle"
+                          size={16}
+                          color={cp.neonPurple}
+                        />
                       </View>
                       <View>
-                        <Text style={[styles.programButtonTitle, { fontSize: 13 * fontScale, color: cp.text }]}>
+                        <Text
+                          style={[
+                            styles.programButtonTitle,
+                            { fontSize: 13 * fontScale, color: cp.text },
+                          ]}
+                        >
                           Week {week} Review
                         </Text>
-                        <Text style={[styles.programButtonSubtitle, { color: cp.textMuted }]}>
+                        <Text
+                          style={[
+                            styles.programButtonSubtitle,
+                            { color: cp.textMuted },
+                          ]}
+                        >
                           Tap to view your AI progress update
                         </Text>
                       </View>
                     </View>
-                    <View style={[styles.missedBadge, { backgroundColor: cp.neonPurple }]}>
-                      <Text style={[styles.missedBadgeText, { color: cp.text }]}>NEW</Text>
+                    <View
+                      style={[
+                        styles.missedBadge,
+                        { backgroundColor: cp.neonPurple },
+                      ]}
+                    >
+                      <Text
+                        style={[styles.missedBadgeText, { color: cp.text }]}
+                      >
+                        NEW
+                      </Text>
                     </View>
                   </Pressable>
                 ))}
               </Animated.View>
             ) : null}
 
-            <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(ANIM_DELAY_XL)}>
+            <Animated.View
+              entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(
+                ANIM_DELAY_XL,
+              )}
+            >
               <BadgesSection />
             </Animated.View>
 
             <Animated.View
-              entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(ANIM_DELAY_450)}
+              entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(
+                ANIM_DELAY_450,
+              )}
               style={styles.longestStreakContainer}
             >
-              <View style={[styles.longestStreakCard, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }, highContrast && { borderColor: colors.border }]}>
-                <Text style={[styles.longestStreakLabel, { fontSize: 12 * fontScale, color: colors.textSecondary }]}>
+              <View
+                style={[
+                  styles.longestStreakCard,
+                  { backgroundColor: cp.cardBg, borderColor: cp.cardBorder },
+                  highContrast && { borderColor: colors.border },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.longestStreakLabel,
+                    { fontSize: 12 * fontScale, color: colors.textSecondary },
+                  ]}
+                >
                   Longest Streak
                 </Text>
-                <Text style={[styles.longestStreakValue, { fontSize: 20 * fontScale, color: colors.accent }]}>
-                  {progress.longestStreak} {progress.longestStreak === 1 ? 'day' : 'days'}
+                <Text
+                  style={[
+                    styles.longestStreakValue,
+                    { fontSize: 20 * fontScale, color: colors.accent },
+                  ]}
+                >
+                  {progress.longestStreak}{" "}
+                  {progress.longestStreak === 1 ? "day" : "days"}
                 </Text>
               </View>
             </Animated.View>
@@ -292,32 +443,56 @@ export default function ProgressScreen() {
             style={styles.emptyContainer}
           >
             <Image
-              source={require('../../assets/images/empty-progress.png')}
+              source={require("../../assets/images/empty-progress.png")}
               style={styles.emptyImage}
               resizeMode="contain"
             />
             <Text style={[styles.emptyTitle, { color: cp.text }]}>
               Start Your Journey
             </Text>
-            <Text style={[styles.emptyDescription, { color: cp.textSecondary }]}>
+            <Text
+              style={[styles.emptyDescription, { color: cp.textSecondary }]}
+            >
               Complete your first workout to begin tracking your progress here.
             </Text>
 
             <Pressable
-              style={[styles.programButton, { marginTop: Spacing.xl, backgroundColor: cp.cardBg, borderColor: `${cp.neonCyan}26` }]}
-              onPress={() => navigation.navigate('ProgramOverview')}
+              style={[
+                styles.programButton,
+                {
+                  marginTop: Spacing.xl,
+                  backgroundColor: cp.cardBg,
+                  borderColor: `${cp.neonCyan}26`,
+                },
+              ]}
+              onPress={() => navigation.navigate("ProgramOverview")}
               testID="button-view-program-empty"
             >
               <View style={styles.programButtonLeft}>
-                <View style={[styles.programButtonIcon, { backgroundColor: cp.cardBorder }]}>
+                <View
+                  style={[
+                    styles.programButtonIcon,
+                    { backgroundColor: cp.cardBorder },
+                  ]}
+                >
                   <Feather name="layers" size={18} color={cp.neonCyan} />
                 </View>
                 <View>
-                  <Text style={[styles.programButtonTitle, { fontSize: 14 * fontScale, color: cp.text }]}>
+                  <Text
+                    style={[
+                      styles.programButtonTitle,
+                      { fontSize: 14 * fontScale, color: cp.text },
+                    ]}
+                  >
                     Preview 12-Week Program
                   </Text>
-                  <Text style={[styles.programButtonSubtitle, { color: cp.textMuted }]}>
-                    See what's ahead
+                  <Text
+                    style={[
+                      styles.programButtonSubtitle,
+                      { color: cp.textMuted },
+                    ]}
+                  >
+                    {"See what's ahead"}
                   </Text>
                 </View>
               </View>
@@ -351,7 +526,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statsContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: Spacing.lg,
   },
   longestStreakContainer: {
@@ -360,7 +535,7 @@ const styles = StyleSheet.create({
   longestStreakCard: {
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
-    alignItems: 'center',
+    alignItems: "center",
     borderWidth: 1,
   },
   longestStreakLabel: {
@@ -368,7 +543,7 @@ const styles = StyleSheet.create({
   },
   longestStreakValue: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: "600",
     marginTop: Spacing.xs,
   },
   missedReviewsContainer: {
@@ -376,13 +551,13 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   missedReviewsTitle: {
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: Spacing.xs,
   },
   missedReviewButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     padding: Spacing.md,
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
@@ -394,34 +569,34 @@ const styles = StyleSheet.create({
   },
   missedBadgeText: {
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: "700",
     letterSpacing: 0.5,
   },
   programButtonContainer: {
     marginTop: Spacing.lg,
   },
   programButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     padding: Spacing.md,
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
   },
   programButtonLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: Spacing.sm,
   },
   programButtonIcon: {
     width: 36,
     height: 36,
     borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   programButtonTitle: {
-    fontWeight: '600',
+    fontWeight: "600",
   },
   programButtonSubtitle: {
     fontSize: 11,
@@ -429,23 +604,23 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: Spacing.xl,
   },
   emptyImage: {
     width: 200,
     height: 200,
-    marginBottom: Spacing['2xl'],
+    marginBottom: Spacing["2xl"],
   },
   emptyTitle: {
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: Spacing.md,
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   emptyDescription: {
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 24,
     fontSize: 16,
   },

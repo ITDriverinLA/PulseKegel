@@ -1,16 +1,16 @@
-import React from 'react';
-import { StyleSheet, Pressable, View } from 'react-native';
+import React from "react";
+import { StyleSheet, Pressable, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   withSpring,
   useSharedValue,
   interpolateColor,
-} from 'react-native-reanimated';
+} from "react-native-reanimated";
 
-import { ThemedText } from '@/components/ThemedText';
-import { useTheme } from '@/hooks/useTheme';
-import { Spacing, BorderRadius } from '@/constants/theme';
-import { hapticsManager } from '@/lib/hapticsManager';
+import { ThemedText } from "@/components/ThemedText";
+import { useTheme } from "@/hooks/useTheme";
+import { Spacing, BorderRadius } from "@/constants/theme";
+import { hapticsManager } from "@/lib/hapticsManager";
 
 interface ToggleProps {
   value: boolean;
@@ -23,7 +23,14 @@ interface ToggleProps {
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
-export function Toggle({ value, onValueChange, label, disabled = false, activeColor, labelColor }: ToggleProps) {
+export function Toggle({
+  value,
+  onValueChange,
+  label,
+  disabled = false,
+  activeColor,
+  labelColor,
+}: ToggleProps) {
   const { theme, isDark } = useTheme();
   const toggleProgress = useSharedValue(value ? 1 : 0);
   const activeTrackColor = activeColor || theme.primary;
@@ -39,7 +46,7 @@ export function Toggle({ value, onValueChange, label, disabled = false, activeCo
     const backgroundColor = interpolateColor(
       toggleProgress.value,
       [0, 1],
-      [isDark ? '#555' : '#D1D5DB', activeTrackColor]
+      [isDark ? "#555" : "#D1D5DB", activeTrackColor],
     );
     return { backgroundColor };
   });
@@ -70,7 +77,10 @@ export function Toggle({ value, onValueChange, label, disabled = false, activeCo
       disabled={disabled}
     >
       {label ? (
-        <ThemedText type="body" style={[styles.label, labelColor ? { color: labelColor } : undefined]}>
+        <ThemedText
+          type="body"
+          style={[styles.label, labelColor ? { color: labelColor } : undefined]}
+        >
           {label}
         </ThemedText>
       ) : null}
@@ -83,9 +93,9 @@ export function Toggle({ value, onValueChange, label, disabled = false, activeCo
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingVertical: Spacing.md,
   },
   disabled: {
@@ -99,14 +109,14 @@ const styles = StyleSheet.create({
     width: 50,
     height: 28,
     borderRadius: BorderRadius.full,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   thumb: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 3,

@@ -13,9 +13,6 @@ export const AppColors = {
   border: "#E5E7EB",
 };
 
-const tintColorLight = AppColors.primary;
-const tintColorDark = "#5A9FF2";
-
 export const Colors = {
   light: {
     text: "#1a1a2e",
