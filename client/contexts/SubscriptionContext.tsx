@@ -14,6 +14,8 @@ import Purchases, {
   PurchasesPackage,
 } from "react-native-purchases";
 
+import { GENERATED_ENV } from "@/lib/env-config.generated";
+
 const STORAGE_KEYS = {
   INSTALL_DATE: "pulsekegel_install_date",
   SUBSCRIPTION_STATUS: "pulsekegel_subscription_status",
@@ -48,8 +50,6 @@ const SubscriptionContext = createContext<SubscriptionContextType>({
   checkSubscription: async () => {},
   hasAccess: true,
 });
-
-import { GENERATED_ENV } from "@/lib/env-config.generated";
 
 const REVENUECAT_API_KEY_IOS =
   process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ||
@@ -275,7 +275,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     };
 
     init();
-  }, []);
+  }, [checkTrialStatus]);
 
   const hasAccess = isSubscribed || isTrialActive;
 

@@ -83,51 +83,55 @@ export default function RootStackNavigator() {
   });
 
   useEffect(() => {
+    const checkVersion = async () => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      try {
+        const url = new URL("/api/version-check", getApiUrl()).toString();
+        const res = await fetch(url, { signal: controller.signal });
+        if (!res.ok) return;
+        const data = await res.json();
+        const currentVersion = Constants.expoConfig?.version ?? "0.0.0";
+        const minimumVersion =
+          typeof data.minimumVersion === "string"
+            ? data.minimumVersion
+            : "0.0.0";
+        if (isVersionOutdated(currentVersion, minimumVersion)) {
+          setNeedsUpdate(true);
+          if (data.iosStoreUrl || data.androidStoreUrl) {
+            setStoreUrls({
+              iosStoreUrl:
+                data.iosStoreUrl ?? "https://apps.apple.com/app/pulsekegel",
+              androidStoreUrl:
+                data.androidStoreUrl ??
+                "https://play.google.com/store/apps/details?id=com.pulsekegel.app",
+            });
+          }
+        }
+      } catch {
+        // Network error or timeout — fail open, never block the user
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    };
+
+    const initialize = async () => {
+      const [onboardingComplete] = await Promise.all([
+        storage.isOnboardingComplete(),
+        checkVersion(),
+      ]);
+      setShowOnboarding(!onboardingComplete);
+      setIsLoading(false);
+    };
     initialize();
   }, []);
-
-  const initialize = async () => {
-    const [onboardingComplete] = await Promise.all([
-      storage.isOnboardingComplete(),
-      checkVersion(),
-    ]);
-    setShowOnboarding(!onboardingComplete);
-    setIsLoading(false);
-  };
-
-  const checkVersion = async () => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-    try {
-      const url = new URL("/api/version-check", getApiUrl()).toString();
-      const res = await fetch(url, { signal: controller.signal });
-      if (!res.ok) return;
-      const data = await res.json();
-      const currentVersion = Constants.expoConfig?.version ?? "0.0.0";
-      const minimumVersion =
-        typeof data.minimumVersion === "string" ? data.minimumVersion : "0.0.0";
-      if (isVersionOutdated(currentVersion, minimumVersion)) {
-        setNeedsUpdate(true);
-        if (data.iosStoreUrl || data.androidStoreUrl) {
-          setStoreUrls({
-            iosStoreUrl: data.iosStoreUrl ?? storeUrls.iosStoreUrl,
-            androidStoreUrl: data.androidStoreUrl ?? storeUrls.androidStoreUrl,
-          });
-        }
-      }
-    } catch {
-      // Network error or timeout — fail open, never block the user
-    } finally {
-      clearTimeout(timeoutId);
-    }
-  };
 
   useEffect(() => {
     if (!isLoading && !showOnboarding && !needsUpdate) {
       fadeOpacity.value = 0;
       fadeOpacity.value = withTiming(1, { duration: ANIM_DURATION_ENTER });
     }
-  }, [isLoading, showOnboarding, needsUpdate]);
+  }, [isLoading, showOnboarding, needsUpdate, fadeOpacity]);
 
   const fadeStyle = useAnimatedStyle(() => ({
     opacity: fadeOpacity.value,

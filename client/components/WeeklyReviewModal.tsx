@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   StyleSheet,
   View,
@@ -48,24 +48,7 @@ export function WeeklyReviewModal({
   const [loading, setLoading] = useState(true);
   const [buttonDisabled, setButtonDisabled] = useState(false);
 
-  useEffect(() => {
-    if (visible) {
-      setButtonDisabled(false);
-      setMessage("");
-      setLoading(true);
-      fetchReviewMessage();
-    }
-  }, [
-    visible,
-    weekNumber,
-    daysWorkedOut,
-    totalMinutes,
-    anatomyType,
-    userName,
-    currentStreak,
-  ]);
-
-  const fetchReviewMessage = async () => {
+  const fetchReviewMessage = useCallback(async () => {
     setLoading(true);
     try {
       const apiUrl = getApiUrl().replace(/\/$/, "");
@@ -110,7 +93,33 @@ export function WeeklyReviewModal({
       setButtonDisabled(true);
       setTimeout(() => setButtonDisabled(false), 1500);
     }
-  };
+  }, [
+    weekNumber,
+    daysWorkedOut,
+    totalMinutes,
+    anatomyType,
+    userName,
+    currentStreak,
+    onMessageReady,
+  ]);
+
+  useEffect(() => {
+    if (visible) {
+      setButtonDisabled(false);
+      setMessage("");
+      setLoading(true);
+      fetchReviewMessage();
+    }
+  }, [
+    visible,
+    weekNumber,
+    daysWorkedOut,
+    totalMinutes,
+    anatomyType,
+    userName,
+    currentStreak,
+    fetchReviewMessage,
+  ]);
 
   const getAccentColor = () => {
     if (daysWorkedOut >= 5) return cp.neonGreen;
@@ -147,7 +156,7 @@ export function WeeklyReviewModal({
       pulse.start();
       return () => pulse.stop();
     }
-  }, [loading]);
+  }, [loading, pulseAnim]);
 
   return (
     <Modal

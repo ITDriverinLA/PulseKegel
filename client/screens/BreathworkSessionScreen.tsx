@@ -342,7 +342,14 @@ export default function BreathworkSessionScreen() {
     return () => {
       clearTimeout(introTimeout);
     };
-  }, []);
+  }, [
+    advancePhase,
+    config.introDuration,
+    config.phases,
+    introPlayer,
+    mode,
+    startPhase,
+  ]);
 
   useEffect(() => {
     timerRef.current = setInterval(() => {
@@ -410,7 +417,18 @@ export default function BreathworkSessionScreen() {
       clearBreathHaptics();
       isRunningRef.current = false;
     };
-  }, []);
+  }, [
+    clearBreathHaptics,
+    config.midpointClip,
+    config.midpointTime,
+    config.outroDuration,
+    config.totalDuration,
+    mode,
+    navigation,
+    outroPlayer,
+    playClip,
+    stopAllAudio,
+  ]);
 
   const handleExit = () => {
     setShowExitModal(true);

@@ -192,7 +192,7 @@ export default function BreathCircle({
       cancelAnimation(pulse);
       cancelAnimation(colorCycle);
     };
-  }, []);
+  }, [progress, pulse, colorCycle]);
 
   useEffect(() => {
     cancelAnimation(progress);
@@ -277,7 +277,7 @@ export default function BreathCircle({
         );
         break;
     }
-  }, [phase, phaseDuration, isPaused]);
+  }, [phase, phaseDuration, isPaused, colorCycle, progress, pulse]);
 
   return (
     <View style={styles.container}>

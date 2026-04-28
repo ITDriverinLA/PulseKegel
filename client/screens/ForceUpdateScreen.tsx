@@ -44,7 +44,7 @@ export default function ForceUpdateScreen({
 
   useEffect(() => {
     opacity.value = withTiming(1, { duration: ANIM_DURATION_ENTER });
-  }, []);
+  }, [opacity]);
 
   const handleUpdate = async () => {
     const url = Platform.OS === "ios" ? iosStoreUrl : androidStoreUrl;

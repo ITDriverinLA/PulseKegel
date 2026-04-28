@@ -84,14 +84,6 @@ export default function SettingsScreen() {
     loadSettings();
   }, [loadSettings]);
 
-  useEffect(() => {
-    const unsubscribe = navigation.addListener("focus", () => {
-      loadSettings();
-      checkPermissionStatus();
-    });
-    return unsubscribe;
-  }, [navigation, loadSettings]);
-
   const checkPermissionStatus = useCallback(async () => {
     const currentSettings = await storage.getSettings();
     if (currentSettings.reminderEnabled) {
@@ -101,6 +93,14 @@ export default function SettingsScreen() {
       setPermissionRevoked(false);
     }
   }, []);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("focus", () => {
+      loadSettings();
+      checkPermissionStatus();
+    });
+    return unsubscribe;
+  }, [navigation, loadSettings, checkPermissionStatus]);
 
   const handleReminderToggle = async (enabled: boolean) => {
     if (enabled) {

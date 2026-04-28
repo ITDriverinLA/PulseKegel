@@ -119,8 +119,9 @@ export default function WorkoutPlayerScreen() {
   }, [glowPulse, backgroundPulse]);
 
   useEffect(() => {
+    const hapticPulse = hapticPulseRef.current;
     return () => {
-      hapticPulseRef.current.stop();
+      hapticPulse.stop();
     };
   }, []);
 
@@ -267,12 +268,24 @@ export default function WorkoutPlayerScreen() {
     engine.start();
     startAmbient();
 
+    const hapticPulse = hapticPulseRef.current;
     return () => {
-      hapticPulseRef.current.stop();
+      hapticPulse.stop();
       stopAmbient();
       engine.destroy();
     };
-  }, [workout, settings, phaseScale, phaseOpacity, phaseColorValue]);
+  }, [
+    workout,
+    settings,
+    phaseScale,
+    phaseOpacity,
+    phaseColorValue,
+    playSfx,
+    startAmbient,
+    stopAmbient,
+    weekNumber,
+    dayNumber,
+  ]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener(

@@ -3,6 +3,7 @@ import React, {
   useContext,
   useCallback,
   useEffect,
+  useMemo,
   useState,
   useRef,
   ReactNode,
@@ -83,31 +84,59 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     AMBIENT_SOURCES.architect_of_surrender,
   );
 
-  const sfxPlayers: Record<SoundEffect, typeof squeezePlayer> = {
-    squeeze: squeezePlayer,
-    rest: restPlayer,
-    breathe: breathePlayer,
-    countdown: countdownPlayer,
-    complete: completePlayer,
-    badge: badgePlayer,
-  };
+  const sfxPlayers = useMemo<Record<SoundEffect, typeof squeezePlayer>>(
+    () => ({
+      squeeze: squeezePlayer,
+      rest: restPlayer,
+      breathe: breathePlayer,
+      countdown: countdownPlayer,
+      complete: completePlayer,
+      badge: badgePlayer,
+    }),
+    [
+      squeezePlayer,
+      restPlayer,
+      breathePlayer,
+      countdownPlayer,
+      completePlayer,
+      badgePlayer,
+    ],
+  );
 
-  const ambientPlayers: Record<TrackKey, typeof ageWeapon1Player> = {
-    age_weapon_1: ageWeapon1Player,
-    age_weapon_2: ageWeapon2Player,
-    training_beats: trainingBeatsPlayer,
-    training_kegel: trainingKegelPlayer,
-    quiet_power_1: quietPower1Player,
-    quiet_power_2: quietPower2Player,
-    quiet_power_f1: quietPowerF1Player,
-    quiet_power_f2: quietPowerF2Player,
-    surrender: surrenderPlayer,
-    on_my_knees: onMyKneesPlayer,
-    take_me: takeMePlayer,
-    velvet_tides: velvetTidesPlayer,
-    rivers_of_surrender: riversOfSurrenderPlayer,
-    architect_of_surrender: architectOfSurrenderPlayer,
-  };
+  const ambientPlayers = useMemo<Record<TrackKey, typeof ageWeapon1Player>>(
+    () => ({
+      age_weapon_1: ageWeapon1Player,
+      age_weapon_2: ageWeapon2Player,
+      training_beats: trainingBeatsPlayer,
+      training_kegel: trainingKegelPlayer,
+      quiet_power_1: quietPower1Player,
+      quiet_power_2: quietPower2Player,
+      quiet_power_f1: quietPowerF1Player,
+      quiet_power_f2: quietPowerF2Player,
+      surrender: surrenderPlayer,
+      on_my_knees: onMyKneesPlayer,
+      take_me: takeMePlayer,
+      velvet_tides: velvetTidesPlayer,
+      rivers_of_surrender: riversOfSurrenderPlayer,
+      architect_of_surrender: architectOfSurrenderPlayer,
+    }),
+    [
+      ageWeapon1Player,
+      ageWeapon2Player,
+      trainingBeatsPlayer,
+      trainingKegelPlayer,
+      quietPower1Player,
+      quietPower2Player,
+      quietPowerF1Player,
+      quietPowerF2Player,
+      surrenderPlayer,
+      onMyKneesPlayer,
+      takeMePlayer,
+      velvetTidesPlayer,
+      riversOfSurrenderPlayer,
+      architectOfSurrenderPlayer,
+    ],
+  );
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -162,7 +191,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       }
     };
     loadSettings();
-  }, []);
+  }, [ambientPlayers]);
 
   useEffect(() => {
     for (const player of Object.values(sfxPlayers)) {
@@ -170,7 +199,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         player.volume = audioSettings.sfxVolume;
       }
     }
-  }, [audioSettings.sfxVolume]);
+  }, [audioSettings.sfxVolume, sfxPlayers]);
 
   useEffect(() => {
     for (const player of Object.values(ambientPlayers)) {
@@ -178,7 +207,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         player.volume = audioSettings.ambientVolume;
       }
     }
-  }, [audioSettings.ambientVolume]);
+  }, [audioSettings.ambientVolume, ambientPlayers]);
 
   const stopAllAmbient = useCallback(() => {
     for (const player of Object.values(ambientPlayers)) {
@@ -189,21 +218,24 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         } catch {}
       }
     }
-  }, []);
+  }, [ambientPlayers]);
 
-  const playTrackByKey = useCallback((track: TrackKey, loop: boolean) => {
-    const player = ambientPlayers[track];
-    if (player) {
-      try {
-        player.loop = loop;
-        player.volume = audioSettingsRef.current.ambientVolume;
-        player.seekTo(0);
-        player.play();
-        setCurrentAmbientTrack(track);
-        lastPlayedTrackRef.current = track;
-      } catch {}
-    }
-  }, []);
+  const playTrackByKey = useCallback(
+    (track: TrackKey, loop: boolean) => {
+      const player = ambientPlayers[track];
+      if (player) {
+        try {
+          player.loop = loop;
+          player.volume = audioSettingsRef.current.ambientVolume;
+          player.seekTo(0);
+          player.play();
+          setCurrentAmbientTrack(track);
+          lastPlayedTrackRef.current = track;
+        } catch {}
+      }
+    },
+    [ambientPlayers],
+  );
 
   const pickNextTrack = useCallback((): TrackKey | null => {
     const settings = audioSettingsRef.current;
@@ -250,6 +282,10 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     audioSettings.selectedTracks,
     audioSettings.shuffleEnabled,
     currentAmbientTrack,
+    ambientPlayers,
+    pickNextTrack,
+    playTrackByKey,
+    stopAllAmbient,
   ]);
 
   const updateAudioSettings = useCallback(
@@ -273,7 +309,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         } catch {}
       }
     },
-    [audioSettings.sfxEnabled, audioSettings.sfxVolume],
+    [audioSettings.sfxEnabled, audioSettings.sfxVolume, sfxPlayers],
   );
 
   const startAmbient = useCallback(() => {
@@ -299,7 +335,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       currentTrackIndexRef.current = 1;
       playTrackByKey(tracks[0], singleTrack);
     }
-  }, []);
+  }, [stopAllAmbient, playTrackByKey]);
 
   const stopAmbient = useCallback(() => {
     isWorkoutActiveRef.current = false;
@@ -308,7 +344,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     setCurrentAmbientTrack("none");
     lastPlayedTrackRef.current = "none";
     currentTrackIndexRef.current = 0;
-  }, []);
+  }, [stopAllAmbient]);
 
   const previewTrack = useCallback(
     (track: TrackKey) => {
@@ -330,13 +366,18 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         } catch {}
       }
     },
-    [previewingTrack, audioSettings.ambientVolume],
+    [
+      previewingTrack,
+      audioSettings.ambientVolume,
+      ambientPlayers,
+      stopAllAmbient,
+    ],
   );
 
   const stopPreview = useCallback(() => {
     stopAllAmbient();
     setPreviewingTrack("none");
-  }, []);
+  }, [stopAllAmbient]);
 
   return (
     <AudioContext.Provider

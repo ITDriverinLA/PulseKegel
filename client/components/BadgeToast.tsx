@@ -95,7 +95,16 @@ export function BadgeToast({ badgeIds, onDismiss }: BadgeToastProps) {
         true,
       ),
     );
-  }, [currentIndex, currentBadge]);
+  }, [
+    currentIndex,
+    currentBadge,
+    contentOpacity,
+    glowPulse,
+    iconRotate,
+    iconScale,
+    playSfx,
+    shimmer,
+  ]);
 
   const iconAnimatedStyle = useAnimatedStyle(() => ({
     transform: [

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   StyleSheet,
   View,
@@ -57,32 +57,46 @@ export default function Week1ReviewScreen() {
     opacity: screenOpacity.value,
   }));
 
-  useEffect(() => {
-    loadStatsAndMessage();
-  }, []);
-
-  useEffect(() => {
-    if (loading) {
-      const pulse = RNAnimated.loop(
-        RNAnimated.sequence([
-          RNAnimated.timing(pulseAnim, {
-            toValue: 1,
-            duration: ANIM_DURATION_PULSE_LOADING,
-            useNativeDriver: true,
+  const fetchMessage = useCallback(
+    async (
+      totalSessions: number,
+      totalMinutes: number,
+      currentStreak: number,
+      anatomyType: string | null,
+      userName: string,
+    ) => {
+      try {
+        const apiUrl = getApiUrl().replace(/\/$/, "");
+        const response = await fetch(`${apiUrl}/api/weekly-review`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            weekNumber: 1,
+            daysWorkedOut: totalSessions,
+            totalMinutes,
+            anatomyType,
+            userName,
+            currentStreak,
           }),
-          RNAnimated.timing(pulseAnim, {
-            toValue: 0.4,
-            duration: ANIM_DURATION_PULSE_LOADING,
-            useNativeDriver: true,
-          }),
-        ]),
-      );
-      pulse.start();
-      return () => pulse.stop();
-    }
-  }, [loading]);
+        });
 
-  const loadStatsAndMessage = async () => {
+        if (!response.ok) throw new Error("API error");
+
+        const data = await response.json();
+        setMessage(data.message);
+      } catch {
+        const fallback = buildFallbackMessage(totalSessions);
+        setMessage(fallback);
+      } finally {
+        setLoading(false);
+        setButtonDisabled(true);
+        setTimeout(() => setButtonDisabled(false), 1500);
+      }
+    },
+    [],
+  );
+
+  const loadStatsAndMessage = useCallback(async () => {
     try {
       const [progress, settings] = await Promise.all([
         storage.getProgress(),
@@ -112,43 +126,32 @@ export default function Week1ReviewScreen() {
       setButtonDisabled(true);
       setTimeout(() => setButtonDisabled(false), 1500);
     }
-  };
+  }, [fetchMessage]);
 
-  const fetchMessage = async (
-    totalSessions: number,
-    totalMinutes: number,
-    currentStreak: number,
-    anatomyType: string | null,
-    userName: string,
-  ) => {
-    try {
-      const apiUrl = getApiUrl().replace(/\/$/, "");
-      const response = await fetch(`${apiUrl}/api/weekly-review`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          weekNumber: 1,
-          daysWorkedOut: totalSessions,
-          totalMinutes,
-          anatomyType,
-          userName,
-          currentStreak,
-        }),
-      });
+  useEffect(() => {
+    loadStatsAndMessage();
+  }, [loadStatsAndMessage]);
 
-      if (!response.ok) throw new Error("API error");
-
-      const data = await response.json();
-      setMessage(data.message);
-    } catch {
-      const fallback = buildFallbackMessage(totalSessions);
-      setMessage(fallback);
-    } finally {
-      setLoading(false);
-      setButtonDisabled(true);
-      setTimeout(() => setButtonDisabled(false), 1500);
+  useEffect(() => {
+    if (loading) {
+      const pulse = RNAnimated.loop(
+        RNAnimated.sequence([
+          RNAnimated.timing(pulseAnim, {
+            toValue: 1,
+            duration: ANIM_DURATION_PULSE_LOADING,
+            useNativeDriver: true,
+          }),
+          RNAnimated.timing(pulseAnim, {
+            toValue: 0.4,
+            duration: ANIM_DURATION_PULSE_LOADING,
+            useNativeDriver: true,
+          }),
+        ]),
+      );
+      pulse.start();
+      return () => pulse.stop();
     }
-  };
+  }, [loading, pulseAnim]);
 
   const buildFallbackMessage = (completedSessions: number): string => {
     if (completedSessions === 0) {

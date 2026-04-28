@@ -130,7 +130,7 @@ export default function OnboardingScreen({
 
   useEffect(() => {
     screenOpacity.value = withTiming(1, { duration: ANIM_DURATION_ENTER });
-  }, []);
+  }, [screenOpacity]);
 
   const isLastPage = currentPage === pages.length - 1;
   const isAnatomyPage = pages[currentPage].type === "anatomy";
