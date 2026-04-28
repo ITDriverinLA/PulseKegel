@@ -1,55 +1,90 @@
 #!/usr/bin/env bash
-# pre-commit hook: auto-update blog-content/*.html lastmod dates on commit
+# pre-commit hook — runs two checks:
 #
-# For every blog-content/*.html file (excluding index.html) that is STAGED
-# for this commit, this hook automatically stamps today's UTC date into:
-#   • the <!--lastmod:YYYY-MM-DD--> comment on line 1
-#   • the "dateModified" field in the JSON-LD <script> block (if present)
+# 1. Blog lastmod auto-dating
+#    For every blog-content/*.html file (excluding index.html) that is STAGED
+#    for this commit, this hook automatically stamps today's UTC date into:
+#      • the <!--lastmod:YYYY-MM-DD--> comment on line 1
+#      • the "dateModified" field in the JSON-LD <script> block (if present)
+#    The updated file is re-staged so the commit always contains the correct date.
 #
-# The updated file is re-staged so the commit always contains the correct date.
-# No manual date editing is ever required.
-#
-# Today's date (not the last-commit date) is used here because we are about to
-# record a new commit — that is the actual modification date of the content.
-# Build-time syncs (scripts/build-blog.js) use the last git commit date instead.
+# 2. Animation lint guard
+#    Any staged file under client/ is linted with ESLint to enforce the Easing
+#    consistency rule defined in eslint.config.js.  A commit that introduces an
+#    inline Easing.* call or a hard-coded duration/delay value is blocked until
+#    the violation is fixed.
 #
 # Install via:  ./install-hooks.sh
 # Bypass (emergency only): git commit --no-verify
 
 set -euo pipefail
 
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+# ---------------------------------------------------------------------------
+# 1. Blog lastmod auto-dating
+# ---------------------------------------------------------------------------
+
 STAGED_BLOG_FILES=$(git diff --cached --name-only --diff-filter=AM | grep '^blog-content/.*\.html$' || true)
 
-if [[ -z "$STAGED_BLOG_FILES" ]]; then
-  exit 0
+if [[ -n "$STAGED_BLOG_FILES" ]]; then
+  TODAY=$(date -u +%F)   # YYYY-MM-DD in UTC
+  SYNC_SCRIPT="$REPO_ROOT/scripts/sync-blog-dates.js"
+
+  while IFS= read -r rel; do
+    basename="${rel##*/}"
+    if [[ "$basename" == "index.html" ]]; then
+      continue
+    fi
+
+    abs="$REPO_ROOT/$rel"
+    if [[ ! -f "$abs" ]]; then
+      continue
+    fi
+
+    # Pass --date TODAY so the commit is stamped with today's date rather than
+    # the previous commit's date (which is what the build-time sync uses).
+    node "$SYNC_SCRIPT" --date "$TODAY" "$abs"
+
+    # Re-stage the updated file so the commit contains the correct date
+    git add "$rel"
+    echo "auto-dated  $rel  →  lastmod:$TODAY"
+
+  done <<< "$STAGED_BLOG_FILES"
+
+  echo ""
+  echo "Blog lastmod dates stamped for this commit ($TODAY UTC)."
 fi
 
-TODAY=$(date -u +%F)   # YYYY-MM-DD in UTC
+# ---------------------------------------------------------------------------
+# 2. Animation lint guard
+# ---------------------------------------------------------------------------
 
-HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$HOOK_DIR/.." && pwd)"
-SYNC_SCRIPT="$REPO_ROOT/scripts/sync-blog-dates.js"
+STAGED_CLIENT_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep '^client/.*\.\(js\|ts\|jsx\|tsx\)$' || true)
 
-while IFS= read -r rel; do
-  basename="${rel##*/}"
-  if [[ "$basename" == "index.html" ]]; then
-    continue
+if [[ -n "$STAGED_CLIENT_FILES" ]]; then
+  ESLINT="$REPO_ROOT/node_modules/.bin/eslint"
+
+  if [[ ! -x "$ESLINT" ]]; then
+    echo "ERROR: eslint not found at $ESLINT — run 'npm install' first."
+    exit 1
   fi
 
-  abs="$REPO_ROOT/$rel"
-  if [[ ! -f "$abs" ]]; then
-    continue
+  echo "animation-lint: checking staged client/ files..."
+
+  # Build a space-separated list of absolute paths for ESLint
+  FILES_TO_LINT=()
+  while IFS= read -r rel; do
+    FILES_TO_LINT+=("$REPO_ROOT/$rel")
+  done <<< "$STAGED_CLIENT_FILES"
+
+  if cd "$REPO_ROOT" && "$ESLINT" "${FILES_TO_LINT[@]}"; then
+    echo "animation-lint: all checks passed."
+  else
+    echo ""
+    echo "ERROR: ESLint found animation rule violations in staged client/ files."
+    echo "Fix the issues above, then stage the changes and commit again."
+    echo "To bypass in an emergency: git commit --no-verify"
+    exit 1
   fi
-
-  # Pass --date TODAY so the commit is stamped with today's date rather than
-  # the previous commit's date (which is what the build-time sync uses).
-  node "$SYNC_SCRIPT" --date "$TODAY" "$abs"
-
-  # Re-stage the updated file so the commit contains the correct date
-  git add "$rel"
-  echo "auto-dated  $rel  →  lastmod:$TODAY"
-
-done <<< "$STAGED_BLOG_FILES"
-
-echo ""
-echo "Blog lastmod dates stamped for this commit ($TODAY UTC)."
+fi
