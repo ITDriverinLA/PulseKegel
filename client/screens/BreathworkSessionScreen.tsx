@@ -1,5 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { View, Text, Pressable, StyleSheet, Modal } from "react-native";
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  Modal,
+  AppState,
+} from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -67,6 +74,10 @@ export default function BreathworkSessionScreen() {
   const sighCountRef = useRef(0);
   const sessionStateRef = useRef<SessionState>("intro");
   const clipPlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sessionWallClockStartRef = useRef<number | null>(null);
+  const currentPhaseClipRef = useRef<
+    keyof typeof BREATHWORK_AUDIO_SOURCES | null
+  >(null);
 
   const introPlayer = useAudioPlayer(
     BREATHWORK_AUDIO_SOURCES[config.introClip],
@@ -261,6 +272,7 @@ export default function BreathworkSessionScreen() {
       setCurrentPhase(step.phase);
       setPhaseDuration(step.duration);
       setPhaseLabel(step.label);
+      currentPhaseClipRef.current = step.audioClip;
       triggerPhaseHaptic(step.phase, step.duration);
       playClip(step.audioClip);
     },
@@ -281,6 +293,7 @@ export default function BreathworkSessionScreen() {
       if (sighCountRef.current >= 4) {
         setSessionState("transition");
         sessionStateRef.current = "transition";
+        currentPhaseClipRef.current = "energize_transition";
         playClip("energize_transition");
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setPhaseLabel("FIND YOUR RHYTHM");
@@ -380,6 +393,7 @@ export default function BreathworkSessionScreen() {
 
   // Mount-only: run the session countdown and trigger the outro when time is up.
   useEffect(() => {
+    sessionWallClockStartRef.current = Date.now();
     timerRef.current = setInterval(() => {
       if (!isRunningRef.current) return;
 
@@ -446,6 +460,41 @@ export default function BreathworkSessionScreen() {
       if (clipPlayTimerRef.current) clearTimeout(clipPlayTimerRef.current);
       sessionDepsRef.current.clearBreathHaptics();
       isRunningRef.current = false;
+    };
+  }, []);
+
+  // Mount-only: resync countdown and resume audio when app returns to foreground.
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      if (
+        nextState === "active" &&
+        sessionWallClockStartRef.current !== null &&
+        isRunningRef.current
+      ) {
+        const state = sessionStateRef.current;
+        if (
+          state === "breathing" ||
+          state === "sigh_phase" ||
+          state === "transition"
+        ) {
+          const elapsed =
+            (Date.now() - sessionWallClockStartRef.current) / 1000;
+          const corrected = Math.max(
+            0,
+            sessionDepsRef.current!.config.totalDuration - Math.round(elapsed),
+          );
+          setTotalSecondsLeft(corrected);
+
+          const clipKey = currentPhaseClipRef.current;
+          if (clipKey) {
+            sessionDepsRef.current!.playClip(clipKey);
+          }
+        }
+      }
+    });
+
+    return () => {
+      subscription.remove();
     };
   }, []);
 
