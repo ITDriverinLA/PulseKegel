@@ -112,11 +112,15 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   const { cp, isDarkMode, toggleDarkMode } = useThemePreference();
   const { audioSettings, updateAudioSettings } = useAudio();
 
-  const screenOpacity = useSharedValue(1);
+  const screenOpacity = useSharedValue(0);
 
   const screenAnimatedStyle = useAnimatedStyle(() => ({
     opacity: screenOpacity.value,
   }));
+
+  useEffect(() => {
+    screenOpacity.value = withTiming(1, { duration: 300 });
+  }, []);
 
   const isLastPage = currentPage === pages.length - 1;
   const isAnatomyPage = pages[currentPage].type === 'anatomy';
