@@ -311,55 +311,84 @@ export default function BreathworkSessionScreen() {
     );
   }, [mode, config.phases, playClip, startPhase]);
 
+  // Immutable snapshot of every value the two mount-only effects need,
+  // captured once on the first render (session start). After that the ref
+  // is never overwritten, so callback identity churn during audio playback
+  // cannot re-run the effects or restart an in-progress session.
+  const sessionDepsRef = useRef<{
+    advancePhase: typeof advancePhase;
+    startPhase: typeof startPhase;
+    playClip: typeof playClip;
+    stopAllAudio: typeof stopAllAudio;
+    clearBreathHaptics: typeof clearBreathHaptics;
+    introPlayer: typeof introPlayer;
+    outroPlayer: typeof outroPlayer;
+    navigation: typeof navigation;
+    mode: typeof mode;
+    config: typeof config;
+  } | null>(null);
+  if (!sessionDepsRef.current) {
+    sessionDepsRef.current = {
+      advancePhase,
+      startPhase,
+      playClip,
+      stopAllAudio,
+      clearBreathHaptics,
+      introPlayer,
+      outroPlayer,
+      navigation,
+      mode,
+      config,
+    };
+  }
+
+  // Mount-only: launch intro audio then transition into the first active phase.
   useEffect(() => {
+    const deps = sessionDepsRef.current!;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    introPlayer.play();
+    deps.introPlayer.play();
 
     const introTimeout = setTimeout(() => {
       if (!isRunningRef.current) return;
+      const d = sessionDepsRef.current!;
 
-      if (mode === "energize") {
+      if (d.mode === "energize") {
         setSessionState("sigh_phase");
         sessionStateRef.current = "sigh_phase";
         phaseIndexRef.current = 0;
-        startPhase(ENERGIZE_SIGH_PHASES, 0);
+        d.startPhase(ENERGIZE_SIGH_PHASES, 0);
         phaseTimerRef.current = setTimeout(
-          advancePhase,
+          d.advancePhase,
           ENERGIZE_SIGH_PHASES[0].duration * 1000,
         );
       } else {
         setSessionState("breathing");
         sessionStateRef.current = "breathing";
         phaseIndexRef.current = 0;
-        startPhase(config.phases, 0);
+        d.startPhase(d.config.phases, 0);
         phaseTimerRef.current = setTimeout(
-          advancePhase,
-          config.phases[0].duration * 1000,
+          d.advancePhase,
+          d.config.phases[0].duration * 1000,
         );
       }
-    }, config.introDuration * 1000);
+    }, deps.config.introDuration * 1000);
 
     return () => {
       clearTimeout(introTimeout);
     };
-  }, [
-    advancePhase,
-    config.introDuration,
-    config.phases,
-    introPlayer,
-    mode,
-    startPhase,
-  ]);
+  }, []);
 
+  // Mount-only: run the session countdown and trigger the outro when time is up.
   useEffect(() => {
     timerRef.current = setInterval(() => {
       if (!isRunningRef.current) return;
 
       setTotalSecondsLeft((prev) => {
         const next = prev - 1;
+        const d = sessionDepsRef.current!;
 
         if (
-          next <= config.outroDuration &&
+          next <= d.config.outroDuration &&
           sessionStateRef.current !== "outro" &&
           sessionStateRef.current !== "complete"
         ) {
@@ -369,8 +398,8 @@ export default function BreathworkSessionScreen() {
           setSessionState("outro");
           sessionStateRef.current = "outro";
           setPhaseLabel("");
-          stopAllAudio();
-          outroPlayer.play();
+          d.stopAllAudio();
+          d.outroPlayer.play();
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           setTimeout(() => {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -380,8 +409,9 @@ export default function BreathworkSessionScreen() {
             isRunningRef.current = false;
             sessionStateRef.current = "complete";
             setSessionState("complete");
-            navigation.replace("BreathworkSummary", { mode, completed: true });
-          }, config.outroDuration * 1000);
+            const { navigation: nav, mode: m } = sessionDepsRef.current!;
+            nav.replace("BreathworkSummary", { mode: m, completed: true });
+          }, d.config.outroDuration * 1000);
         }
 
         if (next <= 0) {
@@ -389,15 +419,15 @@ export default function BreathworkSessionScreen() {
           return 0;
         }
 
-        if (config.midpointClip && config.midpointTime) {
-          const elapsed = config.totalDuration - next;
+        if (d.config.midpointClip && d.config.midpointTime) {
+          const elapsed = d.config.totalDuration - next;
           if (
-            elapsed >= config.midpointTime &&
-            elapsed < config.midpointTime + 2
+            elapsed >= d.config.midpointTime &&
+            elapsed < d.config.midpointTime + 2
           ) {
-            setMidpointPlayed((prev) => {
-              if (!prev) {
-                playClip(config.midpointClip!);
+            setMidpointPlayed((prevPlayed) => {
+              if (!prevPlayed) {
+                sessionDepsRef.current!.playClip(d.config.midpointClip!);
               }
               return true;
             });
@@ -414,21 +444,10 @@ export default function BreathworkSessionScreen() {
       if (outroTimerRef.current) clearTimeout(outroTimerRef.current);
       if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
       if (clipPlayTimerRef.current) clearTimeout(clipPlayTimerRef.current);
-      clearBreathHaptics();
+      sessionDepsRef.current.clearBreathHaptics();
       isRunningRef.current = false;
     };
-  }, [
-    clearBreathHaptics,
-    config.midpointClip,
-    config.midpointTime,
-    config.outroDuration,
-    config.totalDuration,
-    mode,
-    navigation,
-    outroPlayer,
-    playClip,
-    stopAllAudio,
-  ]);
+  }, []);
 
   const handleExit = () => {
     setShowExitModal(true);
