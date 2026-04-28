@@ -17,8 +17,8 @@ import Animated, {
   withSpring,
   withTiming,
   runOnJS,
-  FadeIn,
-  FadeOut,
+  SlideInRight,
+  SlideOutLeft,
   useSharedValue,
   WithSpringConfig,
 } from 'react-native-reanimated';
@@ -208,7 +208,8 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
           {isNamePage ? (
             <Animated.View
               key={currentPage}
-              entering={FadeIn.duration(300)}
+              entering={SlideInRight.duration(300)}
+              exiting={SlideOutLeft.duration(250)}
               style={styles.nameContainer}
             >
               <Feather name="user" size={64} color={cp.neonGreen} style={styles.nameIcon} />
@@ -247,7 +248,8 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
           ) : isAnatomyPage ? (
             <Animated.View
               key={currentPage}
-              entering={FadeIn.duration(300)}
+              entering={SlideInRight.duration(300)}
+              exiting={SlideOutLeft.duration(250)}
               style={styles.anatomyContainer}
             >
               <ThemedText type="h1" style={[styles.title, { color: cp.text }]}>
@@ -288,7 +290,8 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
           ) : isGuidePage ? (
             <Animated.View
               key={currentPage}
-              entering={FadeIn.duration(300)}
+              entering={SlideInRight.duration(300)}
+              exiting={SlideOutLeft.duration(250)}
               style={styles.guideContainer}
             >
               <ScrollView
@@ -312,7 +315,8 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
           ) : isSettingsPage ? (
             <Animated.View
               key={currentPage}
-              entering={FadeIn.duration(300)}
+              entering={SlideInRight.duration(300)}
+              exiting={SlideOutLeft.duration(250)}
               style={styles.settingsContainer}
             >
               <ThemedText type="h1" style={[styles.title, { color: cp.text }]}>
@@ -471,25 +475,21 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
               </ScrollView>
             </Animated.View>
           ) : (
-            <>
-              <Animated.View
-                key={currentPage}
-                entering={FadeIn.duration(300)}
-                exiting={FadeOut.duration(200)}
-                style={styles.imageContainer}
-              >
+            <Animated.View
+              key={currentPage}
+              entering={SlideInRight.duration(300)}
+              exiting={SlideOutLeft.duration(250)}
+              style={styles.defaultPageContainer}
+            >
+              <View style={styles.imageContainer}>
                 <Image
                   source={pages[currentPage].image}
                   style={styles.image}
                   resizeMode="contain"
                 />
-              </Animated.View>
+              </View>
 
-              <Animated.View
-                key={`text-${currentPage}`}
-                entering={FadeIn.duration(300).delay(100)}
-                style={styles.textContainer}
-              >
+              <View style={styles.textContainer}>
                 <ThemedText type="h1" style={[styles.title, { color: cp.text }]}>
                   {pages[currentPage].title}
                 </ThemedText>
@@ -499,8 +499,8 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                 >
                   {pages[currentPage].description}
                 </ThemedText>
-              </Animated.View>
-            </>
+              </View>
+            </Animated.View>
           )}
         </View>
 
@@ -592,6 +592,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xl,
   },
   pageContent: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  defaultPageContainer: {
     flex: 1,
     justifyContent: 'center',
   },
