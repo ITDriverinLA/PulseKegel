@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
-# pre-push hook: verify blog post dates are valid before code leaves the machine
+# pre-push hook: two checks before code leaves the machine
 #
-# Runs the blog build in strict mode (BLOG_STRICT=1) so that any date errors
-# are caught locally — giving instant feedback without waiting for CI.
+# 1. Blog date check: runs the blog build in strict mode (BLOG_STRICT=1) so
+#    that date errors are caught locally before CI.
+#
+# 2. Animation lint: runs ESLint across all of client/ to catch raw Easing
+#    calls and hardcoded duration/delay values that must instead use the
+#    constants in client/constants/animation.ts.
 #
 # Install via:  ./install-hooks.sh
 # Bypass (emergency only): git push --no-verify
@@ -25,6 +29,33 @@ else
   echo ""
   echo "ERROR: Blog build failed in strict mode — push blocked."
   echo "Fix the date errors above, then push again."
+  echo "To bypass in an emergency: git push --no-verify"
+  exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# 2. Animation lint: full client/ sweep
+# ---------------------------------------------------------------------------
+
+ESLINT="$REPO_ROOT/node_modules/.bin/eslint"
+
+if [[ ! -x "$ESLINT" ]]; then
+  echo "ERROR: eslint not found at $ESLINT — run 'npm install' first."
+  exit 1
+fi
+
+echo ""
+echo "pre-push: running animation lint on client/..."
+echo "  Raw Easing calls and hardcoded duration/delay values are not allowed."
+echo "  Use the constants defined in client/constants/animation.ts instead."
+echo ""
+
+if cd "$REPO_ROOT" && "$ESLINT" client/; then
+  echo "pre-push: animation lint passed."
+else
+  echo ""
+  echo "ERROR: ESLint found animation rule violations in client/."
+  echo "Fix the issues above, then push again."
   echo "To bypass in an emergency: git push --no-verify"
   exit 1
 fi

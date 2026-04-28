@@ -1,0 +1,37 @@
+name: Animation lint
+
+on:
+  push:
+    paths:
+      - 'client/**'
+      - 'eslint.config.js'
+  pull_request:
+    paths:
+      - 'client/**'
+      - 'eslint.config.js'
+
+jobs:
+  lint-animation-rules:
+    name: Check animation rule violations
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint on client/
+        run: |
+          echo "Running ESLint to check for animation rule violations..."
+          echo "Raw Easing calls and hardcoded duration/delay values are forbidden."
+          echo "Use the constants defined in client/constants/animation.ts instead."
+          echo ""
+          npx eslint client/
