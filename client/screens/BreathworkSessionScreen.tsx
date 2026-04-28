@@ -176,7 +176,10 @@ export default function BreathworkSessionScreen() {
   }, [introPlayer, outroPlayer]);
 
   const playClip = useCallback(
-    async (clipKey: keyof typeof BREATHWORK_AUDIO_SOURCES | null) => {
+    async (
+      clipKey: keyof typeof BREATHWORK_AUDIO_SOURCES | null,
+      seekOffsetSec: number = 0,
+    ) => {
       if (!clipKey || !isRunningRef.current) return;
       const playerMap: Record<string, ReturnType<typeof useAudioPlayer>> = {
         calm_inhale: calmInhalePlayer,
@@ -197,7 +200,7 @@ export default function BreathworkSessionScreen() {
         try {
           if (clipPlayTimerRef.current) clearTimeout(clipPlayTimerRef.current);
           player.pause();
-          player.seekTo(0);
+          player.seekTo(Math.max(0, seekOffsetSec));
           clipPlayTimerRef.current = setTimeout(() => {
             if (!isRunningRef.current) return;
             try {
@@ -673,7 +676,7 @@ export default function BreathworkSessionScreen() {
               );
               const clipKey = currentPhaseClipRef.current;
               if (clipKey) {
-                d.playClip(clipKey);
+                d.playClip(clipKey, phaseElapsedSec);
               }
             }
           }
