@@ -1,5 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { isRestDayForDate } from "@/data/workoutProgram";
+import {
+  isRestDayForDate,
+  getWorkoutCompletionsForWeek,
+  getScheduledDaysForWeek,
+} from "@/data/workoutProgram";
+import { BADGE_DEFINITIONS } from "@/data/badges";
 import type { EarnedBadge } from "@/data/badges";
 
 const STORAGE_KEYS = {
@@ -539,8 +544,6 @@ export const storage = {
     const earnedIds = new Set(earnedBadges.map((b) => b.badgeId));
     const newBadgeIds: string[] = [];
 
-    const { BADGE_DEFINITIONS } = require("@/data/badges");
-
     for (const badge of BADGE_DEFINITIONS) {
       if (earnedIds.has(badge.id)) continue;
 
@@ -708,10 +711,6 @@ export const storage = {
     totalCoreSessions: number;
     completedOptionalSessions: number;
   }> {
-    const {
-      getWorkoutCompletionsForWeek,
-      getScheduledDaysForWeek,
-    } = require("@/data/workoutProgram");
     const [completedDates, programStartDate, optionalDates] = await Promise.all(
       [
         this.getCompletedDates(),
