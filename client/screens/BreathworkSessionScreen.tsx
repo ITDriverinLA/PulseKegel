@@ -623,7 +623,10 @@ export default function BreathworkSessionScreen() {
                   transitionStartWallClockRef.current =
                     Date.now() - msIntoOrPastTransition;
                   currentPhaseClipRef.current = "energize_transition";
-                  d.playClip("energize_transition");
+                  d.playClip(
+                    "energize_transition",
+                    msIntoOrPastTransition / 1000,
+                  );
                   setPhaseLabel("FIND YOUR RHYTHM");
                   if (transitionTimerRef.current)
                     clearTimeout(transitionTimerRef.current);
