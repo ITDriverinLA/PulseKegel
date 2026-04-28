@@ -48,6 +48,10 @@ args = "Start Frontend"
 task = "workflow.run"
 args = "blog-dates"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "animation-lint"
+
 [[workflows.workflow]]
 name = "Start App"
 author = "agent"
@@ -89,6 +93,17 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "bash ci-validate-blog.sh"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow]]
+name = "animation-lint"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npx eslint client/"
 
 [workflows.workflow.metadata]
 isValidation = true
