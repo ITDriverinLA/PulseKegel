@@ -57,6 +57,12 @@ module.exports = defineConfig([
           message:
             "Do not hardcode delay values in withDelay(). Import the appropriate delay constant from @/constants/animation instead.",
         },
+        {
+          selector:
+            'Property[key.name="easing"] > MemberExpression[object.name="Easing"][property.name=/^(ease|quad|cubic|bezier|back|bounce|sin|circle|exp|elastic)$/]',
+          message:
+            "Do not use raw Easing curves inline. Import the appropriate easing constant from @/constants/animation instead.",
+        },
       ],
     },
   },
