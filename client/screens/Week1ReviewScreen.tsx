@@ -23,6 +23,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { ThemedText } from '@/components/ThemedText';
 import { Spacing } from '@/constants/theme';
+import { ANIM_DURATION_EXIT_COMPLETE } from '@/constants/animation';
 import { storage } from '@/lib/storage';
 import { getApiUrl } from '@/lib/query-client';
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
@@ -164,7 +165,7 @@ export default function Week1ReviewScreen() {
         date: new Date().toISOString().split('T')[0],
       });
     }
-    screenOpacity.value = withTiming(0, { duration: 250 }, (finished) => {
+    screenOpacity.value = withTiming(0, { duration: ANIM_DURATION_EXIT_COMPLETE }, (finished) => {
       if (finished) {
         runOnJS(doNavigate)();
       }

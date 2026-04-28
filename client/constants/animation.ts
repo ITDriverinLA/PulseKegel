@@ -1,0 +1,2 @@
+export const ANIM_DURATION_EXIT = 175;
+export const ANIM_DURATION_EXIT_COMPLETE = 250;

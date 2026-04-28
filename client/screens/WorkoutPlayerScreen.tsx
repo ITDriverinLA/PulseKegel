@@ -26,6 +26,7 @@ import { BadgeToast } from '@/components/BadgeToast';
 import { useTheme } from '@/hooks/useTheme';
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 import { Spacing, BorderRadius, Typography } from '@/constants/theme';
+import { ANIM_DURATION_EXIT, ANIM_DURATION_EXIT_COMPLETE } from '@/constants/animation';
 import { DayTemplate, Segment, isRestDayForDate } from '@/data/workoutProgram';
 import { WorkoutEngine, WorkoutState, WorkoutPhase } from '@/lib/workoutEngine';
 import { hapticsManager, HapticPulseController } from '@/lib/hapticsManager';
@@ -288,12 +289,12 @@ export default function WorkoutPlayerScreen() {
     if (!engineRef.current) return;
     await hapticsManager.triggerWarning();
     hapticPulseRef.current.stop();
-    animateOut(175);
+    animateOut(ANIM_DURATION_EXIT);
   };
 
   const handleClose = () => {
     hapticPulseRef.current.stop();
-    animateOut(isComplete ? 250 : 175);
+    animateOut(isComplete ? ANIM_DURATION_EXIT_COMPLETE : ANIM_DURATION_EXIT);
   };
 
   const screenAnimatedStyle = useAnimatedStyle(() => ({
