@@ -39,6 +39,24 @@ module.exports = defineConfig([
           message:
             "Do not use Easing.linear directly. Import ANIM_EASING_LINEAR from @/constants/animation instead.",
         },
+        {
+          selector:
+            'CallExpression[callee.name="withTiming"] Property[key.name="duration"][value.type="Literal"]',
+          message:
+            "Do not hardcode duration values in withTiming(). Import the appropriate duration constant from @/constants/animation instead.",
+        },
+        {
+          selector:
+            'CallExpression[callee.name="withSpring"] Property[key.name="duration"][value.type="Literal"]',
+          message:
+            "Do not hardcode duration values in withSpring(). Import the appropriate duration constant from @/constants/animation instead.",
+        },
+        {
+          selector:
+            'CallExpression[callee.name="withDelay"][arguments.0.type="Literal"]',
+          message:
+            "Do not hardcode delay values in withDelay(). Import the appropriate delay constant from @/constants/animation instead.",
+        },
       ],
     },
   },
