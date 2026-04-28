@@ -59,7 +59,7 @@ module.exports = defineConfig([
         },
         {
           selector:
-            'MemberExpression[object.name="Easing"][property.name=/^(ease|quad|cubic|bounce|sin|circle|exp)$/]',
+            'MemberExpression[object.name="Easing"][property.name=/^(ease|quad|cubic|bounce|sin|circle|exp|step0|step1)$/]',
           message:
             "Do not use raw Easing curves inline. Import the appropriate easing constant from @/constants/animation instead.",
         },
