@@ -64,6 +64,7 @@ export default function BreathworkSessionScreen() {
   const [cyclesCompleted, setCyclesCompleted] = useState(0);
   const [showExitModal, setShowExitModal] = useState(false);
   const [, setMidpointPlayed] = useState(false);
+  const [phaseElapsed, setPhaseElapsed] = useState(0);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -75,6 +76,8 @@ export default function BreathworkSessionScreen() {
   const sessionStateRef = useRef<SessionState>("intro");
   const clipPlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sessionWallClockStartRef = useRef<number | null>(null);
+  const phaseStartWallClockRef = useRef<number>(Date.now());
+  const phaseDurationRef = useRef<number>(4);
   const currentPhaseClipRef = useRef<
     keyof typeof BREATHWORK_AUDIO_SOURCES | null
   >(null);
@@ -269,6 +272,9 @@ export default function BreathworkSessionScreen() {
     (phases: PhaseStep[], index: number) => {
       if (!isRunningRef.current) return;
       const step = phases[index];
+      phaseStartWallClockRef.current = Date.now();
+      phaseDurationRef.current = step.duration;
+      setPhaseElapsed(0);
       setCurrentPhase(step.phase);
       setPhaseDuration(step.duration);
       setPhaseLabel(step.label);
@@ -485,6 +491,12 @@ export default function BreathworkSessionScreen() {
           );
           setTotalSecondsLeft(corrected);
 
+          const phaseElapsedSec = Math.min(
+            (Date.now() - phaseStartWallClockRef.current) / 1000,
+            phaseDurationRef.current,
+          );
+          setPhaseElapsed(phaseElapsedSec);
+
           const clipKey = currentPhaseClipRef.current;
           if (clipKey) {
             sessionDepsRef.current!.playClip(clipKey);
@@ -610,7 +622,11 @@ export default function BreathworkSessionScreen() {
           </Animated.View>
         ) : (
           <>
-            <BreathCircle phase={currentPhase} phaseDuration={phaseDuration} />
+            <BreathCircle
+              phase={currentPhase}
+              phaseDuration={phaseDuration}
+              elapsedSeconds={phaseElapsed}
+            />
             <Animated.View
               key={phaseLabel}
               entering={FadeIn.duration(ANIM_DURATION_ENTER)}

@@ -169,12 +169,14 @@ interface BreathCircleProps {
   phase: BreathPhase;
   phaseDuration: number;
   isPaused?: boolean;
+  elapsedSeconds?: number;
 }
 
 export default function BreathCircle({
   phase,
   phaseDuration,
   isPaused,
+  elapsedSeconds,
 }: BreathCircleProps) {
   const { isDark } = useTheme();
 
@@ -222,13 +224,19 @@ export default function BreathCircle({
       false,
     );
 
-    const dur = phaseDuration * 1000;
+    const safeElapsed = Math.max(
+      0,
+      Math.min(elapsedSeconds ?? 0, phaseDuration - 0.05),
+    );
+    const remaining = Math.max(0.05, phaseDuration - safeElapsed);
+    const remainingMs = remaining * 1000;
 
     switch (phase) {
       case "inhale":
       case "sigh_inhale":
+        progress.value = safeElapsed / phaseDuration;
         progress.value = withTiming(1, {
-          duration: dur,
+          duration: remainingMs,
           easing: ANIM_EASING_BREATH,
         });
         break;
@@ -253,8 +261,9 @@ export default function BreathCircle({
 
       case "exhale":
       case "sigh_exhale":
+        progress.value = 1 - safeElapsed / phaseDuration;
         progress.value = withTiming(0, {
-          duration: dur,
+          duration: remainingMs,
           easing: ANIM_EASING_BREATH,
         });
         break;
@@ -277,7 +286,15 @@ export default function BreathCircle({
         );
         break;
     }
-  }, [phase, phaseDuration, isPaused, colorCycle, progress, pulse]);
+  }, [
+    phase,
+    phaseDuration,
+    isPaused,
+    elapsedSeconds,
+    colorCycle,
+    progress,
+    pulse,
+  ]);
 
   return (
     <View style={styles.container}>
