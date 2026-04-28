@@ -275,7 +275,11 @@ export default function WorkoutPlayerScreen() {
     if (!engineRef.current) return;
     await hapticsManager.triggerWarning();
     hapticPulseRef.current.stop();
-    navigation.goBack();
+    screenOpacity.value = withTiming(0, { duration: 175 }, (finished) => {
+      if (finished) {
+        runOnJS(doGoBack)();
+      }
+    });
   };
 
   const doGoBack = () => {
@@ -291,7 +295,11 @@ export default function WorkoutPlayerScreen() {
         }
       });
     } else {
-      navigation.goBack();
+      screenOpacity.value = withTiming(0, { duration: 175 }, (finished) => {
+        if (finished) {
+          runOnJS(doGoBack)();
+        }
+      });
     }
   };
 
@@ -481,7 +489,7 @@ export default function WorkoutPlayerScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: cp.bg }]}>
+    <Animated.View style={[styles.container, { backgroundColor: cp.bg }, screenAnimatedStyle]}>
       <LinearGradient
         colors={cp.gradient as unknown as [string, string, ...string[]]}
         start={{ x: 0, y: 0 }}
@@ -650,7 +658,7 @@ export default function WorkoutPlayerScreen() {
       </View>
 
       <FormTipsSheet visible={showTips} onClose={() => setShowTips(false)} />
-    </View>
+    </Animated.View>
   );
 }
 
