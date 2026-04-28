@@ -63,6 +63,18 @@ module.exports = defineConfig([
           message:
             "Do not use raw Easing curves inline. Import the appropriate easing constant from @/constants/animation instead.",
         },
+        {
+          selector:
+            'Property[key.name="easing"] > CallExpression[callee.type="MemberExpression"][callee.object.name="Easing"][callee.property.name="elastic"]',
+          message:
+            "Do not use Easing.elastic() inline. Import the appropriate easing constant from @/constants/animation instead.",
+        },
+        {
+          selector:
+            'Property[key.name="easing"] > CallExpression[callee.type="MemberExpression"][callee.object.name="Easing"][callee.property.name="bezier"]',
+          message:
+            "Do not use Easing.bezier() inline. Import the appropriate easing constant from @/constants/animation instead.",
+        },
       ],
     },
   },
