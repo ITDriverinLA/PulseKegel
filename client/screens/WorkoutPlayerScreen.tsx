@@ -271,36 +271,29 @@ export default function WorkoutPlayerScreen() {
     engineRef.current.skipSegment();
   };
 
-  const handleEnd = async () => {
-    if (!engineRef.current) return;
-    await hapticsManager.triggerWarning();
-    hapticPulseRef.current.stop();
-    screenOpacity.value = withTiming(0, { duration: 175 }, (finished) => {
+  const doGoBack = () => {
+    navigation.goBack();
+  };
+
+  const animateOut = (duration: number) => {
+    'worklet';
+    screenOpacity.value = withTiming(0, { duration }, (finished) => {
       if (finished) {
         runOnJS(doGoBack)();
       }
     });
   };
 
-  const doGoBack = () => {
-    navigation.goBack();
+  const handleEnd = async () => {
+    if (!engineRef.current) return;
+    await hapticsManager.triggerWarning();
+    hapticPulseRef.current.stop();
+    animateOut(175);
   };
 
   const handleClose = () => {
     hapticPulseRef.current.stop();
-    if (isComplete) {
-      screenOpacity.value = withTiming(0, { duration: 250 }, (finished) => {
-        if (finished) {
-          runOnJS(doGoBack)();
-        }
-      });
-    } else {
-      screenOpacity.value = withTiming(0, { duration: 175 }, (finished) => {
-        if (finished) {
-          runOnJS(doGoBack)();
-        }
-      });
-    }
+    animateOut(isComplete ? 250 : 175);
   };
 
   const screenAnimatedStyle = useAnimatedStyle(() => ({
