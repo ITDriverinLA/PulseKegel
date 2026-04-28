@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -9,7 +9,13 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 import { Spacing, BorderRadius } from '@/constants/theme';
@@ -22,6 +28,12 @@ interface ForceUpdateScreenProps {
 export default function ForceUpdateScreen({ iosStoreUrl, androidStoreUrl }: ForceUpdateScreenProps) {
   const insets = useSafeAreaInsets();
   const { cp } = useThemePreference();
+  const opacity = useSharedValue(0);
+  const fadeStyle = useAnimatedStyle(() => ({ opacity: opacity.value, flex: 1 }));
+
+  useEffect(() => {
+    opacity.value = withTiming(1, { duration: 300 });
+  }, []);
 
   const handleUpdate = async () => {
     const url = Platform.OS === 'ios' ? iosStoreUrl : androidStoreUrl;
@@ -33,6 +45,7 @@ export default function ForceUpdateScreen({ iosStoreUrl, androidStoreUrl }: Forc
   };
 
   return (
+    <Animated.View style={fadeStyle}>
     <LinearGradient colors={cp.gradient} style={styles.container}>
       <View
         style={[
@@ -73,6 +86,7 @@ export default function ForceUpdateScreen({ iosStoreUrl, androidStoreUrl }: Forc
         </Animated.View>
       </View>
     </LinearGradient>
+    </Animated.View>
   );
 }
 
