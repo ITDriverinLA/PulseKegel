@@ -12,6 +12,7 @@ import Animated, {
   withTiming,
   withRepeat,
   useSharedValue,
+  runOnJS,
   FadeIn,
   ZoomIn,
   interpolateColor,
@@ -72,6 +73,7 @@ export default function WorkoutPlayerScreen() {
   const glowPulse = useSharedValue(0);
   const backgroundPulse = useSharedValue(0);
   const phaseColorValue = useSharedValue(0);
+  const screenOpacity = useSharedValue(1);
 
   const loadSettings = useCallback(async () => {
     const userSettings = await storage.getSettings();
@@ -276,10 +278,26 @@ export default function WorkoutPlayerScreen() {
     navigation.goBack();
   };
 
-  const handleClose = () => {
-    hapticPulseRef.current.stop();
+  const doGoBack = () => {
     navigation.goBack();
   };
+
+  const handleClose = () => {
+    hapticPulseRef.current.stop();
+    if (isComplete) {
+      screenOpacity.value = withTiming(0, { duration: 250 }, (finished) => {
+        if (finished) {
+          runOnJS(doGoBack)();
+        }
+      });
+    } else {
+      navigation.goBack();
+    }
+  };
+
+  const screenAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: screenOpacity.value,
+  }));
 
   const phaseAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: phaseScale.value }],
@@ -375,7 +393,7 @@ export default function WorkoutPlayerScreen() {
 
   if (isComplete) {
     return (
-      <View style={[styles.container, { backgroundColor: cp.bg }]}>
+      <Animated.View style={[styles.container, { backgroundColor: cp.bg }, screenAnimatedStyle]}>
         <LinearGradient
           colors={cp.gradient as unknown as [string, string, ...string[]]}
           start={{ x: 0, y: 0 }}
@@ -458,7 +476,7 @@ export default function WorkoutPlayerScreen() {
             onDismiss={() => setNewBadgeIds([])}
           />
         ) : null}
-      </View>
+      </Animated.View>
     );
   }
 

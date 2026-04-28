@@ -15,6 +15,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useAnimatedStyle,
   withSpring,
+  withTiming,
+  runOnJS,
   FadeIn,
   FadeOut,
   useSharedValue,
@@ -110,6 +112,12 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   const { cp, isDarkMode, toggleDarkMode } = useThemePreference();
   const { audioSettings, updateAudioSettings } = useAudio();
 
+  const screenOpacity = useSharedValue(1);
+
+  const screenAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: screenOpacity.value,
+  }));
+
   const isLastPage = currentPage === pages.length - 1;
   const isAnatomyPage = pages[currentPage].type === 'anatomy';
   const isNamePage = pages[currentPage].type === 'name';
@@ -128,7 +136,11 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   const handleNext = async () => {
     if (isLastPage) {
       trackOnboardingComplete({ anatomyType: selectedAnatomy });
-      onComplete();
+      screenOpacity.value = withTiming(0, { duration: 300 }, (finished) => {
+        if (finished) {
+          runOnJS(onComplete)();
+        }
+      });
     } else {
       setCurrentPage(prev => prev + 1);
     }
@@ -174,7 +186,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   const musicEnabled = audioSettings.selectedTracks.length > 0;
 
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, screenAnimatedStyle]}>
       <LinearGradient
         colors={cp.gradient as unknown as [string, string, ...string[]]}
         style={StyleSheet.absoluteFill}
@@ -506,7 +518,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
           ) : null}
         </View>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 

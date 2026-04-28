@@ -212,9 +212,10 @@ export default function RootStackNavigator() {
         name="BreathworkSummary"
         component={BreathworkSummaryScreen}
         options={{
-          presentation: 'fullScreenModal',
           headerShown: false,
           gestureEnabled: false,
+          animation: 'fade',
+          animationDuration: 350,
         }}
       />
       <Stack.Screen
