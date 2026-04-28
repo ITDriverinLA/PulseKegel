@@ -8,7 +8,6 @@ import Animated, {
   withDelay,
   withRepeat,
   withSpring,
-  Easing,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
@@ -23,6 +22,7 @@ import {
   ANIM_DURATION_BADGE_APPEAR,
   ANIM_DURATION_BADGE_SHIMMER,
   ANIM_DURATION_BADGE_GLOW,
+  ANIM_EASING_PULSE,
 } from '@/constants/animation';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -65,7 +65,7 @@ export function BadgeToast({ badgeIds, onDismiss }: BadgeToastProps) {
     ));
     contentOpacity.value = withDelay(500, withTiming(1, { duration: ANIM_DURATION_BADGE_APPEAR }));
     shimmer.value = withDelay(300, withRepeat(
-      withTiming(1, { duration: ANIM_DURATION_BADGE_SHIMMER, easing: Easing.inOut(Easing.ease) }),
+      withTiming(1, { duration: ANIM_DURATION_BADGE_SHIMMER, easing: ANIM_EASING_PULSE }),
       -1,
       true
     ));
