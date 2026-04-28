@@ -78,6 +78,7 @@ export default function BreathworkSessionScreen() {
   const sessionWallClockStartRef = useRef<number | null>(null);
   const phaseStartWallClockRef = useRef<number>(Date.now());
   const phaseDurationRef = useRef<number>(4);
+  const currentPhaseRef = useRef<BreathPhase>("inhale");
   const currentPhaseClipRef = useRef<
     keyof typeof BREATHWORK_AUDIO_SOURCES | null
   >(null);
@@ -233,7 +234,7 @@ export default function BreathworkSessionScreen() {
   }, []);
 
   const triggerPhaseHaptic = useCallback(
-    (phase: BreathPhase, duration: number) => {
+    (phase: BreathPhase, duration: number, startOffsetSec: number = 0) => {
       clearBreathHaptics();
 
       if (
@@ -243,25 +244,32 @@ export default function BreathworkSessionScreen() {
         phase === "sigh_exhale"
       ) {
         const totalMs = duration * 1000;
+        const startOffsetMs = startOffsetSec * 1000;
         const pulseCount = 8;
         let elapsed = 0;
 
         for (let i = 0; i < pulseCount; i++) {
           const progress = i / (pulseCount - 1);
           const interval = 80 + progress * progress * 420;
-          const timer = setTimeout(() => {
-            if (!isRunningRef.current) return;
-            const intensity =
-              progress < 0.5
-                ? Haptics.ImpactFeedbackStyle.Medium
-                : Haptics.ImpactFeedbackStyle.Light;
-            Haptics.impactAsync(intensity);
-          }, elapsed);
-          breathHapticTimers.current.push(timer);
+
+          if (elapsed >= startOffsetMs) {
+            const delay = elapsed - startOffsetMs;
+            const capturedProgress = progress;
+            const timer = setTimeout(() => {
+              if (!isRunningRef.current) return;
+              const intensity =
+                capturedProgress < 0.5
+                  ? Haptics.ImpactFeedbackStyle.Medium
+                  : Haptics.ImpactFeedbackStyle.Light;
+              Haptics.impactAsync(intensity);
+            }, delay);
+            breathHapticTimers.current.push(timer);
+          }
+
           elapsed += interval;
           if (elapsed > totalMs * 0.85) break;
         }
-      } else {
+      } else if (startOffsetSec <= 0) {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
     },
@@ -274,6 +282,7 @@ export default function BreathworkSessionScreen() {
       const step = phases[index];
       phaseStartWallClockRef.current = Date.now();
       phaseDurationRef.current = step.duration;
+      currentPhaseRef.current = step.phase;
       setPhaseElapsed(0);
       setCurrentPhase(step.phase);
       setPhaseDuration(step.duration);
@@ -340,6 +349,7 @@ export default function BreathworkSessionScreen() {
     playClip: typeof playClip;
     stopAllAudio: typeof stopAllAudio;
     clearBreathHaptics: typeof clearBreathHaptics;
+    triggerPhaseHaptic: typeof triggerPhaseHaptic;
     introPlayer: typeof introPlayer;
     outroPlayer: typeof outroPlayer;
     navigation: typeof navigation;
@@ -353,6 +363,7 @@ export default function BreathworkSessionScreen() {
       playClip,
       stopAllAudio,
       clearBreathHaptics,
+      triggerPhaseHaptic,
       introPlayer,
       outroPlayer,
       navigation,
@@ -498,6 +509,12 @@ export default function BreathworkSessionScreen() {
             phaseDurationRef.current,
           );
           setPhaseElapsed(phaseElapsedSec);
+
+          sessionDepsRef.current!.triggerPhaseHaptic(
+            currentPhaseRef.current,
+            phaseDurationRef.current,
+            phaseElapsedSec,
+          );
 
           const clipKey = currentPhaseClipRef.current;
           if (clipKey) {
