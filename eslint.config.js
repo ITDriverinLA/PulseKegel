@@ -59,31 +59,31 @@ module.exports = defineConfig([
         },
         {
           selector:
-            'Property[key.name="easing"] > MemberExpression[object.name="Easing"][property.name=/^(ease|quad|cubic|bezier|back|bounce|sin|circle|exp|elastic)$/]',
+            'MemberExpression[object.name="Easing"][property.name=/^(ease|quad|cubic|bounce|sin|circle|exp)$/]',
           message:
             "Do not use raw Easing curves inline. Import the appropriate easing constant from @/constants/animation instead.",
         },
         {
           selector:
-            'Property[key.name="easing"] > CallExpression[callee.type="MemberExpression"][callee.object.name="Easing"][callee.property.name="elastic"]',
+            'CallExpression[callee.type="MemberExpression"][callee.object.name="Easing"][callee.property.name="elastic"]',
           message:
             "Do not use Easing.elastic() inline. Import the appropriate easing constant from @/constants/animation instead.",
         },
         {
           selector:
-            'Property[key.name="easing"] > CallExpression[callee.type="MemberExpression"][callee.object.name="Easing"][callee.property.name="bezier"]',
+            'CallExpression[callee.type="MemberExpression"][callee.object.name="Easing"][callee.property.name="bezier"]',
           message:
             "Do not use Easing.bezier() inline. Import the appropriate easing constant from @/constants/animation instead.",
         },
         {
           selector:
-            'Property[key.name="easing"] > CallExpression[callee.type="MemberExpression"][callee.object.name="Easing"][callee.property.name="back"]',
+            'CallExpression[callee.type="MemberExpression"][callee.object.name="Easing"][callee.property.name="back"]',
           message:
             "Do not use Easing.back() inline. Import the appropriate easing constant from @/constants/animation instead.",
         },
         {
           selector:
-            'Property[key.name="easing"] > CallExpression[callee.type="MemberExpression"][callee.object.name="Easing"][callee.property.name="poly"]',
+            'CallExpression[callee.type="MemberExpression"][callee.object.name="Easing"][callee.property.name="poly"]',
           message:
             "Do not use Easing.poly() inline. Import the appropriate easing constant from @/constants/animation instead.",
         },
