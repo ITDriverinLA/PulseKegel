@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Constants from 'expo-constants';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+} from 'react-native-reanimated';
 
 import MainTabNavigator from '@/navigation/MainTabNavigator';
 import WorkoutPlayerScreen from '@/screens/WorkoutPlayerScreen';
@@ -69,6 +74,7 @@ export default function RootStackNavigator() {
   const [isLoading, setIsLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [needsUpdate, setNeedsUpdate] = useState(false);
+  const fadeOpacity = useSharedValue(0);
   const [storeUrls, setStoreUrls] = useState<StoreUrls>({
     iosStoreUrl: 'https://apps.apple.com/app/pulsekegel',
     androidStoreUrl: 'https://play.google.com/store/apps/details?id=com.pulsekegel.app',
@@ -113,6 +119,18 @@ export default function RootStackNavigator() {
     }
   };
 
+  useEffect(() => {
+    if (!isLoading && !showOnboarding && !needsUpdate) {
+      fadeOpacity.value = 0;
+      fadeOpacity.value = withTiming(1, { duration: 300 });
+    }
+  }, [isLoading, showOnboarding, needsUpdate]);
+
+  const fadeStyle = useAnimatedStyle(() => ({
+    opacity: fadeOpacity.value,
+    flex: 1,
+  }));
+
   const handleOnboardingComplete = async () => {
     await storage.setOnboardingComplete();
     setShowOnboarding(false);
@@ -136,6 +154,7 @@ export default function RootStackNavigator() {
   }
 
   return (
+    <Animated.View style={fadeStyle}>
     <Stack.Navigator screenOptions={screenOptions}>
       <Stack.Screen
         name="Main"
@@ -227,5 +246,6 @@ export default function RootStackNavigator() {
         }}
       />
     </Stack.Navigator>
+    </Animated.View>
   );
 }
