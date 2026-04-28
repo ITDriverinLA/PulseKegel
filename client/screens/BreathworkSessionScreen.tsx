@@ -73,6 +73,7 @@ export default function BreathworkSessionScreen() {
   const phaseIndexRef = useRef(0);
   const isRunningRef = useRef(true);
   const sighCountRef = useRef(0);
+  const sighPhaseWallClockStartRef = useRef<number | null>(null);
   const sessionStateRef = useRef<SessionState>("intro");
   const clipPlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sessionWallClockStartRef = useRef<number | null>(null);
@@ -390,6 +391,7 @@ export default function BreathworkSessionScreen() {
       if (d.mode === "energize") {
         setSessionState("sigh_phase");
         sessionStateRef.current = "sigh_phase";
+        sighPhaseWallClockStartRef.current = Date.now();
         phaseIndexRef.current = 0;
         d.startPhase(ENERGIZE_SIGH_PHASES, 0);
         phaseTimerRef.current = setTimeout(
@@ -581,87 +583,118 @@ export default function BreathworkSessionScreen() {
             const phaseOverrunMs =
               phaseElapsedMs - phaseDurationRef.current * 1000;
 
-            if (phaseOverrunMs > 0) {
+            if (
+              state === "sigh_phase" &&
+              sighPhaseWallClockStartRef.current !== null
+            ) {
+              // Always reconcile sigh_phase from the wall-clock anchor so the
+              // correct cycle count is recovered even when the pending
+              // phaseTimer fires before the AppState "active" event (which
+              // resets phaseStartWallClockRef to now and makes phaseOverrunMs
+              // negative, silently skipping any remaining cycle boundaries).
+              if (phaseTimerRef.current) clearTimeout(phaseTimerRef.current);
+
+              const sighPhases = ENERGIZE_SIGH_PHASES;
+              const sighCycleDurationMs = sighPhases.reduce(
+                (s, p) => s + p.duration * 1000,
+                0,
+              );
+              const totalSighElapsedMs =
+                Date.now() - sighPhaseWallClockStartRef.current;
+              const completedCycles = Math.floor(
+                totalSighElapsedMs / sighCycleDurationMs,
+              );
+              const msIntoCycle = totalSighElapsedMs % sighCycleDurationMs;
+
+              if (completedCycles >= 4) {
+                // All sigh cycles done – transition should have started.
+                sighCountRef.current = 4;
+                const msIntoOrPastTransition =
+                  totalSighElapsedMs - 4 * sighCycleDurationMs;
+                if (msIntoOrPastTransition >= 5000) {
+                  // Past the transition too – enter breathing directly.
+                  if (transitionTimerRef.current)
+                    clearTimeout(transitionTimerRef.current);
+                  resumeBreathing(msIntoOrPastTransition - 5000);
+                } else {
+                  // Mid-transition – show the transition UI and reschedule.
+                  setSessionState("transition");
+                  sessionStateRef.current = "transition";
+                  transitionStartWallClockRef.current =
+                    Date.now() - msIntoOrPastTransition;
+                  currentPhaseClipRef.current = "energize_transition";
+                  d.playClip("energize_transition");
+                  setPhaseLabel("FIND YOUR RHYTHM");
+                  if (transitionTimerRef.current)
+                    clearTimeout(transitionTimerRef.current);
+                  transitionTimerRef.current = setTimeout(() => {
+                    if (!isRunningRef.current) return;
+                    setSessionState("breathing");
+                    sessionStateRef.current = "breathing";
+                    phaseIndexRef.current = 0;
+                    d.startPhase(d.config.phases, 0);
+                    phaseTimerRef.current = setTimeout(
+                      d.advancePhase,
+                      d.config.phases[0].duration * 1000,
+                    );
+                  }, 5000 - msIntoOrPastTransition);
+                }
+              } else {
+                // Still within the sigh phase – find the correct position.
+                // After the loop, elapsedInPhaseMs is the time already elapsed
+                // within the current phase; phaseRemainingMs is how long until
+                // advancePhase should fire.
+                const prevSighCount = sighCountRef.current;
+                const prevPhaseIdx = phaseIndexRef.current;
+                sighCountRef.current = completedCycles;
+                let idx = 0;
+                let elapsedInPhaseMs = msIntoCycle;
+                for (const phase of sighPhases) {
+                  if (elapsedInPhaseMs < phase.duration * 1000) break;
+                  elapsedInPhaseMs -= phase.duration * 1000;
+                  idx = (idx + 1) % sighPhases.length;
+                }
+                const phaseRemainingMs =
+                  sighPhases[idx].duration * 1000 - elapsedInPhaseMs;
+                phaseIndexRef.current = idx;
+
+                if (idx !== prevPhaseIdx || completedCycles !== prevSighCount) {
+                  // Crossed a phase or cycle boundary – start fresh at new phase.
+                  d.startPhase(sighPhases, idx);
+                } else {
+                  // Still in the same phase – sync position without reset.
+                  const inPhaseElapsedSec = elapsedInPhaseMs / 1000;
+                  setPhaseElapsed(inPhaseElapsedSec);
+                  d.triggerPhaseHaptic(
+                    sighPhases[idx].phase,
+                    sighPhases[idx].duration,
+                    inPhaseElapsedSec,
+                  );
+                  const clipKey = sighPhases[idx].audioClip;
+                  if (clipKey) d.playClip(clipKey, inPhaseElapsedSec);
+                }
+
+                phaseTimerRef.current = setTimeout(
+                  d.advancePhase,
+                  phaseRemainingMs,
+                );
+              }
+            } else if (phaseOverrunMs > 0) {
               // One or more phase deadlines fired while backgrounded.
               if (phaseTimerRef.current) clearTimeout(phaseTimerRef.current);
 
-              if (state === "sigh_phase") {
-                // Walk forward through sigh phases, tracking cycle completions.
-                const sighPhases = ENERGIZE_SIGH_PHASES;
-                let idx = (phaseIndexRef.current + 1) % sighPhases.length;
-                let overrunMs = phaseOverrunMs;
-                let sighCount = sighCountRef.current;
-                let enteredTransition = false;
-
-                while (true) {
-                  const isNewCycle = idx === 0;
-                  if (isNewCycle) {
-                    sighCount += 1;
-                    if (sighCount >= 4) {
-                      // overrunMs is time elapsed since transition started.
-                      enteredTransition = true;
-                      break;
-                    }
-                  }
-                  if (overrunMs < sighPhases[idx].duration * 1000) break;
-                  overrunMs -= sighPhases[idx].duration * 1000;
-                  idx = (idx + 1) % sighPhases.length;
-                }
-
-                sighCountRef.current = sighCount;
-
-                if (enteredTransition) {
-                  if (overrunMs >= 5000) {
-                    // Past the transition too – enter breathing directly.
-                    if (transitionTimerRef.current)
-                      clearTimeout(transitionTimerRef.current);
-                    resumeBreathing(overrunMs - 5000);
-                  } else {
-                    // Mid-transition – show the transition UI and reschedule.
-                    setSessionState("transition");
-                    sessionStateRef.current = "transition";
-                    transitionStartWallClockRef.current =
-                      Date.now() - overrunMs;
-                    currentPhaseClipRef.current = "energize_transition";
-                    d.playClip("energize_transition");
-                    setPhaseLabel("FIND YOUR RHYTHM");
-                    if (transitionTimerRef.current)
-                      clearTimeout(transitionTimerRef.current);
-                    transitionTimerRef.current = setTimeout(() => {
-                      if (!isRunningRef.current) return;
-                      setSessionState("breathing");
-                      sessionStateRef.current = "breathing";
-                      phaseIndexRef.current = 0;
-                      d.startPhase(d.config.phases, 0);
-                      phaseTimerRef.current = setTimeout(
-                        d.advancePhase,
-                        d.config.phases[0].duration * 1000,
-                      );
-                    }, 5000 - overrunMs);
-                  }
-                } else {
-                  // Still within sigh_phase – resume the correct sigh phase.
-                  phaseIndexRef.current = idx;
-                  d.startPhase(sighPhases, idx);
-                  phaseTimerRef.current = setTimeout(
-                    d.advancePhase,
-                    sighPhases[idx].duration * 1000 - overrunMs,
-                  );
-                }
-              } else {
-                // "breathing" state – simple repeating phase cycle.
-                const { idx, remaining } = fastForwardPhases(
-                  d.config.phases,
-                  (phaseIndexRef.current + 1) % d.config.phases.length,
-                  phaseOverrunMs,
-                );
-                phaseIndexRef.current = idx;
-                d.startPhase(d.config.phases, idx);
-                phaseTimerRef.current = setTimeout(
-                  d.advancePhase,
-                  d.config.phases[idx].duration * 1000 - remaining,
-                );
-              }
+              // "breathing" state – simple repeating phase cycle.
+              const { idx, remaining } = fastForwardPhases(
+                d.config.phases,
+                (phaseIndexRef.current + 1) % d.config.phases.length,
+                phaseOverrunMs,
+              );
+              phaseIndexRef.current = idx;
+              d.startPhase(d.config.phases, idx);
+              phaseTimerRef.current = setTimeout(
+                d.advancePhase,
+                d.config.phases[idx].duration * 1000 - remaining,
+              );
             } else {
               // Phase still in progress – sync display and resume audio.
               const phaseElapsedSec = Math.min(
