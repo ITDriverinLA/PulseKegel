@@ -4,8 +4,7 @@ import {
   getWorkoutCompletionsForWeek,
   getScheduledDaysForWeek,
 } from "@/data/workoutProgram";
-import { BADGE_DEFINITIONS } from "@/data/badges";
-import type { EarnedBadge } from "@/data/badges";
+import { BADGE_DEFINITIONS, type EarnedBadge } from "@/data/badges";
 
 const STORAGE_KEYS = {
   COMPLETED_DATES: "pulsekegel_completed_dates",
