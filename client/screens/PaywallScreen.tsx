@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import { ANIM_DELAY_SHORT, ANIM_DELAY_MED, ANIM_DELAY_LONG, ANIM_DELAY_XL } from '@/constants/animation';
 import { useNavigation } from '@react-navigation/native';
 
 import Purchases from 'react-native-purchases';
@@ -141,7 +142,7 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
           <Feather name="x" size={24} color={cp.textSecondary} />
         </Pressable>
 
-        <Animated.View entering={FadeInDown.delay(100)} style={styles.header}>
+        <Animated.View entering={FadeInDown.delay(ANIM_DELAY_SHORT)} style={styles.header}>
           <View style={[styles.iconContainer, { backgroundColor: `${cp.neonGreen}26`, borderColor: `${cp.neonGreen}4D` }]}>
             <Feather name="lock" size={32} color={cp.neonGreen} />
           </View>
@@ -159,7 +160,7 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
           )}
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(200)} style={[styles.featuresGrid, { backgroundColor: isDarkMode ? 'rgba(26, 26, 46, 0.6)' : 'rgba(255, 255, 255, 0.7)', borderColor: `${cp.neonCyan}26` }]}>
+        <Animated.View entering={FadeInDown.delay(ANIM_DELAY_MED)} style={[styles.featuresGrid, { backgroundColor: isDarkMode ? 'rgba(26, 26, 46, 0.6)' : 'rgba(255, 255, 255, 0.7)', borderColor: `${cp.neonCyan}26` }]}>
           {features.map((feature, index) => (
             <View key={feature.title} style={styles.featureItem}>
               <View style={[styles.featureIcon, { backgroundColor: `${cp.neonCyan}1A` }]}>
@@ -177,7 +178,7 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
           ))}
         </Animated.View>
 
-        <Animated.View entering={FadeInUp.delay(300)} style={[styles.pricingCard, { backgroundColor: `${cp.neonGreen}1A`, borderColor: `${cp.neonGreen}4D` }]}>
+        <Animated.View entering={FadeInUp.delay(ANIM_DELAY_LONG)} style={[styles.pricingCard, { backgroundColor: `${cp.neonGreen}1A`, borderColor: `${cp.neonGreen}4D` }]}>
           <View style={[styles.priceBadge, { backgroundColor: cp.neonPink }]}>
             <Text style={[styles.priceBadgeText, { color: cp.text }]}>INTRO OFFER</Text>
           </View>
@@ -190,7 +191,7 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
           </Text>
         </Animated.View>
 
-        <Animated.View entering={FadeInUp.delay(400)} style={styles.ctaSection}>
+        <Animated.View entering={FadeInUp.delay(ANIM_DELAY_XL)} style={styles.ctaSection}>
           <Pressable
             style={[styles.subscribeButton, { backgroundColor: cp.neonGreen, shadowColor: cp.neonGreen }, (isPurchasing || isLoading) && styles.buttonDisabled]}
             onPress={handlePurchase}

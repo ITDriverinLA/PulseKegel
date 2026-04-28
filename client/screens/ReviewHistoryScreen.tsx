@@ -8,7 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 
 import { Spacing, BorderRadius } from '@/constants/theme';
-import { ANIM_DURATION_ENTER } from '@/constants/animation';
+import { ANIM_DURATION_ENTER, ANIM_DELAY_SHORT, ANIM_DELAY_STAGGER_SM } from '@/constants/animation';
 import { storage, WeeklyReviewEntry } from '@/lib/storage';
 import { useAccessibility } from '@/contexts/AccessibilityContext';
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
@@ -96,7 +96,7 @@ export default function ReviewHistoryScreen() {
               return (
                 <Animated.View
                   key={review.weekNumber}
-                  entering={FadeInDown.duration(ANIM_DURATION_ENTER).delay(100 + index * 80)}
+                  entering={FadeInDown.duration(ANIM_DURATION_ENTER).delay(ANIM_DELAY_SHORT + index * ANIM_DELAY_STAGGER_SM)}
                 >
                   <Pressable
                     style={[

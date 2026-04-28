@@ -34,3 +34,31 @@ export const ANIM_DURATION_BADGE_SHIMMER = 2000;
 
 // Loading / skeleton pulse
 export const ANIM_DURATION_PULSE_LOADING = 800;
+
+// ---------------------------------------------------------------------------
+// Animation delay constants
+// ---------------------------------------------------------------------------
+
+// Stagger base multipliers – use as: index * ANIM_DELAY_STAGGER_*
+export const ANIM_DELAY_STAGGER_XS = 50;    // gentle stagger (ProgramOverview)
+export const ANIM_DELAY_STAGGER_SM = 80;    // compact stagger (WorkoutPicker, ReviewHistory)
+export const ANIM_DELAY_STAGGER_BASE = 100; // standard stagger (BreathworkModeSelector)
+
+// Sequential reveal steps – fixed delays for content entering in order
+export const ANIM_DELAY_XS = 50;    // first step when using a half-step cadence
+export const ANIM_DELAY_SHORT = 100; // first standard step
+export const ANIM_DELAY_MED = 200;   // second standard step
+export const ANIM_DELAY_LONG = 300;  // third standard step
+export const ANIM_DELAY_XL = 400;    // fourth standard step
+export const ANIM_DELAY_2XL = 500;   // fifth standard step
+export const ANIM_DELAY_3XL = 600;   // sixth standard step
+export const ANIM_DELAY_4XL = 700;   // seventh standard step
+
+// Mid-step delays used in fine-grained stagger sequences
+export const ANIM_DELAY_150 = 150;
+export const ANIM_DELAY_175 = 175;
+export const ANIM_DELAY_225 = 225;
+export const ANIM_DELAY_250 = 250;
+export const ANIM_DELAY_320 = 320;
+export const ANIM_DELAY_350 = 350;
+export const ANIM_DELAY_450 = 450;

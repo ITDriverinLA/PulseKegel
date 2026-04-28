@@ -19,7 +19,7 @@ import Animated, {
 
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 import { Spacing, BorderRadius } from '@/constants/theme';
-import { ANIM_DURATION_ENTER, ANIM_DURATION_CONTENT_SLOW } from '@/constants/animation';
+import { ANIM_DURATION_ENTER, ANIM_DURATION_CONTENT_SLOW, ANIM_DELAY_150 } from '@/constants/animation';
 
 interface ForceUpdateScreenProps {
   iosStoreUrl: string;
@@ -70,7 +70,7 @@ export default function ForceUpdateScreen({ iosStoreUrl, androidStoreUrl }: Forc
           </Text>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT_SLOW).delay(150)} style={styles.bottomSection}>
+        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT_SLOW).delay(ANIM_DELAY_150)} style={styles.bottomSection}>
           <Pressable
             testID="button-update-now"
             onPress={handleUpdate}

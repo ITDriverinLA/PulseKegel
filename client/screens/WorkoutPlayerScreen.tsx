@@ -34,6 +34,8 @@ import {
   ANIM_DURATION_ZOOM_ENTER,
   ANIM_DURATION_PROGRESS_FAST,
   ANIM_DURATION_PROGRESS_SLOW,
+  ANIM_DELAY_MED,
+  ANIM_DELAY_XL,
 } from '@/constants/animation';
 import { DayTemplate, Segment, isRestDayForDate } from '@/data/workoutProgram';
 import { WorkoutEngine, WorkoutState, WorkoutPhase } from '@/lib/workoutEngine';
@@ -435,7 +437,7 @@ export default function WorkoutPlayerScreen() {
               <Feather name="check-circle" size={80} color={cp.neonGreen} />
             </Animated.View>
 
-            <Animated.View entering={FadeIn.delay(200)}>
+            <Animated.View entering={FadeIn.delay(ANIM_DELAY_MED)}>
               <ThemedText type="h1" style={[styles.completeTitle, { color: cp.text }]}>
                 Great Job!
               </ThemedText>
@@ -447,7 +449,7 @@ export default function WorkoutPlayerScreen() {
               </ThemedText>
             </Animated.View>
 
-            <Animated.View entering={FadeIn.delay(400)} style={styles.completeStats}>
+            <Animated.View entering={FadeIn.delay(ANIM_DELAY_XL)} style={styles.completeStats}>
               <View style={[styles.completeStat, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder, borderWidth: 1 }]}>
                 <Feather name="clock" size={24} color={cp.neonCyan} />
                 <ThemedText type="h3" style={{ marginTop: Spacing.sm, color: cp.text }}>

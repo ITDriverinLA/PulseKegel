@@ -15,7 +15,16 @@ import { CalendarGrid } from '@/components/CalendarGrid';
 import { WeeklyReviewModal } from '@/components/WeeklyReviewModal';
 import { BadgesSection } from '@/components/BadgesSection';
 import { Spacing, BorderRadius } from '@/constants/theme';
-import { ANIM_DURATION_CONTENT } from '@/constants/animation';
+import {
+  ANIM_DURATION_CONTENT,
+  ANIM_DELAY_SHORT,
+  ANIM_DELAY_MED,
+  ANIM_DELAY_LONG,
+  ANIM_DELAY_320,
+  ANIM_DELAY_350,
+  ANIM_DELAY_XL,
+  ANIM_DELAY_450,
+} from '@/constants/animation';
 import { storage, UserProgress } from '@/lib/storage';
 import { useAccessibility } from '@/contexts/AccessibilityContext';
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
@@ -135,7 +144,7 @@ export default function ProgressScreen() {
         {hasProgress ? (
           <>
             <Animated.View
-              entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(100)}
+              entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(ANIM_DELAY_SHORT)}
               style={styles.statsContainer}
             >
               <StatCard
@@ -160,7 +169,7 @@ export default function ProgressScreen() {
               />
             </Animated.View>
 
-            <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(200)}>
+            <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(ANIM_DELAY_MED)}>
               <CalendarGrid
                 completedDates={progress.completedDates}
                 restDates={restDates}
@@ -170,7 +179,7 @@ export default function ProgressScreen() {
             </Animated.View>
 
             <Animated.View
-              entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(300)}
+              entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(ANIM_DELAY_LONG)}
               style={styles.programButtonContainer}
             >
               <Pressable
@@ -197,7 +206,7 @@ export default function ProgressScreen() {
 
             {hasReviewHistory ? (
               <Animated.View
-                entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(320)}
+                entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(ANIM_DELAY_320)}
                 style={{ marginTop: Spacing.sm }}
               >
                 <Pressable
@@ -225,7 +234,7 @@ export default function ProgressScreen() {
 
             {missedWeeks.length > 0 ? (
               <Animated.View
-                entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(350)}
+                entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(ANIM_DELAY_350)}
                 style={styles.missedReviewsContainer}
               >
                 <Text style={[styles.missedReviewsTitle, { fontSize: 13 * fontScale, color: cp.neonPurple }]}>
@@ -259,12 +268,12 @@ export default function ProgressScreen() {
               </Animated.View>
             ) : null}
 
-            <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(400)}>
+            <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(ANIM_DELAY_XL)}>
               <BadgesSection />
             </Animated.View>
 
             <Animated.View
-              entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(450)}
+              entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(ANIM_DELAY_450)}
               style={styles.longestStreakContainer}
             >
               <View style={[styles.longestStreakCard, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }, highContrast && { borderColor: colors.border }]}>

@@ -21,7 +21,7 @@ import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useAccessibility } from '@/contexts/AccessibilityContext';
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 import { Spacing, BorderRadius } from '@/constants/theme';
-import { ANIM_DURATION_EXIT_COMPLETE } from '@/constants/animation';
+import { ANIM_DURATION_EXIT_COMPLETE, ANIM_DELAY_SHORT, ANIM_DELAY_MED, ANIM_DELAY_LONG, ANIM_DELAY_XL } from '@/constants/animation';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -214,7 +214,7 @@ export default function ChallengeCompleteScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View entering={FadeInDown.delay(100)} style={styles.header}>
+        <Animated.View entering={FadeInDown.delay(ANIM_DELAY_SHORT)} style={styles.header}>
           <View
             style={[
               styles.iconContainer,
@@ -229,7 +229,7 @@ export default function ChallengeCompleteScreen() {
           </Text>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(200)} style={styles.progressSection}>
+        <Animated.View entering={FadeInDown.delay(ANIM_DELAY_MED)} style={styles.progressSection}>
           <View style={styles.progressDots}>
             {Array.from({ length: stats.totalCoreSessions }).map((_, i) => {
               const filled = i < stats.completedCoreSessions;
@@ -265,7 +265,7 @@ export default function ChallengeCompleteScreen() {
           ) : null}
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(300)}>
+        <Animated.View entering={FadeInDown.delay(ANIM_DELAY_LONG)}>
           <View
             style={[
               styles.messageCard,
@@ -281,7 +281,7 @@ export default function ChallengeCompleteScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInUp.delay(400)} style={styles.ctaSection}>
+        <Animated.View entering={FadeInUp.delay(ANIM_DELAY_XL)} style={styles.ctaSection}>
           <Pressable
             style={[
               styles.primaryButton,

@@ -23,7 +23,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { ThemedText } from '@/components/ThemedText';
 import { Spacing } from '@/constants/theme';
-import { ANIM_DURATION_EXIT_COMPLETE, ANIM_DURATION_ZOOM, ANIM_DURATION_PULSE_LOADING } from '@/constants/animation';
+import { ANIM_DURATION_EXIT_COMPLETE, ANIM_DURATION_ZOOM, ANIM_DURATION_PULSE_LOADING, ANIM_DELAY_150, ANIM_DELAY_250, ANIM_DELAY_350, ANIM_DELAY_450 } from '@/constants/animation';
 import { storage } from '@/lib/storage';
 import { getApiUrl } from '@/lib/query-client';
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
@@ -194,7 +194,7 @@ export default function Week1ReviewScreen() {
           </LinearGradient>
         </Animated.View>
 
-        <Animated.View entering={FadeIn.delay(150)} style={styles.titleBlock}>
+        <Animated.View entering={FadeIn.delay(ANIM_DELAY_150)} style={styles.titleBlock}>
           <ThemedText type="h1" style={[styles.title, { color: accentColor }]}>
             Week 1 Complete
           </ThemedText>
@@ -203,7 +203,7 @@ export default function Week1ReviewScreen() {
           </ThemedText>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(250)} style={[styles.statsRow, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
+        <Animated.View entering={FadeInDown.delay(ANIM_DELAY_250)} style={[styles.statsRow, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
           <View style={styles.statItem}>
             <ThemedText type="h2" style={[styles.statValue, { color: accentColor }]}>
               {sessions}
@@ -236,7 +236,7 @@ export default function Week1ReviewScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(350)} style={[styles.messageCard, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
+        <Animated.View entering={FadeInDown.delay(ANIM_DELAY_350)} style={[styles.messageCard, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
           {loading ? (
             <RNAnimated.Text style={[styles.loadingText, { color: accentColor, opacity: pulseAnim }]}>
               Reviewing your progress...
@@ -248,7 +248,7 @@ export default function Week1ReviewScreen() {
           )}
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(450)} style={styles.buttonWrapper}>
+        <Animated.View entering={FadeInDown.delay(ANIM_DELAY_450)} style={styles.buttonWrapper}>
           <Pressable
             testID="button-continue-week1-review"
             onPress={loading || buttonDisabled ? undefined : handleContinue}

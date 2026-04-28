@@ -8,7 +8,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { getModeConfig, BreathworkMode, getBreathworkColors } from '@/constants/breathworkModes';
 import { useTheme } from '@/hooks/useTheme';
-import { ANIM_DURATION_CONTENT_SLOW } from '@/constants/animation';
+import { ANIM_DURATION_CONTENT_SLOW, ANIM_DELAY_SHORT, ANIM_DELAY_MED, ANIM_DELAY_LONG } from '@/constants/animation';
 import { storage } from '@/lib/storage';
 import { rescheduleAfterCompletion } from '@/lib/notifications';
 import { isRestDayForDate } from '@/data/workoutProgram';
@@ -62,12 +62,12 @@ export default function BreathworkSummaryScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT_SLOW).delay(100)}>
+        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT_SLOW).delay(ANIM_DELAY_SHORT)}>
           <Text style={[styles.title, { color: bwColors.phase_label }]}>Session Complete</Text>
           <Text style={[styles.modeName, { color: bwColors.accent }]}>{config.name}</Text>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT_SLOW).delay(200)} style={[styles.statsRow, { backgroundColor: bwColors.accentSoft }]}>
+        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT_SLOW).delay(ANIM_DELAY_MED)} style={[styles.statsRow, { backgroundColor: bwColors.accentSoft }]}>
           <View style={styles.statItem}>
             <Feather name="clock" size={20} color={bwColors.accent} />
             <Text style={[styles.statValue, { color: bwColors.phase_label }]}>5:00</Text>
@@ -81,7 +81,7 @@ export default function BreathworkSummaryScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT_SLOW).delay(300)} style={styles.buttonsContainer}>
+        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT_SLOW).delay(ANIM_DELAY_LONG)} style={styles.buttonsContainer}>
           {logged ? (
             <View style={[styles.loggedContainer, { backgroundColor: bwColors.accentSoft }]}>
               <Feather name="check" size={20} color={bwColors.accent} />

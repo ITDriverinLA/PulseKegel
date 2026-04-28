@@ -13,7 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Toggle } from '@/components/Toggle';
 import { WeeklyReviewModal } from '@/components/WeeklyReviewModal';
 import { Spacing, BorderRadius } from '@/constants/theme';
-import { ANIM_DURATION_CONTENT } from '@/constants/animation';
+import { ANIM_DURATION_CONTENT, ANIM_DELAY_SHORT, ANIM_DELAY_MED, ANIM_DELAY_LONG, ANIM_DELAY_XL } from '@/constants/animation';
 import { storage, UserSettings, UserProgress, defaultSettings } from '@/lib/storage';
 import { useAccessibility } from '@/contexts/AccessibilityContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
@@ -238,7 +238,7 @@ export default function HomeScreen() {
           />
         }
       >
-        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(100)}>
+        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(ANIM_DELAY_SHORT)}>
           <View style={styles.streakContainer}>
             <View style={[styles.streakBadge, { backgroundColor: `${cp.neonGreen}1A`, borderColor: `${cp.neonGreen}4D` }, highContrast && { borderColor: colors.border }]}>
               <Feather name="zap" size={24 * fontScale} color={colors.accent} />
@@ -252,7 +252,7 @@ export default function HomeScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(200)}>
+        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(ANIM_DELAY_MED)}>
           <View style={[styles.card, { backgroundColor: cp.cardBg, borderColor: isTodayComplete && !todaysWorkout?.isRestDay ? `${cp.neonGreen}4D` : cp.cardBorder }]}>
             {todaysWorkout ? (
               todaysWorkout.isRestDay ? (
@@ -428,7 +428,7 @@ export default function HomeScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(300)}>
+        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(ANIM_DELAY_LONG)}>
           <View style={[styles.card, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
             <View style={styles.recoveryHeader}>
               <View style={styles.recoveryInfo}>
@@ -452,7 +452,7 @@ export default function HomeScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(400)}>
+        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(ANIM_DELAY_XL)}>
           <View style={styles.statsRow}>
             <View style={[styles.statItem, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
               <Feather name="check-circle" size={18} color={cp.neonGreen} />

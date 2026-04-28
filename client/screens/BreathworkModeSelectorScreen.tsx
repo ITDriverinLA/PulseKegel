@@ -8,7 +8,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { BREATHWORK_MODES, BreathworkMode, getBreathworkColors } from '@/constants/breathworkModes';
 import { useTheme } from '@/hooks/useTheme';
-import { ANIM_DURATION_CONTENT } from '@/constants/animation';
+import { ANIM_DURATION_CONTENT, ANIM_DELAY_STAGGER_BASE } from '@/constants/animation';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -61,7 +61,7 @@ export default function BreathworkModeSelectorScreen() {
         </Text>
 
         {BREATHWORK_MODES.map((mode, index) => (
-          <Animated.View key={mode.id} entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(index * 100)}>
+          <Animated.View key={mode.id} entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(index * ANIM_DELAY_STAGGER_BASE)}>
             <Pressable
               onPress={() => handleSelectMode(mode.id)}
               style={[styles.modeCard, { borderColor: bwColors.accentSoft }]}
