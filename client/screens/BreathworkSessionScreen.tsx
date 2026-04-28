@@ -76,6 +76,7 @@ export default function BreathworkSessionScreen() {
   const sessionStateRef = useRef<SessionState>("intro");
   const clipPlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sessionWallClockStartRef = useRef<number | null>(null);
+  const transitionStartWallClockRef = useRef<number | null>(null);
   const phaseStartWallClockRef = useRef<number>(Date.now());
   const phaseDurationRef = useRef<number>(4);
   const currentPhaseRef = useRef<BreathPhase>("inhale");
@@ -308,6 +309,7 @@ export default function BreathworkSessionScreen() {
       if (sighCountRef.current >= 4) {
         setSessionState("transition");
         sessionStateRef.current = "transition";
+        transitionStartWallClockRef.current = Date.now();
         currentPhaseClipRef.current = "energize_transition";
         playClip("energize_transition");
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -504,21 +506,176 @@ export default function BreathworkSessionScreen() {
           );
           setTotalSecondsLeft(corrected);
 
-          const phaseElapsedSec = Math.min(
-            (Date.now() - phaseStartWallClockRef.current) / 1000,
-            phaseDurationRef.current,
-          );
-          setPhaseElapsed(phaseElapsedSec);
+          const d = sessionDepsRef.current!;
 
-          sessionDepsRef.current!.triggerPhaseHaptic(
-            currentPhaseRef.current,
-            phaseDurationRef.current,
-            phaseElapsedSec,
-          );
+          // Helper: fast-forward through a repeating phase array by
+          // overrunMs and return the new index + remaining ms.
+          const fastForwardPhases = (
+            phases: typeof d.config.phases,
+            startIdx: number,
+            overrunMs: number,
+          ) => {
+            let idx = startIdx;
+            let remaining = overrunMs;
+            while (remaining >= phases[idx].duration * 1000) {
+              remaining -= phases[idx].duration * 1000;
+              idx = (idx + 1) % phases.length;
+            }
+            return { idx, remaining };
+          };
 
-          const clipKey = currentPhaseClipRef.current;
-          if (clipKey) {
-            sessionDepsRef.current!.playClip(clipKey);
+          // Helper: enter the breathing state at the wall-clock-correct phase.
+          // Always starts fast-forward from index 0 because breathing always
+          // begins at phase 0 (the transition timer fires startPhase(phases, 0)
+          // before any advancePhase call).
+          const resumeBreathing = (overrunIntoBreathingMs: number) => {
+            setSessionState("breathing");
+            sessionStateRef.current = "breathing";
+            const phases = d.config.phases;
+            const { idx, remaining } = fastForwardPhases(
+              phases,
+              0,
+              overrunIntoBreathingMs,
+            );
+            phaseIndexRef.current = idx;
+            d.startPhase(phases, idx);
+            phaseTimerRef.current = setTimeout(
+              d.advancePhase,
+              phases[idx].duration * 1000 - remaining,
+            );
+          };
+
+          if (state === "transition") {
+            // Reconcile the 5-second transition timer.
+            if (transitionStartWallClockRef.current !== null) {
+              const transitionElapsedMs =
+                Date.now() - transitionStartWallClockRef.current;
+              if (transitionElapsedMs >= 5000) {
+                // Transition already done – jump straight into breathing.
+                if (transitionTimerRef.current)
+                  clearTimeout(transitionTimerRef.current);
+                if (phaseTimerRef.current) clearTimeout(phaseTimerRef.current);
+                resumeBreathing(transitionElapsedMs - 5000);
+              } else {
+                // Still in transition – reschedule the remaining portion.
+                if (transitionTimerRef.current)
+                  clearTimeout(transitionTimerRef.current);
+                transitionTimerRef.current = setTimeout(() => {
+                  if (!isRunningRef.current) return;
+                  setSessionState("breathing");
+                  sessionStateRef.current = "breathing";
+                  phaseIndexRef.current = 0;
+                  d.startPhase(d.config.phases, 0);
+                  phaseTimerRef.current = setTimeout(
+                    d.advancePhase,
+                    d.config.phases[0].duration * 1000,
+                  );
+                }, 5000 - transitionElapsedMs);
+              }
+            }
+          } else {
+            const phaseElapsedMs = Date.now() - phaseStartWallClockRef.current;
+            const phaseOverrunMs =
+              phaseElapsedMs - phaseDurationRef.current * 1000;
+
+            if (phaseOverrunMs > 0) {
+              // One or more phase deadlines fired while backgrounded.
+              if (phaseTimerRef.current) clearTimeout(phaseTimerRef.current);
+
+              if (state === "sigh_phase") {
+                // Walk forward through sigh phases, tracking cycle completions.
+                const sighPhases = ENERGIZE_SIGH_PHASES;
+                let idx = (phaseIndexRef.current + 1) % sighPhases.length;
+                let overrunMs = phaseOverrunMs;
+                let sighCount = sighCountRef.current;
+                let enteredTransition = false;
+
+                while (true) {
+                  const isNewCycle = idx === 0;
+                  if (isNewCycle) {
+                    sighCount += 1;
+                    if (sighCount >= 4) {
+                      // overrunMs is time elapsed since transition started.
+                      enteredTransition = true;
+                      break;
+                    }
+                  }
+                  if (overrunMs < sighPhases[idx].duration * 1000) break;
+                  overrunMs -= sighPhases[idx].duration * 1000;
+                  idx = (idx + 1) % sighPhases.length;
+                }
+
+                sighCountRef.current = sighCount;
+
+                if (enteredTransition) {
+                  if (overrunMs >= 5000) {
+                    // Past the transition too – enter breathing directly.
+                    if (transitionTimerRef.current)
+                      clearTimeout(transitionTimerRef.current);
+                    resumeBreathing(overrunMs - 5000);
+                  } else {
+                    // Mid-transition – show the transition UI and reschedule.
+                    setSessionState("transition");
+                    sessionStateRef.current = "transition";
+                    transitionStartWallClockRef.current =
+                      Date.now() - overrunMs;
+                    currentPhaseClipRef.current = "energize_transition";
+                    d.playClip("energize_transition");
+                    setPhaseLabel("FIND YOUR RHYTHM");
+                    if (transitionTimerRef.current)
+                      clearTimeout(transitionTimerRef.current);
+                    transitionTimerRef.current = setTimeout(() => {
+                      if (!isRunningRef.current) return;
+                      setSessionState("breathing");
+                      sessionStateRef.current = "breathing";
+                      phaseIndexRef.current = 0;
+                      d.startPhase(d.config.phases, 0);
+                      phaseTimerRef.current = setTimeout(
+                        d.advancePhase,
+                        d.config.phases[0].duration * 1000,
+                      );
+                    }, 5000 - overrunMs);
+                  }
+                } else {
+                  // Still within sigh_phase – resume the correct sigh phase.
+                  phaseIndexRef.current = idx;
+                  d.startPhase(sighPhases, idx);
+                  phaseTimerRef.current = setTimeout(
+                    d.advancePhase,
+                    sighPhases[idx].duration * 1000 - overrunMs,
+                  );
+                }
+              } else {
+                // "breathing" state – simple repeating phase cycle.
+                const { idx, remaining } = fastForwardPhases(
+                  d.config.phases,
+                  (phaseIndexRef.current + 1) % d.config.phases.length,
+                  phaseOverrunMs,
+                );
+                phaseIndexRef.current = idx;
+                d.startPhase(d.config.phases, idx);
+                phaseTimerRef.current = setTimeout(
+                  d.advancePhase,
+                  d.config.phases[idx].duration * 1000 - remaining,
+                );
+              }
+            } else {
+              // Phase still in progress – sync display and resume audio.
+              const phaseElapsedSec = Math.min(
+                phaseElapsedMs / 1000,
+                phaseDurationRef.current,
+              );
+              setPhaseElapsed(phaseElapsedSec);
+              d.triggerPhaseHaptic(
+                currentPhaseRef.current,
+                phaseDurationRef.current,
+                phaseElapsedSec,
+              );
+              const clipKey = currentPhaseClipRef.current;
+              if (clipKey) {
+                d.playClip(clipKey);
+              }
+            }
           }
         }
       }
