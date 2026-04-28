@@ -19,6 +19,7 @@ import Animated, {
 
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 import { Spacing, BorderRadius } from '@/constants/theme';
+import { ANIM_DURATION_ENTER, ANIM_DURATION_CONTENT_SLOW } from '@/constants/animation';
 
 interface ForceUpdateScreenProps {
   iosStoreUrl: string;
@@ -32,7 +33,7 @@ export default function ForceUpdateScreen({ iosStoreUrl, androidStoreUrl }: Forc
   const fadeStyle = useAnimatedStyle(() => ({ opacity: opacity.value, flex: 1 }));
 
   useEffect(() => {
-    opacity.value = withTiming(1, { duration: 300 });
+    opacity.value = withTiming(1, { duration: ANIM_DURATION_ENTER });
   }, []);
 
   const handleUpdate = async () => {
@@ -56,7 +57,7 @@ export default function ForceUpdateScreen({ iosStoreUrl, androidStoreUrl }: Forc
           },
         ]}
       >
-        <Animated.View entering={FadeInUp.duration(500)} style={styles.topSection}>
+        <Animated.View entering={FadeInUp.duration(ANIM_DURATION_CONTENT_SLOW)} style={styles.topSection}>
           <View style={[styles.iconCircle, { backgroundColor: cp.neonCyan + '22' }]}>
             <Text style={[styles.arrowIcon, { color: cp.neonCyan }]}>↑</Text>
           </View>
@@ -69,7 +70,7 @@ export default function ForceUpdateScreen({ iosStoreUrl, androidStoreUrl }: Forc
           </Text>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(500).delay(150)} style={styles.bottomSection}>
+        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT_SLOW).delay(150)} style={styles.bottomSection}>
           <Pressable
             testID="button-update-now"
             onPress={handleUpdate}

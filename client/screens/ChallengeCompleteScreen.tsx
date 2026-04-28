@@ -21,6 +21,7 @@ import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useAccessibility } from '@/contexts/AccessibilityContext';
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 import { Spacing, BorderRadius } from '@/constants/theme';
+import { ANIM_DURATION_EXIT_COMPLETE } from '@/constants/animation';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -319,7 +320,7 @@ export default function ChallengeCompleteScreen() {
       >
         <View style={styles.modalBackdrop}>
           <Animated.View
-            entering={FadeInDown.duration(250)}
+            entering={FadeInDown.duration(ANIM_DURATION_EXIT_COMPLETE)}
             style={[
               styles.modalCard,
               {

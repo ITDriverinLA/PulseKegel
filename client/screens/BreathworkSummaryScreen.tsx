@@ -8,6 +8,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { getModeConfig, BreathworkMode, getBreathworkColors } from '@/constants/breathworkModes';
 import { useTheme } from '@/hooks/useTheme';
+import { ANIM_DURATION_CONTENT_SLOW } from '@/constants/animation';
 import { storage } from '@/lib/storage';
 import { rescheduleAfterCompletion } from '@/lib/notifications';
 import { isRestDayForDate } from '@/data/workoutProgram';
@@ -55,18 +56,18 @@ export default function BreathworkSummaryScreen() {
   return (
     <View style={[styles.container, { backgroundColor: bwColors.bg_session, paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }]}>
       <View style={styles.content}>
-        <Animated.View entering={FadeInDown.duration(500)} style={styles.iconContainer}>
+        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT_SLOW)} style={styles.iconContainer}>
           <View style={[styles.iconCircle, { backgroundColor: bwColors.accentSoft }]}>
             <Feather name="check-circle" size={64} color={bwColors.accent} />
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(500).delay(100)}>
+        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT_SLOW).delay(100)}>
           <Text style={[styles.title, { color: bwColors.phase_label }]}>Session Complete</Text>
           <Text style={[styles.modeName, { color: bwColors.accent }]}>{config.name}</Text>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(500).delay(200)} style={[styles.statsRow, { backgroundColor: bwColors.accentSoft }]}>
+        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT_SLOW).delay(200)} style={[styles.statsRow, { backgroundColor: bwColors.accentSoft }]}>
           <View style={styles.statItem}>
             <Feather name="clock" size={20} color={bwColors.accent} />
             <Text style={[styles.statValue, { color: bwColors.phase_label }]}>5:00</Text>
@@ -80,7 +81,7 @@ export default function BreathworkSummaryScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(500).delay(300)} style={styles.buttonsContainer}>
+        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT_SLOW).delay(300)} style={styles.buttonsContainer}>
           {logged ? (
             <View style={[styles.loggedContainer, { backgroundColor: bwColors.accentSoft }]}>
               <Feather name="check" size={20} color={bwColors.accent} />

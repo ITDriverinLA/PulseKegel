@@ -23,7 +23,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { ThemedText } from '@/components/ThemedText';
 import { Spacing } from '@/constants/theme';
-import { ANIM_DURATION_EXIT_COMPLETE } from '@/constants/animation';
+import { ANIM_DURATION_EXIT_COMPLETE, ANIM_DURATION_ZOOM, ANIM_DURATION_PULSE_LOADING } from '@/constants/animation';
 import { storage } from '@/lib/storage';
 import { getApiUrl } from '@/lib/query-client';
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
@@ -55,8 +55,8 @@ export default function Week1ReviewScreen() {
     if (loading) {
       const pulse = RNAnimated.loop(
         RNAnimated.sequence([
-          RNAnimated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-          RNAnimated.timing(pulseAnim, { toValue: 0.4, duration: 800, useNativeDriver: true }),
+          RNAnimated.timing(pulseAnim, { toValue: 1, duration: ANIM_DURATION_PULSE_LOADING, useNativeDriver: true }),
+          RNAnimated.timing(pulseAnim, { toValue: 0.4, duration: ANIM_DURATION_PULSE_LOADING, useNativeDriver: true }),
         ])
       );
       pulse.start();
@@ -185,7 +185,7 @@ export default function Week1ReviewScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View entering={ZoomIn.duration(350)} style={styles.iconWrapper}>
+        <Animated.View entering={ZoomIn.duration(ANIM_DURATION_ZOOM)} style={styles.iconWrapper}>
           <LinearGradient
             colors={[accentColor, cp.neonPink]}
             style={styles.iconGradient}

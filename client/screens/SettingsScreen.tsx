@@ -19,6 +19,7 @@ import { getApiUrl } from '@/lib/query-client';
 import { Toggle } from '@/components/Toggle';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { Spacing, BorderRadius } from '@/constants/theme';
+import { ANIM_DURATION_CONTENT } from '@/constants/animation';
 import { storage, UserSettings, defaultSettings } from '@/lib/storage';
 import { hapticsManager } from '@/lib/hapticsManager';
 import { useAccessibility } from '@/contexts/AccessibilityContext';
@@ -245,7 +246,7 @@ export default function SettingsScreen() {
         }}
         scrollIndicatorInsets={{ bottom: insets.bottom }}
       >
-        <Animated.View entering={FadeInDown.duration(400).delay(50)}>
+        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(50)}>
           <Text style={[styles.sectionTitle, { color: cp.neonCyan, textShadowColor: isDarkMode ? cp.neonCyan : 'transparent' }]}>APPEARANCE</Text>
           <View style={[styles.card, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
             <Toggle
@@ -258,7 +259,7 @@ export default function SettingsScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(400).delay(100)}>
+        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(100)}>
           <Text style={[styles.sectionTitle, { color: cp.neonCyan, textShadowColor: isDarkMode ? cp.neonCyan : 'transparent' }]}>HAPTIC FEEDBACK</Text>
           <View style={[styles.card, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
             <Toggle
@@ -305,7 +306,7 @@ export default function SettingsScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(400).delay(150)}>
+        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(150)}>
           <Text style={[styles.sectionTitle, { color: cp.neonCyan, textShadowColor: isDarkMode ? cp.neonCyan : 'transparent' }]}>SOUND</Text>
           <View style={[styles.card, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
             <Toggle
@@ -368,7 +369,7 @@ export default function SettingsScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(400).delay(175)}>
+        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(175)}>
           <Text style={[styles.sectionTitle, { color: cp.neonCyan, textShadowColor: isDarkMode ? cp.neonCyan : 'transparent' }]}>REMINDERS</Text>
           <View style={[styles.card, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
             {permissionRevoked ? (
@@ -442,7 +443,7 @@ export default function SettingsScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(400).delay(225)}>
+        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(225)}>
           <Text style={[styles.sectionTitle, { color: cp.neonCyan, textShadowColor: isDarkMode ? cp.neonCyan : 'transparent' }]}>ACCESSIBILITY</Text>
           <View style={[styles.card, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
             <Toggle
@@ -465,7 +466,7 @@ export default function SettingsScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(400).delay(300)}>
+        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(300)}>
           <Text style={[styles.sectionTitle, { color: cp.neonCyan, textShadowColor: isDarkMode ? cp.neonCyan : 'transparent' }]}>WORKOUT MODE</Text>
           <View style={[styles.card, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
             <Toggle
@@ -541,7 +542,7 @@ export default function SettingsScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(400).delay(400)}>
+        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(400)}>
           <Text style={[styles.sectionTitle, { color: cp.neonCyan, textShadowColor: isDarkMode ? cp.neonCyan : 'transparent' }]}>PERSONALIZATION</Text>
           <View style={[styles.card, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
             <View style={styles.settingRow}>
@@ -580,7 +581,7 @@ export default function SettingsScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(400).delay(500)}>
+        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(500)}>
           <Text style={[styles.sectionTitle, { color: cp.neonCyan, textShadowColor: isDarkMode ? cp.neonCyan : 'transparent' }]}>SUBSCRIPTION</Text>
           <View style={[styles.card, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
             <View style={styles.subscriptionStatus}>
@@ -627,7 +628,7 @@ export default function SettingsScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(400).delay(600)}>
+        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(600)}>
           <Text style={[styles.sectionTitle, { color: cp.neonCyan, textShadowColor: isDarkMode ? cp.neonCyan : 'transparent' }]}>DATA</Text>
           <View style={[styles.card, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
             <Pressable onPress={handleResetProgress} style={styles.dangerButton}>
@@ -644,7 +645,7 @@ export default function SettingsScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(400).delay(700)}>
+        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(700)}>
           <View style={styles.sectionTitleRow}>
             <Feather name="book-open" size={14} color={cp.neonCyan} />
             <Text style={[styles.sectionTitle, { color: cp.neonCyan, textShadowColor: isDarkMode ? cp.neonCyan : 'transparent' }]}>RESOURCES</Text>
@@ -662,7 +663,7 @@ export default function SettingsScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(400).delay(600)}>
+        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(600)}>
           <View style={styles.footer}>
             <Text style={[styles.footerText, { color: cp.textMuted }]}>PulseKegel v{Constants.expoConfig?.version ?? '—'}</Text>
             <Text style={[styles.footerText, { color: cp.textMuted }]}>

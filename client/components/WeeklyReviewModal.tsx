@@ -6,6 +6,7 @@ import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/ThemedText';
 import { Spacing } from '@/constants/theme';
+import { ANIM_DURATION_ENTER, ANIM_DURATION_PULSE_LOADING } from '@/constants/animation';
 import { getApiUrl } from '@/lib/query-client';
 import { AnatomyType } from '@/lib/storage';
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
@@ -108,12 +109,12 @@ export function WeeklyReviewModal({
         RNAnimated.sequence([
           RNAnimated.timing(pulseAnim, {
             toValue: 1,
-            duration: 800,
+            duration: ANIM_DURATION_PULSE_LOADING,
             useNativeDriver: true,
           }),
           RNAnimated.timing(pulseAnim, {
             toValue: 0.4,
-            duration: 800,
+            duration: ANIM_DURATION_PULSE_LOADING,
             useNativeDriver: true,
           }),
         ])
@@ -131,7 +132,7 @@ export function WeeklyReviewModal({
       onRequestClose={onClose}
     >
       <View style={[styles.overlay, { backgroundColor: cp.overlay }]}>
-        <Animated.View entering={ZoomIn.duration(300)} style={styles.container}>
+        <Animated.View entering={ZoomIn.duration(ANIM_DURATION_ENTER)} style={styles.container}>
           <LinearGradient
             colors={isDarkMode ? ['#1a1a2e', '#16213e', '#0f0f23'] : ['#ffffff', '#f5f7fc', '#eef1f8']}
             style={styles.gradient}

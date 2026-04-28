@@ -9,6 +9,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/ThemedText';
 import { Spacing, BorderRadius } from '@/constants/theme';
+import { ANIM_DURATION_CONTENT } from '@/constants/animation';
 import { standaloneWorkouts, StandaloneWorkout } from '@/data/standaloneWorkouts';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
@@ -64,7 +65,7 @@ export default function WorkoutPickerScreen() {
         {standaloneWorkouts.map((workout, index) => (
           <Animated.View
             key={workout.id}
-            entering={FadeInDown.duration(400).delay(index * 80)}
+            entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(index * 80)}
           >
             <Pressable
               style={({ pressed }) => [

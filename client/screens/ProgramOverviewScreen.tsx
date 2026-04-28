@@ -16,6 +16,7 @@ import { workoutProgram, Week, DayTemplate } from '@/data/workoutProgram';
 import { storage } from '@/lib/storage';
 import { useAccessibility } from '@/contexts/AccessibilityContext';
 import { Spacing, BorderRadius } from '@/constants/theme';
+import { ANIM_DURATION_ENTER } from '@/constants/animation';
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 
 const DAY_TYPE_LABELS: Record<string, string> = {
@@ -250,7 +251,7 @@ export default function ProgramOverviewScreen() {
     return (
       <Animated.View
         key={week.weekNumber}
-        entering={FadeInDown.duration(300).delay(index * 50)}
+        entering={FadeInDown.duration(ANIM_DURATION_ENTER).delay(index * 50)}
       >
         <Pressable
           onPress={() => setExpandedWeek(isExpanded ? null : week.weekNumber)}

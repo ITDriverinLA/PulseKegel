@@ -19,6 +19,12 @@ import {
   ENERGIZE_SIGH_PHASES,
 } from '@/constants/breathworkModes';
 import { useTheme } from '@/hooks/useTheme';
+import {
+  ANIM_DURATION_ENTER,
+  ANIM_DURATION_CONTENT,
+  ANIM_DURATION_INTRO,
+  ANIM_DURATION_MICRO_SETTLE,
+} from '@/constants/animation';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
 type SessionRoute = RouteProp<RootStackParamList, 'BreathworkSession'>;
@@ -343,7 +349,7 @@ export default function BreathworkSessionScreen() {
 
       <View style={styles.centerContent}>
         {sessionState === 'intro' ? (
-          <Animated.View entering={FadeIn.duration(600)} style={styles.introContainer}>
+          <Animated.View entering={FadeIn.duration(ANIM_DURATION_INTRO)} style={styles.introContainer}>
             <View style={[styles.introCirclePlaceholder, { backgroundColor: bwColors.accentSoft }]}>
               <Feather name={config.icon as any} size={48} color={bwColors.accent} />
             </View>
@@ -353,19 +359,19 @@ export default function BreathworkSessionScreen() {
             <Text style={[styles.introSubtitle, { color: bwColors.timer_text }]}>Listen and relax...</Text>
           </Animated.View>
         ) : sessionState === 'transition' ? (
-          <Animated.View entering={FadeIn.duration(400)} style={styles.introContainer}>
+          <Animated.View entering={FadeIn.duration(ANIM_DURATION_CONTENT)} style={styles.introContainer}>
             <BreathCircle phase="hold_top" phaseDuration={5} />
             <Text style={[styles.phaseText, { color: bwColors.phase_label }]}>{phaseLabel}</Text>
           </Animated.View>
         ) : sessionState === 'outro' ? (
-          <Animated.View entering={FadeIn.duration(400)} style={styles.introContainer}>
+          <Animated.View entering={FadeIn.duration(ANIM_DURATION_CONTENT)} style={styles.introContainer}>
             <BreathCircle phase="hold_bottom" phaseDuration={config.outroDuration} />
             <Text style={[styles.outroText, { color: bwColors.accent }]}>Session Complete</Text>
           </Animated.View>
         ) : (
           <>
             <BreathCircle phase={currentPhase} phaseDuration={phaseDuration} />
-            <Animated.View key={phaseLabel} entering={FadeIn.duration(300)} exiting={FadeOut.duration(200)}>
+            <Animated.View key={phaseLabel} entering={FadeIn.duration(ANIM_DURATION_ENTER)} exiting={FadeOut.duration(ANIM_DURATION_MICRO_SETTLE)}>
               <Text style={[styles.phaseText, { color: bwColors.phase_label }]} testID="breathwork-phase-label">{phaseLabel}</Text>
             </Animated.View>
           </>

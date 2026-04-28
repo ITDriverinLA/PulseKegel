@@ -17,6 +17,13 @@ import { getBadgeById } from '@/data/badges';
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 import { useAudio } from '@/contexts/AudioContext';
 import { Spacing, BorderRadius } from '@/constants/theme';
+import {
+  ANIM_DURATION_MICRO,
+  ANIM_DURATION_MICRO_SETTLE,
+  ANIM_DURATION_BADGE_APPEAR,
+  ANIM_DURATION_BADGE_SHIMMER,
+  ANIM_DURATION_BADGE_GLOW,
+} from '@/constants/animation';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -52,18 +59,18 @@ export function BadgeToast({ badgeIds, onDismiss }: BadgeToastProps) {
 
     iconScale.value = withDelay(200, withSpring(1, { damping: 8, stiffness: 120 }));
     iconRotate.value = withDelay(200, withSequence(
-      withTiming(-10, { duration: 150 }),
-      withTiming(10, { duration: 150 }),
-      withTiming(0, { duration: 200 })
+      withTiming(-10, { duration: ANIM_DURATION_MICRO }),
+      withTiming(10, { duration: ANIM_DURATION_MICRO }),
+      withTiming(0, { duration: ANIM_DURATION_MICRO_SETTLE })
     ));
-    contentOpacity.value = withDelay(500, withTiming(1, { duration: 400 }));
+    contentOpacity.value = withDelay(500, withTiming(1, { duration: ANIM_DURATION_BADGE_APPEAR }));
     shimmer.value = withDelay(300, withRepeat(
-      withTiming(1, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
+      withTiming(1, { duration: ANIM_DURATION_BADGE_SHIMMER, easing: Easing.inOut(Easing.ease) }),
       -1,
       true
     ));
     glowPulse.value = withDelay(400, withRepeat(
-      withTiming(1, { duration: 1500 }),
+      withTiming(1, { duration: ANIM_DURATION_BADGE_GLOW }),
       -1,
       true
     ));

@@ -8,6 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { useTheme } from '@/hooks/useTheme';
+import { ANIM_DURATION_ENTER } from '@/constants/animation';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -37,7 +38,7 @@ export function ProgressRing({
     const strokeDashoffset = circumference * (1 - Math.min(Math.max(progress, 0), 1));
     return {
       strokeDashoffset: withTiming(strokeDashoffset, {
-        duration: 300,
+        duration: ANIM_DURATION_ENTER,
         easing: Easing.out(Easing.ease),
       }),
     };

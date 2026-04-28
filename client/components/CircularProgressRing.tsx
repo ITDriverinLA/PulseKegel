@@ -14,6 +14,7 @@ import Animated, {
 import Svg, { Circle, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
 
 import { SegmentType } from '@/data/workoutProgram';
+import { ANIM_DURATION_MICRO, ANIM_DURATION_PROGRESS_DRAIN } from '@/constants/animation';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -66,7 +67,7 @@ export function CircularProgressRing({
       switch (segmentType) {
         case 'quickFlicks':
           progress.value = withTiming(1, {
-            duration: 150,
+            duration: ANIM_DURATION_MICRO,
             easing: Easing.out(Easing.cubic),
           });
           break;
@@ -125,7 +126,7 @@ export function CircularProgressRing({
     } else {
       cancelAnimation(progress);
       progress.value = withTiming(0, {
-        duration: 600,
+        duration: ANIM_DURATION_PROGRESS_DRAIN,
         easing: Easing.out(Easing.cubic),
       });
     }

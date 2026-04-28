@@ -7,6 +7,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import Slider from '@react-native-community/slider';
 
 import { Spacing, BorderRadius } from '@/constants/theme';
+import { ANIM_DURATION_CONTENT } from '@/constants/animation';
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 import { useAudio } from '@/contexts/AudioContext';
 import {
@@ -77,7 +78,7 @@ export default function MusicScreen() {
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + Spacing.xl }]}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View entering={FadeInDown.duration(400).delay(100)}>
+        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(100)}>
           <View style={[styles.section, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
             <View style={styles.sectionHeader}>
               <Feather name="music" size={18} color={cp.neonCyan} />
@@ -142,7 +143,7 @@ export default function MusicScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(400).delay(200)}>
+        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(200)}>
           <View style={[styles.section, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
             <Pressable
               onPress={() => updateAudioSettings({ shuffleEnabled: !audioSettings.shuffleEnabled })}
@@ -176,7 +177,7 @@ export default function MusicScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(400).delay(300)}>
+        <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(300)}>
           <View style={[styles.section, { backgroundColor: cp.cardBg, borderColor: cp.cardBorder }]}>
             <View style={styles.sectionHeader}>
               <Feather name="volume-2" size={18} color={cp.neonCyan} />

@@ -21,6 +21,7 @@ import BreathworkSummaryScreen from '@/screens/BreathworkSummaryScreen';
 import TechniqueGuideScreen from '@/screens/TechniqueGuideScreen';
 import ForceUpdateScreen from '@/screens/ForceUpdateScreen';
 import { useScreenOptions } from '@/hooks/useScreenOptions';
+import { ANIM_DURATION_ENTER } from '@/constants/animation';
 import { storage } from '@/lib/storage';
 import { getApiUrl } from '@/lib/query-client';
 import { DayTemplate } from '@/data/workoutProgram';
@@ -122,7 +123,7 @@ export default function RootStackNavigator() {
   useEffect(() => {
     if (!isLoading && !showOnboarding && !needsUpdate) {
       fadeOpacity.value = 0;
-      fadeOpacity.value = withTiming(1, { duration: 300 });
+      fadeOpacity.value = withTiming(1, { duration: ANIM_DURATION_ENTER });
     }
   }, [isLoading, showOnboarding, needsUpdate]);
 

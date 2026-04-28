@@ -27,6 +27,7 @@ import Slider from '@react-native-community/slider';
 
 import { ThemedText } from '@/components/ThemedText';
 import { Spacing, BorderRadius } from '@/constants/theme';
+import { ANIM_DURATION_ENTER, ANIM_DURATION_EXIT_COMPLETE } from '@/constants/animation';
 import { storage, AnatomyType, defaultSettings } from '@/lib/storage';
 import { trackOnboardingComplete } from '@/lib/analytics';
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
@@ -119,7 +120,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   }));
 
   useEffect(() => {
-    screenOpacity.value = withTiming(1, { duration: 300 });
+    screenOpacity.value = withTiming(1, { duration: ANIM_DURATION_ENTER });
   }, []);
 
   const isLastPage = currentPage === pages.length - 1;
@@ -140,7 +141,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   const handleNext = async () => {
     if (isLastPage) {
       trackOnboardingComplete({ anatomyType: selectedAnatomy });
-      screenOpacity.value = withTiming(0, { duration: 300 }, (finished) => {
+      screenOpacity.value = withTiming(0, { duration: ANIM_DURATION_ENTER }, (finished) => {
         if (finished) {
           runOnJS(onComplete)();
         }
@@ -208,8 +209,8 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
           {isNamePage ? (
             <Animated.View
               key={currentPage}
-              entering={SlideInRight.duration(300)}
-              exiting={SlideOutLeft.duration(250)}
+              entering={SlideInRight.duration(ANIM_DURATION_ENTER)}
+              exiting={SlideOutLeft.duration(ANIM_DURATION_EXIT_COMPLETE)}
               style={styles.nameContainer}
             >
               <Feather name="user" size={64} color={cp.neonGreen} style={styles.nameIcon} />
@@ -248,8 +249,8 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
           ) : isAnatomyPage ? (
             <Animated.View
               key={currentPage}
-              entering={SlideInRight.duration(300)}
-              exiting={SlideOutLeft.duration(250)}
+              entering={SlideInRight.duration(ANIM_DURATION_ENTER)}
+              exiting={SlideOutLeft.duration(ANIM_DURATION_EXIT_COMPLETE)}
               style={styles.anatomyContainer}
             >
               <ThemedText type="h1" style={[styles.title, { color: cp.text }]}>
@@ -290,8 +291,8 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
           ) : isGuidePage ? (
             <Animated.View
               key={currentPage}
-              entering={SlideInRight.duration(300)}
-              exiting={SlideOutLeft.duration(250)}
+              entering={SlideInRight.duration(ANIM_DURATION_ENTER)}
+              exiting={SlideOutLeft.duration(ANIM_DURATION_EXIT_COMPLETE)}
               style={styles.guideContainer}
             >
               <ScrollView
@@ -315,8 +316,8 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
           ) : isSettingsPage ? (
             <Animated.View
               key={currentPage}
-              entering={SlideInRight.duration(300)}
-              exiting={SlideOutLeft.duration(250)}
+              entering={SlideInRight.duration(ANIM_DURATION_ENTER)}
+              exiting={SlideOutLeft.duration(ANIM_DURATION_EXIT_COMPLETE)}
               style={styles.settingsContainer}
             >
               <ThemedText type="h1" style={[styles.title, { color: cp.text }]}>
@@ -477,8 +478,8 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
           ) : (
             <Animated.View
               key={currentPage}
-              entering={SlideInRight.duration(300)}
-              exiting={SlideOutLeft.duration(250)}
+              entering={SlideInRight.duration(ANIM_DURATION_ENTER)}
+              exiting={SlideOutLeft.duration(ANIM_DURATION_EXIT_COMPLETE)}
               style={styles.defaultPageContainer}
             >
               <View style={styles.imageContainer}>

@@ -14,6 +14,12 @@ import Animated, {
 import Svg, { Rect } from 'react-native-svg';
 import { BreathPhase } from '@/constants/breathworkModes';
 import { useTheme } from '@/hooks/useTheme';
+import {
+  ANIM_DURATION_PULSE,
+  ANIM_DURATION_COLOR_CYCLE,
+  ANIM_DURATION_HOLD_PULSE,
+  ANIM_DURATION_HOLD_PULSE_BOTTOM,
+} from '@/constants/animation';
 
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
 
@@ -25,7 +31,6 @@ const MIN_HEIGHT = 16;
 const CORNER_RADIUS = 5;
 const GLOW_EXTEND = 10;
 
-const COLOR_CYCLE_DURATION = 18000;
 
 const TOTAL_WIDTH = BAR_COUNT * BAR_WIDTH + (BAR_COUNT - 1) * BAR_GAP;
 const SVG_HEIGHT = MAX_HEIGHT + 60;
@@ -141,14 +146,14 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
     }
 
     pulse.value = withRepeat(
-      withTiming(pulse.value + 1, { duration: 2400, easing: Easing.linear }),
+      withTiming(pulse.value + 1, { duration: ANIM_DURATION_PULSE, easing: Easing.linear }),
       -1,
       false,
     );
 
     colorCycle.value = 0;
     colorCycle.value = withRepeat(
-      withTiming(1, { duration: COLOR_CYCLE_DURATION, easing: Easing.linear }),
+      withTiming(1, { duration: ANIM_DURATION_COLOR_CYCLE, easing: Easing.linear }),
       -1,
       false,
     );
@@ -168,8 +173,8 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
         progress.value = 1;
         progress.value = withRepeat(
           withSequence(
-            withTiming(0.96, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
-            withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
+            withTiming(0.96, { duration: ANIM_DURATION_HOLD_PULSE, easing: Easing.inOut(Easing.ease) }),
+            withTiming(1, { duration: ANIM_DURATION_HOLD_PULSE, easing: Easing.inOut(Easing.ease) }),
           ),
           -1,
           true,
@@ -188,8 +193,8 @@ export default function BreathCircle({ phase, phaseDuration, isPaused }: BreathC
         progress.value = 0;
         progress.value = withRepeat(
           withSequence(
-            withTiming(0.06, { duration: 1400, easing: Easing.inOut(Easing.ease) }),
-            withTiming(0, { duration: 1400, easing: Easing.inOut(Easing.ease) }),
+            withTiming(0.06, { duration: ANIM_DURATION_HOLD_PULSE_BOTTOM, easing: Easing.inOut(Easing.ease) }),
+            withTiming(0, { duration: ANIM_DURATION_HOLD_PULSE_BOTTOM, easing: Easing.inOut(Easing.ease) }),
           ),
           -1,
           true,

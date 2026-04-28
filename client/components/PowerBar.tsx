@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { SegmentType } from '@/data/workoutProgram';
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
+import { ANIM_DURATION_MICRO, ANIM_DURATION_PROGRESS_DRAIN } from '@/constants/animation';
 
 interface PowerBarProps {
   phase: 'squeeze' | 'rest';
@@ -147,7 +148,7 @@ export function PowerBar({
       switch (segmentType) {
         case 'quickFlicks':
           progress.value = withTiming(1.05, { 
-            duration: 150,
+            duration: ANIM_DURATION_MICRO,
             easing: Easing.out(Easing.cubic),
           });
           break;
@@ -206,7 +207,7 @@ export function PowerBar({
     } else {
       cancelAnimation(progress);
       progress.value = withTiming(0, {
-        duration: 600,
+        duration: ANIM_DURATION_PROGRESS_DRAIN,
         easing: Easing.out(Easing.cubic),
       });
     }

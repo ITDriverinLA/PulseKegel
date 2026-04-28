@@ -26,7 +26,15 @@ import { BadgeToast } from '@/components/BadgeToast';
 import { useTheme } from '@/hooks/useTheme';
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
 import { Spacing, BorderRadius, Typography } from '@/constants/theme';
-import { ANIM_DURATION_EXIT, ANIM_DURATION_EXIT_COMPLETE } from '@/constants/animation';
+import {
+  ANIM_DURATION_EXIT,
+  ANIM_DURATION_EXIT_COMPLETE,
+  ANIM_DURATION_ENTER,
+  ANIM_DURATION_MICRO_SETTLE,
+  ANIM_DURATION_ZOOM_ENTER,
+  ANIM_DURATION_PROGRESS_FAST,
+  ANIM_DURATION_PROGRESS_SLOW,
+} from '@/constants/animation';
 import { DayTemplate, Segment, isRestDayForDate } from '@/data/workoutProgram';
 import { WorkoutEngine, WorkoutState, WorkoutPhase } from '@/lib/workoutEngine';
 import { hapticsManager, HapticPulseController } from '@/lib/hapticsManager';
@@ -87,12 +95,12 @@ export default function WorkoutPlayerScreen() {
 
   useEffect(() => {
     glowPulse.value = withRepeat(
-      withTiming(1, { duration: 1500 }),
+      withTiming(1, { duration: ANIM_DURATION_PROGRESS_FAST }),
       -1,
       true
     );
     backgroundPulse.value = withRepeat(
-      withTiming(1, { duration: 3000 }),
+      withTiming(1, { duration: ANIM_DURATION_PROGRESS_SLOW }),
       -1,
       true
     );
@@ -123,7 +131,7 @@ export default function WorkoutPlayerScreen() {
       onPhaseChange: async (newPhase, segment) => {
         setCurrentPhase(newPhase);
         
-        phaseColorValue.value = withTiming(newPhase === 'squeeze' ? 1 : 0, { duration: 300 });
+        phaseColorValue.value = withTiming(newPhase === 'squeeze' ? 1 : 0, { duration: ANIM_DURATION_ENTER });
         
         const duration = newPhase === 'squeeze' 
           ? segment.squeezeSeconds 
@@ -133,7 +141,7 @@ export default function WorkoutPlayerScreen() {
         phaseScale.value = 0.8;
         phaseOpacity.value = 0.5;
         phaseScale.value = withSpring(1, { damping: 12, stiffness: 200 });
-        phaseOpacity.value = withTiming(1, { duration: 200 });
+        phaseOpacity.value = withTiming(1, { duration: ANIM_DURATION_MICRO_SETTLE });
         
         if (newPhase === 'squeeze') {
           playSfx('squeeze');
@@ -421,7 +429,7 @@ export default function WorkoutPlayerScreen() {
 
           <View style={styles.completeContent}>
             <Animated.View
-              entering={ZoomIn.duration(400)}
+              entering={ZoomIn.duration(ANIM_DURATION_ZOOM_ENTER)}
               style={[styles.completeIcon, { backgroundColor: `${cp.neonGreen}20` }]}
             >
               <Feather name="check-circle" size={80} color={cp.neonGreen} />

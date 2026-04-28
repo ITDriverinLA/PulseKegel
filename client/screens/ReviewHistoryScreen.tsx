@@ -8,6 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 
 import { Spacing, BorderRadius } from '@/constants/theme';
+import { ANIM_DURATION_ENTER } from '@/constants/animation';
 import { storage, WeeklyReviewEntry } from '@/lib/storage';
 import { useAccessibility } from '@/contexts/AccessibilityContext';
 import { useThemePreference } from '@/contexts/ThemePreferenceContext';
@@ -81,7 +82,7 @@ export default function ReviewHistoryScreen() {
       >
         {reviews.length > 0 ? (
           <>
-            <Animated.View entering={FadeInDown.duration(300)}>
+            <Animated.View entering={FadeInDown.duration(ANIM_DURATION_ENTER)}>
               <Text style={[styles.headerSubtitle, { color: cp.textMuted, fontSize: 13 * fontScale }]}>
                 Your personalized AI insights from each completed week
               </Text>
@@ -95,7 +96,7 @@ export default function ReviewHistoryScreen() {
               return (
                 <Animated.View
                   key={review.weekNumber}
-                  entering={FadeInDown.duration(300).delay(100 + index * 80)}
+                  entering={FadeInDown.duration(ANIM_DURATION_ENTER).delay(100 + index * 80)}
                 >
                   <Pressable
                     style={[
