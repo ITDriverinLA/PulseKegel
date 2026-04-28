@@ -403,10 +403,12 @@ export default function BreathworkSessionScreen() {
     timerRef.current = setInterval(() => {
       if (!isRunningRef.current) return;
 
-      setTotalSecondsLeft((prev) => {
-        const next = prev - 1;
-        const d = sessionDepsRef.current!;
+      const d = sessionDepsRef.current!;
+      const elapsedSec =
+        (Date.now() - sessionWallClockStartRef.current!) / 1000;
+      const next = Math.max(0, d.config.totalDuration - Math.round(elapsedSec));
 
+      setTotalSecondsLeft(() => {
         if (
           next <= d.config.outroDuration &&
           sessionStateRef.current !== "outro" &&
