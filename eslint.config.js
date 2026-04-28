@@ -75,6 +75,18 @@ module.exports = defineConfig([
           message:
             "Do not use Easing.bezier() inline. Import the appropriate easing constant from @/constants/animation instead.",
         },
+        {
+          selector:
+            'Property[key.name="easing"] > CallExpression[callee.type="MemberExpression"][callee.object.name="Easing"][callee.property.name="back"]',
+          message:
+            "Do not use Easing.back() inline. Import the appropriate easing constant from @/constants/animation instead.",
+        },
+        {
+          selector:
+            'Property[key.name="easing"] > CallExpression[callee.type="MemberExpression"][callee.object.name="Easing"][callee.property.name="poly"]',
+          message:
+            "Do not use Easing.poly() inline. Import the appropriate easing constant from @/constants/animation instead.",
+        },
       ],
     },
   },
