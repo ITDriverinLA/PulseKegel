@@ -1132,11 +1132,11 @@ export const storage = {
     gain: number;
   }> {
     const state = await this.getControlScoreState();
-    if (state.lastSessionDate === today) {
-      return { state, rankUp: null, backOnTrack: false, gain: 0 };
-    }
     const sessionDates = await this.getSessionCompletedDates();
     const completedSet = new Set(sessionDates);
+    if (state.lastSessionDate === today || completedSet.has(today)) {
+      return { state, rankUp: null, backOnTrack: false, gain: 0 };
+    }
     if (state.lastScoreUpdateDate < today) {
       const yesterday = addDays(today, -1);
       let cursor = state.lastScoreUpdateDate;

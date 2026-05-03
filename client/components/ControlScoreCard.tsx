@@ -100,6 +100,14 @@ export function ControlScoreCard({ state }: Props) {
         </View>
       </View>
 
+      <Text
+        style={[
+          styles.scoreLabel,
+          { color: cp.textMuted, fontSize: 11 * fontScale },
+        ]}
+      >
+        CONTROL SCORE
+      </Text>
       <View style={styles.scoreRow}>
         <Text
           style={[styles.score, { color: cp.text, fontSize: 28 * fontScale }]}
@@ -181,6 +189,11 @@ const styles = StyleSheet.create({
   trendText: {
     fontWeight: "600",
     letterSpacing: 0.3,
+  },
+  scoreLabel: {
+    fontWeight: "600",
+    letterSpacing: 0.5,
+    marginBottom: 2,
   },
   scoreRow: {
     flexDirection: "row",
