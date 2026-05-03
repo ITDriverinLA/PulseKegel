@@ -74,11 +74,73 @@ export default function SettingsScreen() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [permissionRevoked, setPermissionRevoked] = useState(false);
+  const [difficultyPath, setDifficultyPath] = useState<
+    "accelerated" | "standard" | "gentle" | null
+  >(null);
 
   const loadSettings = useCallback(async () => {
-    const userSettings = await storage.getSettings();
+    const [userSettings, calibState] = await Promise.all([
+      storage.getSettings(),
+      storage.getCalibrationState(),
+    ]);
     setSettings(userSettings);
+    setDifficultyPath(calibState.difficultyPath);
   }, []);
+
+  const pathInfo = (() => {
+    if (difficultyPath === "accelerated")
+      return {
+        label: "Accelerated Path",
+        description:
+          "Calibration showed Day 1 felt easy, so workouts ramp up faster.",
+        color: cp.neonCyan,
+      };
+    if (difficultyPath === "gentle")
+      return {
+        label: "Gentle Path",
+        description:
+          "Calibration showed Day 1 was tough, so we ease in more gradually.",
+        color: cp.neonPurple,
+      };
+    if (difficultyPath === "standard")
+      return {
+        label: "Standard Path",
+        description:
+          "Calibration showed Day 1 felt about right — you're on the standard plan.",
+        color: cp.neonGreen,
+      };
+    return {
+      label: "Not yet calibrated",
+      description: "Complete Week 1, Day 1 to set your training path.",
+      color: cp.textMuted,
+    };
+  })();
+
+  const handleResetCalibration = () => {
+    const doReset = async () => {
+      await storage.clearCalibrationState();
+      setDifficultyPath(null);
+      await hapticsManager.triggerWarning();
+    };
+    if (Platform.OS === "web") {
+      if (
+        confirm(
+          "Reset your training path? You'll be re-calibrated on your next Day 1.",
+        )
+      ) {
+        doReset();
+      }
+    } else {
+      Alert.alert(
+        "Reset Training Path",
+        "This clears your current path. You'll see the calibration intro again on your next Day 1 workout.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Reset", style: "destructive", onPress: doReset },
+        ],
+      );
+    }
+  };
 
   useEffect(() => {
     loadSettings();
@@ -768,6 +830,83 @@ export default function SettingsScreen() {
             >
               Skip the cooldown segment at the end of workouts when disabled.
             </Text>
+          </View>
+        </Animated.View>
+
+        <Animated.View
+          entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(
+            ANIM_DELAY_XL,
+          )}
+        >
+          <Text
+            style={[
+              styles.sectionTitle,
+              {
+                color: cp.neonCyan,
+                textShadowColor: isDarkMode ? cp.neonCyan : "transparent",
+              },
+            ]}
+          >
+            TRAINING PATH
+          </Text>
+          <View
+            style={[
+              styles.card,
+              { backgroundColor: cp.cardBg, borderColor: cp.cardBorder },
+            ]}
+          >
+            <View style={styles.pathRow}>
+              <View
+                style={[
+                  styles.pathIconWrap,
+                  {
+                    backgroundColor: `${pathInfo.color}1A`,
+                    borderColor: `${pathInfo.color}4D`,
+                  },
+                ]}
+              >
+                <Feather name="trending-up" size={18} color={pathInfo.color} />
+              </View>
+              <View style={styles.pathTextWrap}>
+                <Text
+                  style={[styles.settingLabel, { color: cp.text }]}
+                  testID="text-training-path"
+                >
+                  {pathInfo.label}
+                </Text>
+                <Text
+                  style={[
+                    styles.settingDescription,
+                    { color: cp.textSecondary, marginTop: 2 },
+                  ]}
+                >
+                  {pathInfo.description}
+                </Text>
+              </View>
+            </View>
+
+            {difficultyPath ? (
+              <>
+                <View
+                  style={[styles.divider, { backgroundColor: cp.divider }]}
+                />
+                <Pressable
+                  onPress={handleResetCalibration}
+                  style={styles.subscriptionButton}
+                  testID="button-reset-calibration"
+                >
+                  <Feather name="refresh-ccw" size={20} color={cp.neonCyan} />
+                  <Text
+                    style={[
+                      styles.subscriptionButtonText,
+                      { color: cp.neonCyan },
+                    ]}
+                  >
+                    Reset Calibration
+                  </Text>
+                </Pressable>
+              </>
+            ) : null}
           </View>
         </Animated.View>
 
@@ -1481,5 +1620,22 @@ const styles = StyleSheet.create({
   permissionBannerLink: {
     fontSize: 13,
     fontWeight: "700",
+  },
+  pathRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: Spacing.md,
+    paddingVertical: Spacing.xs,
+  },
+  pathIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pathTextWrap: {
+    flex: 1,
   },
 });

@@ -788,6 +788,14 @@ export const storage = {
     }
   },
 
+  async clearCalibrationState(): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(STORAGE_KEYS.CHALLENGE_CALIBRATION);
+    } catch (error) {
+      console.error("Error clearing calibration state:", error);
+    }
+  },
+
   async setCalibrationState(level: "easy" | "okay" | "tooHard"): Promise<void> {
     try {
       const difficultyPath =

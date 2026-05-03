@@ -78,6 +78,9 @@ export default function HomeScreen() {
   const [pendingReviewMessage, setPendingReviewMessage] = useState<string>("");
   const trackedWeekCompleteRef = useRef<number | null>(null);
   const [calibrationCompleted, setCalibrationCompleted] = useState(true);
+  const [difficultyPath, setDifficultyPath] = useState<
+    "accelerated" | "standard" | "gentle" | null
+  >(null);
   const [showCalibrationIntro, setShowCalibrationIntro] = useState(false);
 
   const loadData = useCallback(async () => {
@@ -94,6 +97,7 @@ export default function HomeScreen() {
     setProgress(userProgress);
     setSettings(userSettings);
     setCalibrationCompleted(calibState.calibrationCompleted);
+    setDifficultyPath(calibState.difficultyPath);
 
     const today = new Date();
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
@@ -195,6 +199,42 @@ export default function HomeScreen() {
 
   const isDay1Calibration =
     todaysWorkout?.week.weekNumber === 1 && todaysWorkout?.dayIndex === 0;
+
+  const pathMeta = (() => {
+    if (!difficultyPath) return null;
+    if (difficultyPath === "accelerated")
+      return { label: "Accelerated Path", color: cp.neonCyan };
+    if (difficultyPath === "gentle")
+      return { label: "Gentle Path", color: cp.neonPurple };
+    return { label: "Standard Path", color: cp.neonGreen };
+  })();
+
+  const renderPathBadge = () => {
+    if (!pathMeta) return null;
+    if (todaysWorkout?.week.weekNumber !== 1) return null;
+    return (
+      <View
+        style={[
+          styles.pathBadge,
+          {
+            backgroundColor: `${pathMeta.color}1A`,
+            borderColor: `${pathMeta.color}4D`,
+          },
+        ]}
+      >
+        <Feather name="trending-up" size={11} color={pathMeta.color} />
+        <Text
+          style={[
+            styles.pathBadgeText,
+            { color: pathMeta.color, fontSize: 11 * fontScale },
+          ]}
+          testID="badge-training-path"
+        >
+          {pathMeta.label}
+        </Text>
+      </View>
+    );
+  };
 
   const startWorkoutNavigation = () => {
     if (!todaysWorkout) return;
@@ -383,6 +423,7 @@ export default function HomeScreen() {
                       >
                         Rest Day
                       </Text>
+                      {renderPathBadge()}
                     </View>
                     <View
                       style={[
@@ -511,6 +552,7 @@ export default function HomeScreen() {
                       >
                         {todaysWorkout.workout.name}
                       </Text>
+                      {renderPathBadge()}
                     </View>
                     <View
                       style={[
@@ -645,6 +687,7 @@ export default function HomeScreen() {
                       >
                         {todaysWorkout.workout.name}
                       </Text>
+                      {renderPathBadge()}
                     </View>
                     <View
                       style={[
@@ -1049,6 +1092,21 @@ const styles = StyleSheet.create({
   durationText: {
     marginLeft: Spacing.xs,
     fontSize: 14,
+  },
+  pathBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 4,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 3,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    marginTop: Spacing.xs,
+  },
+  pathBadgeText: {
+    fontWeight: "600",
+    letterSpacing: 0.3,
   },
   phaseDescription: {
     marginBottom: Spacing.lg,
