@@ -2,11 +2,19 @@ import React, { useState, useEffect, useCallback } from "react";
 import { StyleSheet, View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
+import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
-import { workoutProgram, Week, DayTemplate } from "@/data/workoutProgram";
+import {
+  workoutProgram,
+  Week,
+  DayTemplate,
+  ChallengeDifficultyPath,
+  getWeek1WorkoutForDayIndex,
+  getWorkoutForDifficultyPath,
+} from "@/data/workoutProgram";
 import { storage } from "@/lib/storage";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { Spacing, BorderRadius } from "@/constants/theme";
@@ -37,6 +45,7 @@ const DAY_TYPE_NAMES: Record<string, string> = {
 export default function ProgramOverviewScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
+  const navigation = useNavigation();
   const { fontScale } = useAccessibility();
   const { cp, isDarkMode } = useThemePreference();
 
@@ -62,16 +71,50 @@ export default function ProgramOverviewScreen() {
   const [currentWeek, setCurrentWeek] = useState(0);
   const [currentDayInWeek, setCurrentDayInWeek] = useState(0);
   const [expandedWeek, setExpandedWeek] = useState<number | null>(null);
+  const [displayWeeks, setDisplayWeeks] = useState<Week[]>(
+    workoutProgram.weeks,
+  );
 
   const loadData = useCallback(async () => {
-    const [dates, rDates, startDate] = await Promise.all([
+    const [dates, rDates, startDate, calibState] = await Promise.all([
       storage.getCompletedDates(),
       storage.getRestDates(),
       storage.getProgramStartDate(),
+      storage.getCalibrationState(),
     ]);
     setCompletedDates(dates);
     setRestDates(rDates);
     setProgramStartDate(startDate);
+
+    const week1Path: ChallengeDifficultyPath = calibState.calibrationCompleted
+      ? calibState.difficultyPath
+      : null;
+
+    const weekPaths = await Promise.all(
+      workoutProgram.weeks.map((w) =>
+        w.weekNumber === 1
+          ? Promise.resolve(week1Path)
+          : storage.getDifficultyPathForWeek(w.weekNumber),
+      ),
+    );
+
+    const adjustedWeeks: Week[] = workoutProgram.weeks.map((week, i) => {
+      const path = weekPaths[i];
+      if (week.weekNumber === 1) {
+        return {
+          ...week,
+          days: week.days.map((_, dayIndex) =>
+            getWeek1WorkoutForDayIndex(dayIndex, path),
+          ),
+        };
+      }
+      if (!path || path === "standard") return week;
+      return {
+        ...week,
+        days: week.days.map((day) => getWorkoutForDifficultyPath(day, path)),
+      };
+    });
+    setDisplayWeeks(adjustedWeeks);
 
     if (startDate) {
       const start = new Date(startDate);
@@ -92,6 +135,11 @@ export default function ProgramOverviewScreen() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("focus", loadData);
+    return unsubscribe;
+  }, [navigation, loadData]);
 
   const getDayDateStr = (weekNum: number, dayIndex: number): string | null => {
     if (!programStartDate) return null;
@@ -494,7 +542,7 @@ export default function ProgramOverviewScreen() {
           </View>
         </View>
 
-        {workoutProgram.weeks.map((week, index) => renderWeekCard(week, index))}
+        {displayWeeks.map((week, index) => renderWeekCard(week, index))}
       </ScrollView>
     </View>
   );
