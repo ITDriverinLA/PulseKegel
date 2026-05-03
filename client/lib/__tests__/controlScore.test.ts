@@ -196,6 +196,53 @@ expect(
   { score: 100, idleDays: 1 },
 );
 
+function simulateCompleteWithInactivity(
+  startScore: number,
+  lastUpdateDate: string,
+  today: string,
+  pastSessionDates: string[],
+): { wasInactive: boolean; idleDaysAtCheck: number } {
+  const completedSet = new Set(pastSessionDates);
+  let cursor = lastUpdateDate;
+  let idleDays = 0;
+  let score = startScore;
+  if (lastUpdateDate < today) {
+    const yesterday = addDays(today, -1);
+    while (cursor < yesterday) {
+      cursor = addDays(cursor, 1);
+      if (cursor !== today && completedSet.has(cursor)) {
+        idleDays = 0;
+      } else {
+        idleDays += 1;
+        score = clampScore(score - calculateDecayForIdleDay(idleDays));
+      }
+    }
+  }
+  const wasInactive = idleDays >= 3;
+  return { wasInactive, idleDaysAtCheck: idleDays };
+}
+expect(
+  "back-on-track: 5-day gap then session today triggers wasInactive",
+  simulateCompleteWithInactivity(100, "2026-05-01", "2026-05-06", [
+    "2026-05-01",
+  ]),
+  { wasInactive: true, idleDaysAtCheck: 4 },
+);
+expect(
+  "back-on-track: 1-day gap does not trigger wasInactive",
+  simulateCompleteWithInactivity(100, "2026-05-01", "2026-05-03", [
+    "2026-05-01",
+  ]),
+  { wasInactive: false, idleDaysAtCheck: 1 },
+);
+expect(
+  "back-on-track: 3-day gap triggers wasInactive",
+  simulateCompleteWithInactivity(100, "2026-05-01", "2026-05-05", [
+    "2026-05-01",
+  ]),
+  { wasInactive: true, idleDaysAtCheck: 3 },
+);
+
 expect("RANKS has 9 ranks", RANKS.length, 9);
 expect("RANKS first is Rookie", RANKS[0].name, "Rookie");
 expect("RANKS last is Elite", RANKS[RANKS.length - 1].name, "Elite");

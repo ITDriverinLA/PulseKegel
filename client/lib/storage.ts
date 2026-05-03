@@ -1131,16 +1131,33 @@ export const storage = {
     backOnTrack: boolean;
     gain: number;
   }> {
-    const state = await this.applyDailyDecay(today);
-    const sessionDates = await this.getSessionCompletedDates();
-    const completedSet = new Set(sessionDates);
+    const state = await this.getControlScoreState();
     if (state.lastSessionDate === today) {
       return { state, rankUp: null, backOnTrack: false, gain: 0 };
     }
+    const sessionDates = await this.getSessionCompletedDates();
+    const completedSet = new Set(sessionDates);
+    if (state.lastScoreUpdateDate < today) {
+      const yesterday = addDays(today, -1);
+      let cursor = state.lastScoreUpdateDate;
+      while (cursor < yesterday) {
+        cursor = addDays(cursor, 1);
+        if (cursor !== today && completedSet.has(cursor)) {
+          state.idleDays = 0;
+        } else {
+          if (state.currentStreak > 0) state.currentStreak = 0;
+          state.idleDays += 1;
+          state.controlScore = clampScore(
+            state.controlScore - calculateDecayForIdleDay(state.idleDays),
+          );
+        }
+      }
+      state.currentRank = getRankForScore(state.controlScore);
+    }
     const previousRank = state.currentRank;
     const wasInactive = state.idleDays >= 3;
-    const yesterday = addDays(today, -1);
-    state.currentStreak = completedSet.has(yesterday)
+    const prevDay = addDays(today, -1);
+    state.currentStreak = completedSet.has(prevDay)
       ? state.currentStreak + 1
       : 1;
     state.idleDays = 0;

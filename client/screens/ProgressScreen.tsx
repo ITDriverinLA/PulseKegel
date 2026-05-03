@@ -172,69 +172,64 @@ export default function ProgressScreen() {
           />
         }
       >
-        {hasProgress ? (
-          <>
-            {scoreState ? (
-              <Animated.View
-                entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(
-                  ANIM_DELAY_SHORT,
-                )}
-              >
-                <ControlScoreCard state={scoreState} />
+        {scoreState ? (
+          <Animated.View
+            entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(
+              ANIM_DELAY_SHORT,
+            )}
+          >
+            <ControlScoreCard state={scoreState} />
+            <View
+              style={[
+                styles.bestRow,
+                {
+                  backgroundColor: cp.cardBg,
+                  borderColor: cp.cardBorder,
+                },
+              ]}
+              testID="row-rank-best"
+            >
+              <View style={styles.bestItem}>
+                <Text style={[styles.bestLabel, { color: cp.textMuted }]}>
+                  BEST RANK
+                </Text>
+                <Text style={[styles.bestValue, { color: cp.text }]}>
+                  {scoreState.highestRankAchieved}
+                </Text>
+              </View>
+              <View
+                style={[styles.bestDivider, { backgroundColor: cp.divider }]}
+              />
+              <View style={styles.bestItem}>
+                <Text style={[styles.bestLabel, { color: cp.textMuted }]}>
+                  HIGHEST SCORE
+                </Text>
+                <Text style={[styles.bestValue, { color: cp.text }]}>
+                  {scoreState.highestScoreAchieved}
+                </Text>
+              </View>
+              {scoreState.eliteAchieved ? (
                 <View
                   style={[
-                    styles.bestRow,
+                    styles.elitePill,
                     {
-                      backgroundColor: cp.cardBg,
-                      borderColor: cp.cardBorder,
+                      backgroundColor: `${cp.neonOrange}1A`,
+                      borderColor: `${cp.neonOrange}55`,
                     },
                   ]}
-                  testID="row-rank-best"
+                  testID="pill-elite-unlocked"
                 >
-                  <View style={styles.bestItem}>
-                    <Text style={[styles.bestLabel, { color: cp.textMuted }]}>
-                      BEST RANK
-                    </Text>
-                    <Text style={[styles.bestValue, { color: cp.text }]}>
-                      {scoreState.highestRankAchieved}
-                    </Text>
-                  </View>
-                  <View
-                    style={[
-                      styles.bestDivider,
-                      { backgroundColor: cp.divider },
-                    ]}
-                  />
-                  <View style={styles.bestItem}>
-                    <Text style={[styles.bestLabel, { color: cp.textMuted }]}>
-                      HIGHEST SCORE
-                    </Text>
-                    <Text style={[styles.bestValue, { color: cp.text }]}>
-                      {scoreState.highestScoreAchieved}
-                    </Text>
-                  </View>
-                  {scoreState.eliteAchieved ? (
-                    <View
-                      style={[
-                        styles.elitePill,
-                        {
-                          backgroundColor: `${cp.neonOrange}1A`,
-                          borderColor: `${cp.neonOrange}55`,
-                        },
-                      ]}
-                      testID="pill-elite-unlocked"
-                    >
-                      <Feather name="award" size={11} color={cp.neonOrange} />
-                      <Text
-                        style={[styles.eliteText, { color: cp.neonOrange }]}
-                      >
-                        Elite
-                      </Text>
-                    </View>
-                  ) : null}
+                  <Feather name="award" size={11} color={cp.neonOrange} />
+                  <Text style={[styles.eliteText, { color: cp.neonOrange }]}>
+                    Elite
+                  </Text>
                 </View>
-              </Animated.View>
-            ) : null}
+              ) : null}
+            </View>
+          </Animated.View>
+        ) : null}
+        {hasProgress ? (
+          <>
             <Animated.View
               entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(
                 ANIM_DELAY_SHORT,
