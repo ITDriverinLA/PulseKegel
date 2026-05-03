@@ -107,7 +107,7 @@ export default function HomeScreen() {
     if (workout && workout.week.weekNumber === 1) {
       const adjustedWorkout = getWeek1WorkoutForDayIndex(
         workout.dayIndex,
-        calibState.calibrationLevel,
+        calibState.difficultyPath,
       );
       setTodaysWorkout({
         ...workout,
@@ -943,7 +943,7 @@ export default function HomeScreen() {
               ]}
             >
               {
-                "This first session helps us match the rest of the week to your body. It's shorter than a regular session — just do your best, and tell us how it felt when you're done."
+                "Welcome to Week 1, Day 1 — Calibration day! We're going to start nice and easy to see where your body is at. Let's go!"
               }
             </Text>
             <Pressable

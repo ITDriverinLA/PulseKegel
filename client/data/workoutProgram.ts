@@ -616,6 +616,11 @@ export const getTotalProgramDays = (): number => {
 };
 
 export type ChallengeCalibrationLevel = "easy" | "okay" | "tooHard" | null;
+export type ChallengeDifficultyPath =
+  | "accelerated"
+  | "standard"
+  | "gentle"
+  | null;
 
 const calibrationStrengthDay = (): DayTemplate => {
   const sets = 2;
@@ -886,11 +891,14 @@ const gentleStrengthDay = (): DayTemplate => {
 };
 
 const gentleSpeedDay = (): DayTemplate => {
+  // Day 5 — building back toward standard speedDay(1) which uses 3×25 flicks,
+  // 9 contract-relax, 5 slow holds. Gentle Day 5 ramps to 2×25 flicks,
+  // 8 contract-relax, 5 slow holds — noticeable step up from gentle Day 3.
   const flickSets = 2;
-  const flickReps = 20;
-  const contractReps = 7;
-  const slowReps = 4;
-  const slowHold = 4;
+  const flickReps = 25;
+  const contractReps = 8;
+  const slowReps = 5;
+  const slowHold = 5;
   const totalSeconds =
     flickSets * flickReps * 2 +
     20 +
@@ -953,13 +961,13 @@ const gentleSpeedDay = (): DayTemplate => {
 
 export const getWeek1WorkoutForDayIndex = (
   dayIndex: number,
-  calibrationLevel: ChallengeCalibrationLevel,
+  difficultyPath: ChallengeDifficultyPath,
 ): DayTemplate => {
   if (dayIndex === 0) {
     return calibrationStrengthDay();
   }
 
-  if (calibrationLevel === "easy") {
+  if (difficultyPath === "accelerated") {
     switch (dayIndex) {
       case 1:
         return lightStrengthDay("w1-acc-d2");
@@ -978,7 +986,7 @@ export const getWeek1WorkoutForDayIndex = (
     }
   }
 
-  if (calibrationLevel === "tooHard") {
+  if (difficultyPath === "gentle") {
     switch (dayIndex) {
       case 1:
         return createRestDay(1, 2);
