@@ -352,3 +352,42 @@ describe("getWeekdayLabel", () => {
     expect(getWeekdayLabel(6)).toBe("Sun");
   });
 });
+
+describe("Weekday-anchored scheduling for non-rebuild paths", () => {
+  test("controlModeStartDate is ignored for daily selection (weekday anchors)", () => {
+    // Same calendar date (Mon 2026-01-05) requested with two different
+    // controlModeStartDates should produce the SAME workout slot, because
+    // maintain/build/precision are weekday-anchored.
+    const a = getControlModeTodaysWorkout("build", "2025-09-01", "2026-01-05", {
+      rank: "Strong",
+      recentCompletions: [],
+    });
+    const b = getControlModeTodaysWorkout("build", "2025-12-30", "2026-01-05", {
+      rank: "Strong",
+      recentCompletions: [],
+    });
+    expect(a.dayIndex).toBe(b.dayIndex);
+    expect(a.workout.name).toBe(b.workout.name);
+    expect(a.isRestDay).toBe(b.isRestDay);
+  });
+
+  test("dayIndex matches Mon-first weekday of the requested date", () => {
+    // 2026-01-05 is a Monday → weekday index 0
+    const monday = getControlModeTodaysWorkout(
+      "maintain",
+      "2026-01-01",
+      "2026-01-05",
+      { recentCompletions: [] },
+    );
+    expect(monday.dayIndex).toBe(0);
+
+    // 2026-01-11 is a Sunday → weekday index 6
+    const sunday = getControlModeTodaysWorkout(
+      "maintain",
+      "2026-01-01",
+      "2026-01-11",
+      { recentCompletions: [] },
+    );
+    expect(sunday.dayIndex).toBe(6);
+  });
+});

@@ -187,6 +187,21 @@ function synthesizeWeek(
   };
 }
 
+/**
+ * Returns the Control Mode workout (or rest day) for a given calendar date.
+ *
+ * Scheduling semantics:
+ * - "rebuild" path is start-date-anchored: it cycles through Week 2 of the
+ *   12-week program based on `(today - controlModeStartDate) % 7`.
+ * - "maintain" / "build" / "precision" paths are weekday-anchored:
+ *   today's slot is selected by Mon..Sun weekday index, not by days-since-
+ *   start. `controlModeStartDate` is therefore not used for daily selection
+ *   on these paths — it only marks when Control Mode began for analytics
+ *   and weekly counters elsewhere. This is intentional so habit-based
+ *   rest-day placement (least-trained weekdays) and the Mon-first weekly
+ *   plan rendered on Program Overview stay aligned with the user's real
+ *   weekly rhythm.
+ */
 export function getControlModeTodaysWorkout(
   path: ControlModePath,
   controlModeStartDate: string,
