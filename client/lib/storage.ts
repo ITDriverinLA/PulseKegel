@@ -51,7 +51,13 @@ const STORAGE_KEYS = {
   BACK_ON_TRACK_PENDING: "pulsekegel_back_on_track_pending",
   PENDING_RANK_UP: "pulsekegel_pending_rank_up",
   PROGRAM_PROGRESS: "pulsekegel_program_progress",
+  SEGMENT_TYPE_HISTORY: "pulsekegel_segment_type_history",
 };
+
+export interface SegmentTypeHistoryEntry {
+  date: string;
+  types: string[];
+}
 
 export interface ControlScoreState {
   controlScore: number;
@@ -304,6 +310,54 @@ export const storage = {
     } catch (error) {
       console.error("Error saving completed date:", error);
     }
+  },
+
+  async getSegmentTypeHistory(): Promise<SegmentTypeHistoryEntry[]> {
+    try {
+      const data = await AsyncStorage.getItem(
+        STORAGE_KEYS.SEGMENT_TYPE_HISTORY,
+      );
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  async addSegmentTypeHistoryEntry(
+    date: string,
+    types: string[],
+  ): Promise<void> {
+    try {
+      const history = await this.getSegmentTypeHistory();
+      history.push({ date, types });
+      // Keep last 60 entries to bound storage.
+      const trimmed = history.slice(-60);
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.SEGMENT_TYPE_HISTORY,
+        JSON.stringify(trimmed),
+      );
+    } catch (error) {
+      console.error("Error saving segment type history:", error);
+    }
+  },
+
+  async getRecentSegmentTypeCounts(
+    todayStr: string,
+    lookbackDays: number = 14,
+  ): Promise<Record<string, number>> {
+    const history = await this.getSegmentTypeHistory();
+    const [y, m, d] = todayStr.split("-").map(Number);
+    const cutoff = new Date(y, m - 1, d);
+    cutoff.setDate(cutoff.getDate() - lookbackDays);
+    const cutoffStr = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, "0")}-${String(cutoff.getDate()).padStart(2, "0")}`;
+    const counts: Record<string, number> = {};
+    for (const entry of history) {
+      if (entry.date < cutoffStr || entry.date >= todayStr) continue;
+      for (const t of entry.types) {
+        counts[t] = (counts[t] ?? 0) + 1;
+      }
+    }
+    return counts;
   },
 
   async getTotalSessions(): Promise<number> {

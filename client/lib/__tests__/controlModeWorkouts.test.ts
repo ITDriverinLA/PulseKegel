@@ -5,6 +5,11 @@ import {
   buildHabitSchedule,
   scaleDayForRank,
   getWeekdayLabel,
+  detectWeakAreaType,
+  pickWorkoutForType,
+  getPrimaryExerciseType,
+  getExerciseTypesIn,
+  PATH_LIBRARIES,
 } from "@/data/controlModeWorkouts";
 import { getControlModeTodaysWorkout } from "@/lib/programCompletion";
 
@@ -71,7 +76,11 @@ describe("Rank tier scaling", () => {
     const base = DEFAULT_SCHEDULES.maintain[0]!();
     const elite = scaleDayForRank(base, "Elite");
     base.segments.forEach((s, i) => {
-      if (s.type === "getReady" || s.type === "blockRest" || s.type === "breathing") {
+      if (
+        s.type === "getReady" ||
+        s.type === "blockRest" ||
+        s.type === "breathing"
+      ) {
         expect(elite.segments[i].repsPerSet).toBe(s.repsPerSet);
         expect(elite.segments[i].squeezeSeconds).toBe(s.squeezeSeconds);
       }
@@ -181,10 +190,15 @@ describe("Habit-aware scheduling", () => {
 describe("getControlModeTodaysWorkout (control paths)", () => {
   test("maintain returns rest day on default Wed when no signal", () => {
     // 2026-01-07 is a Wednesday → maintain default rest.
-    const r = getControlModeTodaysWorkout("maintain", "2026-01-01", "2026-01-07", {
-      rank: "Capable",
-      recentCompletions: [],
-    });
+    const r = getControlModeTodaysWorkout(
+      "maintain",
+      "2026-01-01",
+      "2026-01-07",
+      {
+        rank: "Capable",
+        recentCompletions: [],
+      },
+    );
     expect(r.isRestDay).toBe(true);
   });
 
@@ -199,7 +213,11 @@ describe("getControlModeTodaysWorkout (control paths)", () => {
   });
 
   test("rebuild keeps Week 2 cycling behavior (no schedule field)", () => {
-    const r = getControlModeTodaysWorkout("rebuild", "2026-01-01", "2026-01-03");
+    const r = getControlModeTodaysWorkout(
+      "rebuild",
+      "2026-01-01",
+      "2026-01-03",
+    );
     expect(r.schedule).toBeUndefined();
     expect(r.preferredRestWeekdays).toBeUndefined();
   });
@@ -220,12 +238,111 @@ describe("getControlModeTodaysWorkout (control paths)", () => {
     );
     expect(elite.isRestDay).toBe(false);
     expect(rookie.isRestDay).toBe(false);
-    const eliteHold = elite.workout.segments.find((s) => s.type === "elevator")!
-      .squeezeSeconds;
+    const eliteHold = elite.workout.segments.find(
+      (s) => s.type === "elevator",
+    )!.squeezeSeconds;
     const rookieHold = rookie.workout.segments.find(
       (s) => s.type === "elevator",
     )!.squeezeSeconds;
     expect(eliteHold).toBeGreaterThan(rookieHold);
+  });
+});
+
+describe("Weak-area personalization", () => {
+  test("detectWeakAreaType returns null with insufficient signal", () => {
+    expect(detectWeakAreaType("build", {})).toBeNull();
+    expect(detectWeakAreaType("build", { slowHolds: 2 })).toBeNull();
+  });
+
+  test("detectWeakAreaType picks the under-trained type for build path", () => {
+    // Build covers slowHolds, quickFlicks, elevator, contractRelax (varies).
+    // Heavy slowHolds + quickFlicks training, almost no contractRelax.
+    const counts = {
+      slowHolds: 6,
+      quickFlicks: 5,
+      contractRelax: 0,
+      elevator: 4,
+    };
+    const result = detectWeakAreaType("build", counts);
+    expect(result).toBe("contractRelax");
+  });
+
+  test("detectWeakAreaType returns null when training is balanced", () => {
+    const counts = {
+      slowHolds: 3,
+      quickFlicks: 3,
+      contractRelax: 3,
+      elevator: 3,
+    };
+    expect(detectWeakAreaType("build", counts)).toBeNull();
+  });
+
+  test("pickWorkoutForType returns a template whose primary type matches", () => {
+    for (const path of ["maintain", "build", "precision"] as const) {
+      for (const make of PATH_LIBRARIES[path]) {
+        const primary = getPrimaryExerciseType(make());
+        if (!primary) continue;
+        const tpl = pickWorkoutForType(path, primary);
+        expect(tpl).not.toBeNull();
+        expect(getPrimaryExerciseType(tpl!)).toBe(primary);
+      }
+    }
+  });
+
+  test("getControlModeTodaysWorkout swaps today's workout to weak area", () => {
+    // 2026-01-05 Monday → build path Monday default = heavy strength
+    // (primary slowHolds). With contractRelax under-trained, expect a swap.
+    const r = getControlModeTodaysWorkout("build", "2026-01-01", "2026-01-05", {
+      rank: "Strong",
+      recentCompletions: [],
+      recentSegmentTypeCounts: {
+        slowHolds: 6,
+        quickFlicks: 5,
+        contractRelax: 0,
+        elevator: 4,
+      },
+    });
+    expect(r.isRestDay).toBe(false);
+    expect(r.appliedWeakArea).toBe(true);
+    expect(r.weakAreaType).toBe("contractRelax");
+    expect(getPrimaryExerciseType(r.workout)).toBe("contractRelax");
+  });
+
+  test("getControlModeTodaysWorkout does not swap when balanced", () => {
+    const r = getControlModeTodaysWorkout("build", "2026-01-01", "2026-01-05", {
+      rank: "Strong",
+      recentCompletions: [],
+      recentSegmentTypeCounts: {
+        slowHolds: 3,
+        quickFlicks: 3,
+        contractRelax: 3,
+        elevator: 3,
+      },
+    });
+    expect(r.appliedWeakArea).toBe(false);
+  });
+
+  test("getControlModeTodaysWorkout never swaps a rest day", () => {
+    // Maintain default rest on Wed (2). 2026-01-07 Wed.
+    const r = getControlModeTodaysWorkout(
+      "maintain",
+      "2026-01-01",
+      "2026-01-07",
+      {
+        rank: "Strong",
+        recentCompletions: [],
+        recentSegmentTypeCounts: { slowHolds: 10, quickFlicks: 0 },
+      },
+    );
+    expect(r.isRestDay).toBe(true);
+    expect(r.appliedWeakArea).toBe(false);
+  });
+
+  test("getExerciseTypesIn returns distinct exercise types in order", () => {
+    const tpl = PATH_LIBRARIES.precision[0]();
+    const types = getExerciseTypesIn(tpl);
+    expect(types.length).toBeGreaterThan(0);
+    expect(new Set(types).size).toBe(types.length);
   });
 });
 

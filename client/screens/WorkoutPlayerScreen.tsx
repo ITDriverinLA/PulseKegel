@@ -223,6 +223,24 @@ export default function WorkoutPlayerScreen() {
           const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
           const minutes = Math.ceil(seconds / 60);
           await storage.addCompletedDate(today, minutes);
+          const exerciseTypes = Array.from(
+            new Set(
+              workout.segments
+                .filter((s) =>
+                  [
+                    "slowHolds",
+                    "quickFlicks",
+                    "elevator",
+                    "reverse",
+                    "contractRelax",
+                  ].includes(s.type),
+                )
+                .map((s) => s.type),
+            ),
+          );
+          if (exerciseTypes.length > 0) {
+            await storage.addSegmentTypeHistoryEntry(today, exerciseTypes);
+          }
           trackSessionComplete({
             durationMinutes: minutes,
             workoutType: workout.dayType,

@@ -2,10 +2,14 @@ import {
   workoutProgram,
   type Week,
   type DayTemplate,
+  type SegmentType,
 } from "../data/workoutProgram";
 import {
   buildHabitSchedule,
   scaleDayForRank,
+  detectWeakAreaType,
+  pickWorkoutForType,
+  getPrimaryExerciseType,
   type ControlPath,
   type RankTier,
 } from "../data/controlModeWorkouts";
@@ -151,6 +155,7 @@ const CONTROL_MODE_SOURCE_WEEK: Record<"rebuild", number> = {
 export interface ControlModeWorkoutOptions {
   rank?: RankName | RankTier;
   recentCompletions?: string[];
+  recentSegmentTypeCounts?: Partial<Record<SegmentType, number>>;
 }
 
 export interface ControlModeWorkoutResult {
@@ -158,9 +163,11 @@ export interface ControlModeWorkoutResult {
   dayIndex: number;
   workout: DayTemplate;
   isRestDay: boolean;
-  schedule?: Array<{ template: DayTemplate; isRestDay: boolean }>;
+  schedule?: { template: DayTemplate; isRestDay: boolean }[];
   preferredRestWeekdays?: number[];
   appliedHabits?: boolean;
+  appliedWeakArea?: boolean;
+  weakAreaType?: SegmentType | null;
 }
 
 function weekdayMonFirst(dateStr: string): number {
@@ -170,7 +177,7 @@ function weekdayMonFirst(dateStr: string): number {
 
 function synthesizeWeek(
   path: ControlModePath,
-  schedule: Array<{ template: DayTemplate; isRestDay: boolean }>,
+  schedule: { template: DayTemplate; isRestDay: boolean }[],
 ): Week {
   return {
     weekNumber: 0,
@@ -216,18 +223,44 @@ export function getControlModeTodaysWorkout(
     todayStr,
   );
   const dayIndex = weekdayMonFirst(todayStr);
-  const slot = habit.schedule[dayIndex];
+  let slot = habit.schedule[dayIndex];
+
+  // Weak-area personalization: if there's enough segment-type signal and
+  // today is not a rest day, swap today's workout for one that targets the
+  // user's least-trained area.
+  let appliedWeakArea = false;
+  let weakAreaType: SegmentType | null = null;
+  if (options.recentSegmentTypeCounts && !slot.isRestDay) {
+    weakAreaType = detectWeakAreaType(cp, options.recentSegmentTypeCounts);
+    if (weakAreaType) {
+      const currentPrimary = getPrimaryExerciseType(slot.template);
+      if (currentPrimary !== weakAreaType) {
+        const swap = pickWorkoutForType(cp, weakAreaType);
+        if (swap) {
+          slot = { template: swap, isRestDay: false };
+          appliedWeakArea = true;
+        }
+      }
+    }
+  }
+
   const workout =
     options.rank && !slot.isRestDay
       ? scaleDayForRank(slot.template, options.rank)
       : slot.template;
+  const baseSchedule = habit.schedule.map((s, i) =>
+    i === dayIndex ? slot : s,
+  );
   const scaledSchedule = options.rank
-    ? habit.schedule.map((s) =>
+    ? baseSchedule.map((s) =>
         s.isRestDay
           ? s
-          : { template: scaleDayForRank(s.template, options.rank!), isRestDay: false },
+          : {
+              template: scaleDayForRank(s.template, options.rank!),
+              isRestDay: false,
+            },
       )
-    : habit.schedule;
+    : baseSchedule;
   return {
     week: synthesizeWeek(path, scaledSchedule),
     dayIndex,
@@ -236,6 +269,8 @@ export function getControlModeTodaysWorkout(
     schedule: scaledSchedule,
     preferredRestWeekdays: habit.preferredRestWeekdays,
     appliedHabits: habit.appliedHabits,
+    appliedWeakArea,
+    weakAreaType,
   };
 }
 

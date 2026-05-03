@@ -1,8 +1,4 @@
-import {
-  DayTemplate,
-  Segment,
-  SegmentType,
-} from "./workoutProgram";
+import { DayTemplate, Segment, SegmentType } from "./workoutProgram";
 import type { RankName } from "@/lib/controlScore";
 
 export type ControlPath = "maintain" | "build" | "precision";
@@ -56,7 +52,16 @@ const seg = (
 });
 
 const getReady = (id: string): Segment =>
-  seg(id, "Get Ready", "Prepare yourself for the workout", 1, 1, 0, 5, "getReady");
+  seg(
+    id,
+    "Get Ready",
+    "Prepare yourself for the workout",
+    1,
+    1,
+    0,
+    5,
+    "getReady",
+  );
 
 const blockRest = (id: string, secs: number = 20): Segment =>
   seg(
@@ -257,16 +262,7 @@ const buildHeavyStrength = (variant: "a" | "b"): DayTemplate =>
 const buildContractRelax = (): DayTemplate =>
   day("cm-build-cr", "Power Pulses", "speed", [
     getReady("cm-b-cr-gr"),
-    seg(
-      "cm-b-cr-warm",
-      "Warm Up",
-      "Light pulses",
-      1,
-      8,
-      2,
-      2,
-      "quickFlicks",
-    ),
+    seg("cm-b-cr-warm", "Warm Up", "Light pulses", 1, 8, 2, 2, "quickFlicks"),
     blockRest("cm-b-cr-r1", 15),
     seg(
       "cm-b-cr-main",
@@ -372,16 +368,7 @@ const buildSpeed = (): DayTemplate =>
 const buildEndurance = (): DayTemplate =>
   day("cm-build-endurance", "Endurance Push", "strength", [
     getReady("cm-b-end-gr"),
-    seg(
-      "cm-b-end-warm",
-      "Warm Up",
-      "Build up gently",
-      1,
-      6,
-      4,
-      3,
-      "slowHolds",
-    ),
+    seg("cm-b-end-warm", "Warm Up", "Build up gently", 1, 6, 4, 3, "slowHolds"),
     blockRest("cm-b-end-r1", 15),
     seg(
       "cm-b-end-long",
@@ -730,7 +717,7 @@ export function buildHabitSchedule(
   const totalSignal = counts.reduce((a, b) => a + b, 0);
 
   // Workouts in their natural order (used both for default and habit-mapped).
-  const workouts: Array<() => DayTemplate> = defaults.filter(
+  const workouts: (() => DayTemplate)[] = defaults.filter(
     (s): s is () => DayTemplate => s !== null,
   );
 
@@ -786,4 +773,129 @@ const WEEKDAY_LABEL_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export function getWeekdayLabel(monFirstIndex: number): string {
   return WEEKDAY_LABEL_SHORT[((monFirstIndex % 7) + 7) % 7];
+}
+
+// ----------------------------------------------------------------------------
+// Weak-area personalization helpers.
+// ----------------------------------------------------------------------------
+
+export const EXERCISE_SEGMENT_TYPES: SegmentType[] = [
+  "slowHolds",
+  "quickFlicks",
+  "elevator",
+  "reverse",
+  "contractRelax",
+];
+
+export const SEGMENT_TYPE_LABEL: Record<string, string> = {
+  slowHolds: "Slow Holds",
+  quickFlicks: "Quick Flicks",
+  elevator: "Elevator",
+  reverse: "Reverse Kegel",
+  contractRelax: "Contract & Relax",
+};
+
+export function getExerciseTypesIn(template: DayTemplate): SegmentType[] {
+  const seen = new Set<SegmentType>();
+  const ordered: SegmentType[] = [];
+  for (const s of template.segments) {
+    if (EXERCISE_SEGMENT_TYPES.includes(s.type) && !seen.has(s.type)) {
+      seen.add(s.type);
+      ordered.push(s.type);
+    }
+  }
+  return ordered;
+}
+
+export function getPrimaryExerciseType(
+  template: DayTemplate,
+): SegmentType | null {
+  const counts = new Map<SegmentType, number>();
+  for (const s of template.segments) {
+    if (EXERCISE_SEGMENT_TYPES.includes(s.type)) {
+      counts.set(s.type, (counts.get(s.type) ?? 0) + s.sets * s.repsPerSet);
+    }
+  }
+  if (counts.size === 0) return null;
+  let best: SegmentType | null = null;
+  let bestN = -1;
+  for (const [t, n] of counts) {
+    if (n > bestN) {
+      bestN = n;
+      best = t;
+    }
+  }
+  return best;
+}
+
+export const PATH_LIBRARIES: Record<ControlPath, (() => DayTemplate)[]> = {
+  maintain: [maintainStrength, maintainCoordination, maintainSpeed],
+  build: [
+    () => buildHeavyStrength("a"),
+    () => buildHeavyStrength("b"),
+    buildContractRelax,
+    buildCoordination,
+    buildSpeed,
+    buildEndurance,
+  ],
+  precision: [
+    precisionElevator,
+    precisionFlicks,
+    precisionReverse,
+    precisionCoord,
+    precisionMixed,
+  ],
+};
+
+export function pathCoversType(path: ControlPath, type: SegmentType): boolean {
+  for (const make of PATH_LIBRARIES[path]) {
+    const t = getPrimaryExerciseType(make());
+    if (t === type) return true;
+  }
+  return false;
+}
+
+const WEAK_AREA_MIN_SIGNAL = 3;
+const WEAK_AREA_DOMINANCE = 1.5; // weak < min(other counts) / 1.5
+
+export function detectWeakAreaType(
+  path: ControlPath,
+  recentCounts: Partial<Record<SegmentType, number>>,
+): SegmentType | null {
+  const total = EXERCISE_SEGMENT_TYPES.reduce(
+    (n, t) => n + (recentCounts[t] ?? 0),
+    0,
+  );
+  if (total < WEAK_AREA_MIN_SIGNAL) return null;
+  const covered = EXERCISE_SEGMENT_TYPES.filter((t) => pathCoversType(path, t));
+  if (covered.length < 2) return null;
+  let weakest: SegmentType | null = null;
+  let weakestN = Infinity;
+  let secondN = Infinity;
+  for (const t of covered) {
+    const n = recentCounts[t] ?? 0;
+    if (n < weakestN) {
+      secondN = weakestN;
+      weakestN = n;
+      weakest = t;
+    } else if (n < secondN) {
+      secondN = n;
+    }
+  }
+  if (weakest === null) return null;
+  // Only flag a weak area when it's clearly under-trained vs the rest.
+  if (secondN === 0) return null;
+  if (weakestN * WEAK_AREA_DOMINANCE > secondN) return null;
+  return weakest;
+}
+
+export function pickWorkoutForType(
+  path: ControlPath,
+  type: SegmentType,
+): DayTemplate | null {
+  for (const make of PATH_LIBRARIES[path]) {
+    const tpl = make();
+    if (getPrimaryExerciseType(tpl) === type) return tpl;
+  }
+  return null;
 }

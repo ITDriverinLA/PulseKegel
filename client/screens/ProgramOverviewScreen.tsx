@@ -27,6 +27,7 @@ import {
 import {
   RANK_TO_TIER,
   getWeekdayLabel,
+  SEGMENT_TYPE_LABEL,
 } from "@/data/controlModeWorkouts";
 import type { RankName } from "@/lib/controlScore";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
@@ -92,8 +93,15 @@ export default function ProgramOverviewScreen() {
   const [lifetimeSessions, setLifetimeSessions] = useState(0);
   const [lifetimeMinutes, setLifetimeMinutes] = useState(0);
   const [currentRank, setCurrentRank] = useState<RankName | null>(null);
+  const [recentSegmentTypeCounts, setRecentSegmentTypeCounts] = useState<
+    Record<string, number>
+  >({});
 
   const loadData = useCallback(async () => {
+    const todayStr = (() => {
+      const n = new Date();
+      return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(n.getDate()).padStart(2, "0")}`;
+    })();
     const [
       dates,
       rDates,
@@ -103,6 +111,7 @@ export default function ProgramOverviewScreen() {
       sessions,
       minutes,
       score,
+      segCounts,
     ] = await Promise.all([
       storage.getCompletedDates(),
       storage.getRestDates(),
@@ -112,6 +121,7 @@ export default function ProgramOverviewScreen() {
       storage.getTotalSessions(),
       storage.getTotalMinutes(),
       storage.getControlScoreState(),
+      storage.getRecentSegmentTypeCounts(todayStr),
     ]);
     setCompletedDates(dates);
     setRestDates(rDates);
@@ -120,6 +130,7 @@ export default function ProgramOverviewScreen() {
     setLifetimeSessions(sessions);
     setLifetimeMinutes(minutes);
     setCurrentRank(score?.currentRank ?? null);
+    setRecentSegmentTypeCounts(segCounts);
 
     const week1Path: ChallengeDifficultyPath = calibState.calibrationCompleted
       ? calibState.difficultyPath
@@ -518,6 +529,9 @@ export default function ProgramOverviewScreen() {
             {
               rank: currentRank ?? undefined,
               recentCompletions: completedDates,
+              recentSegmentTypeCounts: recentSegmentTypeCounts as Partial<
+                Record<import("@/data/workoutProgram").SegmentType, number>
+              >,
             },
           )
         : null;
@@ -534,10 +548,14 @@ export default function ProgramOverviewScreen() {
               : "balanced intensity";
     const restDayLabels =
       controlPlan?.preferredRestWeekdays?.map((i) => getWeekdayLabel(i)) ?? [];
+    const weakAreaSuffix =
+      controlPlan?.appliedWeakArea && controlPlan.weakAreaType
+        ? ` Today focuses on ${SEGMENT_TYPE_LABEL[controlPlan.weakAreaType] ?? controlPlan.weakAreaType} — your least-trained area.`
+        : "";
     const tailoredNote = controlPlan
       ? controlPlan.appliedHabits
-        ? `Tuned to your habits: ${tierIntensityLabel} for ${currentRank ?? "your rank"}, rest on ${restDayLabels.join(", ")}.`
-        : `Default schedule with ${tierIntensityLabel}. We will tune rest days as you build a routine.`
+        ? `Tuned to your habits: ${tierIntensityLabel} for ${currentRank ?? "your rank"}, rest on ${restDayLabels.join(", ")}.${weakAreaSuffix}`
+        : `Default schedule with ${tierIntensityLabel}. We will tune rest days as you build a routine.${weakAreaSuffix}`
       : null;
     return (
       <View style={styles.container} testID="program-overview-control-mode">
@@ -642,7 +660,7 @@ export default function ProgramOverviewScreen() {
                   { color: cp.text, fontSize: 14 * fontScale },
                 ]}
               >
-                This week's plan
+                This week&apos;s plan
               </Text>
               {tailoredNote ? (
                 <Text

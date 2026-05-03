@@ -61,6 +61,10 @@ import {
   getControlModeTodaysWorkout,
   getControlModeWeeklyCount,
 } from "@/lib/programCompletion";
+import {
+  getExerciseTypesIn,
+  SEGMENT_TYPE_LABEL,
+} from "@/data/controlModeWorkouts";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -149,6 +153,8 @@ export default function HomeScreen() {
       progProgress.controlModePath &&
       progProgress.controlModeStartDate
     ) {
+      const recentSegmentTypeCounts =
+        await storage.getRecentSegmentTypeCounts(todayStr);
       const controlWorkout = getControlModeTodaysWorkout(
         progProgress.controlModePath,
         progProgress.controlModeStartDate,
@@ -156,6 +162,7 @@ export default function HomeScreen() {
         {
           rank: freshScore?.currentRank,
           recentCompletions: userProgress.completedDates,
+          recentSegmentTypeCounts,
         },
       );
       setTodaysWorkout(controlWorkout);
@@ -556,18 +563,35 @@ export default function HomeScreen() {
                 </Text>
               </View>
               {todaysWorkout ? (
-                <Text
-                  style={[
-                    styles.scoreNudgeText,
-                    { color: cp.text, fontSize: 13, fontWeight: "600" },
-                  ]}
-                  testID="text-control-mode-today"
-                >
-                  Today:{" "}
-                  {todaysWorkout.isRestDay
-                    ? "Rest Day"
-                    : `${todaysWorkout.workout.name} · ${todaysWorkout.workout.estimatedMinutes} min`}
-                </Text>
+                <>
+                  <Text
+                    style={[
+                      styles.scoreNudgeText,
+                      { color: cp.text, fontSize: 13, fontWeight: "600" },
+                    ]}
+                    testID="text-control-mode-today"
+                  >
+                    Today:{" "}
+                    {todaysWorkout.isRestDay
+                      ? "Rest Day"
+                      : `${todaysWorkout.workout.name} · ${todaysWorkout.workout.estimatedMinutes} min`}
+                  </Text>
+                  {!todaysWorkout.isRestDay &&
+                  getExerciseTypesIn(todaysWorkout.workout).length > 0 ? (
+                    <Text
+                      style={[
+                        styles.scoreNudgeText,
+                        { color: cp.textSecondary, fontSize: 12 },
+                      ]}
+                      testID="text-control-mode-today-segments"
+                    >
+                      Focus:{" "}
+                      {getExerciseTypesIn(todaysWorkout.workout)
+                        .map((t) => SEGMENT_TYPE_LABEL[t] ?? t)
+                        .join(" + ")}
+                    </Text>
+                  ) : null}
+                </>
               ) : null}
               <Text
                 style={[
