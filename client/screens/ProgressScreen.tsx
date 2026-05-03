@@ -244,7 +244,7 @@ export default function ProgressScreen() {
                         { fontSize: 14 * fontScale, color: cp.text },
                       ]}
                     >
-                      12-Week Program
+                      7-Day Challenge & 12-Week Program
                     </Text>
                     <Text
                       style={[

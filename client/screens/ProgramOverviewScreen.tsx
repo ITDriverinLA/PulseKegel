@@ -348,10 +348,14 @@ export default function ProgramOverviewScreen() {
                     { color: cp.text, fontSize: 15 * fontScale },
                   ]}
                 >
-                  {week.phase} Phase
+                  {week.weekNumber === 1
+                    ? "7-Day Challenge"
+                    : `${week.phase} Phase`}
                 </Text>
                 <Text style={[styles.weekSubtitle, { color: cp.textMuted }]}>
-                  {week.phaseDescription}
+                  {week.weekNumber === 1
+                    ? "Calibration week — your first 7 days"
+                    : week.phaseDescription}
                 </Text>
               </View>
             </View>
@@ -421,7 +425,7 @@ export default function ProgramOverviewScreen() {
               { color: cp.text, fontSize: 18 * fontScale },
             ]}
           >
-            12-Week Program
+            7-Day Challenge & 12-Week Program
           </Text>
           {programStartDate ? (
             <Text style={[styles.summaryText, { color: cp.textSecondary }]}>
