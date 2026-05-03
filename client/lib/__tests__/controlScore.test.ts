@@ -126,6 +126,76 @@ expect(
 );
 expect("trend with empty history", getTrend([], 50, "2026-05-03"), "holding");
 
+function simulateDecay(
+  startScore: number,
+  lastUpdateDate: string,
+  today: string,
+  sessionDates: string[],
+): { score: number; idleDays: number } {
+  const completedSet = new Set(sessionDates);
+  const yesterday = addDays(today, -1);
+  let cursor = lastUpdateDate;
+  let score = startScore;
+  let idleDays = 0;
+  while (cursor < yesterday) {
+    cursor = addDays(cursor, 1);
+    if (completedSet.has(cursor)) {
+      idleDays = 0;
+    } else {
+      idleDays += 1;
+      score = clampScore(score - calculateDecayForIdleDay(idleDays));
+    }
+  }
+  if (completedSet.has(today)) idleDays = 0;
+  return { score, idleDays };
+}
+
+expect(
+  "decay scenario: open day after one missed day = no decay",
+  simulateDecay(100, "2026-05-01", "2026-05-03", ["2026-05-01"]),
+  { score: 100, idleDays: 1 },
+);
+expect(
+  "decay scenario: open day 4 (last on day 1) -> only days 2,3 elapsed, both grace",
+  simulateDecay(100, "2026-05-01", "2026-05-04", ["2026-05-01"]),
+  { score: 100, idleDays: 2 },
+);
+expect(
+  "decay scenario: open day 5 after skipping 3 days = -3 (day 3 only)",
+  simulateDecay(100, "2026-05-01", "2026-05-05", ["2026-05-01"]),
+  { score: 97, idleDays: 3 },
+);
+expect(
+  "decay scenario: open day 9 after 7 elapsed missed days = -3*5 = -15",
+  simulateDecay(100, "2026-05-01", "2026-05-09", ["2026-05-01"]),
+  { score: 85, idleDays: 7 },
+);
+expect(
+  "decay scenario: open day 10 after 8 elapsed missed days = -3*5 + -5 = -20",
+  simulateDecay(100, "2026-05-01", "2026-05-10", ["2026-05-01"]),
+  { score: 80, idleDays: 8 },
+);
+expect(
+  "decay scenario: today is tomorrow of last update with session yesterday -> no decay",
+  simulateDecay(100, "2026-05-02", "2026-05-03", ["2026-05-02"]),
+  { score: 100, idleDays: 0 },
+);
+expect(
+  "decay scenario: completing today resets idleDays even if past gap",
+  simulateDecay(100, "2026-05-01", "2026-05-05", ["2026-05-01", "2026-05-05"]),
+  { score: 97, idleDays: 0 },
+);
+expect(
+  "decay scenario: same-day reopen is a no-op",
+  simulateDecay(100, "2026-05-03", "2026-05-03", []),
+  { score: 100, idleDays: 0 },
+);
+expect(
+  "decay scenario: gap of 2 days -> still grace period",
+  simulateDecay(100, "2026-05-01", "2026-05-03", []),
+  { score: 100, idleDays: 1 },
+);
+
 expect("RANKS has 9 ranks", RANKS.length, 9);
 expect("RANKS first is Rookie", RANKS[0].name, "Rookie");
 expect("RANKS last is Elite", RANKS[RANKS.length - 1].name, "Elite");

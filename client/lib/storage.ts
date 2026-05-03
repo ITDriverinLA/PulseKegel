@@ -130,7 +130,8 @@ const replaySessionsForBackfill = (
     if (state.controlScore >= 850) state.eliteAchieved = true;
     cursor = d;
   }
-  while (cursor < today) {
+  const tailEnd = addDays(today, -1);
+  while (cursor < tailEnd) {
     cursor = addDays(cursor, 1);
     if (!uniqueSet.has(cursor)) {
       state.currentStreak = 0;
@@ -141,6 +142,9 @@ const replaySessionsForBackfill = (
     } else {
       state.idleDays = 0;
     }
+  }
+  if (uniqueSet.has(today)) {
+    state.idleDays = 0;
   }
   state.currentRank = getRankForScore(state.controlScore);
   state.lastScoreUpdateDate = today;
@@ -1093,8 +1097,9 @@ export const storage = {
     }
     const sessionDates = await this.getSessionCompletedDates();
     const completedSet = new Set(sessionDates);
+    const yesterday = addDays(today, -1);
     let cursor = state.lastScoreUpdateDate;
-    while (cursor < today) {
+    while (cursor < yesterday) {
       cursor = addDays(cursor, 1);
       if (completedSet.has(cursor)) {
         state.idleDays = 0;
@@ -1105,6 +1110,9 @@ export const storage = {
           state.controlScore - calculateDecayForIdleDay(state.idleDays),
         );
       }
+    }
+    if (completedSet.has(today)) {
+      state.idleDays = 0;
     }
     state.currentRank = getRankForScore(state.controlScore);
     state.lastScoreUpdateDate = today;
