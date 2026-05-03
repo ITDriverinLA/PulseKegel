@@ -193,6 +193,11 @@ function synthesizeWeek(
  * Scheduling semantics:
  * - "rebuild" path is start-date-anchored: it cycles through Week 2 of the
  *   12-week program based on `(today - controlModeStartDate) % 7`.
+ * Progress signal: user progress is reflected via `rank` (which is itself
+ * driven by Control Score and lifetime completion behavior elsewhere in
+ * the app), so completion-rate / lifetime totals are intentionally
+ * surfaced through rank-tier intensity scaling rather than re-derived here.
+ *
  * - "maintain" / "build" / "precision" paths are weekday-anchored:
  *   today's slot is selected by Mon..Sun weekday index, not by days-since-
  *   start. `controlModeStartDate` is therefore not used for daily selection
