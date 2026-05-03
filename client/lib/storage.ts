@@ -251,6 +251,13 @@ const calculateStreak = (completedDates: string[]): number => {
   return streak;
 };
 
+let scoreWriteQueue: Promise<unknown> = Promise.resolve();
+const runScoreSerialized = <T>(fn: () => Promise<T>): Promise<T> => {
+  const next = scoreWriteQueue.then(fn, fn);
+  scoreWriteQueue = next.catch(() => undefined);
+  return next;
+};
+
 export const storage = {
   async getCompletedDates(): Promise<string[]> {
     try {
@@ -1086,6 +1093,12 @@ export const storage = {
   async applyDailyDecay(
     today: string = todayDateString(),
   ): Promise<ControlScoreState> {
+    return runScoreSerialized(() => this._applyDailyDecayUnsafe(today));
+  },
+
+  async _applyDailyDecayUnsafe(
+    today: string = todayDateString(),
+  ): Promise<ControlScoreState> {
     const state = await this.getControlScoreState();
     if (!state.lastScoreUpdateDate) {
       state.lastScoreUpdateDate = today;
@@ -1126,6 +1139,17 @@ export const storage = {
   },
 
   async completeSessionForScore(today: string = todayDateString()): Promise<{
+    state: ControlScoreState;
+    rankUp: RankName | null;
+    backOnTrack: boolean;
+    gain: number;
+  }> {
+    return runScoreSerialized(() => this._completeSessionForScoreUnsafe(today));
+  },
+
+  async _completeSessionForScoreUnsafe(
+    today: string = todayDateString(),
+  ): Promise<{
     state: ControlScoreState;
     rankUp: RankName | null;
     backOnTrack: boolean;
