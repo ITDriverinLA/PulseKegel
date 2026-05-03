@@ -90,9 +90,9 @@ const pages: PageEntry[] = [
   },
   {
     image: require("../../assets/images/icon.png"),
-    title: "Your 12-Week Journey",
+    title: "Start Your 7-Day Challenge",
     description:
-      "Progress through phases of control, strength, power, and maintenance. Each workout adapts to your current level.",
+      "Kick things off with a 7-day challenge — the first week of your full 12-week program. Each workout adapts to how you're progressing.",
   },
 ];
 
@@ -689,7 +689,7 @@ export default function OnboardingScreen({
 
           {!isAnatomyPage && !isNamePage ? (
             <NeonButton onPress={handleNext} cp={cp}>
-              {isLastPage ? "Get Started" : "Continue"}
+              {isLastPage ? "Start your 7-Day Challenge" : "Continue"}
             </NeonButton>
           ) : null}
         </View>
