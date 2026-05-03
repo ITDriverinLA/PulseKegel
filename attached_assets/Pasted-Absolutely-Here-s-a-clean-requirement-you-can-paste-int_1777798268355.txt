@@ -1,0 +1,300 @@
+Absolutely. Here’s a clean requirement you can paste into Replit.
+
+---
+
+## PulseKegel Feature Update: 7-Day Challenge Calibration Flow
+
+### Goal
+
+Update the 7-Day Challenge so Day 1 acts as a **calibration session**. The user should complete an easy first session, then answer how it felt. Their response should tune Days 2 through 7 so the challenge feels more personalized and less one-size-fits-all.
+
+This should make the experience feel smarter, safer, and more supportive.
+
+---
+
+## Feature Summary
+
+Day 1 of the 7-Day Challenge should be presented as **Calibration Day**.
+
+After the user completes the Day 1 session, show a simple feedback screen asking:
+
+**How did that session feel?**
+
+Options:
+
+1. **Easy**
+2. **Okay**
+3. **Too hard**
+
+Based on the user’s answer, adjust the remaining challenge schedule for Days 2 through 7.
+
+---
+
+## Day 1 Intro Copy
+
+Before the Day 1 session starts, display:
+
+> **Welcome to Week 1, Day 1 — Calibration day!**
+> We're going to start nice and easy to see where your body is at. Let's go!
+
+---
+
+## Post-Day-1 Feedback Screen
+
+After the user completes the first session, show this prompt:
+
+> **How did that session feel?**
+
+Buttons:
+
+### Easy
+
+Response message:
+
+> Nice work! You're stronger than you think. Let's turn it up a little for the rest of the week.
+
+### Okay
+
+Response message:
+
+> Perfect. You're right where you should be. We'll keep going at this pace.
+
+### Too hard
+
+Response message:
+
+> Hey, that's awesome that you showed up and gave it a go. Don't worry at all. This is just calibration. We'll make it easier for you so you can build up properly.
+
+---
+
+## Calibration Logic
+
+Store the user’s Day 1 response as a challenge calibration value.
+
+Suggested values:
+
+```ts
+calibrationLevel: "easy" | "okay" | "tooHard" | null
+```
+
+Once the user selects a response, save it to the user’s local challenge state.
+
+Example:
+
+```ts
+challengeCalibration = {
+  week: 1,
+  day: 1,
+  response: "easy",
+  createdAt: timestamp
+}
+```
+
+---
+
+## Day 2 Through Day 7 Adjustment Rules
+
+### If user selects “Easy”
+
+The user is handling the work well.
+
+Adjust Days 2 through 7 by reducing the number of rest days and slightly increasing training density.
+
+Requirements:
+
+* Keep the same overall challenge length.
+* Do not make sessions dramatically harder.
+* Reduce rest days where appropriate.
+* Favor more active training days.
+* Progress should feel like: “I can handle more.”
+
+Example adjustment:
+
+```ts
+difficultyPath = "accelerated"
+```
+
+Possible behavior:
+
+* Convert one rest day into a light session.
+* Add slightly more reps or sets to later sessions.
+* Keep Day 7 as a strong completion day.
+
+---
+
+### If user selects “Okay”
+
+The user is correctly matched to the standard plan.
+
+Requirements:
+
+* No changes to the existing Day 2 through Day 7 schedule.
+* Continue with the current standard 7-Day Challenge structure.
+
+Example:
+
+```ts
+difficultyPath = "standard"
+```
+
+---
+
+### If user selects “Too hard”
+
+The user needs a gentler ramp.
+
+Adjust Days 2 through 7 by reducing early repetitions, then gradually building back toward the standard Day 7 target.
+
+Requirements:
+
+* Reduce repetitions for Days 2 through 4.
+* Maintain or increase rest where needed.
+* Gradually increase reps from Days 5 through 7.
+* Day 7 should still build toward the standard Day 7 experience, but not feel punishing.
+* The tone should be supportive, not corrective.
+
+Example:
+
+```ts
+difficultyPath = "gentle"
+```
+
+Possible behavior:
+
+* Day 2: noticeably easier than standard
+* Day 3: slightly increased
+* Day 4: moderate
+* Day 5: closer to standard
+* Day 6: near standard
+* Day 7: standard or slightly below standard depending on app logic
+
+---
+
+## Suggested Data Model
+
+Add calibration fields to the 7-Day Challenge progress state.
+
+```ts
+type ChallengeCalibrationLevel = "easy" | "okay" | "tooHard" | null;
+
+type ChallengeDifficultyPath = "accelerated" | "standard" | "gentle";
+
+type ChallengeState = {
+  currentDay: number;
+  completedDays: number[];
+  challengeStartedAt: string;
+  calibrationLevel: ChallengeCalibrationLevel;
+  difficultyPath: ChallengeDifficultyPath | null;
+  calibrationCompleted: boolean;
+};
+```
+
+---
+
+## Suggested Session Adjustment Model
+
+Create a helper function that returns the correct session plan based on the calibration response.
+
+```ts
+function getChallengeSessionPlan(day: number, calibrationLevel: ChallengeCalibrationLevel) {
+  if (day === 1) {
+    return getCalibrationDaySession();
+  }
+
+  switch (calibrationLevel) {
+    case "easy":
+      return getAcceleratedSession(day);
+
+    case "okay":
+      return getStandardSession(day);
+
+    case "tooHard":
+      return getGentleRampSession(day);
+
+    default:
+      return getStandardSession(day);
+  }
+}
+```
+
+---
+
+## Acceptance Criteria
+
+### Day 1 Calibration
+
+* Day 1 is clearly labeled as **Calibration Day**.
+* The intro message appears before the Day 1 session.
+* The Day 1 session should be easier than or equal to the current standard Day 1.
+* After completion, the user sees the feedback screen.
+
+### Feedback Screen
+
+* The screen asks: **How did that session feel?**
+* User can select **Easy**, **Okay**, or **Too hard**.
+* Each selection shows the correct response message.
+* The selected response is saved.
+* The user can continue to the next challenge day after selecting a response.
+
+### Difficulty Adjustment
+
+* Selecting **Easy** applies the accelerated path for Days 2 through 7.
+* Selecting **Okay** keeps the standard path.
+* Selecting **Too hard** applies the gentle ramp path.
+* The selected path persists after app restart.
+* The user should not be asked the calibration question again after completing it.
+
+### Restart Challenge Behavior
+
+* If the user restarts the 7-Day Challenge, clear the previous calibration value.
+* The restarted Day 1 should behave as a new calibration day.
+* The user should be asked again how Day 1 felt.
+
+---
+
+## Suggested UX Flow
+
+1. User starts 7-Day Challenge.
+
+2. Day 1 screen says:
+
+   > Welcome to Week 1, Day 1 — Calibration day!
+   > We're going to start nice and easy to see where your body is at. Let's go!
+
+3. User completes Day 1 session.
+
+4. App shows:
+
+   > How did that session feel?
+
+5. User selects:
+
+   * Easy
+   * Okay
+   * Too hard
+
+6. App shows matching confirmation message.
+
+7. App saves calibration response.
+
+8. Days 2 through 7 use the adjusted challenge plan.
+
+---
+
+## Important Tone Guidance
+
+The wording should feel:
+
+* Supportive
+* Confident
+* Non-clinical
+* Non-judgmental
+* Private and practical
+
+Avoid anything that makes the user feel weak, behind, or embarrassed.
+
+This should feel less like a test and more like the app saying:
+
+> “Cool. I see where you are. Let’s train from there.”
+
+Tiny coach in the pocket, minus the whistle and tragic shorts.
