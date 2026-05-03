@@ -3,7 +3,13 @@ import {
   type Week,
   type DayTemplate,
 } from "../data/workoutProgram";
-import { todayDateString } from "./controlScore";
+import {
+  buildHabitSchedule,
+  scaleDayForRank,
+  type ControlPath,
+  type RankTier,
+} from "../data/controlModeWorkouts";
+import { todayDateString, type RankName } from "./controlScore";
 
 export type ProgramPhase =
   | "seven_day_challenge"
@@ -136,37 +142,100 @@ export const CONTROL_MODE_LABEL: Record<ControlModePath, string> = {
   rebuild: "Rebuild",
 };
 
-const CONTROL_MODE_SOURCE_WEEK: Record<ControlModePath, number> = {
-  maintain: 11,
-  build: 9,
-  precision: 5,
+// Rebuild keeps reusing Week 2 from the 12-week program. Maintain/Build/
+// Precision now use dedicated content libraries from controlModeWorkouts.ts.
+const CONTROL_MODE_SOURCE_WEEK: Record<"rebuild", number> = {
   rebuild: 2,
 };
+
+export interface ControlModeWorkoutOptions {
+  rank?: RankName | RankTier;
+  recentCompletions?: string[];
+}
+
+export interface ControlModeWorkoutResult {
+  week: Week;
+  dayIndex: number;
+  workout: DayTemplate;
+  isRestDay: boolean;
+  schedule?: Array<{ template: DayTemplate; isRestDay: boolean }>;
+  preferredRestWeekdays?: number[];
+  appliedHabits?: boolean;
+}
+
+function weekdayMonFirst(dateStr: string): number {
+  const dt = parseLocal(dateStr);
+  return (dt.getDay() + 6) % 7;
+}
+
+function synthesizeWeek(
+  path: ControlModePath,
+  schedule: Array<{ template: DayTemplate; isRestDay: boolean }>,
+): Week {
+  return {
+    weekNumber: 0,
+    phase: "Control",
+    phaseDescription: `Control Mode · ${path}`,
+    days: schedule.map((s) => s.template),
+  };
+}
 
 export function getControlModeTodaysWorkout(
   path: ControlModePath,
   controlModeStartDate: string,
   todayStr: string = todayDateString(),
-): { week: Week; dayIndex: number; workout: DayTemplate; isRestDay: boolean } {
-  const sourceWeekNum = CONTROL_MODE_SOURCE_WEEK[path];
-  const week =
-    workoutProgram.weeks.find((w) => w.weekNumber === sourceWeekNum) ??
-    workoutProgram.weeks[0];
-  const start = parseLocal(controlModeStartDate);
-  start.setHours(0, 0, 0, 0);
-  const today = parseLocal(todayStr);
-  today.setHours(0, 0, 0, 0);
-  const daysSinceStart = Math.max(
-    0,
-    Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)),
+  options: ControlModeWorkoutOptions = {},
+): ControlModeWorkoutResult {
+  if (path === "rebuild") {
+    const sourceWeekNum = CONTROL_MODE_SOURCE_WEEK.rebuild;
+    const week =
+      workoutProgram.weeks.find((w) => w.weekNumber === sourceWeekNum) ??
+      workoutProgram.weeks[0];
+    const start = parseLocal(controlModeStartDate);
+    start.setHours(0, 0, 0, 0);
+    const today = parseLocal(todayStr);
+    today.setHours(0, 0, 0, 0);
+    const daysSinceStart = Math.max(
+      0,
+      Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)),
+    );
+    const dayIndex = daysSinceStart % 7;
+    const workout = week.days[dayIndex];
+    return {
+      week,
+      dayIndex,
+      workout,
+      isRestDay: workout.isRestDay === true,
+    };
+  }
+
+  const cp = path as ControlPath;
+  const habit = buildHabitSchedule(
+    cp,
+    options.recentCompletions ?? [],
+    todayStr,
   );
-  const dayIndex = daysSinceStart % 7;
-  const workout = week.days[dayIndex];
+  const dayIndex = weekdayMonFirst(todayStr);
+  const slot = habit.schedule[dayIndex];
+  const workout =
+    options.rank && !slot.isRestDay
+      ? scaleDayForRank(slot.template, options.rank)
+      : slot.template;
+  const scaledSchedule = options.rank
+    ? habit.schedule.map((s) =>
+        s.isRestDay
+          ? s
+          : { template: scaleDayForRank(s.template, options.rank!), isRestDay: false },
+      )
+    : habit.schedule;
   return {
-    week,
+    week: synthesizeWeek(path, scaledSchedule),
     dayIndex,
     workout,
-    isRestDay: workout.isRestDay === true,
+    isRestDay: slot.isRestDay,
+    schedule: scaledSchedule,
+    preferredRestWeekdays: habit.preferredRestWeekdays,
+    appliedHabits: habit.appliedHabits,
   };
 }
 

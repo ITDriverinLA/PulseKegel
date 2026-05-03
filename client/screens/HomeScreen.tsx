@@ -153,6 +153,10 @@ export default function HomeScreen() {
         progProgress.controlModePath,
         progProgress.controlModeStartDate,
         todayStr,
+        {
+          rank: freshScore?.currentRank,
+          recentCompletions: userProgress.completedDates,
+        },
       );
       setTodaysWorkout(controlWorkout);
       const restDates = await storage.getRestDates();
@@ -551,6 +555,20 @@ export default function HomeScreen() {
                   this week
                 </Text>
               </View>
+              {todaysWorkout ? (
+                <Text
+                  style={[
+                    styles.scoreNudgeText,
+                    { color: cp.text, fontSize: 13, fontWeight: "600" },
+                  ]}
+                  testID="text-control-mode-today"
+                >
+                  Today:{" "}
+                  {todaysWorkout.isRestDay
+                    ? "Rest Day"
+                    : `${todaysWorkout.workout.name} · ${todaysWorkout.workout.estimatedMinutes} min`}
+                </Text>
+              ) : null}
               <Text
                 style={[
                   styles.scoreNudgeText,

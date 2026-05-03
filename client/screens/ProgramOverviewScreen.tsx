@@ -22,7 +22,13 @@ import {
   CONTROL_MODE_TAGLINE,
   CONTROL_MODE_WEEKLY_TARGET,
   getControlModeWeeklyCount,
+  getControlModeTodaysWorkout,
 } from "@/lib/programCompletion";
+import {
+  RANK_TO_TIER,
+  getWeekdayLabel,
+} from "@/data/controlModeWorkouts";
+import type { RankName } from "@/lib/controlScore";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import {
@@ -85,24 +91,35 @@ export default function ProgramOverviewScreen() {
     useState<UserProgramProgress | null>(null);
   const [lifetimeSessions, setLifetimeSessions] = useState(0);
   const [lifetimeMinutes, setLifetimeMinutes] = useState(0);
+  const [currentRank, setCurrentRank] = useState<RankName | null>(null);
 
   const loadData = useCallback(async () => {
-    const [dates, rDates, startDate, calibState, progress, sessions, minutes] =
-      await Promise.all([
-        storage.getCompletedDates(),
-        storage.getRestDates(),
-        storage.getProgramStartDate(),
-        storage.getCalibrationState(),
-        storage.getProgramProgress(),
-        storage.getTotalSessions(),
-        storage.getTotalMinutes(),
-      ]);
+    const [
+      dates,
+      rDates,
+      startDate,
+      calibState,
+      progress,
+      sessions,
+      minutes,
+      score,
+    ] = await Promise.all([
+      storage.getCompletedDates(),
+      storage.getRestDates(),
+      storage.getProgramStartDate(),
+      storage.getCalibrationState(),
+      storage.getProgramProgress(),
+      storage.getTotalSessions(),
+      storage.getTotalMinutes(),
+      storage.getControlScoreState(),
+    ]);
     setCompletedDates(dates);
     setRestDates(rDates);
     setProgramStartDate(startDate);
     setProgramProgress(progress);
     setLifetimeSessions(sessions);
     setLifetimeMinutes(minutes);
+    setCurrentRank(score?.currentRank ?? null);
 
     const week1Path: ChallengeDifficultyPath = calibState.calibrationCompleted
       ? calibState.difficultyPath
@@ -486,6 +503,42 @@ export default function ProgramOverviewScreen() {
         : programProgress.completionTier === "partial"
           ? "Solid Finish"
           : "Restart";
+
+    const todayStr = (() => {
+      const n = new Date();
+      return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(n.getDate()).padStart(2, "0")}`;
+    })();
+    const todayWeekday = ((new Date().getDay() + 6) % 7) as number;
+    const controlPlan =
+      path !== "rebuild" && programProgress.controlModeStartDate
+        ? getControlModeTodaysWorkout(
+            path,
+            programProgress.controlModeStartDate,
+            todayStr,
+            {
+              rank: currentRank ?? undefined,
+              recentCompletions: completedDates,
+            },
+          )
+        : null;
+    const tier = currentRank ? RANK_TO_TIER[currentRank] : null;
+    const tierIntensityLabel =
+      tier === "foundation"
+        ? "lighter intensity"
+        : tier === "building"
+          ? "balanced intensity"
+          : tier === "strong"
+            ? "stronger intensity"
+            : tier === "peak"
+              ? "peak intensity"
+              : "balanced intensity";
+    const restDayLabels =
+      controlPlan?.preferredRestWeekdays?.map((i) => getWeekdayLabel(i)) ?? [];
+    const tailoredNote = controlPlan
+      ? controlPlan.appliedHabits
+        ? `Tuned to your habits: ${tierIntensityLabel} for ${currentRank ?? "your rank"}, rest on ${restDayLabels.join(", ")}.`
+        : `Default schedule with ${tierIntensityLabel}. We will tune rest days as you build a routine.`
+      : null;
     return (
       <View style={styles.container} testID="program-overview-control-mode">
         <LinearGradient
@@ -574,6 +627,113 @@ export default function ProgramOverviewScreen() {
               />
             </View>
           </Animated.View>
+
+          {controlPlan && controlPlan.schedule ? (
+            <View
+              style={[
+                styles.weekCard,
+                { backgroundColor: cp.cardBg, borderColor: cp.inputBg },
+              ]}
+              testID="control-mode-schedule-card"
+            >
+              <Text
+                style={[
+                  styles.weekTitle,
+                  { color: cp.text, fontSize: 14 * fontScale },
+                ]}
+              >
+                This week's plan
+              </Text>
+              {tailoredNote ? (
+                <Text
+                  style={[
+                    styles.weekSubtitle,
+                    {
+                      color: cp.textSecondary,
+                      marginTop: 4,
+                      marginBottom: Spacing.sm,
+                    },
+                  ]}
+                  testID="text-control-mode-tailored-note"
+                >
+                  {tailoredNote}
+                </Text>
+              ) : null}
+              <View style={styles.dayPillsRow}>
+                {controlPlan.schedule.map((slot, i) => {
+                  const isToday = i === todayWeekday;
+                  const color = slot.isRestDay ? cp.textMuted : cp.neonCyan;
+                  return (
+                    <View key={i} style={styles.dayPillContainer}>
+                      <View
+                        style={[
+                          styles.dayPill,
+                          {
+                            borderColor: color + "55",
+                            backgroundColor: slot.isRestDay
+                              ? "transparent"
+                              : color + "15",
+                          },
+                          slot.isRestDay && styles.dayPillRest,
+                          isToday && {
+                            borderWidth: 2,
+                            borderColor: cp.neonGreen,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.dayPillText,
+                            { color: slot.isRestDay ? cp.textMuted : color },
+                          ]}
+                        >
+                          {slot.isRestDay ? "REST" : "WORK"}
+                        </Text>
+                      </View>
+                      <Text style={[styles.dayLabel, { color: cp.textMuted }]}>
+                        {getWeekdayLabel(i)}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+              <View
+                style={{
+                  marginTop: Spacing.sm,
+                  paddingTop: Spacing.sm,
+                  borderTopWidth: 1,
+                  borderTopColor: cp.divider,
+                }}
+              >
+                {controlPlan.schedule.map((slot, i) => (
+                  <View
+                    key={i}
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      paddingVertical: 4,
+                    }}
+                  >
+                    <Text style={{ color: cp.textSecondary, fontSize: 12 }}>
+                      {getWeekdayLabel(i)}
+                      {i === todayWeekday ? " · Today" : ""}
+                    </Text>
+                    <Text
+                      style={{
+                        color: slot.isRestDay ? cp.textMuted : cp.text,
+                        fontSize: 12,
+                        fontWeight: "500",
+                      }}
+                    >
+                      {slot.isRestDay
+                        ? "Rest"
+                        : `${slot.template.name} · ${slot.template.estimatedMinutes} min`}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          ) : null}
 
           <View
             style={[
