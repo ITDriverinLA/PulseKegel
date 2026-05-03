@@ -252,3 +252,45 @@ describe("storage program-completion helpers", () => {
     expect(p2.lifetimeProgramsCompleted).toBe(3);
   });
 });
+
+describe("Segment-type history window", () => {
+  beforeEach(() => store.clear());
+
+  it("getRecentSegmentTypeCounts respects the lookback window and excludes today", async () => {
+    await storage.addSegmentTypeHistoryEntry("2026-01-01", ["slowHolds"]);
+    await storage.addSegmentTypeHistoryEntry("2026-01-10", [
+      "slowHolds",
+      "quickFlicks",
+    ]);
+    await storage.addSegmentTypeHistoryEntry("2026-01-14", [
+      "quickFlicks",
+      "elevator",
+    ]);
+    // today's session should NOT be counted (window is < today)
+    await storage.addSegmentTypeHistoryEntry("2026-01-15", ["contractRelax"]);
+
+    const counts = await storage.getRecentSegmentTypeCounts("2026-01-15", 14);
+    // 2026-01-01 is exactly 14 days before 2026-01-15 → cutoff inclusive,
+    // so the 01-01 entry IS included.
+    expect(counts.slowHolds).toBe(2);
+    expect(counts.quickFlicks).toBe(2);
+    expect(counts.elevator).toBe(1);
+    expect(counts.contractRelax).toBeUndefined();
+  });
+
+  it("getRecentSegmentTypeCounts returns an empty object when there is no history", async () => {
+    const counts = await storage.getRecentSegmentTypeCounts("2026-01-15");
+    expect(counts).toEqual({});
+  });
+
+  it("addSegmentTypeHistoryEntry caps history at 60 entries", async () => {
+    for (let i = 0; i < 75; i++) {
+      const day = String(i + 1).padStart(2, "0");
+      await storage.addSegmentTypeHistoryEntry(`2026-01-${day}`, ["slowHolds"]);
+    }
+    const history = await storage.getSegmentTypeHistory();
+    expect(history.length).toBe(60);
+    // Oldest should have been dropped — earliest remaining is entry #16.
+    expect(history[0].date).toBe("2026-01-16");
+  });
+});
