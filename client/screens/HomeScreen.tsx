@@ -155,18 +155,24 @@ export default function HomeScreen() {
     ) {
       const recentSegmentTypeCounts =
         await storage.getRecentSegmentTypeCounts(todayStr);
+      const restDates = await storage.getRestDates();
+      // Exclude explicitly-rested dates so habit inference reflects
+      // actual workout-completion behavior only.
+      const restSet = new Set(restDates);
+      const habitCompletions = userProgress.completedDates.filter(
+        (d) => !restSet.has(d),
+      );
       const controlWorkout = getControlModeTodaysWorkout(
         progProgress.controlModePath,
         progProgress.controlModeStartDate,
         todayStr,
         {
           rank: freshScore?.currentRank,
-          recentCompletions: userProgress.completedDates,
+          recentCompletions: habitCompletions,
           recentSegmentTypeCounts,
         },
       );
       setTodaysWorkout(controlWorkout);
-      const restDates = await storage.getRestDates();
       setControlModeWeekCount(
         getControlModeWeeklyCount(
           userProgress.completedDates,

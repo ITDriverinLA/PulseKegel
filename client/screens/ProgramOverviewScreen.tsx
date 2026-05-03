@@ -528,7 +528,9 @@ export default function ProgramOverviewScreen() {
             todayStr,
             {
               rank: currentRank ?? undefined,
-              recentCompletions: completedDates,
+              recentCompletions: completedDates.filter(
+                (d) => !restDatesState.includes(d),
+              ),
               recentSegmentTypeCounts: recentSegmentTypeCounts as Partial<
                 Record<import("@/data/workoutProgram").SegmentType, number>
               >,
