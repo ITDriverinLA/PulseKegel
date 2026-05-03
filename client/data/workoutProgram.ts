@@ -453,9 +453,19 @@ const generateWeek = (weekNum: number): Week => {
 
   const days: DayTemplate[] = [];
 
-  if (weekNum <= 2) {
-    // Weeks 1-2: 3 workouts, 4 rest days (Mon/Wed/Fri pattern)
-    // Day 1: Strength, Day 2: Rest, Day 3: Strength, Day 4: Rest, Day 5: Speed, Day 6: Rest, Day 7: Rest
+  if (weekNum === 1) {
+    // Week 1 (7-Day Challenge): Day 7 is a strength finale — never a rest day.
+    // Day 1: Strength (calibration), Day 2: Rest, Day 3: Strength, Day 4: Rest,
+    // Day 5: Speed, Day 6: Rest, Day 7: Strength finale.
+    days.push(strengthDay(weekNum)); // Day 1
+    days.push(createRestDay(weekNum, 2)); // Day 2
+    days.push(strengthDay(weekNum)); // Day 3
+    days.push(createRestDay(weekNum, 4)); // Day 4
+    days.push(speedDay(weekNum)); // Day 5
+    days.push(createRestDay(weekNum, 6)); // Day 6
+    days.push(strengthDay(weekNum)); // Day 7 - finale before challenge results
+  } else if (weekNum <= 2) {
+    // Week 2: 3 workouts, 4 rest days (Mon/Wed/Fri pattern)
     days.push(strengthDay(weekNum)); // Day 1
     days.push(createRestDay(weekNum, 2)); // Day 2
     days.push(strengthDay(weekNum)); // Day 3
@@ -980,7 +990,7 @@ export const getWeek1WorkoutForDayIndex = (
       case 5:
         return createRestDay(1, 6);
       case 6:
-        return createRestDay(1, 7);
+        return acceleratedStrengthDay();
       default:
         return workoutProgram.weeks[0].days[dayIndex];
     }
@@ -999,7 +1009,7 @@ export const getWeek1WorkoutForDayIndex = (
       case 5:
         return createRestDay(1, 6);
       case 6:
-        return createRestDay(1, 7);
+        return gentleStrengthDay();
       default:
         return workoutProgram.weeks[0].days[dayIndex];
     }
