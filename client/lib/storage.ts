@@ -1360,7 +1360,18 @@ export const storage = {
     if (progress.phase !== "twelve_week_program") return false;
     if (!progress.twelveWeekStartDate) return false;
     if (progress.twelveWeekDecisionDate) return false;
-    return isTwelveWeekWindowComplete(progress.twelveWeekStartDate, today);
+    // Window passed: today >= start + 84 days.
+    if (isTwelveWeekWindowComplete(progress.twelveWeekStartDate, today)) {
+      return true;
+    }
+    // Immediate trigger: Week 12 Day 7 (start + 83 days) is today AND today's
+    // session has been completed.
+    const day84 = addDays(progress.twelveWeekStartDate, 83);
+    if (today >= day84) {
+      const completed = await this.getCompletedDates();
+      if (completed.includes(today)) return true;
+    }
+    return false;
   },
 
   async _clearWorkoutSessionKeys(): Promise<void> {

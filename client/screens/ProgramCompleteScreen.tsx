@@ -245,8 +245,8 @@ export default function ProgramCompleteScreen() {
     tier === "strong"
       ? "12 Weeks Complete"
       : tier === "partial"
-        ? "Strong Finish"
-        : "Let's Reset Together";
+        ? "Progress Made"
+        : "Let's Reset the Plan";
 
   const subheading =
     tier === "strong"
