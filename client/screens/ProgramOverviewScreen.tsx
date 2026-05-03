@@ -28,6 +28,7 @@ import {
   RANK_TO_TIER,
   getWeekdayLabel,
   SEGMENT_TYPE_LABEL,
+  EXERCISE_SEGMENT_TYPES,
 } from "@/data/controlModeWorkouts";
 import type { RankName } from "@/lib/controlScore";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
@@ -96,6 +97,9 @@ export default function ProgramOverviewScreen() {
   const [recentSegmentTypeCounts, setRecentSegmentTypeCounts] = useState<
     Record<string, number>
   >({});
+  const [expandedScheduleDay, setExpandedScheduleDay] = useState<number | null>(
+    null,
+  );
 
   const loadData = useCallback(async () => {
     const todayStr = (() => {
@@ -725,32 +729,128 @@ export default function ProgramOverviewScreen() {
                   borderTopColor: cp.divider,
                 }}
               >
-                {controlPlan.schedule.map((slot, i) => (
-                  <View
-                    key={i}
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                      paddingVertical: 4,
-                    }}
-                  >
-                    <Text style={{ color: cp.textSecondary, fontSize: 12 }}>
-                      {getWeekdayLabel(i)}
-                      {i === todayWeekday ? " · Today" : ""}
-                    </Text>
-                    <Text
-                      style={{
-                        color: slot.isRestDay ? cp.textMuted : cp.text,
-                        fontSize: 12,
-                        fontWeight: "500",
-                      }}
-                    >
-                      {slot.isRestDay
-                        ? "Rest"
-                        : `${slot.template.name} · ${slot.template.estimatedMinutes} min`}
-                    </Text>
-                  </View>
-                ))}
+                {controlPlan.schedule.map((slot, i) => {
+                  const isToday = i === todayWeekday;
+                  const isExpanded = expandedScheduleDay === i;
+                  const segments = slot.isRestDay ? [] : slot.template.segments;
+                  return (
+                    <View key={i}>
+                      <Pressable
+                        disabled={slot.isRestDay}
+                        onPress={() =>
+                          setExpandedScheduleDay(isExpanded ? null : i)
+                        }
+                        style={[
+                          styles.scheduleDayRow,
+                          isToday && {
+                            backgroundColor: cp.neonGreen + "08",
+                          },
+                        ]}
+                        testID={`schedule-day-${i}`}
+                      >
+                        <View style={styles.scheduleDayLeft}>
+                          <Text
+                            style={{ color: cp.textSecondary, fontSize: 12 }}
+                          >
+                            {getWeekdayLabel(i)}
+                            {isToday ? " · Today" : ""}
+                          </Text>
+                        </View>
+                        <View style={styles.scheduleDayRight}>
+                          <Text
+                            style={{
+                              color: slot.isRestDay ? cp.textMuted : cp.text,
+                              fontSize: 12,
+                              fontWeight: "500",
+                            }}
+                          >
+                            {slot.isRestDay
+                              ? "Rest"
+                              : `${slot.template.name} · ${slot.template.estimatedMinutes} min`}
+                          </Text>
+                          {!slot.isRestDay ? (
+                            <Feather
+                              name={isExpanded ? "chevron-up" : "chevron-down"}
+                              size={14}
+                              color={cp.textMuted}
+                            />
+                          ) : null}
+                        </View>
+                      </Pressable>
+                      {isExpanded && !slot.isRestDay ? (
+                        <View
+                          style={[
+                            styles.scheduleSegmentList,
+                            { borderLeftColor: cp.neonCyan + "40" },
+                          ]}
+                          testID={`schedule-day-${i}-segments`}
+                        >
+                          {segments.length === 0 ? (
+                            <Text style={{ color: cp.textMuted, fontSize: 11 }}>
+                              No segments scheduled
+                            </Text>
+                          ) : (
+                            segments.map((s, si) => {
+                              const isExercise =
+                                EXERCISE_SEGMENT_TYPES.includes(s.type);
+                              const typeLabel =
+                                SEGMENT_TYPE_LABEL[s.type] ??
+                                (s.type === "getReady"
+                                  ? "Prep"
+                                  : s.type === "blockRest"
+                                    ? "Block Rest"
+                                    : s.type === "breathing"
+                                      ? "Cool Down"
+                                      : s.type);
+                              const totalReps = s.sets * s.repsPerSet;
+                              const detail = isExercise
+                                ? `${s.sets}×${s.repsPerSet} · ${s.squeezeSeconds}s hold · ${s.restSeconds}s rest`
+                                : totalReps > 1
+                                  ? `${s.sets}×${s.repsPerSet} · ${s.restSeconds}s`
+                                  : `${s.restSeconds}s`;
+                              return (
+                                <View
+                                  key={`${s.id}-${si}`}
+                                  style={styles.scheduleSegmentRow}
+                                >
+                                  <View style={{ flex: 1 }}>
+                                    <Text
+                                      style={{
+                                        color: cp.text,
+                                        fontSize: 12,
+                                        fontWeight: "600",
+                                      }}
+                                    >
+                                      {s.name}
+                                    </Text>
+                                    <Text
+                                      style={{
+                                        color: cp.textMuted,
+                                        fontSize: 11,
+                                        marginTop: 1,
+                                      }}
+                                    >
+                                      {typeLabel}
+                                    </Text>
+                                  </View>
+                                  <Text
+                                    style={{
+                                      color: cp.textSecondary,
+                                      fontSize: 11,
+                                      fontVariant: ["tabular-nums"],
+                                    }}
+                                  >
+                                    {detail}
+                                  </Text>
+                                </View>
+                              );
+                            })
+                          )}
+                        </View>
+                      ) : null}
+                    </View>
+                  );
+                })}
               </View>
             </View>
           ) : null}
@@ -1100,6 +1200,35 @@ const styles = StyleSheet.create({
   },
   expandedDayMeta: {
     fontSize: 12,
+  },
+  scheduleDayRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 6,
+    paddingHorizontal: Spacing.xs,
+    borderRadius: 6,
+  },
+  scheduleDayLeft: {
+    flex: 1,
+  },
+  scheduleDayRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  scheduleSegmentList: {
+    marginLeft: Spacing.sm,
+    paddingLeft: Spacing.sm,
+    paddingVertical: 4,
+    borderLeftWidth: 2,
+  },
+  scheduleSegmentRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 4,
+    gap: Spacing.sm,
   },
   currentBadge: {
     paddingHorizontal: 8,
