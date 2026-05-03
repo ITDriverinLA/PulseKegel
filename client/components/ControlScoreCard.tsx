@@ -18,7 +18,9 @@ interface Props {
   state: ControlScoreState;
 }
 
-const TREND_LABELS: Record<Trend, { label: string; icon: string }> = {
+type FeatherIconName = React.ComponentProps<typeof Feather>["name"];
+
+const TREND_LABELS: Record<Trend, { label: string; icon: FeatherIconName }> = {
   gaining: { label: "Gaining", icon: "trending-up" },
   holding: { label: "Holding", icon: "minus" },
   slipping: { label: "Slipping", icon: "trending-down" },
@@ -86,7 +88,7 @@ export function ControlScoreCard({ state }: Props) {
             },
           ]}
         >
-          <Feather name={trendInfo.icon as any} size={12} color={trendColor} />
+          <Feather name={trendInfo.icon} size={12} color={trendColor} />
           <Text
             style={[
               styles.trendText,

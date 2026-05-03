@@ -139,7 +139,7 @@ export function calculateSessionGain(
   if (currentStreak >= 7) gain += 1;
   if (rolling7Count >= 5) gain += 3;
   if (rolling7Count >= 7) gain += 3;
-  return gain;
+  return Math.min(gain, 7);
 }
 
 export function calculateDecayForIdleDay(idleDays: number): number {

@@ -7,6 +7,7 @@ import {
 import { BADGE_DEFINITIONS, type EarnedBadge } from "@/data/badges";
 import {
   RankName,
+  RANKS,
   addDays,
   calculateDecayForIdleDay,
   calculateSessionGain,
@@ -15,6 +16,8 @@ import {
   getRankForScore,
   todayDateString,
 } from "./controlScore";
+
+const RANKS_ORDER: RankName[] = RANKS.map((r) => r.name);
 
 const STORAGE_KEYS = {
   COMPLETED_DATES: "pulsekegel_completed_dates",
@@ -36,6 +39,7 @@ const STORAGE_KEYS = {
   CONTROL_SCORE_STATE: "pulsekegel_control_score_state",
   RANKS_NOTIFIED: "pulsekegel_ranks_notified",
   BACK_ON_TRACK_PENDING: "pulsekegel_back_on_track_pending",
+  PENDING_RANK_UP: "pulsekegel_pending_rank_up",
 };
 
 export interface ControlScoreState {
@@ -73,6 +77,11 @@ const pushHistory = (
 ): { date: string; score: number }[] => {
   const next = [...history.filter((h) => h.date !== date), { date, score }];
   return next.slice(-30);
+};
+
+const sessionDatesOnly = (completed: string[], rest: string[]): string[] => {
+  const restSet = new Set(rest);
+  return completed.filter((d) => !restSet.has(d));
 };
 
 const replaySessionsForBackfill = (
@@ -1037,9 +1046,9 @@ export const storage = {
         const parsed = JSON.parse(raw) as Partial<ControlScoreState>;
         return { ...defaultControlScoreState, ...parsed };
       }
-      const completedDates = await this.getCompletedDates();
+      const sessionDates = await this.getSessionCompletedDates();
       const today = todayDateString();
-      const sorted = [...completedDates].filter(Boolean).sort();
+      const sorted = [...sessionDates].filter(Boolean).sort();
       const backfilled = replaySessionsForBackfill(sorted, today);
       await AsyncStorage.setItem(
         STORAGE_KEYS.CONTROL_SCORE_STATE,
@@ -1062,6 +1071,14 @@ export const storage = {
     }
   },
 
+  async getSessionCompletedDates(): Promise<string[]> {
+    const [completed, rest] = await Promise.all([
+      this.getCompletedDates(),
+      this.getRestDates(),
+    ]);
+    return sessionDatesOnly(completed, rest);
+  },
+
   async applyDailyDecay(
     today: string = todayDateString(),
   ): Promise<ControlScoreState> {
@@ -1074,8 +1091,8 @@ export const storage = {
     if (state.lastScoreUpdateDate >= today) {
       return state;
     }
-    const completedDates = await this.getCompletedDates();
-    const completedSet = new Set(completedDates);
+    const sessionDates = await this.getSessionCompletedDates();
+    const completedSet = new Set(sessionDates);
     let cursor = state.lastScoreUpdateDate;
     while (cursor < today) {
       cursor = addDays(cursor, 1);
@@ -1107,8 +1124,8 @@ export const storage = {
     gain: number;
   }> {
     const state = await this.applyDailyDecay(today);
-    const completedDates = await this.getCompletedDates();
-    const completedSet = new Set(completedDates);
+    const sessionDates = await this.getSessionCompletedDates();
+    const completedSet = new Set(sessionDates);
     if (state.lastSessionDate === today) {
       return { state, rankUp: null, backOnTrack: false, gain: 0 };
     }
@@ -1138,16 +1155,34 @@ export const storage = {
     );
     await this.saveControlScoreState(state);
     let rankUp: RankName | null = null;
-    if (state.currentRank !== previousRank) {
+    if (
+      state.currentRank !== previousRank &&
+      RANKS_ORDER.indexOf(state.currentRank) > RANKS_ORDER.indexOf(previousRank)
+    ) {
       const notified = await this.getRanksNotified();
       if (!notified.includes(state.currentRank)) {
         rankUp = state.currentRank;
+        await AsyncStorage.setItem(
+          STORAGE_KEYS.PENDING_RANK_UP,
+          state.currentRank,
+        );
       }
     }
     if (wasInactive) {
       await AsyncStorage.setItem(STORAGE_KEYS.BACK_ON_TRACK_PENDING, "1");
     }
     return { state, rankUp, backOnTrack: wasInactive, gain };
+  },
+
+  async consumePendingRankUp(): Promise<RankName | null> {
+    try {
+      const raw = await AsyncStorage.getItem(STORAGE_KEYS.PENDING_RANK_UP);
+      if (!raw) return null;
+      await AsyncStorage.removeItem(STORAGE_KEYS.PENDING_RANK_UP);
+      return raw as RankName;
+    } catch {
+      return null;
+    }
   },
 
   async getRanksNotified(): Promise<RankName[]> {
@@ -1214,6 +1249,7 @@ export const storage = {
       );
       await AsyncStorage.removeItem(STORAGE_KEYS.RANKS_NOTIFIED);
       await AsyncStorage.removeItem(STORAGE_KEYS.BACK_ON_TRACK_PENDING);
+      await AsyncStorage.removeItem(STORAGE_KEYS.PENDING_RANK_UP);
     } catch (error) {
       console.error("Error resetting control score:", error);
     }

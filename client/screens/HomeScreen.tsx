@@ -99,14 +99,8 @@ export default function HomeScreen() {
     setScoreState(freshScore);
     const backOnTrack = await storage.consumeBackOnTrackPending();
     if (backOnTrack) setShowBackOnTrack(true);
-    const notified = await storage.getRanksNotified();
-    if (
-      freshScore.currentRank !== "Rookie" &&
-      !notified.includes(freshScore.currentRank) &&
-      freshScore.lastSessionDate !== null
-    ) {
-      setPendingRankUp(freshScore.currentRank);
-    }
+    const pendingRank = await storage.consumePendingRankUp();
+    if (pendingRank) setPendingRankUp(pendingRank);
 
     const [userProgress, userSettings, calibState] = await Promise.all([
       storage.getProgress(),

@@ -119,6 +119,7 @@ export default function SettingsScreen() {
   const handleResetCalibration = () => {
     const doReset = async () => {
       await storage.clearCalibrationState();
+      await storage.resetControlScore(true);
       setDifficultyPath(null);
       await hapticsManager.triggerWarning();
     };
