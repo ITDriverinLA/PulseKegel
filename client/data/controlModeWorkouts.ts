@@ -677,6 +677,7 @@ export interface HabitScheduleResult {
   schedule: ScheduledDay[]; // length 7, Mon-first
   preferredRestWeekdays: number[]; // weekday indices (0=Mon) where rest fell
   appliedHabits: boolean; // false → fell back to default
+  pinnedRestWeekdays: number[]; // weekday indices the user explicitly pinned
 }
 
 function weekdayMonFirst(dateStr: string): number {
@@ -703,9 +704,14 @@ export function buildHabitSchedule(
   path: ControlPath,
   completedDates: string[],
   todayStr: string,
+  pinnedRestWeekdays: number[] = [],
 ): HabitScheduleResult {
   const defaults = DEFAULT_SCHEDULES[path];
-  const restCount = defaults.filter((s) => s === null).length;
+  const defaultRestCount = defaults.filter((s) => s === null).length;
+
+  const pinnedSet = new Set<number>(
+    pinnedRestWeekdays.filter((i) => Number.isInteger(i) && i >= 0 && i <= 6),
+  );
 
   const lookbackStart = dateNDaysBefore(todayStr, HABIT_LOOKBACK_DAYS);
   const recent = completedDates.filter(
@@ -715,37 +721,39 @@ export function buildHabitSchedule(
   for (const d of recent) counts[weekdayMonFirst(d)]++;
 
   const totalSignal = counts.reduce((a, b) => a + b, 0);
+  const appliedHabits = totalSignal >= MIN_SIGNAL_COMPLETIONS;
 
   // Workouts in their natural order (used both for default and habit-mapped).
   const workouts: (() => DayTemplate)[] = defaults.filter(
     (s): s is () => DayTemplate => s !== null,
   );
 
-  if (totalSignal < MIN_SIGNAL_COMPLETIONS) {
-    const schedule: ScheduledDay[] = defaults.map((slot) =>
-      slot === null
-        ? { template: restDay(`cm-${path}-rest`), isRestDay: true }
-        : { template: slot(), isRestDay: false },
-    );
-    const preferredRestWeekdays = defaults
-      .map((s, i) => (s === null ? i : -1))
-      .filter((i) => i >= 0);
-    return {
-      schedule,
-      preferredRestWeekdays,
-      appliedHabits: false,
-    };
-  }
+  // Pinned weekdays always count as rest. Auto-detection (or defaults) fills
+  // any remaining rest slots up to the path's normal rest count. If the user
+  // pins more days than the default, those extra rest days are honored too.
+  const restWeekdays = new Set<number>(pinnedSet);
+  const targetRestCount = Math.max(defaultRestCount, pinnedSet.size);
 
-  // Pick K least-used weekdays as rest. Tie-break by weekday index ascending
-  // so output is deterministic.
-  const indexed = counts.map((c, i) => ({ count: c, weekday: i }));
-  indexed.sort((a, b) =>
-    a.count !== b.count ? a.count - b.count : a.weekday - b.weekday,
-  );
-  const restWeekdays = new Set(
-    indexed.slice(0, restCount).map((x) => x.weekday),
-  );
+  if (appliedHabits) {
+    // Pick least-used unpinned weekdays as rest. Tie-break by weekday index
+    // ascending so output is deterministic.
+    const candidates = counts
+      .map((c, i) => ({ count: c, weekday: i }))
+      .filter((x) => !pinnedSet.has(x.weekday));
+    candidates.sort((a, b) =>
+      a.count !== b.count ? a.count - b.count : a.weekday - b.weekday,
+    );
+    for (const c of candidates) {
+      if (restWeekdays.size >= targetRestCount) break;
+      restWeekdays.add(c.weekday);
+    }
+  } else {
+    // Use the default schedule's rest weekdays for the unpinned slots.
+    for (let i = 0; i < defaults.length; i++) {
+      if (restWeekdays.size >= targetRestCount) break;
+      if (defaults[i] === null && !pinnedSet.has(i)) restWeekdays.add(i);
+    }
+  }
 
   const schedule: ScheduledDay[] = [];
   let workoutIdx = 0;
@@ -765,7 +773,8 @@ export function buildHabitSchedule(
   return {
     schedule,
     preferredRestWeekdays: Array.from(restWeekdays).sort((a, b) => a - b),
-    appliedHabits: true,
+    appliedHabits,
+    pinnedRestWeekdays: Array.from(pinnedSet).sort((a, b) => a - b),
   };
 }
 

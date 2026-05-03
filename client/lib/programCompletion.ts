@@ -33,6 +33,7 @@ export interface UserProgramProgress {
   controlModePath: ControlModePath | null;
   controlModeStartDate: string | null;
   controlModeUnlocked: boolean;
+  controlModePinnedRestWeekdays: number[];
   weeklyTarget: number | null;
   currentWeek: number | null;
   currentDay: number | null;
@@ -49,6 +50,7 @@ export const defaultProgramProgress: UserProgramProgress = {
   controlModePath: null,
   controlModeStartDate: null,
   controlModeUnlocked: false,
+  controlModePinnedRestWeekdays: [],
   weeklyTarget: null,
   currentWeek: null,
   currentDay: null,
@@ -156,6 +158,7 @@ export interface ControlModeWorkoutOptions {
   rank?: RankName | RankTier;
   recentCompletions?: string[];
   recentSegmentTypeCounts?: Partial<Record<SegmentType, number>>;
+  pinnedRestWeekdays?: number[];
 }
 
 export interface ControlModeWorkoutResult {
@@ -165,6 +168,7 @@ export interface ControlModeWorkoutResult {
   isRestDay: boolean;
   schedule?: { template: DayTemplate; isRestDay: boolean }[];
   preferredRestWeekdays?: number[];
+  pinnedRestWeekdays?: number[];
   appliedHabits?: boolean;
   appliedWeakArea?: boolean;
   weakAreaType?: SegmentType | null;
@@ -241,6 +245,7 @@ export function getControlModeTodaysWorkout(
     cp,
     options.recentCompletions ?? [],
     todayStr,
+    options.pinnedRestWeekdays ?? [],
   );
   const dayIndex = weekdayMonFirst(todayStr);
   let slot = habit.schedule[dayIndex];
@@ -288,6 +293,7 @@ export function getControlModeTodaysWorkout(
     isRestDay: slot.isRestDay,
     schedule: scaledSchedule,
     preferredRestWeekdays: habit.preferredRestWeekdays,
+    pinnedRestWeekdays: habit.pinnedRestWeekdays,
     appliedHabits: habit.appliedHabits,
     appliedWeakArea,
     weakAreaType,

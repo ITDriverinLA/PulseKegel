@@ -538,6 +538,8 @@ export default function ProgramOverviewScreen() {
               recentSegmentTypeCounts: recentSegmentTypeCounts as Partial<
                 Record<import("@/data/workoutProgram").SegmentType, number>
               >,
+              pinnedRestWeekdays:
+                programProgress.controlModePinnedRestWeekdays ?? [],
             },
           )
         : null;
@@ -552,17 +554,47 @@ export default function ProgramOverviewScreen() {
             : tier === "peak"
               ? "peak intensity"
               : "balanced intensity";
+    const pinnedRestSet = new Set(controlPlan?.pinnedRestWeekdays ?? []);
     const restDayLabels =
       controlPlan?.preferredRestWeekdays?.map((i) => getWeekdayLabel(i)) ?? [];
+    const pinnedLabels = (controlPlan?.pinnedRestWeekdays ?? []).map((i) =>
+      getWeekdayLabel(i),
+    );
+    const detectedLabels = (controlPlan?.preferredRestWeekdays ?? [])
+      .filter((i) => !pinnedRestSet.has(i))
+      .map((i) => getWeekdayLabel(i));
     const weakAreaSuffix =
       controlPlan?.appliedWeakArea && controlPlan.weakAreaType
         ? ` Today focuses on ${SEGMENT_TYPE_LABEL[controlPlan.weakAreaType] ?? controlPlan.weakAreaType} — your least-trained area.`
         : "";
+    const restPlanSentence = (() => {
+      if (pinnedLabels.length > 0 && detectedLabels.length > 0) {
+        return `rest pinned on ${pinnedLabels.join(", ")} and detected on ${detectedLabels.join(", ")}`;
+      }
+      if (pinnedLabels.length > 0) {
+        return `rest pinned on ${pinnedLabels.join(", ")}`;
+      }
+      return `rest on ${restDayLabels.join(", ")}`;
+    })();
     const tailoredNote = controlPlan
       ? controlPlan.appliedHabits
-        ? `Tuned to your habits: ${tierIntensityLabel} for ${currentRank ?? "your rank"}, rest on ${restDayLabels.join(", ")}.${weakAreaSuffix}`
-        : `Default schedule with ${tierIntensityLabel}. We will tune rest days as you build a routine.${weakAreaSuffix}`
+        ? `Tuned to your habits: ${tierIntensityLabel} for ${currentRank ?? "your rank"}, ${restPlanSentence}.${weakAreaSuffix}`
+        : pinnedLabels.length > 0
+          ? `${tierIntensityLabel.charAt(0).toUpperCase() + tierIntensityLabel.slice(1)} with ${restPlanSentence}. We will tune unpinned rest days as you build a routine.${weakAreaSuffix}`
+          : `Default schedule with ${tierIntensityLabel}. We will tune rest days as you build a routine.${weakAreaSuffix}`
       : null;
+
+    const togglePinnedRest = async (weekday: number) => {
+      const current = new Set(
+        programProgress.controlModePinnedRestWeekdays ?? [],
+      );
+      if (current.has(weekday)) current.delete(weekday);
+      else current.add(weekday);
+      const next = await storage.setControlModePinnedRestWeekdays(
+        Array.from(current),
+      );
+      setProgramProgress(next);
+    };
     return (
       <View style={styles.container} testID="program-overview-control-mode">
         <LinearGradient
@@ -651,6 +683,79 @@ export default function ProgramOverviewScreen() {
               />
             </View>
           </Animated.View>
+
+          {controlPlan ? (
+            <View
+              style={[
+                styles.weekCard,
+                { backgroundColor: cp.cardBg, borderColor: cp.inputBg },
+              ]}
+              testID="control-mode-rest-pin-card"
+            >
+              <Text
+                style={[
+                  styles.weekTitle,
+                  { color: cp.text, fontSize: 14 * fontScale },
+                ]}
+              >
+                Rest day preferences
+              </Text>
+              <Text
+                style={[
+                  styles.weekSubtitle,
+                  {
+                    color: cp.textMuted,
+                    marginTop: 4,
+                    marginBottom: Spacing.sm,
+                  },
+                ]}
+              >
+                Tap a day to always rest. Unpinned days are auto-tuned.
+              </Text>
+              <View style={styles.dayPillsRow}>
+                {[0, 1, 2, 3, 4, 5, 6].map((i) => {
+                  const isPinned = pinnedRestSet.has(i);
+                  const color = isPinned ? cp.neonCyan : cp.textMuted;
+                  return (
+                    <View key={i} style={styles.dayPillContainer}>
+                      <Pressable
+                        onPress={() => togglePinnedRest(i)}
+                        style={[
+                          styles.dayPill,
+                          {
+                            borderColor: color + "55",
+                            backgroundColor: isPinned
+                              ? color + "20"
+                              : "transparent",
+                          },
+                          isPinned && {
+                            borderWidth: 2,
+                            borderColor: cp.neonCyan,
+                          },
+                        ]}
+                        testID={`pin-rest-day-${i}`}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: isPinned }}
+                        accessibilityLabel={`${isPinned ? "Unpin" : "Pin"} rest on ${getWeekdayLabel(i)}`}
+                      >
+                        <Text
+                          style={[
+                            styles.dayPillText,
+                            { color: isPinned ? cp.neonCyan : cp.textMuted },
+                          ]}
+                        >
+                          {isPinned ? "REST" : "AUTO"}
+                        </Text>
+                      </Pressable>
+                      <Text style={[styles.dayLabel, { color: cp.textMuted }]}>
+                        {getWeekdayLabel(i)}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          ) : null}
 
           {controlPlan && controlPlan.schedule ? (
             <View

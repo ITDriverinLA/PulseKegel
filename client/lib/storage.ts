@@ -1390,6 +1390,21 @@ export const storage = {
     }
   },
 
+  async setControlModePinnedRestWeekdays(
+    weekdays: number[],
+  ): Promise<UserProgramProgress> {
+    const prev = await this.getProgramProgress();
+    const cleaned = Array.from(
+      new Set(weekdays.filter((i) => Number.isInteger(i) && i >= 0 && i <= 6)),
+    ).sort((a, b) => a - b);
+    const next: UserProgramProgress = {
+      ...prev,
+      controlModePinnedRestWeekdays: cleaned,
+    };
+    await this.saveProgramProgress(next);
+    return next;
+  },
+
   async evaluateAndStoreCompletionTier(): Promise<TwelveWeekEvaluation | null> {
     const progress = await this.getProgramProgress();
     if (!progress.twelveWeekStartDate) return null;

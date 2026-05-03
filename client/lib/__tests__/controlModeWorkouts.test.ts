@@ -185,6 +185,64 @@ describe("Habit-aware scheduling", () => {
       expect(result.schedule).toHaveLength(7);
     }
   });
+
+  test("pinned rest weekdays override default schedule with no signal", () => {
+    // Build path defaults to rest only on Sun (6). Pin Sun (6) — already rest,
+    // plus Tue (1). Expect both to be rest, even with no habit signal, and
+    // Wed default workout returns.
+    const result = buildHabitSchedule("build", [], MON, [1, 6]);
+    expect(result.appliedHabits).toBe(false);
+    expect(result.pinnedRestWeekdays).toEqual([1, 6]);
+    expect(result.schedule[1].isRestDay).toBe(true);
+    expect(result.schedule[6].isRestDay).toBe(true);
+    expect(result.preferredRestWeekdays).toEqual(
+      expect.arrayContaining([1, 6]),
+    );
+  });
+
+  test("pinned rest weekdays override habit-detected rest with signal", () => {
+    // Same dataset as the "least-trained" test: Sat/Sun never trained, Mon-Fri
+    // tied at 2 each. Pin Wed (2) — auto-detection would NOT have picked Wed.
+    const completed: string[] = [
+      "2025-12-22",
+      "2025-12-23",
+      "2025-12-24",
+      "2025-12-25",
+      "2025-12-26",
+      "2025-12-29",
+      "2025-12-30",
+      "2025-12-31",
+      "2026-01-01",
+      "2026-01-02",
+    ];
+    const result = buildHabitSchedule("maintain", completed, MON, [2]);
+    expect(result.appliedHabits).toBe(true);
+    expect(result.pinnedRestWeekdays).toEqual([2]);
+    // Wed (pinned), Sat, Sun must be rest. Mon (auto-pick previously) is now
+    // workout because Wed already filled the third slot.
+    expect(result.schedule[2].isRestDay).toBe(true);
+    expect(result.schedule[5].isRestDay).toBe(true);
+    expect(result.schedule[6].isRestDay).toBe(true);
+    expect(result.preferredRestWeekdays).toEqual([2, 5, 6]);
+  });
+
+  test("pinning more days than default rest count adds extra rest", () => {
+    // Build defaults to 1 rest day (Sun). Pin Mon, Tue, Wed → 3 rest days.
+    const result = buildHabitSchedule("build", [], MON, [0, 1, 2]);
+    expect(result.pinnedRestWeekdays).toEqual([0, 1, 2]);
+    expect(result.schedule[0].isRestDay).toBe(true);
+    expect(result.schedule[1].isRestDay).toBe(true);
+    expect(result.schedule[2].isRestDay).toBe(true);
+    // Sun would have been default rest; with no signal and pinned >= default,
+    // it stays a workout because we cap at max(default, pinned.size) = 3.
+    expect(result.schedule[6].isRestDay).toBe(false);
+  });
+
+  test("invalid pinned weekday indices are ignored", () => {
+    const result = buildHabitSchedule("maintain", [], MON, [-1, 7, 2.5, 3]);
+    expect(result.pinnedRestWeekdays).toEqual([3]);
+    expect(result.schedule[3].isRestDay).toBe(true);
+  });
 });
 
 describe("getControlModeTodaysWorkout (control paths)", () => {

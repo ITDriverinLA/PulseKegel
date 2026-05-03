@@ -170,6 +170,7 @@ export default function HomeScreen() {
           rank: freshScore?.currentRank,
           recentCompletions: habitCompletions,
           recentSegmentTypeCounts,
+          pinnedRestWeekdays: progProgress.controlModePinnedRestWeekdays ?? [],
         },
       );
       setTodaysWorkout(controlWorkout);
