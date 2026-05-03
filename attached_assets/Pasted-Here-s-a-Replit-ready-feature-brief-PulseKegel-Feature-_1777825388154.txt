@@ -1,0 +1,742 @@
+Here’s a Replit-ready feature brief.
+
+---
+
+# PulseKegel Feature Requirement: Post-12-Week Program Completion Flow
+
+## Goal
+
+When a user completes the 12-week PulseKegel program, the app should not simply end the journey.
+
+Instead, evaluate how consistently the user completed sessions and then guide them into the appropriate next phase.
+
+The purpose is to keep users engaged after the initial training program and transition them into long-term pelvic floor control, maintenance, and continued progression.
+
+---
+
+# Program Completion Evaluation
+
+At the end of the 12-week program, evaluate the user’s completed sessions.
+
+Assume the 12-week program covers:
+
+```ts
+84 calendar days
+```
+
+Use the number of completed training days, not the number of total sessions if the user completes multiple sessions in one day.
+
+```ts
+completedTrainingDays: number;
+```
+
+---
+
+# Completion Tiers
+
+## Tier 1: Strong Completion
+
+### Criteria
+
+```ts
+completedTrainingDays >= 60
+```
+
+This means the user completed roughly 5 or more training days per week.
+
+### User Message
+
+```text
+12 Weeks Complete
+
+You showed up, built the habit, and trained real control.
+
+Now PulseKegel shifts with you. Choose your next path: maintain, build, or sharpen precision.
+```
+
+### Unlock
+
+Unlock a new mode called:
+
+```text
+Control Mode
+```
+
+Control Mode is the long-term training phase after the 12-week program.
+
+---
+
+# Control Mode
+
+Control Mode should offer three path options.
+
+## Option 1: Maintain Control
+
+### Purpose
+
+For users who want to keep their progress without feeling pressured to train every day.
+
+### Weekly Target
+
+```ts
+minimumSessionsPerWeek = 3;
+idealSessionsPerWeek = 5;
+```
+
+### Program Style
+
+* Shorter sessions
+* Gentle consistency
+* Balanced contract and release timing
+* Focus on retaining control and habit strength
+
+### Button Label
+
+```text
+Maintain Control
+```
+
+### Supporting Copy
+
+```text
+Stay sharp with three short sessions a week.
+```
+
+---
+
+## Option 2: Build Strength
+
+### Purpose
+
+For users who want continued progression after the 12-week program.
+
+### Weekly Target
+
+```ts
+minimumSessionsPerWeek = 5;
+idealSessionsPerWeek = 6;
+```
+
+### Program Style
+
+* Longer holds
+* More advanced timing patterns
+* Gradual progression
+* Continued score/rank advancement
+
+### Button Label
+
+```text
+Build Strength
+```
+
+### Supporting Copy
+
+```text
+Keep building. More control, more endurance, more command.
+```
+
+---
+
+## Option 3: Precision Training
+
+### Purpose
+
+For users who want better control and coordination, not just stronger contractions.
+
+### Weekly Target
+
+```ts
+minimumSessionsPerWeek = 4;
+idealSessionsPerWeek = 5;
+```
+
+### Program Style
+
+Include variable-effort training:
+
+```text
+25% contraction
+50% contraction
+75% contraction
+100% contraction
+Full release
+Breath reset
+```
+
+### Button Label
+
+```text
+Train Precision
+```
+
+### Supporting Copy
+
+```text
+Strength is good. Precision is better.
+```
+
+---
+
+# Tier 2: Partial Completion
+
+## Criteria
+
+```ts
+completedTrainingDays >= 35 && completedTrainingDays < 60
+```
+
+This means the user made progress, but did not complete enough sessions for the habit to feel fully established.
+
+### User Message
+
+```text
+Progress Made
+
+You made progress, but the habit is not fully locked in yet.
+
+Want to repeat the program, restart from Week 5, or switch to Maintenance?
+```
+
+### Options
+
+Display three actions:
+
+```text
+Repeat 12 Weeks
+Restart from Week 5
+Switch to Maintenance
+```
+
+## Behavior
+
+### Repeat 12 Weeks
+
+Restart the 12-week program from Week 1, Day 1.
+
+```ts
+programPhase = "twelve_week_program";
+currentWeek = 1;
+currentDay = 1;
+```
+
+Preserve historical stats, rank, and Control Score.
+
+Do not reset:
+
+```ts
+controlScore
+currentRank
+highestRankAchieved
+highestScoreAchieved
+eliteAchieved
+lifetimeCompletedSessions
+```
+
+### Restart from Week 5
+
+Restart the user at Week 5, Day 1.
+
+```ts
+programPhase = "twelve_week_program";
+currentWeek = 5;
+currentDay = 1;
+```
+
+Preserve historical stats, rank, and Control Score.
+
+### Switch to Maintenance
+
+Move the user into the Maintain Control path.
+
+```ts
+programPhase = "control_mode";
+controlModePath = "maintain_control";
+```
+
+---
+
+# Tier 3: Low Completion
+
+## Criteria
+
+```ts
+completedTrainingDays < 35
+```
+
+This means the user completed fewer than roughly 3 training days per week.
+
+### User Message
+
+```text
+Let’s Reset the Plan
+
+The program works best when it becomes routine.
+
+Restart with a lighter schedule and build from there.
+```
+
+### Options
+
+Display three actions:
+
+```text
+Restart 12 Weeks
+Start 7-Day Calibration
+Choose 3 Days/Week Plan
+```
+
+## Behavior
+
+### Restart 12 Weeks
+
+Restart the full 12-week program from Week 1, Day 1.
+
+```ts
+programPhase = "twelve_week_program";
+currentWeek = 1;
+currentDay = 1;
+```
+
+Preserve historical rank and Control Score unless the app currently resets these elsewhere.
+
+### Start 7-Day Calibration
+
+Send the user back into the 7-day calibration challenge.
+
+```ts
+programPhase = "seven_day_challenge";
+currentChallengeDay = 1;
+calibrationStatus = "not_started";
+```
+
+### Choose 3 Days/Week Plan
+
+Move the user into a lighter version of Control Mode.
+
+```ts
+programPhase = "control_mode";
+controlModePath = "maintain_control";
+weeklyTarget = 3;
+```
+
+---
+
+# Rank System Tie-In
+
+After 12 weeks, the rank system should continue to operate.
+
+Do not stop Control Score progression after the 12-week program.
+
+The user should continue earning Control Score based on completed sessions, streaks, and consistency.
+
+Current rank can rise or fall based on the live Control Score.
+
+Highest rank achieved should remain permanent.
+
+This supports the long-term goal:
+
+```text
+Reach Elite
+```
+
+Elite should remain positioned as a long-term achievement that typically takes around six months of strong consistency.
+
+---
+
+# Suggested Data Model Additions
+
+```ts
+type ProgramPhase =
+  | "seven_day_challenge"
+  | "twelve_week_program"
+  | "control_mode";
+
+type ControlModePath =
+  | "maintain_control"
+  | "build_strength"
+  | "precision_training";
+
+type CompletionTier =
+  | "strong_completion"
+  | "partial_completion"
+  | "low_completion";
+
+interface UserProgramProgress {
+  programPhase: ProgramPhase;
+
+  currentWeek?: number;
+  currentDay?: number;
+  currentChallengeDay?: number;
+
+  twelveWeekStartDate?: string;
+  twelveWeekCompletionDate?: string;
+
+  completedTrainingDays: number;
+
+  completionTier?: CompletionTier;
+
+  controlModeUnlocked: boolean;
+  controlModePath?: ControlModePath;
+
+  weeklyTarget?: number;
+}
+```
+
+---
+
+# Completion Evaluation Utility
+
+```ts
+function getCompletionTier(completedTrainingDays: number): CompletionTier {
+  if (completedTrainingDays >= 60) {
+    return "strong_completion";
+  }
+
+  if (completedTrainingDays >= 35) {
+    return "partial_completion";
+  }
+
+  return "low_completion";
+}
+```
+
+---
+
+# Completion Flow Pseudocode
+
+```ts
+function handleTwelveWeekCompletion(userProgress: UserProgramProgress) {
+  const tier = getCompletionTier(userProgress.completedTrainingDays);
+
+  userProgress.completionTier = tier;
+  userProgress.twelveWeekCompletionDate = getTodayDate();
+
+  if (tier === "strong_completion") {
+    userProgress.controlModeUnlocked = true;
+    userProgress.programPhase = "control_mode";
+    userProgress.controlModePath = undefined;
+
+    return {
+      screen: "strong_completion",
+      title: "12 Weeks Complete",
+      message:
+        "You showed up, built the habit, and trained real control. Now PulseKegel shifts with you. Choose your next path: maintain, build, or sharpen precision.",
+      options: [
+        {
+          label: "Maintain Control",
+          action: "select_maintain_control",
+        },
+        {
+          label: "Build Strength",
+          action: "select_build_strength",
+        },
+        {
+          label: "Train Precision",
+          action: "select_precision_training",
+        },
+      ],
+    };
+  }
+
+  if (tier === "partial_completion") {
+    return {
+      screen: "partial_completion",
+      title: "Progress Made",
+      message:
+        "You made progress, but the habit is not fully locked in yet. Want to repeat the program, restart from Week 5, or switch to Maintenance?",
+      options: [
+        {
+          label: "Repeat 12 Weeks",
+          action: "repeat_twelve_weeks",
+        },
+        {
+          label: "Restart from Week 5",
+          action: "restart_week_five",
+        },
+        {
+          label: "Switch to Maintenance",
+          action: "switch_to_maintenance",
+        },
+      ],
+    };
+  }
+
+  return {
+    screen: "low_completion",
+    title: "Let’s Reset the Plan",
+    message:
+      "The program works best when it becomes routine. Restart with a lighter schedule and build from there.",
+    options: [
+      {
+        label: "Restart 12 Weeks",
+        action: "restart_twelve_weeks",
+      },
+      {
+        label: "Start 7-Day Calibration",
+        action: "start_seven_day_calibration",
+      },
+      {
+        label: "Choose 3 Days/Week Plan",
+        action: "choose_three_day_plan",
+      },
+    ],
+  };
+}
+```
+
+---
+
+# Control Mode Selection Logic
+
+```ts
+function selectControlModePath(
+  userProgress: UserProgramProgress,
+  selectedPath: ControlModePath
+) {
+  userProgress.programPhase = "control_mode";
+  userProgress.controlModeUnlocked = true;
+  userProgress.controlModePath = selectedPath;
+
+  if (selectedPath === "maintain_control") {
+    userProgress.weeklyTarget = 3;
+  }
+
+  if (selectedPath === "build_strength") {
+    userProgress.weeklyTarget = 5;
+  }
+
+  if (selectedPath === "precision_training") {
+    userProgress.weeklyTarget = 4;
+  }
+
+  return userProgress;
+}
+```
+
+---
+
+# Action Handling
+
+```ts
+function handleCompletionAction(userProgress, action) {
+  switch (action) {
+    case "select_maintain_control":
+      return selectControlModePath(userProgress, "maintain_control");
+
+    case "select_build_strength":
+      return selectControlModePath(userProgress, "build_strength");
+
+    case "select_precision_training":
+      return selectControlModePath(userProgress, "precision_training");
+
+    case "repeat_twelve_weeks":
+      userProgress.programPhase = "twelve_week_program";
+      userProgress.currentWeek = 1;
+      userProgress.currentDay = 1;
+      return userProgress;
+
+    case "restart_week_five":
+      userProgress.programPhase = "twelve_week_program";
+      userProgress.currentWeek = 5;
+      userProgress.currentDay = 1;
+      return userProgress;
+
+    case "switch_to_maintenance":
+      return selectControlModePath(userProgress, "maintain_control");
+
+    case "restart_twelve_weeks":
+      userProgress.programPhase = "twelve_week_program";
+      userProgress.currentWeek = 1;
+      userProgress.currentDay = 1;
+      return userProgress;
+
+    case "start_seven_day_calibration":
+      userProgress.programPhase = "seven_day_challenge";
+      userProgress.currentChallengeDay = 1;
+      return userProgress;
+
+    case "choose_three_day_plan":
+      userProgress.programPhase = "control_mode";
+      userProgress.controlModeUnlocked = true;
+      userProgress.controlModePath = "maintain_control";
+      userProgress.weeklyTarget = 3;
+      return userProgress;
+
+    default:
+      return userProgress;
+  }
+}
+```
+
+---
+
+# UI Requirements
+
+At the end of Week 12, Day 7, or once the 84-day program ends, show a completion screen based on the user’s completion tier.
+
+## Strong Completion UI
+
+Title:
+
+```text
+12 Weeks Complete
+```
+
+Body:
+
+```text
+You showed up, built the habit, and trained real control.
+
+Now PulseKegel shifts with you. Choose your next path: maintain, build, or sharpen precision.
+```
+
+Buttons:
+
+```text
+Maintain Control
+Build Strength
+Train Precision
+```
+
+---
+
+## Partial Completion UI
+
+Title:
+
+```text
+Progress Made
+```
+
+Body:
+
+```text
+You made progress, but the habit is not fully locked in yet.
+
+Want to repeat the program, restart from Week 5, or switch to Maintenance?
+```
+
+Buttons:
+
+```text
+Repeat 12 Weeks
+Restart from Week 5
+Switch to Maintenance
+```
+
+---
+
+## Low Completion UI
+
+Title:
+
+```text
+Let’s Reset the Plan
+```
+
+Body:
+
+```text
+The program works best when it becomes routine.
+
+Restart with a lighter schedule and build from there.
+```
+
+Buttons:
+
+```text
+Restart 12 Weeks
+Start 7-Day Calibration
+Choose 3 Days/Week Plan
+```
+
+---
+
+# Control Mode UI
+
+Once the user enters Control Mode, the home screen should display:
+
+```text
+Control Mode
+Selected Path: Maintain Control
+Weekly Target: 3 sessions
+Current Rank: Controlled
+Control Score: 442 / 1000
+```
+
+Also show:
+
+```text
+This week: 2 of 3 sessions complete
+```
+
+---
+
+# Control Mode Weekly Messaging
+
+## Maintain Control
+
+```text
+Stay sharp with three short sessions a week.
+```
+
+## Build Strength
+
+```text
+Keep building. More control, more endurance, more command.
+```
+
+## Precision Training
+
+```text
+Strength is good. Precision is better.
+```
+
+---
+
+# Acceptance Criteria
+
+1. The app evaluates 12-week completion based on completed training days.
+
+2. Completing 60 or more training days unlocks Control Mode and asks the user to choose:
+
+   * Maintain Control
+   * Build Strength
+   * Train Precision
+
+3. Completing 35 to 59 training days shows the Partial Completion screen.
+
+4. Completing fewer than 35 training days shows the Low Completion screen.
+
+5. Control Mode continues the existing rank and Control Score system.
+
+6. Control Score and highest rank should not reset when the user repeats or restarts a program.
+
+7. Current rank may rise or fall based on live Control Score.
+
+8. Highest rank achieved should remain permanent.
+
+9. Multiple sessions in one calendar day should count as one completed training day for program completion purposes.
+
+10. User can continue progressing toward Elite after the 12-week program.
+
+11. The 12-week completion screen should never simply say “congratulations, move on.” It must always offer a next action.
+
+---
+
+# Product Intent
+
+The 12-week program is not the end of PulseKegel.
+
+It is the end of the foundation phase.
+
+After that, the user should move into long-term control training through Control Mode.
+
+The user should feel:
+
+```text
+I finished basic training. Now I choose my discipline.
+```
+
+That keeps the app useful, gives the rank system more purpose, and creates a reason to keep coming back after the initial challenge.
