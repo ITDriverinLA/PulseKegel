@@ -20,6 +20,7 @@ const STORAGE_KEYS = {
   AUDIO_SETTINGS: "pulsekegel_audio_settings",
   LAST_WEEK_COMPLETE_TRACKED: "pulsekegel_last_week_complete_tracked",
   CHALLENGE_OPTIONAL_DATES: "pulsekegel_challenge_optional_dates",
+  CHALLENGE_CALIBRATION: "pulsekegel_challenge_calibration",
 };
 
 export interface WeeklyReviewEntry {
@@ -752,11 +753,60 @@ export const storage = {
         STORAGE_KEYS.LAST_WEEKLY_REVIEW,
         STORAGE_KEYS.LAST_WEEK_COMPLETE_TRACKED,
         STORAGE_KEYS.REVIEW_HISTORY,
+        STORAGE_KEYS.CHALLENGE_CALIBRATION,
         "pulsekegel_challenge_shown",
       ]);
       await AsyncStorage.setItem("pulsekegel_install_date", today);
     } catch (error) {
       console.error("Error resetting challenge progress:", error);
+    }
+  },
+
+  async getCalibrationState(): Promise<{
+    calibrationLevel: "easy" | "okay" | "tooHard" | null;
+    difficultyPath: "accelerated" | "standard" | "gentle" | null;
+    calibrationCompleted: boolean;
+  }> {
+    try {
+      const data = await AsyncStorage.getItem(
+        STORAGE_KEYS.CHALLENGE_CALIBRATION,
+      );
+      if (!data) {
+        return {
+          calibrationLevel: null,
+          difficultyPath: null,
+          calibrationCompleted: false,
+        };
+      }
+      return JSON.parse(data);
+    } catch {
+      return {
+        calibrationLevel: null,
+        difficultyPath: null,
+        calibrationCompleted: false,
+      };
+    }
+  },
+
+  async setCalibrationState(level: "easy" | "okay" | "tooHard"): Promise<void> {
+    try {
+      const difficultyPath =
+        level === "easy"
+          ? "accelerated"
+          : level === "tooHard"
+            ? "gentle"
+            : "standard";
+      const state = {
+        calibrationLevel: level,
+        difficultyPath,
+        calibrationCompleted: true,
+      };
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.CHALLENGE_CALIBRATION,
+        JSON.stringify(state),
+      );
+    } catch (error) {
+      console.error("Error saving calibration state:", error);
     }
   },
 };

@@ -6,6 +6,7 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
+  Modal,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -41,6 +42,7 @@ import {
   getWorkoutForRecoveryMode,
   getScheduledDaysForWeek,
   getWorkoutCompletionsForWeek,
+  getWeek1WorkoutForDayIndex,
   DayTemplate,
   Week,
 } from "@/data/workoutProgram";
@@ -75,19 +77,23 @@ export default function HomeScreen() {
   } | null>(null);
   const [pendingReviewMessage, setPendingReviewMessage] = useState<string>("");
   const trackedWeekCompleteRef = useRef<number | null>(null);
+  const [calibrationCompleted, setCalibrationCompleted] = useState(true);
+  const [showCalibrationIntro, setShowCalibrationIntro] = useState(false);
 
   const loadData = useCallback(async () => {
     const startDate = await storage.getProgramStartDate();
 
     await storage.backfillRestDays(startDate);
 
-    const [userProgress, userSettings] = await Promise.all([
+    const [userProgress, userSettings, calibState] = await Promise.all([
       storage.getProgress(),
       storage.getSettings(),
+      storage.getCalibrationState(),
     ]);
 
     setProgress(userProgress);
     setSettings(userSettings);
+    setCalibrationCompleted(calibState.calibrationCompleted);
 
     const today = new Date();
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
@@ -97,7 +103,20 @@ export default function HomeScreen() {
       userProgress.completedDates,
       startDate || undefined,
     );
-    setTodaysWorkout(workout);
+
+    if (workout && workout.week.weekNumber === 1) {
+      const adjustedWorkout = getWeek1WorkoutForDayIndex(
+        workout.dayIndex,
+        calibState.calibrationLevel,
+      );
+      setTodaysWorkout({
+        ...workout,
+        workout: adjustedWorkout,
+        isRestDay: adjustedWorkout.isRestDay === true,
+      });
+    } else {
+      setTodaysWorkout(workout);
+    }
 
     const reviewCheck = await storage.shouldShowWeeklyReview(
       userProgress.completedDates,
@@ -174,6 +193,22 @@ export default function HomeScreen() {
     }
   };
 
+  const isDay1Calibration =
+    todaysWorkout?.week.weekNumber === 1 && todaysWorkout?.dayIndex === 0;
+
+  const startWorkoutNavigation = () => {
+    if (!todaysWorkout) return;
+    const workout = settings.recoveryMode
+      ? getWorkoutForRecoveryMode(todaysWorkout.workout)
+      : todaysWorkout.workout;
+    navigation.navigate("WorkoutPlayer", {
+      workout,
+      weekNumber: todaysWorkout.week.weekNumber,
+      phase: todaysWorkout.week.phase,
+      dayNumber: todaysWorkout.dayIndex + 1,
+    });
+  };
+
   const handleStartWorkout = async () => {
     if (!todaysWorkout) return;
 
@@ -182,16 +217,12 @@ export default function HomeScreen() {
       return;
     }
 
-    const workout = settings.recoveryMode
-      ? getWorkoutForRecoveryMode(todaysWorkout.workout)
-      : todaysWorkout.workout;
+    if (isDay1Calibration && !calibrationCompleted && !isTodayComplete) {
+      setShowCalibrationIntro(true);
+      return;
+    }
 
-    navigation.navigate("WorkoutPlayer", {
-      workout,
-      weekNumber: todaysWorkout.week.weekNumber,
-      phase: todaysWorkout.week.phase,
-      dayNumber: todaysWorkout.dayIndex + 1,
-    });
+    startWorkoutNavigation();
   };
 
   const handleQuickWorkout = async () => {
@@ -859,6 +890,97 @@ export default function HomeScreen() {
         currentStreak={progress?.currentStreak ?? 0}
         onMessageReady={setPendingReviewMessage}
       />
+
+      <Modal
+        visible={showCalibrationIntro}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+      >
+        <View style={styles.introOverlay}>
+          <View
+            style={[
+              styles.introSheet,
+              {
+                backgroundColor: isDarkMode
+                  ? "rgba(16, 16, 36, 0.97)"
+                  : "rgba(255,255,255,0.97)",
+                borderColor: `${cp.neonGreen}30`,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.introIconWrap,
+                {
+                  backgroundColor: `${cp.neonGreen}20`,
+                  borderColor: `${cp.neonGreen}40`,
+                },
+              ]}
+            >
+              <Feather name="crosshair" size={32} color={cp.neonGreen} />
+            </View>
+            <Text
+              style={[
+                styles.introEyebrow,
+                { color: cp.neonGreen, fontSize: 11 * fontScale },
+              ]}
+            >
+              CALIBRATION DAY
+            </Text>
+            <Text
+              style={[
+                styles.introTitle,
+                { color: cp.text, fontSize: 22 * fontScale },
+              ]}
+            >
+              {"Let's see where you're starting from"}
+            </Text>
+            <Text
+              style={[
+                styles.introBody,
+                { color: cp.textSecondary, fontSize: 15 * fontScale },
+              ]}
+            >
+              {
+                "This first session helps us match the rest of the week to your body. It's shorter than a regular session — just do your best, and tell us how it felt when you're done."
+              }
+            </Text>
+            <Pressable
+              onPress={() => {
+                setShowCalibrationIntro(false);
+                startWorkoutNavigation();
+              }}
+              testID="button-calibration-intro-start"
+              style={[styles.introButton, { backgroundColor: cp.neonGreen }]}
+            >
+              <Feather name="play" size={18} color={cp.bg} />
+              <Text
+                style={[
+                  styles.introButtonText,
+                  { color: cp.bg, fontSize: 16 * fontScale },
+                ]}
+              >
+                Start calibration
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setShowCalibrationIntro(false)}
+              testID="button-calibration-intro-cancel"
+              style={styles.introCancelButton}
+            >
+              <Text
+                style={[
+                  styles.introCancelText,
+                  { color: cp.textMuted, fontSize: 14 * fontScale },
+                ]}
+              >
+                Not yet
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </LinearGradient>
   );
 }
@@ -1141,5 +1263,66 @@ const styles = StyleSheet.create({
   secondaryActionText: {
     fontSize: 14,
     fontWeight: "600",
+  },
+  introOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "flex-end",
+    alignItems: "center",
+  },
+  introSheet: {
+    width: "100%",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderWidth: 1,
+    paddingTop: Spacing.xl,
+    paddingBottom: Spacing.xl * 2,
+    paddingHorizontal: Spacing.xl,
+    alignItems: "center",
+    gap: Spacing.md,
+  },
+  introIconWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: Spacing.xs,
+  },
+  introEyebrow: {
+    fontWeight: "700",
+    letterSpacing: 2,
+    textAlign: "center",
+  },
+  introTitle: {
+    fontWeight: "800",
+    textAlign: "center",
+    lineHeight: 30,
+  },
+  introBody: {
+    textAlign: "center",
+    lineHeight: 23,
+    marginTop: Spacing.xs,
+  },
+  introButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: Spacing.lg,
+    width: "100%",
+    marginTop: Spacing.md,
+  },
+  introButtonText: {
+    fontWeight: "700",
+  },
+  introCancelButton: {
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.xl,
+  },
+  introCancelText: {
+    fontWeight: "500",
   },
 });

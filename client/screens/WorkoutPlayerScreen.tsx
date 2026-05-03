@@ -88,6 +88,7 @@ export default function WorkoutPlayerScreen() {
   );
   const appStateRef = useRef(AppState.currentState);
   const startTimeRef = useRef<Date | null>(null);
+  const redirectToCalibrationRef = useRef(false);
 
   const phaseScale = useSharedValue(1);
   const phaseOpacity = useSharedValue(1);
@@ -241,6 +242,13 @@ export default function WorkoutPlayerScreen() {
 
           await rescheduleAfterCompletion();
 
+          if (weekNumber === 1 && dayNumber === 1) {
+            const calibState = await storage.getCalibrationState();
+            if (!calibState.calibrationCompleted) {
+              redirectToCalibrationRef.current = true;
+            }
+          }
+
           const awarded = await storage.checkAndAwardBadges();
           if (awarded.length > 0) {
             setNewBadgeIds(awarded);
@@ -357,7 +365,11 @@ export default function WorkoutPlayerScreen() {
   };
 
   const doGoBack = () => {
-    navigation.goBack();
+    if (redirectToCalibrationRef.current) {
+      navigation.replace("CalibrationFeedback");
+    } else {
+      navigation.goBack();
+    }
   };
 
   const animateOut = (duration: number) => {

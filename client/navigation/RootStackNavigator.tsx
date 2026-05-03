@@ -19,6 +19,7 @@ import BreathworkModeSelectorScreen from "@/screens/BreathworkModeSelectorScreen
 import BreathworkSessionScreen from "@/screens/BreathworkSessionScreen";
 import BreathworkSummaryScreen from "@/screens/BreathworkSummaryScreen";
 import TechniqueGuideScreen from "@/screens/TechniqueGuideScreen";
+import CalibrationFeedbackScreen from "@/screens/CalibrationFeedbackScreen";
 import ForceUpdateScreen from "@/screens/ForceUpdateScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { ANIM_DURATION_ENTER } from "@/constants/animation";
@@ -45,6 +46,7 @@ export type RootStackParamList = {
   BreathworkSession: { mode: BreathworkMode };
   BreathworkSummary: { mode: BreathworkMode; completed: boolean };
   TechniqueGuide: undefined;
+  CalibrationFeedback: undefined;
 };
 
 interface StoreUrls {
@@ -250,6 +252,17 @@ export default function RootStackNavigator() {
           options={{
             presentation: "modal",
             headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="CalibrationFeedback"
+          component={CalibrationFeedbackScreen}
+          options={{
+            presentation: "fullScreenModal",
+            headerShown: false,
+            gestureEnabled: false,
+            animation: "fade",
+            animationDuration: 350,
           }}
         />
       </Stack.Navigator>

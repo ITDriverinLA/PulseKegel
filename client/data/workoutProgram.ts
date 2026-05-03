@@ -615,6 +615,391 @@ export const getTotalProgramDays = (): number => {
   return 12 * 7; // 84 days
 };
 
+export type ChallengeCalibrationLevel = "easy" | "okay" | "tooHard" | null;
+
+const calibrationStrengthDay = (): DayTemplate => {
+  const sets = 2;
+  const reps = 6;
+  const hold = 5;
+  const rest = 5;
+  const flickReps = 10;
+  const reverseReps = 4;
+  const totalSeconds =
+    sets * reps * (hold + rest) +
+    20 +
+    flickReps * 2 +
+    20 +
+    reverseReps * 8 +
+    20;
+  return {
+    id: "w1-calibration",
+    name: "Calibration Day",
+    dayType: "strength",
+    estimatedMinutes: Math.ceil(totalSeconds / 60),
+    segments: [
+      createGetReady("w1-cal-getready"),
+      createSegment(
+        "w1-cal-slow",
+        "Slow Holds",
+        "Squeeze and hold, then fully relax",
+        sets,
+        reps,
+        hold,
+        rest,
+        "slowHolds",
+      ),
+      createBlockRest("w1-cal-rest1"),
+      createSegment(
+        "w1-cal-flicks",
+        "Quick Flicks",
+        "Quick squeeze and release rhythm",
+        1,
+        flickReps,
+        1,
+        1,
+        "quickFlicks",
+      ),
+      createBlockRest("w1-cal-rest2"),
+      createSegment(
+        "w1-cal-reverse",
+        "Reverse Kegels",
+        "Gently release and drop tension",
+        1,
+        reverseReps,
+        4,
+        4,
+        "reverse",
+      ),
+      createSegment(
+        "w1-cal-cooldown",
+        "Cool Down",
+        "Relax and breathe deeply",
+        1,
+        1,
+        0,
+        20,
+        "breathing",
+      ),
+    ],
+  };
+};
+
+const lightStrengthDay = (id: string): DayTemplate => {
+  const sets = 2;
+  const reps = 6;
+  const hold = 5;
+  const rest = 5;
+  const flickReps = 10;
+  const reverseReps = 4;
+  const totalSeconds =
+    sets * reps * (hold + rest) +
+    20 +
+    flickReps * 2 +
+    20 +
+    reverseReps * 8 +
+    20;
+  return {
+    id,
+    name: "Light Training",
+    dayType: "strength",
+    estimatedMinutes: Math.ceil(totalSeconds / 60),
+    segments: [
+      createGetReady(`${id}-getready`),
+      createSegment(
+        `${id}-slow`,
+        "Slow Holds",
+        "Squeeze and hold, then fully relax",
+        sets,
+        reps,
+        hold,
+        rest,
+        "slowHolds",
+      ),
+      createBlockRest(`${id}-rest1`),
+      createSegment(
+        `${id}-flicks`,
+        "Quick Flicks",
+        "Quick squeeze and release rhythm",
+        1,
+        flickReps,
+        1,
+        1,
+        "quickFlicks",
+      ),
+      createBlockRest(`${id}-rest2`),
+      createSegment(
+        `${id}-reverse`,
+        "Reverse Kegels",
+        "Gently release and drop tension",
+        1,
+        reverseReps,
+        4,
+        4,
+        "reverse",
+      ),
+      createSegment(
+        `${id}-cooldown`,
+        "Cool Down",
+        "Relax and breathe deeply",
+        1,
+        1,
+        0,
+        20,
+        "breathing",
+      ),
+    ],
+  };
+};
+
+const acceleratedStrengthDay = (): DayTemplate => {
+  const sets = 3;
+  const reps = 10;
+  const hold = 5;
+  const rest = 5;
+  const flickReps = 12;
+  const reverseReps = 4;
+  const totalSeconds =
+    sets * reps * (hold + rest) +
+    20 +
+    flickReps * 2 +
+    20 +
+    reverseReps * 8 +
+    20;
+  return {
+    id: "w1-acc-d3",
+    name: "Strength Training",
+    dayType: "strength",
+    estimatedMinutes: Math.ceil(totalSeconds / 60),
+    segments: [
+      createGetReady("w1-acc-d3-getready"),
+      createSegment(
+        "w1-acc-d3-slow",
+        "Slow Holds",
+        "Squeeze and hold, then fully relax",
+        sets,
+        reps,
+        hold,
+        rest,
+        "slowHolds",
+      ),
+      createBlockRest("w1-acc-d3-rest1"),
+      createSegment(
+        "w1-acc-d3-flicks",
+        "Quick Flicks",
+        "Quick squeeze and release rhythm",
+        1,
+        flickReps,
+        1,
+        1,
+        "quickFlicks",
+      ),
+      createBlockRest("w1-acc-d3-rest2"),
+      createSegment(
+        "w1-acc-d3-reverse",
+        "Reverse Kegels",
+        "Gently release and drop tension",
+        1,
+        reverseReps,
+        4,
+        4,
+        "reverse",
+      ),
+      createSegment(
+        "w1-acc-d3-cooldown",
+        "Cool Down",
+        "Relax and breathe deeply",
+        1,
+        1,
+        0,
+        20,
+        "breathing",
+      ),
+    ],
+  };
+};
+
+const gentleStrengthDay = (): DayTemplate => {
+  const sets = 2;
+  const reps = 5;
+  const hold = 4;
+  const rest = 5;
+  const flickReps = 8;
+  const reverseReps = 3;
+  const totalSeconds =
+    sets * reps * (hold + rest) +
+    20 +
+    flickReps * 2 +
+    20 +
+    reverseReps * 8 +
+    20;
+  return {
+    id: "w1-gen-d3",
+    name: "Strength Training",
+    dayType: "strength",
+    estimatedMinutes: Math.ceil(totalSeconds / 60),
+    segments: [
+      createGetReady("w1-gen-d3-getready"),
+      createSegment(
+        "w1-gen-d3-slow",
+        "Slow Holds",
+        "Squeeze and hold, then fully relax",
+        sets,
+        reps,
+        hold,
+        rest,
+        "slowHolds",
+      ),
+      createBlockRest("w1-gen-d3-rest1"),
+      createSegment(
+        "w1-gen-d3-flicks",
+        "Quick Flicks",
+        "Quick squeeze and release rhythm",
+        1,
+        flickReps,
+        1,
+        1,
+        "quickFlicks",
+      ),
+      createBlockRest("w1-gen-d3-rest2"),
+      createSegment(
+        "w1-gen-d3-reverse",
+        "Reverse Kegels",
+        "Gently release and drop tension",
+        1,
+        reverseReps,
+        4,
+        4,
+        "reverse",
+      ),
+      createSegment(
+        "w1-gen-d3-cooldown",
+        "Cool Down",
+        "Relax and breathe deeply",
+        1,
+        1,
+        0,
+        20,
+        "breathing",
+      ),
+    ],
+  };
+};
+
+const gentleSpeedDay = (): DayTemplate => {
+  const flickSets = 2;
+  const flickReps = 20;
+  const contractReps = 7;
+  const slowReps = 4;
+  const slowHold = 4;
+  const totalSeconds =
+    flickSets * flickReps * 2 +
+    20 +
+    contractReps * 6 +
+    20 +
+    slowReps * (slowHold + 4) +
+    20;
+  return {
+    id: "w1-gen-d5",
+    name: "Speed Training",
+    dayType: "speed",
+    estimatedMinutes: Math.ceil(totalSeconds / 60),
+    segments: [
+      createGetReady("w1-gen-d5-getready"),
+      createSegment(
+        "w1-gen-d5-flicks",
+        "Quick Flicks",
+        "Quick squeeze and release rhythm",
+        flickSets,
+        flickReps,
+        1,
+        1,
+        "quickFlicks",
+      ),
+      createBlockRest("w1-gen-d5-rest1"),
+      createSegment(
+        "w1-gen-d5-contract",
+        "Contract-Relax",
+        "Short squeeze with longer relaxation",
+        1,
+        contractReps,
+        2,
+        4,
+        "contractRelax",
+      ),
+      createBlockRest("w1-gen-d5-rest2"),
+      createSegment(
+        "w1-gen-d5-slow",
+        "Slow Holds",
+        "Squeeze and hold for control",
+        1,
+        slowReps,
+        slowHold,
+        4,
+        "slowHolds",
+      ),
+      createSegment(
+        "w1-gen-d5-cooldown",
+        "Cool Down",
+        "Relax and breathe deeply",
+        1,
+        1,
+        0,
+        20,
+        "breathing",
+      ),
+    ],
+  };
+};
+
+export const getWeek1WorkoutForDayIndex = (
+  dayIndex: number,
+  calibrationLevel: ChallengeCalibrationLevel,
+): DayTemplate => {
+  if (dayIndex === 0) {
+    return calibrationStrengthDay();
+  }
+
+  if (calibrationLevel === "easy") {
+    switch (dayIndex) {
+      case 1:
+        return lightStrengthDay("w1-acc-d2");
+      case 2:
+        return acceleratedStrengthDay();
+      case 3:
+        return createRestDay(1, 4);
+      case 4:
+        return speedDay(1);
+      case 5:
+        return lightStrengthDay("w1-acc-d6");
+      case 6:
+        return createRestDay(1, 7);
+      default:
+        return workoutProgram.weeks[0].days[dayIndex];
+    }
+  }
+
+  if (calibrationLevel === "tooHard") {
+    switch (dayIndex) {
+      case 1:
+        return createRestDay(1, 2);
+      case 2:
+        return gentleStrengthDay();
+      case 3:
+        return createRestDay(1, 4);
+      case 4:
+        return gentleSpeedDay();
+      case 5:
+        return createRestDay(1, 6);
+      case 6:
+        return createRestDay(1, 7);
+      default:
+        return workoutProgram.weeks[0].days[dayIndex];
+    }
+  }
+
+  return workoutProgram.weeks[0].days[dayIndex];
+};
+
 export const getWorkoutForRecoveryMode = (
   workout: DayTemplate,
 ): DayTemplate => {
