@@ -53,6 +53,14 @@ import {
 } from "@/data/workoutProgram";
 import { trackWeekComplete } from "@/lib/analytics";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import {
+  type UserProgramProgress,
+  CONTROL_MODE_LABEL,
+  CONTROL_MODE_TAGLINE,
+  CONTROL_MODE_WEEKLY_TARGET,
+  getControlModeTodaysWorkout,
+  getControlModeWeeklyCount,
+} from "@/lib/programCompletion";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -90,6 +98,9 @@ export default function HomeScreen() {
   const [scoreState, setScoreState] = useState<ControlScoreState | null>(null);
   const [pendingRankUp, setPendingRankUp] = useState<RankName | null>(null);
   const [showBackOnTrack, setShowBackOnTrack] = useState(false);
+  const [programProgress, setProgramProgress] =
+    useState<UserProgramProgress | null>(null);
+  const [controlModeWeekCount, setControlModeWeekCount] = useState(0);
 
   const loadData = useCallback(async () => {
     const startDate = await storage.getProgramStartDate();
@@ -102,20 +113,58 @@ export default function HomeScreen() {
     const pendingRank = await storage.consumePendingRankUp();
     if (pendingRank) setPendingRankUp(pendingRank);
 
-    const [userProgress, userSettings, calibState] = await Promise.all([
-      storage.getProgress(),
-      storage.getSettings(),
-      storage.getCalibrationState(),
-    ]);
+    const [userProgress, userSettings, calibState, progProgress] =
+      await Promise.all([
+        storage.getProgress(),
+        storage.getSettings(),
+        storage.getCalibrationState(),
+        storage.getProgramProgress(),
+      ]);
 
     setProgress(userProgress);
     setSettings(userSettings);
     setCalibrationCompleted(calibState.calibrationCompleted);
     setDifficultyPath(calibState.difficultyPath);
+    setProgramProgress(progProgress);
 
     const today = new Date();
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
     setIsTodayComplete(userProgress.completedDates.includes(todayStr));
+
+    // Detect 12-week program completion → navigate to ProgramComplete.
+    // Skipped if user is in 7-day challenge phase or already in control mode
+    // or has already made a decision.
+    const shouldShowComplete =
+      await storage.shouldShowProgramCompletion(todayStr);
+    if (shouldShowComplete) {
+      await storage.evaluateAndStoreCompletionTier();
+      navigation.navigate("ProgramComplete");
+      return;
+    }
+
+    // Control Mode: override today's workout with path-specific cycle and
+    // compute weekly session count for banner.
+    if (
+      progProgress.phase === "control_mode" &&
+      progProgress.controlModePath &&
+      progProgress.controlModeStartDate
+    ) {
+      const controlWorkout = getControlModeTodaysWorkout(
+        progProgress.controlModePath,
+        progProgress.controlModeStartDate,
+        todayStr,
+      );
+      setTodaysWorkout(controlWorkout);
+      const restDates = await storage.getRestDates();
+      setControlModeWeekCount(
+        getControlModeWeeklyCount(
+          userProgress.completedDates,
+          restDates,
+          todayStr,
+        ),
+      );
+      return;
+    }
 
     const workout = getTodaysWorkout(
       userProgress.completedDates,
@@ -188,7 +237,7 @@ export default function HomeScreen() {
         }
       }
     }
-  }, []);
+  }, [navigation]);
 
   useEffect(() => {
     loadData();
@@ -460,6 +509,57 @@ export default function HomeScreen() {
               </View>
             ) : null}
             <ControlScoreCard state={scoreState} />
+          </Animated.View>
+        ) : null}
+
+        {programProgress?.phase === "control_mode" &&
+        programProgress.controlModePath ? (
+          <Animated.View
+            entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(
+              ANIM_DELAY_SHORT,
+            )}
+          >
+            <View
+              style={[
+                styles.scoreNudge,
+                {
+                  backgroundColor: `${cp.neonCyan}1A`,
+                  borderColor: `${cp.neonCyan}4D`,
+                  flexDirection: "column",
+                  alignItems: "flex-start",
+                  gap: 4,
+                },
+              ]}
+              testID="banner-control-mode"
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <Feather name="shield" size={16} color={cp.neonCyan} />
+                <Text
+                  style={[styles.scoreNudgeText, { color: cp.text, flex: 0 }]}
+                  testID="text-control-mode-summary"
+                >
+                  Control Mode ·{" "}
+                  {CONTROL_MODE_LABEL[programProgress.controlModePath]} ·{" "}
+                  {controlModeWeekCount} of{" "}
+                  {CONTROL_MODE_WEEKLY_TARGET[programProgress.controlModePath]}{" "}
+                  this week
+                </Text>
+              </View>
+              <Text
+                style={[
+                  styles.scoreNudgeText,
+                  { color: cp.textSecondary, fontSize: 12 },
+                ]}
+              >
+                {CONTROL_MODE_TAGLINE[programProgress.controlModePath]}
+              </Text>
+            </View>
           </Animated.View>
         ) : null}
 

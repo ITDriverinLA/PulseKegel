@@ -16,6 +16,14 @@ import {
   getRankForScore,
   todayDateString,
 } from "./controlScore";
+import {
+  type UserProgramProgress,
+  type ControlModePath,
+  defaultProgramProgress,
+  evaluateTwelveWeekCompletion,
+  isTwelveWeekWindowComplete,
+  type TwelveWeekEvaluation,
+} from "./programCompletion";
 
 const RANKS_ORDER: RankName[] = RANKS.map((r) => r.name);
 
@@ -40,6 +48,7 @@ const STORAGE_KEYS = {
   RANKS_NOTIFIED: "pulsekegel_ranks_notified",
   BACK_ON_TRACK_PENDING: "pulsekegel_back_on_track_pending",
   PENDING_RANK_UP: "pulsekegel_pending_rank_up",
+  PROGRAM_PROGRESS: "pulsekegel_program_progress",
 };
 
 export interface ControlScoreState {
@@ -1271,6 +1280,154 @@ export const storage = {
     } catch {
       return false;
     }
+  },
+
+  async getProgramProgress(): Promise<UserProgramProgress> {
+    try {
+      const raw = await AsyncStorage.getItem(STORAGE_KEYS.PROGRAM_PROGRESS);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Partial<UserProgramProgress>;
+        return { ...defaultProgramProgress, ...parsed };
+      }
+      // Lazy-init for legacy users: if a program start date exists, assume
+      // they are mid-12-week program. Otherwise leave defaults.
+      const startDate = await this.getProgramStartDate();
+      const fresh: UserProgramProgress = {
+        ...defaultProgramProgress,
+        twelveWeekStartDate: startDate ?? null,
+      };
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.PROGRAM_PROGRESS,
+        JSON.stringify(fresh),
+      );
+      return fresh;
+    } catch {
+      return { ...defaultProgramProgress };
+    }
+  },
+
+  async saveProgramProgress(progress: UserProgramProgress): Promise<void> {
+    try {
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.PROGRAM_PROGRESS,
+        JSON.stringify(progress),
+      );
+    } catch (error) {
+      console.error("Error saving program progress:", error);
+    }
+  },
+
+  async evaluateAndStoreCompletionTier(): Promise<TwelveWeekEvaluation | null> {
+    const progress = await this.getProgramProgress();
+    if (!progress.twelveWeekStartDate) return null;
+    const [completedDates, restDates] = await Promise.all([
+      this.getCompletedDates(),
+      this.getRestDates(),
+    ]);
+    const evaluation = evaluateTwelveWeekCompletion(
+      completedDates,
+      restDates,
+      progress.twelveWeekStartDate,
+    );
+    if (progress.completionTier !== evaluation.tier) {
+      await this.saveProgramProgress({
+        ...progress,
+        completionTier: evaluation.tier,
+      });
+    }
+    return evaluation;
+  },
+
+  async shouldShowProgramCompletion(
+    today: string = todayDateString(),
+  ): Promise<boolean> {
+    const progress = await this.getProgramProgress();
+    if (progress.phase !== "twelve_week_program") return false;
+    if (!progress.twelveWeekStartDate) return false;
+    if (progress.twelveWeekDecisionDate) return false;
+    return isTwelveWeekWindowComplete(progress.twelveWeekStartDate, today);
+  },
+
+  async _clearWorkoutSessionKeys(): Promise<void> {
+    await AsyncStorage.multiRemove([
+      STORAGE_KEYS.COMPLETED_DATES,
+      STORAGE_KEYS.REST_DATES,
+      STORAGE_KEYS.TOTAL_SESSIONS,
+      STORAGE_KEYS.TOTAL_MINUTES,
+      STORAGE_KEYS.LAST_WEEKLY_REVIEW,
+      STORAGE_KEYS.LAST_WEEK_COMPLETE_TRACKED,
+      STORAGE_KEYS.REVIEW_HISTORY,
+      STORAGE_KEYS.CHALLENGE_OPTIONAL_DATES,
+      STORAGE_KEYS.WEEKLY_CALIBRATION,
+      STORAGE_KEYS.WEEKLY_CALIBRATION_PROMPTED,
+    ]);
+  },
+
+  async restartTwelveWeekProgram(
+    today: string = todayDateString(),
+  ): Promise<void> {
+    const prev = await this.getProgramProgress();
+    await this._clearWorkoutSessionKeys();
+    // Intentionally NOT resetting CONTROL_SCORE_STATE: the spec requires
+    // preserving controlScore, currentRank, highestRank, highestScore, and
+    // eliteAchieved across restarts so users carry their progression forward.
+    await this.setProgramStartDate(today);
+    await this.saveProgramProgress({
+      ...defaultProgramProgress,
+      phase: "twelve_week_program",
+      twelveWeekStartDate: today,
+      lifetimeProgramsCompleted: prev.lifetimeProgramsCompleted + 1,
+    });
+  },
+
+  async restartFromWeekFive(today: string = todayDateString()): Promise<void> {
+    const prev = await this.getProgramProgress();
+    await this._clearWorkoutSessionKeys();
+    // Backdate program start so today falls on day 28 (start of week 5).
+    // Control score state is preserved across the restart.
+    const start = addDays(today, -28);
+    await this.setProgramStartDate(start);
+    await this.saveProgramProgress({
+      ...defaultProgramProgress,
+      phase: "twelve_week_program",
+      twelveWeekStartDate: start,
+      lifetimeProgramsCompleted: prev.lifetimeProgramsCompleted,
+    });
+  },
+
+  async restartSevenDayCalibration(
+    today: string = todayDateString(),
+  ): Promise<void> {
+    const prev = await this.getProgramProgress();
+    await this._clearWorkoutSessionKeys();
+    await AsyncStorage.removeItem(STORAGE_KEYS.CHALLENGE_CALIBRATION);
+    // Control score state is preserved across the restart.
+    await this.setProgramStartDate(today);
+    await this.saveProgramProgress({
+      ...defaultProgramProgress,
+      phase: "seven_day_challenge",
+      twelveWeekStartDate: today,
+      lifetimeProgramsCompleted: prev.lifetimeProgramsCompleted,
+    });
+  },
+
+  async switchToControlMode(
+    path: ControlModePath,
+    today: string = todayDateString(),
+  ): Promise<void> {
+    const prev = await this.getProgramProgress();
+    const incrementedLifetime =
+      prev.phase === "twelve_week_program" && prev.completionTier === "strong"
+        ? prev.lifetimeProgramsCompleted + 1
+        : prev.lifetimeProgramsCompleted;
+    await this.saveProgramProgress({
+      ...prev,
+      phase: "control_mode",
+      controlModePath: path,
+      controlModeStartDate: today,
+      twelveWeekDecisionDate: today,
+      lifetimeProgramsCompleted: incrementedLifetime,
+    });
   },
 
   async resetControlScore(preserveHighest: boolean = false): Promise<void> {

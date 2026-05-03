@@ -13,6 +13,7 @@ import WorkoutPickerScreen from "@/screens/WorkoutPickerScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
 import PaywallScreen from "@/screens/PaywallScreen";
 import ChallengeCompleteScreen from "@/screens/ChallengeCompleteScreen";
+import ProgramCompleteScreen from "@/screens/ProgramCompleteScreen";
 import Week1ReviewScreen from "@/screens/Week1ReviewScreen";
 import MusicScreen from "@/screens/MusicScreen";
 import BreathworkModeSelectorScreen from "@/screens/BreathworkModeSelectorScreen";
@@ -40,6 +41,7 @@ export type RootStackParamList = {
   Onboarding: undefined;
   Paywall: undefined;
   ChallengeComplete: undefined;
+  ProgramComplete: undefined;
   Week1Review: undefined;
   Music: undefined;
   BreathworkModeSelector: undefined;
@@ -208,6 +210,17 @@ export default function RootStackNavigator() {
           component={ChallengeCompleteScreen}
           options={{
             headerShown: false,
+            animation: "fade",
+            animationDuration: 350,
+          }}
+        />
+        <Stack.Screen
+          name="ProgramComplete"
+          component={ProgramCompleteScreen}
+          options={{
+            presentation: "fullScreenModal",
+            headerShown: false,
+            gestureEnabled: false,
             animation: "fade",
             animationDuration: 350,
           }}
