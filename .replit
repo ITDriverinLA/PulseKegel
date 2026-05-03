@@ -52,6 +52,10 @@ args = "blog-dates"
 task = "workflow.run"
 args = "animation-lint"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "test"
+
 [[workflows.workflow]]
 name = "Start App"
 author = "agent"
@@ -104,6 +108,17 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npx eslint client/"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow]]
+name = "test"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npx jest"
 
 [workflows.workflow.metadata]
 isValidation = true

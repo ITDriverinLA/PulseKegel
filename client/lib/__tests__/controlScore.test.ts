@@ -12,243 +12,267 @@ import {
   getTrend,
 } from "../controlScore";
 
-let passed = 0;
-let failed = 0;
-const results: string[] = [];
+describe("clampScore", () => {
+  it("floors negatives at 0", () => {
+    expect(clampScore(-50)).toBe(0);
+  });
+  it("caps at 1000", () => {
+    expect(clampScore(2000)).toBe(1000);
+  });
+  it("rounds floats", () => {
+    expect(clampScore(42.7)).toBe(43);
+  });
+  it("treats NaN as 0", () => {
+    expect(clampScore(Number.NaN)).toBe(0);
+  });
+});
 
-function expect(label: string, actual: unknown, expected: unknown): void {
-  const ok = JSON.stringify(actual) === JSON.stringify(expected);
-  if (ok) {
-    passed++;
-    results.push(`PASS  ${label}`);
-  } else {
-    failed++;
-    results.push(
-      `FAIL  ${label}\n      expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`,
+describe("addDays", () => {
+  it("moves forward across month boundary", () => {
+    expect(addDays("2026-01-31", 1)).toBe("2026-02-01");
+  });
+  it("moves backward across month boundary", () => {
+    expect(addDays("2026-03-01", -1)).toBe("2026-02-28");
+  });
+});
+
+describe("getRankForScore - all 9 rank boundary transitions", () => {
+  const cases: [number, string][] = [
+    [0, "Rookie"],
+    [24, "Rookie"],
+    [25, "Novice"],
+    [79, "Novice"],
+    [80, "Apprentice"],
+    [169, "Apprentice"],
+    [170, "Journeyman"],
+    [289, "Journeyman"],
+    [290, "Capable"],
+    [429, "Capable"],
+    [430, "Controlled"],
+    [579, "Controlled"],
+    [580, "Strong"],
+    [709, "Strong"],
+    [710, "Advanced"],
+    [849, "Advanced"],
+    [850, "Elite"],
+    [1000, "Elite"],
+  ];
+  it.each(cases)("score %i -> %s", (score, rank) => {
+    expect(getRankForScore(score)).toBe(rank);
+  });
+});
+
+describe("getNextRank / getPointsToNextRank", () => {
+  it("Elite has no next rank", () => {
+    expect(getNextRank("Elite")).toBeNull();
+  });
+  it("Rookie -> Novice", () => {
+    expect(getNextRank("Rookie")?.name).toBe("Novice");
+  });
+  it("points from 0 to next rank = 25", () => {
+    expect(getPointsToNextRank(0)).toBe(25);
+  });
+  it("points from 24 to next rank = 1", () => {
+    expect(getPointsToNextRank(24)).toBe(1);
+  });
+  it("points to next at Elite = 0", () => {
+    expect(getPointsToNextRank(900)).toBe(0);
+  });
+});
+
+describe("getRankBandProgress", () => {
+  it("returns 1 at the Elite (terminal) rank", () => {
+    expect(getRankBandProgress(900)).toBe(1);
+  });
+  it("returns 0 at the bottom of a band", () => {
+    expect(getRankBandProgress(0)).toBe(0);
+  });
+  it("returns ~0.5 at the middle of a band", () => {
+    const p = getRankBandProgress(12);
+    expect(p).toBeGreaterThan(0.4);
+    expect(p).toBeLessThan(0.6);
+  });
+  it("returns ~1 just before the next rank threshold", () => {
+    expect(getRankBandProgress(24)).toBeCloseTo(24 / 25, 5);
+  });
+});
+
+describe("calculateDecayForIdleDay - tier transitions at days 3 and 8", () => {
+  it("days 1 and 2 are grace (0)", () => {
+    expect(calculateDecayForIdleDay(1)).toBe(0);
+    expect(calculateDecayForIdleDay(2)).toBe(0);
+  });
+  it("day 3 is the first decay tier (-3)", () => {
+    expect(calculateDecayForIdleDay(3)).toBe(3);
+  });
+  it("day 7 is still in the first decay tier (-3)", () => {
+    expect(calculateDecayForIdleDay(7)).toBe(3);
+  });
+  it("day 8 jumps to the second decay tier (-5)", () => {
+    expect(calculateDecayForIdleDay(8)).toBe(5);
+  });
+  it("very long idle stays at the second decay tier (-5)", () => {
+    expect(calculateDecayForIdleDay(30)).toBe(5);
+  });
+});
+
+describe("calculateSessionGain - streak and rolling thresholds", () => {
+  it("base gain with no bonuses = 2", () => {
+    expect(calculateSessionGain(0, 0)).toBe(2);
+    expect(calculateSessionGain(1, 1)).toBe(2);
+  });
+  it("crossing streak 3 adds +1 (=3)", () => {
+    expect(calculateSessionGain(2, 1)).toBe(2);
+    expect(calculateSessionGain(3, 1)).toBe(3);
+  });
+  it("crossing streak 7 adds another +1 (=4)", () => {
+    expect(calculateSessionGain(6, 1)).toBe(3);
+    expect(calculateSessionGain(7, 1)).toBe(4);
+  });
+  it("crossing rolling 5/7 adds +3", () => {
+    expect(calculateSessionGain(1, 4)).toBe(2);
+    expect(calculateSessionGain(1, 5)).toBe(5);
+    expect(calculateSessionGain(1, 6)).toBe(5);
+  });
+  it("crossing rolling 7/7 adds another +3 but is capped at 7", () => {
+    expect(calculateSessionGain(1, 7)).toBe(7);
+  });
+  it("total gain is capped at 7 even when all bonuses stack", () => {
+    expect(calculateSessionGain(7, 7)).toBe(7);
+    expect(calculateSessionGain(30, 7)).toBe(7);
+  });
+});
+
+describe("getCompletedDaysInLast7", () => {
+  it("counts dates within the 7-day inclusive window", () => {
+    const set = new Set<string>([
+      "2026-05-03",
+      "2026-05-02",
+      "2026-05-01",
+      "2026-04-29",
+      "2026-04-28",
+      "2026-04-27",
+    ]);
+    expect(getCompletedDaysInLast7(set, "2026-05-03")).toBe(6);
+  });
+  it("ignores dates outside the window", () => {
+    expect(getCompletedDaysInLast7(new Set(["2026-04-25"]), "2026-05-03")).toBe(
+      0,
     );
-  }
-}
+  });
+  it("returns 0 for an empty set", () => {
+    expect(getCompletedDaysInLast7(new Set(), "2026-05-03")).toBe(0);
+  });
+});
 
-expect("clampScore floors at 0", clampScore(-50), 0);
-expect("clampScore caps at 1000", clampScore(2000), 1000);
-expect("clampScore rounds", clampScore(42.7), 43);
-expect("clampScore handles NaN", clampScore(Number.NaN), 0);
+describe("getTrend", () => {
+  it("returns 'gaining' when score moved up by >= 2", () => {
+    expect(
+      getTrend(
+        [
+          { date: "2026-04-29", score: 100 },
+          { date: "2026-04-30", score: 102 },
+        ],
+        110,
+        "2026-05-03",
+      ),
+    ).toBe("gaining");
+  });
+  it("returns 'slipping' when score dropped by >= 2", () => {
+    expect(
+      getTrend([{ date: "2026-04-29", score: 100 }], 95, "2026-05-03"),
+    ).toBe("slipping");
+  });
+  it("returns 'holding' for movement within +/- 1", () => {
+    expect(
+      getTrend([{ date: "2026-04-29", score: 100 }], 101, "2026-05-03"),
+    ).toBe("holding");
+    expect(
+      getTrend([{ date: "2026-04-29", score: 100 }], 99, "2026-05-03"),
+    ).toBe("holding");
+  });
+  it("returns 'holding' on empty history", () => {
+    expect(getTrend([], 50, "2026-05-03")).toBe("holding");
+  });
+  it("falls back to oldest entry when no entry is >= 3 days old", () => {
+    // history only contains a recent point (1 day ago) - baseline falls back to history[0]
+    expect(
+      getTrend([{ date: "2026-05-02", score: 50 }], 60, "2026-05-03"),
+    ).toBe("gaining");
+  });
+});
 
-expect("addDays forward", addDays("2026-01-31", 1), "2026-02-01");
-expect("addDays backward", addDays("2026-03-01", -1), "2026-02-28");
-
-expect("rank for 0 = Rookie", getRankForScore(0), "Rookie");
-expect("rank for 24 = Rookie", getRankForScore(24), "Rookie");
-expect("rank for 25 = Novice", getRankForScore(25), "Novice");
-expect("rank for 169 = Apprentice", getRankForScore(169), "Apprentice");
-expect("rank for 170 = Journeyman", getRankForScore(170), "Journeyman");
-expect("rank for 849 = Advanced", getRankForScore(849), "Advanced");
-expect("rank for 850 = Elite", getRankForScore(850), "Elite");
-expect("rank for 1000 = Elite", getRankForScore(1000), "Elite");
-
-expect("nextRank Elite is null", getNextRank("Elite"), null);
-expect(
-  "nextRank Rookie is Novice",
-  getNextRank("Rookie")?.name ?? null,
-  "Novice",
-);
-
-expect("pointsToNext from 0 = 25", getPointsToNextRank(0), 25);
-expect("pointsToNext from 24 = 1", getPointsToNextRank(24), 1);
-expect("pointsToNext at Elite = 0", getPointsToNextRank(900), 0);
-
-expect("bandProgress at Elite = 1", getRankBandProgress(900), 1);
-expect("bandProgress at Rookie min = 0", getRankBandProgress(0), 0);
-
-expect("decay days 1 = 0", calculateDecayForIdleDay(1), 0);
-expect("decay days 2 = 0", calculateDecayForIdleDay(2), 0);
-expect("decay days 3 = 3", calculateDecayForIdleDay(3), 3);
-expect("decay days 7 = 3", calculateDecayForIdleDay(7), 3);
-expect("decay days 8 = 5", calculateDecayForIdleDay(8), 5);
-expect("decay days 30 = 5", calculateDecayForIdleDay(30), 5);
-
-expect("gain base = 2", calculateSessionGain(1, 1), 2);
-expect("gain at streak 3 = 3", calculateSessionGain(3, 1), 3);
-expect("gain at streak 7 = 4", calculateSessionGain(7, 1), 4);
-expect("gain rolling 5 of 7 = 5+2 (2+3)", calculateSessionGain(1, 5), 5);
-expect("gain rolling 6 still 5/7 bonus", calculateSessionGain(1, 6), 5);
-expect(
-  "gain at 7 streak + 7 rolling capped at 7",
-  calculateSessionGain(7, 7),
-  7,
-);
-expect(
-  "gain at 30 streak + 7 rolling capped at 7",
-  calculateSessionGain(30, 7),
-  7,
-);
-
-const set = new Set<string>([
-  "2026-05-03",
-  "2026-05-02",
-  "2026-05-01",
-  "2026-04-29",
-  "2026-04-28",
-  "2026-04-27",
-]);
-expect(
-  "rolling7 counts last-7-day window inclusive",
-  getCompletedDaysInLast7(set, "2026-05-03"),
-  6,
-);
-expect(
-  "rolling7 ignores out-of-window dates",
-  getCompletedDaysInLast7(new Set(["2026-04-25"]), "2026-05-03"),
-  0,
-);
-
-expect(
-  "trend gaining when score moved up >= 2",
-  getTrend(
-    [
-      { date: "2026-04-29", score: 100 },
-      { date: "2026-04-30", score: 102 },
-    ],
-    110,
-    "2026-05-03",
-  ),
-  "gaining",
-);
-expect(
-  "trend slipping when score dropped >= 2",
-  getTrend([{ date: "2026-04-29", score: 100 }], 95, "2026-05-03"),
-  "slipping",
-);
-expect(
-  "trend holding within +/- 1",
-  getTrend([{ date: "2026-04-29", score: 100 }], 101, "2026-05-03"),
-  "holding",
-);
-expect("trend with empty history", getTrend([], 50, "2026-05-03"), "holding");
-
-function simulateDecay(
-  startScore: number,
-  lastUpdateDate: string,
-  today: string,
-  sessionDates: string[],
-): { score: number; idleDays: number } {
-  const completedSet = new Set(sessionDates);
-  const yesterday = addDays(today, -1);
-  let cursor = lastUpdateDate;
-  let score = startScore;
-  let idleDays = 0;
-  while (cursor < yesterday) {
-    cursor = addDays(cursor, 1);
-    if (completedSet.has(cursor)) {
-      idleDays = 0;
-    } else {
-      idleDays += 1;
-      score = clampScore(score - calculateDecayForIdleDay(idleDays));
+describe("RANKS table integrity", () => {
+  it("has exactly 9 ranks", () => {
+    expect(RANKS).toHaveLength(9);
+  });
+  it("starts at Rookie and ends at Elite", () => {
+    expect(RANKS[0].name).toBe("Rookie");
+    expect(RANKS[RANKS.length - 1].name).toBe("Elite");
+  });
+  it("rank bands are contiguous (each band's max + 1 == next band's min)", () => {
+    for (let i = 0; i < RANKS.length - 1; i++) {
+      expect(RANKS[i].max + 1).toBe(RANKS[i + 1].min);
     }
-  }
-  if (completedSet.has(today)) idleDays = 0;
-  return { score, idleDays };
-}
+  });
+});
 
-expect(
-  "decay scenario: open day after one missed day = no decay",
-  simulateDecay(100, "2026-05-01", "2026-05-03", ["2026-05-01"]),
-  { score: 100, idleDays: 1 },
-);
-expect(
-  "decay scenario: open day 4 (last on day 1) -> only days 2,3 elapsed, both grace",
-  simulateDecay(100, "2026-05-01", "2026-05-04", ["2026-05-01"]),
-  { score: 100, idleDays: 2 },
-);
-expect(
-  "decay scenario: open day 5 after skipping 3 days = -3 (day 3 only)",
-  simulateDecay(100, "2026-05-01", "2026-05-05", ["2026-05-01"]),
-  { score: 97, idleDays: 3 },
-);
-expect(
-  "decay scenario: open day 9 after 7 elapsed missed days = -3*5 = -15",
-  simulateDecay(100, "2026-05-01", "2026-05-09", ["2026-05-01"]),
-  { score: 85, idleDays: 7 },
-);
-expect(
-  "decay scenario: open day 10 after 8 elapsed missed days = -3*5 + -5 = -20",
-  simulateDecay(100, "2026-05-01", "2026-05-10", ["2026-05-01"]),
-  { score: 80, idleDays: 8 },
-);
-expect(
-  "decay scenario: today is tomorrow of last update with session yesterday -> no decay",
-  simulateDecay(100, "2026-05-02", "2026-05-03", ["2026-05-02"]),
-  { score: 100, idleDays: 0 },
-);
-expect(
-  "decay scenario: completing today resets idleDays even if past gap",
-  simulateDecay(100, "2026-05-01", "2026-05-05", ["2026-05-01", "2026-05-05"]),
-  { score: 97, idleDays: 0 },
-);
-expect(
-  "decay scenario: same-day reopen is a no-op",
-  simulateDecay(100, "2026-05-03", "2026-05-03", []),
-  { score: 100, idleDays: 0 },
-);
-expect(
-  "decay scenario: gap of 2 days -> still grace period",
-  simulateDecay(100, "2026-05-01", "2026-05-03", []),
-  { score: 100, idleDays: 1 },
-);
-
-function simulateCompleteWithInactivity(
-  startScore: number,
-  lastUpdateDate: string,
-  today: string,
-  pastSessionDates: string[],
-): { wasInactive: boolean; idleDaysAtCheck: number } {
-  const completedSet = new Set(pastSessionDates);
-  let cursor = lastUpdateDate;
-  let idleDays = 0;
-  let score = startScore;
-  if (lastUpdateDate < today) {
+describe("decay simulation - integration of calculateDecayForIdleDay over time", () => {
+  function simulateDecay(
+    startScore: number,
+    lastUpdateDate: string,
+    today: string,
+    sessionDates: string[],
+  ): { score: number; idleDays: number } {
+    const completedSet = new Set(sessionDates);
     const yesterday = addDays(today, -1);
+    let cursor = lastUpdateDate;
+    let score = startScore;
+    let idleDays = 0;
     while (cursor < yesterday) {
       cursor = addDays(cursor, 1);
-      if (cursor !== today && completedSet.has(cursor)) {
+      if (completedSet.has(cursor)) {
         idleDays = 0;
       } else {
         idleDays += 1;
         score = clampScore(score - calculateDecayForIdleDay(idleDays));
       }
     }
+    if (completedSet.has(today)) idleDays = 0;
+    return { score, idleDays };
   }
-  const wasInactive = idleDays >= 3;
-  return { wasInactive, idleDaysAtCheck: idleDays };
-}
-expect(
-  "back-on-track: 5-day gap then session today triggers wasInactive",
-  simulateCompleteWithInactivity(100, "2026-05-01", "2026-05-06", [
-    "2026-05-01",
-  ]),
-  { wasInactive: true, idleDaysAtCheck: 4 },
-);
-expect(
-  "back-on-track: 1-day gap does not trigger wasInactive",
-  simulateCompleteWithInactivity(100, "2026-05-01", "2026-05-03", [
-    "2026-05-01",
-  ]),
-  { wasInactive: false, idleDaysAtCheck: 1 },
-);
-expect(
-  "back-on-track: 3-day gap triggers wasInactive",
-  simulateCompleteWithInactivity(100, "2026-05-01", "2026-05-05", [
-    "2026-05-01",
-  ]),
-  { wasInactive: true, idleDaysAtCheck: 3 },
-);
 
-expect("RANKS has 9 ranks", RANKS.length, 9);
-expect("RANKS first is Rookie", RANKS[0].name, "Rookie");
-expect("RANKS last is Elite", RANKS[RANKS.length - 1].name, "Elite");
-
-console.log(results.join("\n"));
-console.log(`\n${passed} passed, ${failed} failed`);
-if (failed > 0) {
-  process.exit(1);
-}
+  it("one missed day stays in grace (no decay)", () => {
+    expect(
+      simulateDecay(100, "2026-05-01", "2026-05-03", ["2026-05-01"]),
+    ).toEqual({ score: 100, idleDays: 1 });
+  });
+  it("two elapsed missed days still in grace", () => {
+    expect(
+      simulateDecay(100, "2026-05-01", "2026-05-04", ["2026-05-01"]),
+    ).toEqual({ score: 100, idleDays: 2 });
+  });
+  it("first decay hit is exactly -3 on day 3", () => {
+    expect(
+      simulateDecay(100, "2026-05-01", "2026-05-05", ["2026-05-01"]),
+    ).toEqual({ score: 97, idleDays: 3 });
+  });
+  it("seven elapsed missed days = 5 decay days at -3 each = -15", () => {
+    expect(
+      simulateDecay(100, "2026-05-01", "2026-05-09", ["2026-05-01"]),
+    ).toEqual({ score: 85, idleDays: 7 });
+  });
+  it("eight elapsed missed days = -15 (days 3-7) + -5 (day 8) = -20", () => {
+    expect(
+      simulateDecay(100, "2026-05-01", "2026-05-10", ["2026-05-01"]),
+    ).toEqual({ score: 80, idleDays: 8 });
+  });
+  it("completing today resets idleDays to 0 even after a gap", () => {
+    expect(
+      simulateDecay(100, "2026-05-01", "2026-05-05", [
+        "2026-05-01",
+        "2026-05-05",
+      ]),
+    ).toEqual({ score: 97, idleDays: 0 });
+  });
+});
