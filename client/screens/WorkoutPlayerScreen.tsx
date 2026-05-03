@@ -238,7 +238,10 @@ export default function WorkoutPlayerScreen() {
                 .map((s) => s.type),
             ),
           );
-          if (exerciseTypes.length > 0) {
+          // Only Control Mode sessions feed weak-area detection so the
+          // signal isn't biased by 12-week program workouts.
+          const isControlModeSession = weekNumber === 0 || phase === "Control";
+          if (exerciseTypes.length > 0 && isControlModeSession) {
             await storage.addSegmentTypeHistoryEntry(today, exerciseTypes);
           }
           trackSessionComplete({
@@ -337,6 +340,7 @@ export default function WorkoutPlayerScreen() {
     stopAmbient,
     weekNumber,
     dayNumber,
+    phase,
   ]);
 
   useEffect(() => {
