@@ -22,6 +22,11 @@ export interface UserProgramProgress {
   completionTier: CompletionTier | null;
   controlModePath: ControlModePath | null;
   controlModeStartDate: string | null;
+  controlModeUnlocked: boolean;
+  weeklyTarget: number | null;
+  currentWeek: number | null;
+  currentDay: number | null;
+  currentChallengeDay: number | null;
   lifetimeProgramsCompleted: number;
 }
 
@@ -33,6 +38,11 @@ export const defaultProgramProgress: UserProgramProgress = {
   completionTier: null,
   controlModePath: null,
   controlModeStartDate: null,
+  controlModeUnlocked: false,
+  weeklyTarget: null,
+  currentWeek: null,
+  currentDay: null,
+  currentChallengeDay: null,
   lifetimeProgramsCompleted: 0,
 };
 

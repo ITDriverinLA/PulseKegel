@@ -65,15 +65,21 @@ beforeEach(() => {
 });
 
 describe("storage program-completion helpers", () => {
-  it("getProgramProgress lazy-inits to seven_day_challenge when calibration is in progress", async () => {
+  it("getProgramProgress lazy-inits to twelve_week_program for legacy users with no calibration record", async () => {
+    // No PROGRAM_PROGRESS, no CHALLENGE_CALIBRATION - typical legacy user.
+    await AsyncStorage.setItem("pulsekegel_program_start_date", "2026-01-01");
+    const p = await storage.getProgramProgress();
+    expect(p.phase).toBe("twelve_week_program");
+    expect(p.twelveWeekStartDate).toBe("2026-01-01");
+  });
+
+  it("getProgramProgress lazy-inits to seven_day_challenge only when calibration is in progress (record exists, not completed)", async () => {
     await AsyncStorage.setItem(
       "pulsekegel_challenge_calibration",
       JSON.stringify({
-        easyCount: 0,
-        okayCount: 0,
-        tooHardCount: 0,
-        calibrationCompleted: false,
+        calibrationLevel: null,
         difficultyPath: null,
+        calibrationCompleted: false,
       }),
     );
     const p = await storage.getProgramProgress();
@@ -85,16 +91,20 @@ describe("storage program-completion helpers", () => {
     await AsyncStorage.setItem(
       "pulsekegel_challenge_calibration",
       JSON.stringify({
-        easyCount: 0,
-        okayCount: 0,
-        tooHardCount: 0,
-        calibrationCompleted: true,
+        calibrationLevel: "okay",
         difficultyPath: "standard",
+        calibrationCompleted: true,
       }),
     );
     const p = await storage.getProgramProgress();
     expect(p.phase).toBe("twelve_week_program");
     expect(p.twelveWeekStartDate).toBe("2026-01-01");
+  });
+
+  it("getProgramProgress lazy-inits to twelve_week_program for fresh installs (no data at all)", async () => {
+    const p = await storage.getProgramProgress();
+    expect(p.phase).toBe("twelve_week_program");
+    expect(p.twelveWeekStartDate).toBeNull();
   });
 
   it("evaluateAndStoreCompletionTier persists tier and twelveWeekCompletionDate", async () => {
@@ -227,6 +237,8 @@ describe("storage program-completion helpers", () => {
     const p1 = await storage.getProgramProgress();
     expect(p1.phase).toBe("control_mode");
     expect(p1.controlModePath).toBe("build");
+    expect(p1.controlModeUnlocked).toBe(true);
+    expect(p1.weeklyTarget).toBe(6); // build target
     expect(p1.lifetimeProgramsCompleted).toBe(3);
 
     // Score state still preserved across the transition.

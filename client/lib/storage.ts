@@ -23,6 +23,7 @@ import {
   defaultProgramProgress,
   evaluateTwelveWeekCompletion,
   isTwelveWeekWindowComplete,
+  CONTROL_MODE_WEEKLY_TARGET,
   type TwelveWeekEvaluation,
 } from "./programCompletion";
 
@@ -1290,16 +1291,25 @@ export const storage = {
         const parsed = JSON.parse(raw) as Partial<UserProgramProgress>;
         return { ...defaultProgramProgress, ...parsed };
       }
-      // Lazy-init for legacy users: if calibration is still in progress,
-      // they're mid-7-day-challenge. Otherwise default to the 12-week
-      // program (anchored to programStartDate when present).
-      const [startDate, calib] = await Promise.all([
+      // Lazy-init for legacy users: default to twelve_week_program (anchored
+      // to programStartDate when present). Reserve seven_day_challenge for
+      // users with an explicit in-progress challenge signal — namely a
+      // partial calibration record that exists but is not yet completed.
+      const [startDate, calibRaw] = await Promise.all([
         this.getProgramStartDate(),
-        this.getCalibrationState(),
+        AsyncStorage.getItem(STORAGE_KEYS.CHALLENGE_CALIBRATION),
       ]);
-      const phase: ProgramPhase = calib.calibrationCompleted
-        ? "twelve_week_program"
-        : "seven_day_challenge";
+      let phase: ProgramPhase = "twelve_week_program";
+      if (calibRaw) {
+        try {
+          const calib = JSON.parse(calibRaw) as {
+            calibrationCompleted?: boolean;
+          };
+          if (!calib.calibrationCompleted) phase = "seven_day_challenge";
+        } catch {
+          // ignore parse errors and stick with the default
+        }
+      }
       const fresh: UserProgramProgress = {
         ...defaultProgramProgress,
         phase,
@@ -1402,6 +1412,10 @@ export const storage = {
       ...defaultProgramProgress,
       phase: "twelve_week_program",
       twelveWeekStartDate: today,
+      currentWeek: 1,
+      currentDay: 1,
+      currentChallengeDay: null,
+      controlModeUnlocked: prev.controlModeUnlocked,
       lifetimeProgramsCompleted: prev.lifetimeProgramsCompleted + 1,
     });
   },
@@ -1417,6 +1431,10 @@ export const storage = {
       ...defaultProgramProgress,
       phase: "twelve_week_program",
       twelveWeekStartDate: start,
+      currentWeek: 5,
+      currentDay: 1,
+      currentChallengeDay: null,
+      controlModeUnlocked: prev.controlModeUnlocked,
       lifetimeProgramsCompleted: prev.lifetimeProgramsCompleted,
     });
   },
@@ -1433,6 +1451,10 @@ export const storage = {
       ...defaultProgramProgress,
       phase: "seven_day_challenge",
       twelveWeekStartDate: today,
+      currentWeek: null,
+      currentDay: null,
+      currentChallengeDay: 1,
+      controlModeUnlocked: prev.controlModeUnlocked,
       lifetimeProgramsCompleted: prev.lifetimeProgramsCompleted,
     });
   },
@@ -1452,6 +1474,11 @@ export const storage = {
       controlModePath: path,
       controlModeStartDate: today,
       twelveWeekDecisionDate: today,
+      controlModeUnlocked: true,
+      weeklyTarget: CONTROL_MODE_WEEKLY_TARGET[path],
+      currentWeek: null,
+      currentDay: null,
+      currentChallengeDay: null,
       lifetimeProgramsCompleted: incrementedLifetime,
     });
   },
