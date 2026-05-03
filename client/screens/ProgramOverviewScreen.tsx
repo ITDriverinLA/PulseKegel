@@ -100,6 +100,10 @@ export default function ProgramOverviewScreen() {
   const [expandedScheduleDay, setExpandedScheduleDay] = useState<number | null>(
     null,
   );
+  const [expandedProgramDay, setExpandedProgramDay] = useState<{
+    weekNumber: number;
+    dayIndex: number;
+  } | null>(null);
 
   const loadData = useCallback(async () => {
     const todayStr = (() => {
@@ -322,76 +326,173 @@ export default function ProgramOverviewScreen() {
               })
             : "";
 
+          const isDayExpanded =
+            expandedProgramDay?.weekNumber === week.weekNumber &&
+            expandedProgramDay?.dayIndex === index;
+          const segments = rest ? [] : day.segments;
+
           return (
-            <View
-              key={index}
-              style={[
-                styles.expandedDayRow,
-                current && { backgroundColor: cp.neonGreen + "08" },
-              ]}
-            >
-              <View style={styles.expandedDayLeft}>
-                <View
-                  style={[
-                    styles.expandedDayDot,
-                    { backgroundColor: rest ? cp.textMuted : color },
-                    completed && !rest && { backgroundColor: color },
-                    completed &&
-                      rest && { backgroundColor: cp.neonCyan + "40" },
-                  ]}
-                >
-                  {completed && !rest ? (
-                    <Feather name="check" size={10} color={cp.bg} />
-                  ) : null}
-                </View>
-                <View>
-                  <Text
-                    style={[
-                      styles.expandedDayName,
-                      { color: cp.text, fontSize: 13 * fontScale },
-                    ]}
-                  >
-                    {rest ? "Rest Day" : DAY_TYPE_NAMES[day.dayType]}
-                  </Text>
-                  <Text
-                    style={[styles.expandedDayDate, { color: cp.textMuted }]}
-                  >
-                    {dateLabel}
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.expandedDayRight}>
-                {rest ? (
-                  <Text
-                    style={[styles.expandedDayMeta, { color: cp.textMuted }]}
-                  >
-                    Recovery
-                  </Text>
-                ) : (
-                  <Text
-                    style={[styles.expandedDayMeta, { color: cp.textMuted }]}
-                  >
-                    {day.estimatedMinutes} min
-                  </Text>
-                )}
-                {current ? (
+            <View key={index}>
+              <Pressable
+                disabled={rest}
+                onPress={() =>
+                  setExpandedProgramDay(
+                    isDayExpanded
+                      ? null
+                      : { weekNumber: week.weekNumber, dayIndex: index },
+                  )
+                }
+                style={[
+                  styles.expandedDayRow,
+                  current && { backgroundColor: cp.neonGreen + "08" },
+                ]}
+                testID={`program-day-${week.weekNumber}-${index}`}
+              >
+                <View style={styles.expandedDayLeft}>
                   <View
                     style={[
-                      styles.currentBadge,
-                      {
-                        backgroundColor: cp.neonGreen + "20",
-                        borderColor: cp.neonGreen + "40",
-                      },
+                      styles.expandedDayDot,
+                      { backgroundColor: rest ? cp.textMuted : color },
+                      completed && !rest && { backgroundColor: color },
+                      completed &&
+                        rest && { backgroundColor: cp.neonCyan + "40" },
                     ]}
                   >
+                    {completed && !rest ? (
+                      <Feather name="check" size={10} color={cp.bg} />
+                    ) : null}
+                  </View>
+                  <View>
                     <Text
-                      style={[styles.currentBadgeText, { color: cp.neonGreen }]}
+                      style={[
+                        styles.expandedDayName,
+                        { color: cp.text, fontSize: 13 * fontScale },
+                      ]}
                     >
-                      TODAY
+                      {rest ? "Rest Day" : DAY_TYPE_NAMES[day.dayType]}
+                    </Text>
+                    <Text
+                      style={[styles.expandedDayDate, { color: cp.textMuted }]}
+                    >
+                      {dateLabel}
                     </Text>
                   </View>
-                ) : null}
-              </View>
+                </View>
+                <View style={styles.expandedDayRight}>
+                  {rest ? (
+                    <Text
+                      style={[styles.expandedDayMeta, { color: cp.textMuted }]}
+                    >
+                      Recovery
+                    </Text>
+                  ) : (
+                    <Text
+                      style={[styles.expandedDayMeta, { color: cp.textMuted }]}
+                    >
+                      {day.estimatedMinutes} min
+                    </Text>
+                  )}
+                  {current ? (
+                    <View
+                      style={[
+                        styles.currentBadge,
+                        {
+                          backgroundColor: cp.neonGreen + "20",
+                          borderColor: cp.neonGreen + "40",
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.currentBadgeText,
+                          { color: cp.neonGreen },
+                        ]}
+                      >
+                        TODAY
+                      </Text>
+                    </View>
+                  ) : null}
+                  {!rest ? (
+                    <Feather
+                      name={isDayExpanded ? "chevron-up" : "chevron-down"}
+                      size={14}
+                      color={cp.textMuted}
+                    />
+                  ) : null}
+                </View>
+              </Pressable>
+              {isDayExpanded && !rest ? (
+                <View
+                  style={[
+                    styles.scheduleSegmentList,
+                    { borderLeftColor: cp.neonCyan + "40" },
+                  ]}
+                  testID={`program-day-${week.weekNumber}-${index}-segments`}
+                >
+                  {segments.length === 0 ? (
+                    <Text style={{ color: cp.textMuted, fontSize: 11 }}>
+                      No segments scheduled
+                    </Text>
+                  ) : (
+                    segments.map((s, si) => {
+                      const isExercise = EXERCISE_SEGMENT_TYPES.includes(
+                        s.type,
+                      );
+                      const typeLabel =
+                        SEGMENT_TYPE_LABEL[s.type] ??
+                        (s.type === "getReady"
+                          ? "Prep"
+                          : s.type === "blockRest"
+                            ? "Block Rest"
+                            : s.type === "breathing"
+                              ? "Cool Down"
+                              : s.type);
+                      const totalReps = s.sets * s.repsPerSet;
+                      const detail = isExercise
+                        ? `${s.sets}×${s.repsPerSet} · ${s.squeezeSeconds}s hold · ${s.restSeconds}s rest`
+                        : totalReps > 1
+                          ? `${s.sets}×${s.repsPerSet} · ${s.restSeconds}s`
+                          : `${s.restSeconds}s`;
+                      return (
+                        <View
+                          key={`${s.id}-${si}`}
+                          style={styles.scheduleSegmentRow}
+                        >
+                          <View style={{ flex: 1 }}>
+                            <Text
+                              style={{
+                                color: cp.text,
+                                fontSize: 12,
+                                fontWeight: "600",
+                              }}
+                            >
+                              {s.name}
+                            </Text>
+                            <Text
+                              style={{
+                                color: cp.textMuted,
+                                fontSize: 11,
+                                marginTop: 1,
+                              }}
+                            >
+                              {typeLabel}
+                            </Text>
+                          </View>
+                          <Text
+                            style={{
+                              color: cp.textSecondary,
+                              fontSize: 11,
+                              fontVariant: ["tabular-nums"],
+                            }}
+                          >
+                            {detail}
+                          </Text>
+                        </View>
+                      );
+                    })
+                  )}
+                </View>
+              ) : null}
             </View>
           );
         })}
