@@ -978,7 +978,7 @@ export const getWeek1WorkoutForDayIndex = (
       case 4:
         return speedDay(1);
       case 5:
-        return lightStrengthDay("w1-acc-d6");
+        return createRestDay(1, 6);
       case 6:
         return createRestDay(1, 7);
       default:

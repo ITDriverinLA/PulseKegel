@@ -88,7 +88,8 @@ export default function WorkoutPlayerScreen() {
   );
   const appStateRef = useRef(AppState.currentState);
   const startTimeRef = useRef<Date | null>(null);
-  const redirectToCalibrationRef = useRef(false);
+  const shouldRedirectToCalibrationRef = useRef(false);
+  const isCompleteRef = useRef(false);
 
   const phaseScale = useSharedValue(1);
   const phaseOpacity = useSharedValue(1);
@@ -101,6 +102,14 @@ export default function WorkoutPlayerScreen() {
     const userSettings = await storage.getSettings();
     setSettings(userSettings);
   }, []);
+
+  useEffect(() => {
+    if (weekNumber !== 1 || dayNumber !== 1) return;
+    (async () => {
+      const calibState = await storage.getCalibrationState();
+      shouldRedirectToCalibrationRef.current = !calibState.calibrationCompleted;
+    })();
+  }, [weekNumber, dayNumber]);
 
   useEffect(() => {
     loadSettings();
@@ -201,6 +210,7 @@ export default function WorkoutPlayerScreen() {
           stopAmbient();
           playSfx("complete");
           setTotalSeconds(seconds);
+          isCompleteRef.current = true;
           setIsComplete(true);
           await hapticsManager.triggerComplete(settings);
 
@@ -241,13 +251,6 @@ export default function WorkoutPlayerScreen() {
           }
 
           await rescheduleAfterCompletion();
-
-          if (weekNumber === 1 && dayNumber === 1) {
-            const calibState = await storage.getCalibrationState();
-            if (!calibState.calibrationCompleted) {
-              redirectToCalibrationRef.current = true;
-            }
-          }
 
           const awarded = await storage.checkAndAwardBadges();
           if (awarded.length > 0) {
@@ -365,7 +368,7 @@ export default function WorkoutPlayerScreen() {
   };
 
   const doGoBack = () => {
-    if (redirectToCalibrationRef.current) {
+    if (isCompleteRef.current && shouldRedirectToCalibrationRef.current) {
       navigation.replace("CalibrationFeedback");
     } else {
       navigation.goBack();
