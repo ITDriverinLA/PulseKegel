@@ -15,7 +15,12 @@ import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-import { storage } from "@/lib/storage";
+import {
+  storage,
+  type DifficultyPath,
+  type ControlScoreState,
+} from "@/lib/storage";
+import { estimateSessionsToNextRank, getNextRank } from "@/lib/controlScore";
 import { trackChallengeResult, trackChallengeCta } from "@/lib/analytics";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
@@ -44,6 +49,21 @@ interface ChallengeStats {
   totalCoreSessions: number;
   completedOptionalSessions: number;
 }
+
+const PATH_LABELS: Record<DifficultyPath, string> = {
+  gentle: "Gentle plan",
+  standard: "Standard plan",
+  accelerated: "Accelerated plan",
+};
+
+const PATH_BLURB: Record<DifficultyPath, string> = {
+  gentle:
+    "You followed the Gentle plan — lighter contractions and longer rest, dialed to where your body started.",
+  standard:
+    "You followed the Standard plan — the calibrated baseline matched to your starting strength.",
+  accelerated:
+    "You followed the Accelerated plan — heavier reps and shorter rest, calibrated to your starting strength.",
+};
 
 function getChallengeResult(stats: ChallengeStats): ChallengeResult {
   if (stats.completedCoreSessions === 0) return "not_started";
@@ -130,12 +150,30 @@ export default function ChallengeCompleteScreen() {
   const { checkSubscription } = useSubscription();
 
   const [stats, setStats] = useState<ChallengeStats | null>(null);
+  const [difficultyPath, setDifficultyPath] = useState<DifficultyPath | null>(
+    null,
+  );
+  const [scoreState, setScoreState] = useState<ControlScoreState | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isRestarting, setIsRestarting] = useState(false);
   const [restartError, setRestartError] = useState(false);
 
   useEffect(() => {
-    storage.getChallengeStats().then(setStats);
+    let cancelled = false;
+    (async () => {
+      const [s, cal, score] = await Promise.all([
+        storage.getChallengeStats(),
+        storage.getCalibrationState(),
+        storage.getControlScoreState(),
+      ]);
+      if (cancelled) return;
+      setStats(s);
+      setDifficultyPath(cal.difficultyPath);
+      setScoreState(score);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -254,6 +292,23 @@ export default function ChallengeCompleteScreen() {
           <Text style={[styles.label, { color: iconColor }]}>
             7-DAY CONTROL CHALLENGE
           </Text>
+          {difficultyPath ? (
+            <View
+              style={[
+                styles.planPill,
+                {
+                  backgroundColor: `${iconColor}1A`,
+                  borderColor: `${iconColor}55`,
+                },
+              ]}
+              testID="pill-difficulty-path"
+            >
+              <Feather name="sliders" size={11} color={iconColor} />
+              <Text style={[styles.planPillText, { color: iconColor }]}>
+                {PATH_LABELS[difficultyPath]}
+              </Text>
+            </View>
+          ) : null}
           <Text
             style={[styles.title, { color: cp.text, fontSize: 32 * fontScale }]}
           >
@@ -317,8 +372,91 @@ export default function ChallengeCompleteScreen() {
             <Text style={[styles.messageText, { color: cp.textSecondary }]}>
               {config.message}
             </Text>
+            {difficultyPath ? (
+              <Text
+                style={[
+                  styles.planBlurbText,
+                  { color: cp.textMuted, fontSize: 13 * fontScale },
+                ]}
+              >
+                {PATH_BLURB[difficultyPath]}
+              </Text>
+            ) : null}
           </View>
         </Animated.View>
+
+        {scoreState ? (
+          <Animated.View
+            entering={FadeInDown.delay(ANIM_DELAY_LONG)}
+            style={[
+              styles.nextRankCard,
+              {
+                backgroundColor: isDarkMode
+                  ? "rgba(26, 26, 46, 0.6)"
+                  : "rgba(255,255,255,0.7)",
+                borderColor: `${cp.neonCyan}33`,
+              },
+            ]}
+            testID="card-next-rank"
+          >
+            <View style={styles.nextRankHeader}>
+              <Feather name="trending-up" size={16} color={cp.neonCyan} />
+              <Text
+                style={[
+                  styles.nextRankLabel,
+                  { color: cp.neonCyan, fontSize: 11 * fontScale },
+                ]}
+              >
+                NEXT RANK
+              </Text>
+            </View>
+            {(() => {
+              const next = getNextRank(scoreState.currentRank);
+              const sessions = estimateSessionsToNextRank(
+                scoreState.controlScore,
+                scoreState.currentStreak,
+              );
+              if (!next || sessions === null) {
+                return (
+                  <Text
+                    style={[
+                      styles.nextRankBody,
+                      { color: cp.text, fontSize: 15 * fontScale },
+                    ]}
+                  >
+                    You&apos;ve reached Elite — the top rank. Hold the line.
+                  </Text>
+                );
+              }
+              return (
+                <Text
+                  style={[
+                    styles.nextRankBody,
+                    { color: cp.text, fontSize: 15 * fontScale },
+                  ]}
+                  testID="text-sessions-to-next-rank"
+                >
+                  <Text style={{ color: cp.text, fontWeight: "700" }}>
+                    {sessions}
+                  </Text>
+                  {` more session${sessions === 1 ? "" : "s"} to reach `}
+                  <Text style={{ color: cp.neonCyan, fontWeight: "700" }}>
+                    {next.name}
+                  </Text>
+                  {"."}
+                </Text>
+              );
+            })()}
+            <Text
+              style={[
+                styles.nextRankSubtle,
+                { color: cp.textMuted, fontSize: 11 * fontScale },
+              ]}
+            >
+              {`Currently ${scoreState.currentRank} · ${scoreState.controlScore} / 1000`}
+            </Text>
+          </Animated.View>
+        ) : null}
 
         <Animated.View
           entering={FadeInUp.delay(ANIM_DELAY_XL)}
@@ -489,6 +627,54 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
     textAlign: "center",
+  },
+  planPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 6,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.sm,
+  },
+  planPillText: {
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+  },
+  planBlurbText: {
+    marginTop: Spacing.md,
+    lineHeight: 20,
+    textAlign: "center",
+    fontStyle: "italic",
+  },
+  nextRankCard: {
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    padding: Spacing.lg,
+    marginBottom: Spacing.xl,
+    gap: Spacing.xs,
+  },
+  nextRankHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: Spacing.xs,
+  },
+  nextRankLabel: {
+    fontWeight: "700",
+    letterSpacing: 1.2,
+  },
+  nextRankBody: {
+    lineHeight: 22,
+  },
+  nextRankSubtle: {
+    marginTop: Spacing.xs,
+    fontWeight: "600",
+    letterSpacing: 0.4,
   },
   messageCard: {
     borderRadius: BorderRadius.lg,

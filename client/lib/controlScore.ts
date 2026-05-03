@@ -142,6 +142,20 @@ export function calculateSessionGain(
   return Math.min(gain, 7);
 }
 
+export function estimateSessionsToNextRank(
+  score: number,
+  currentStreak: number,
+): number | null {
+  const rank = getRankForScore(score);
+  const next = getNextRank(rank);
+  if (!next) return null;
+  const pointsNeeded = Math.max(0, next.min - clampScore(score));
+  if (pointsNeeded === 0) return 0;
+  const projectedStreak = Math.max(currentStreak, 0) + 1;
+  const perSession = calculateSessionGain(projectedStreak, projectedStreak);
+  return Math.max(1, Math.ceil(pointsNeeded / perSession));
+}
+
 export function calculateDecayForIdleDay(idleDays: number): number {
   if (idleDays <= 2) return 0;
   if (idleDays <= 7) return 3;
