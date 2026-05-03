@@ -1,0 +1,526 @@
+Here’s a ready-to-paste implementation brief for Replit.
+
+---
+
+# PulseKegel Feature Requirement: Live Rank & Control Score System
+
+## Goal
+
+Add a live progression system to PulseKegel based on consistency and completed sessions.
+
+The user should have a **Control Score** from **0 to 1000**. This score increases when the user completes sessions and slowly decreases when the user becomes inactive.
+
+The score maps to a visible **Rank**. The rank system should feel like skill mastery, not just a simple day counter.
+
+## Rank Ladder
+
+Use the following score bands:
+
+| Score Range | Rank       |
+| ----------: | ---------- |
+|        0–24 | Rookie     |
+|       25–79 | Novice     |
+|      80–169 | Apprentice |
+|     170–289 | Journeyman |
+|     290–429 | Capable    |
+|     430–579 | Controlled |
+|     580–709 | Strong     |
+|     710–849 | Advanced   |
+|    850–1000 | Elite      |
+
+## Core Rules
+
+### Control Score
+
+Each user has:
+
+```ts
+controlScore: number; // 0 to 1000
+currentRank: string;
+currentStreak: number; // consecutive days with completed session
+idleDays: number; // consecutive days without completed session
+lastSessionDate: string | null; // ISO date
+sessionHistory: string[]; // completed session dates in YYYY-MM-DD format
+highestRankAchieved: string;
+highestScoreAchieved: number;
+eliteAchieved: boolean;
+```
+
+The score should always be capped:
+
+```ts
+controlScore = Math.max(0, Math.min(1000, controlScore));
+```
+
+## Session Completion Scoring
+
+When a user completes a session, award points.
+
+### Base Points
+
+Every completed session gives:
+
+```ts
++2 points
+```
+
+### Streak Bonus
+
+Add bonus points based on the user’s current streak after today’s session is counted:
+
+```ts
+if currentStreak >= 3:
+  +1 point
+
+if currentStreak >= 7:
+  +1 additional point
+```
+
+So:
+
+* Days 1–2 of a streak = +2
+* Days 3–6 of a streak = +3
+* Days 7+ of a streak = +4
+
+### Rolling 7-Day Consistency Bonus
+
+Check how many sessions the user has completed in the last 7 calendar days, including today.
+
+If today’s completed session brings the user to exactly 5 completed days in the last 7:
+
+```ts
++3 points
+```
+
+If today’s completed session brings the user to exactly 7 completed days in the last 7:
+
+```ts
++3 additional points
+```
+
+This means:
+
+* The 5th session in a rolling 7-day window gets a bonus.
+* The 7th session in a rolling 7-day window gets a bonus.
+
+### Max Gain Example
+
+A user on a 7+ day streak who completes a session and reaches 7 sessions in the last 7 days earns:
+
+```ts
+2 base + 1 streak + 1 streak + 3 rolling bonus = 7 points
+```
+
+## Inactivity / Decay Logic
+
+The score should decay when the user does not complete sessions for multiple days.
+
+### Missed Day Rules
+
+On days with no completed session:
+
+```ts
+1st missed day: 0 point penalty
+2nd missed day: 0 point penalty
+3rd to 7th consecutive missed day: -3 points per day
+8th+ consecutive missed day: -5 points per day
+```
+
+This should be calculated when the app opens, when the home screen loads, or before displaying the user’s score/rank.
+
+Do not apply decay more than once per calendar day.
+
+## Streak Rules
+
+A streak is based on consecutive calendar days with at least one completed session.
+
+Rules:
+
+* Completing multiple sessions in one day should only count as **one completed day** for streak and rolling 7-day calculations.
+* Multiple sessions in one day may be allowed, but should not award repeated rank progression points unless the app intentionally supports that.
+* Recommended: only the **first completed session per calendar day** awards Control Score points.
+* If the user skips one day, the streak ends.
+* The first and second missed days do not reduce score, but they do reset the streak.
+
+## Decay Timing Logic
+
+When app loads:
+
+1. Check `lastScoreUpdateDate`.
+2. Compare it to today’s date.
+3. For each calendar day between `lastScoreUpdateDate` and today:
+
+   * If that date has a completed session in `sessionHistory`, do not apply decay.
+   * If no session was completed, increment `idleDays`.
+   * Apply decay based on the idle day rules.
+4. Update score.
+5. Save `lastScoreUpdateDate = today`.
+
+Suggested additional field:
+
+```ts
+lastScoreUpdateDate: string | null; // YYYY-MM-DD
+```
+
+## Rank Calculation
+
+Create a utility function:
+
+```ts
+function getRankForScore(score: number): string {
+  if (score >= 850) return "Elite";
+  if (score >= 710) return "Advanced";
+  if (score >= 580) return "Strong";
+  if (score >= 430) return "Controlled";
+  if (score >= 290) return "Capable";
+  if (score >= 170) return "Journeyman";
+  if (score >= 80) return "Apprentice";
+  if (score >= 25) return "Novice";
+  return "Rookie";
+}
+```
+
+## Milestone Expectations
+
+The scoring should roughly produce this progression for a highly consistent daily user:
+
+|   Timeframe | Approx Score | Expected Rank             |
+| ----------: | -----------: | ------------------------- |
+|       Day 1 |            2 | Rookie                    |
+|       Day 7 |           26 | Novice                    |
+|      Day 30 |         ~136 | Apprentice                |
+|      Day 60 |         ~286 | Journeyman / near Capable |
+|      Day 90 |         ~436 | Controlled                |
+|     Day 120 |         ~586 | Strong                    |
+|     Day 150 |         ~736 | Advanced                  |
+| Day 175–180 |        ~850+ | Elite                     |
+
+The intent is that **Elite takes roughly six months of strong consistency**.
+
+## UI Requirements
+
+Show the user’s rank and progression in the app.
+
+Recommended home screen elements:
+
+```text
+Rank: Controlled
+Control Score: 442 / 1000
+Trend: ↑ Gaining
+```
+
+Also show progress toward the next rank:
+
+```text
+68 points to Strong
+```
+
+### Progress Bar
+
+Display a progress bar between current rank and next rank.
+
+Example:
+
+* Current score: 442
+* Current rank: Controlled
+* Controlled range: 430–579
+* Next rank: Strong at 580
+* Progress through current band:
+
+```ts
+(score - currentRankMin) / (nextRankMin - currentRankMin)
+```
+
+## Suggested User Messages
+
+### On rank increase
+
+```text
+Rank up: Novice
+You’re building control. Keep going.
+```
+
+### On reaching Journeyman
+
+```text
+Rank up: Journeyman
+This is becoming a real habit.
+```
+
+### On reaching Controlled
+
+```text
+Rank up: Controlled
+You’re not just squeezing. You’re training control.
+```
+
+### On reaching Elite
+
+```text
+Elite unlocked.
+Six months of consistency changes the game.
+```
+
+### After 2 missed days
+
+```text
+Control slipping. One quick session gets you moving again.
+```
+
+### After returning from inactivity
+
+```text
+Back on track.
+Good. Now keep the signal alive.
+```
+
+## Achievement Logic
+
+Add both a **current rank** and a **highest rank achieved**.
+
+Current rank can decrease if the score decays.
+
+Highest rank achieved should never decrease.
+
+Fields:
+
+```ts
+currentRank: string;
+highestRankAchieved: string;
+highestScoreAchieved: number;
+eliteAchieved: boolean;
+```
+
+When score updates:
+
+```ts
+const newRank = getRankForScore(controlScore);
+
+currentRank = newRank;
+
+if (controlScore > highestScoreAchieved) {
+  highestScoreAchieved = controlScore;
+  highestRankAchieved = getRankForScore(controlScore);
+}
+
+if (controlScore >= 850) {
+  eliteAchieved = true;
+}
+```
+
+## Important Product Behavior
+
+Do not make rank a simple number of days.
+
+The system should feel alive:
+
+* consistent training increases score
+* inactivity slowly lowers current score
+* users always see movement
+* Elite remains a long-term achievement
+* highest rank provides permanent achievement value
+
+## Suggested TypeScript Pseudocode
+
+```ts
+const RANKS = [
+  { name: "Rookie", min: 0, max: 24 },
+  { name: "Novice", min: 25, max: 79 },
+  { name: "Apprentice", min: 80, max: 169 },
+  { name: "Journeyman", min: 170, max: 289 },
+  { name: "Capable", min: 290, max: 429 },
+  { name: "Controlled", min: 430, max: 579 },
+  { name: "Strong", min: 580, max: 709 },
+  { name: "Advanced", min: 710, max: 849 },
+  { name: "Elite", min: 850, max: 1000 },
+];
+
+function clampScore(score: number): number {
+  return Math.max(0, Math.min(1000, score));
+}
+
+function getRankForScore(score: number): string {
+  const rank = RANKS.find(r => score >= r.min && score <= r.max);
+  return rank ? rank.name : "Rookie";
+}
+
+function getCompletedDaysInLast7(sessionHistory: string[], today: string): number {
+  const todayDate = new Date(today);
+  const uniqueDays = new Set(sessionHistory);
+
+  let count = 0;
+
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(todayDate);
+    date.setDate(todayDate.getDate() - i);
+    const dateString = date.toISOString().slice(0, 10);
+
+    if (uniqueDays.has(dateString)) {
+      count++;
+    }
+  }
+
+  return count;
+}
+
+function calculateSessionGain(currentStreak: number, rolling7Count: number): number {
+  let gain = 2;
+
+  if (currentStreak >= 3) {
+    gain += 1;
+  }
+
+  if (currentStreak >= 7) {
+    gain += 1;
+  }
+
+  if (rolling7Count === 5) {
+    gain += 3;
+  }
+
+  if (rolling7Count === 7) {
+    gain += 3;
+  }
+
+  return gain;
+}
+
+function calculateDecayForIdleDay(idleDays: number): number {
+  if (idleDays <= 2) return 0;
+  if (idleDays <= 7) return 3;
+  return 5;
+}
+```
+
+## Session Completion Flow
+
+```ts
+function completeSession(userProgress, today) {
+  const alreadyCompletedToday = userProgress.sessionHistory.includes(today);
+
+  if (alreadyCompletedToday) {
+    return userProgress;
+  }
+
+  const yesterday = getDateOffset(today, -1);
+
+  if (userProgress.sessionHistory.includes(yesterday)) {
+    userProgress.currentStreak += 1;
+  } else {
+    userProgress.currentStreak = 1;
+  }
+
+  userProgress.idleDays = 0;
+
+  userProgress.sessionHistory.push(today);
+
+  const rolling7Count = getCompletedDaysInLast7(
+    userProgress.sessionHistory,
+    today
+  );
+
+  const gain = calculateSessionGain(
+    userProgress.currentStreak,
+    rolling7Count
+  );
+
+  userProgress.controlScore = clampScore(
+    userProgress.controlScore + gain
+  );
+
+  userProgress.currentRank = getRankForScore(userProgress.controlScore);
+
+  if (userProgress.controlScore > userProgress.highestScoreAchieved) {
+    userProgress.highestScoreAchieved = userProgress.controlScore;
+    userProgress.highestRankAchieved = getRankForScore(userProgress.controlScore);
+  }
+
+  if (userProgress.controlScore >= 850) {
+    userProgress.eliteAchieved = true;
+  }
+
+  userProgress.lastSessionDate = today;
+  userProgress.lastScoreUpdateDate = today;
+
+  return userProgress;
+}
+```
+
+## Daily Decay Flow
+
+```ts
+function applyDailyDecay(userProgress, today) {
+  if (!userProgress.lastScoreUpdateDate) {
+    userProgress.lastScoreUpdateDate = today;
+    return userProgress;
+  }
+
+  let dateToCheck = getDateOffset(userProgress.lastScoreUpdateDate, 1);
+
+  while (dateToCheck <= today) {
+    const completedThatDay = userProgress.sessionHistory.includes(dateToCheck);
+
+    if (completedThatDay) {
+      userProgress.idleDays = 0;
+    } else {
+      userProgress.currentStreak = 0;
+      userProgress.idleDays += 1;
+
+      const decay = calculateDecayForIdleDay(userProgress.idleDays);
+
+      userProgress.controlScore = clampScore(
+        userProgress.controlScore - decay
+      );
+    }
+
+    dateToCheck = getDateOffset(dateToCheck, 1);
+  }
+
+  userProgress.currentRank = getRankForScore(userProgress.controlScore);
+  userProgress.lastScoreUpdateDate = today;
+
+  return userProgress;
+}
+```
+
+## Acceptance Criteria
+
+1. A new user starts with:
+
+   * `controlScore = 0`
+   * `currentRank = Rookie`
+   * `currentStreak = 0`
+   * `idleDays = 0`
+   * `eliteAchieved = false`
+
+2. Completing one session in a day increases Control Score.
+
+3. Completing multiple sessions in the same day does not repeatedly increase Control Score.
+
+4. Completing 7 consecutive days should move the user from Rookie to Novice.
+
+5. A highly consistent daily user should reach Elite in roughly 175–180 days.
+
+6. Missing 1 or 2 days should not reduce score.
+
+7. Missing 3 or more consecutive days should reduce score.
+
+8. Current rank can drop when score decays.
+
+9. Highest rank achieved should never drop.
+
+10. Elite achievement should remain true once unlocked.
+
+11. The home screen should display:
+
+* current rank
+* Control Score
+* progress to next rank
+* current streak
+
+## Product Note
+
+This should feel like a **live mastery system**, not a static badge wall.
+
+The user is not just collecting days.
+They are building control.
