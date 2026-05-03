@@ -273,6 +273,8 @@ export default function WorkoutPlayerScreen() {
 
           await rescheduleAfterCompletion();
 
+          await storage.completeSessionForScore(today);
+
           const awarded = await storage.checkAndAwardBadges();
           if (awarded.length > 0) {
             setNewBadgeIds(awarded);

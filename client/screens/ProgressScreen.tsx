@@ -33,7 +33,8 @@ import {
   ANIM_DELAY_XL,
   ANIM_DELAY_450,
 } from "@/constants/animation";
-import { storage, UserProgress } from "@/lib/storage";
+import { storage, UserProgress, ControlScoreState } from "@/lib/storage";
+import { ControlScoreCard } from "@/components/ControlScoreCard";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { useThemePreference } from "@/contexts/ThemePreferenceContext";
 
@@ -48,6 +49,7 @@ export default function ProgressScreen() {
 
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [restDates, setRestDates] = useState<string[]>([]);
+  const [scoreState, setScoreState] = useState<ControlScoreState | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [refreshing, setRefreshing] = useState(false);
   const [missedWeeks, setMissedWeeks] = useState<number[]>([]);
@@ -65,6 +67,8 @@ export default function ProgressScreen() {
   const loadData = useCallback(async () => {
     const startDate = await storage.getProgramStartDate();
     await storage.backfillRestDays(startDate);
+    const freshScore = await storage.applyDailyDecay();
+    setScoreState(freshScore);
     const [userProgress, userRestDates, userSettings] = await Promise.all([
       storage.getProgress(),
       storage.getRestDates(),
@@ -170,6 +174,67 @@ export default function ProgressScreen() {
       >
         {hasProgress ? (
           <>
+            {scoreState ? (
+              <Animated.View
+                entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(
+                  ANIM_DELAY_SHORT,
+                )}
+              >
+                <ControlScoreCard state={scoreState} />
+                <View
+                  style={[
+                    styles.bestRow,
+                    {
+                      backgroundColor: cp.cardBg,
+                      borderColor: cp.cardBorder,
+                    },
+                  ]}
+                  testID="row-rank-best"
+                >
+                  <View style={styles.bestItem}>
+                    <Text style={[styles.bestLabel, { color: cp.textMuted }]}>
+                      BEST RANK
+                    </Text>
+                    <Text style={[styles.bestValue, { color: cp.text }]}>
+                      {scoreState.highestRankAchieved}
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.bestDivider,
+                      { backgroundColor: cp.divider },
+                    ]}
+                  />
+                  <View style={styles.bestItem}>
+                    <Text style={[styles.bestLabel, { color: cp.textMuted }]}>
+                      HIGHEST SCORE
+                    </Text>
+                    <Text style={[styles.bestValue, { color: cp.text }]}>
+                      {scoreState.highestScoreAchieved}
+                    </Text>
+                  </View>
+                  {scoreState.eliteAchieved ? (
+                    <View
+                      style={[
+                        styles.elitePill,
+                        {
+                          backgroundColor: `${cp.neonOrange}1A`,
+                          borderColor: `${cp.neonOrange}55`,
+                        },
+                      ]}
+                      testID="pill-elite-unlocked"
+                    >
+                      <Feather name="award" size={11} color={cp.neonOrange} />
+                      <Text
+                        style={[styles.eliteText, { color: cp.neonOrange }]}
+                      >
+                        Elite
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+              </Animated.View>
+            ) : null}
             <Animated.View
               entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(
                 ANIM_DELAY_SHORT,
@@ -519,6 +584,47 @@ export default function ProgressScreen() {
 }
 
 const styles = StyleSheet.create({
+  bestRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    marginBottom: Spacing.lg,
+    gap: Spacing.md,
+  },
+  bestItem: {
+    flex: 1,
+  },
+  bestLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 1.5,
+    marginBottom: 4,
+  },
+  bestValue: {
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  bestDivider: {
+    width: 1,
+    alignSelf: "stretch",
+  },
+  elitePill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+  },
+  eliteText: {
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 1,
+  },
   container: {
     flex: 1,
   },

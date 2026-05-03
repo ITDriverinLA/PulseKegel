@@ -238,7 +238,7 @@ export default function SettingsScreen() {
   const handleResetProgress = () => {
     if (Platform.OS === "web") {
       if (confirm("This will delete all your progress. Are you sure?")) {
-        storage.clearAllData();
+        storage.clearAllData({ preserveHighestRank: true });
         loadSettings();
       }
     } else {
@@ -251,7 +251,7 @@ export default function SettingsScreen() {
             text: "Reset",
             style: "destructive",
             onPress: async () => {
-              await storage.clearAllData();
+              await storage.clearAllData({ preserveHighestRank: true });
               await loadSettings();
               await hapticsManager.triggerWarning();
             },

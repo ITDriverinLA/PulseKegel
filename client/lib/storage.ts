@@ -5,6 +5,16 @@ import {
   getScheduledDaysForWeek,
 } from "@/data/workoutProgram";
 import { BADGE_DEFINITIONS, type EarnedBadge } from "@/data/badges";
+import {
+  RankName,
+  addDays,
+  calculateDecayForIdleDay,
+  calculateSessionGain,
+  clampScore,
+  getCompletedDaysInLast7,
+  getRankForScore,
+  todayDateString,
+} from "./controlScore";
 
 const STORAGE_KEYS = {
   COMPLETED_DATES: "pulsekegel_completed_dates",
@@ -23,6 +33,110 @@ const STORAGE_KEYS = {
   CHALLENGE_CALIBRATION: "pulsekegel_challenge_calibration",
   WEEKLY_CALIBRATION: "pulsekegel_weekly_calibration",
   WEEKLY_CALIBRATION_PROMPTED: "pulsekegel_weekly_calibration_prompted",
+  CONTROL_SCORE_STATE: "pulsekegel_control_score_state",
+  RANKS_NOTIFIED: "pulsekegel_ranks_notified",
+  BACK_ON_TRACK_PENDING: "pulsekegel_back_on_track_pending",
+};
+
+export interface ControlScoreState {
+  controlScore: number;
+  currentRank: RankName;
+  currentStreak: number;
+  idleDays: number;
+  lastSessionDate: string | null;
+  lastScoreUpdateDate: string | null;
+  highestRankAchieved: RankName;
+  highestScoreAchieved: number;
+  eliteAchieved: boolean;
+  scoreHistory: { date: string; score: number }[];
+  backfilled: boolean;
+}
+
+const defaultControlScoreState: ControlScoreState = {
+  controlScore: 0,
+  currentRank: "Rookie",
+  currentStreak: 0,
+  idleDays: 0,
+  lastSessionDate: null,
+  lastScoreUpdateDate: null,
+  highestRankAchieved: "Rookie",
+  highestScoreAchieved: 0,
+  eliteAchieved: false,
+  scoreHistory: [],
+  backfilled: false,
+};
+
+const pushHistory = (
+  history: { date: string; score: number }[],
+  date: string,
+  score: number,
+): { date: string; score: number }[] => {
+  const next = [...history.filter((h) => h.date !== date), { date, score }];
+  return next.slice(-30);
+};
+
+const replaySessionsForBackfill = (
+  sortedDates: string[],
+  today: string,
+): ControlScoreState => {
+  const state: ControlScoreState = {
+    ...defaultControlScoreState,
+    backfilled: true,
+  };
+  if (sortedDates.length === 0) {
+    state.lastScoreUpdateDate = today;
+    return state;
+  }
+  const uniqueSet = new Set<string>();
+  let cursor = sortedDates[0];
+  for (const d of sortedDates) {
+    if (d > today) break;
+    while (cursor < d) {
+      cursor = addDays(cursor, 1);
+      if (cursor === d) break;
+      if (!uniqueSet.has(cursor)) {
+        state.currentStreak = 0;
+        state.idleDays += 1;
+        state.controlScore = clampScore(
+          state.controlScore - calculateDecayForIdleDay(state.idleDays),
+        );
+      }
+    }
+    if (uniqueSet.has(d)) continue;
+    uniqueSet.add(d);
+    const yesterday = addDays(d, -1);
+    state.currentStreak = uniqueSet.has(yesterday)
+      ? state.currentStreak + 1
+      : 1;
+    state.idleDays = 0;
+    const rolling = getCompletedDaysInLast7(uniqueSet, d);
+    state.controlScore = clampScore(
+      state.controlScore + calculateSessionGain(state.currentStreak, rolling),
+    );
+    state.lastSessionDate = d;
+    if (state.controlScore > state.highestScoreAchieved) {
+      state.highestScoreAchieved = state.controlScore;
+      state.highestRankAchieved = getRankForScore(state.controlScore);
+    }
+    if (state.controlScore >= 850) state.eliteAchieved = true;
+    cursor = d;
+  }
+  while (cursor < today) {
+    cursor = addDays(cursor, 1);
+    if (!uniqueSet.has(cursor)) {
+      state.currentStreak = 0;
+      state.idleDays += 1;
+      state.controlScore = clampScore(
+        state.controlScore - calculateDecayForIdleDay(state.idleDays),
+      );
+    } else {
+      state.idleDays = 0;
+    }
+  }
+  state.currentRank = getRankForScore(state.controlScore);
+  state.lastScoreUpdateDate = today;
+  state.scoreHistory = pushHistory([], today, state.controlScore);
+  return state;
 };
 
 export type CalibrationLevel = "easy" | "okay" | "tooHard";
@@ -346,9 +460,34 @@ export const storage = {
     }
   },
 
-  async clearAllData(): Promise<void> {
+  async clearAllData(
+    opts: { preserveHighestRank?: boolean } = {},
+  ): Promise<void> {
     try {
+      let highestRank: RankName = "Rookie";
+      let highestScore = 0;
+      let elite = false;
+      if (opts.preserveHighestRank) {
+        const existing = await this.getControlScoreState();
+        highestRank = existing.highestRankAchieved;
+        highestScore = existing.highestScoreAchieved;
+        elite = existing.eliteAchieved;
+      }
       await AsyncStorage.multiRemove(Object.values(STORAGE_KEYS));
+      if (opts.preserveHighestRank) {
+        const fresh: ControlScoreState = {
+          ...defaultControlScoreState,
+          highestRankAchieved: highestRank,
+          highestScoreAchieved: highestScore,
+          eliteAchieved: elite,
+          lastScoreUpdateDate: todayDateString(),
+          backfilled: true,
+        };
+        await AsyncStorage.setItem(
+          STORAGE_KEYS.CONTROL_SCORE_STATE,
+          JSON.stringify(fresh),
+        );
+      }
     } catch (error) {
       console.error("Error clearing data:", error);
     }
@@ -888,6 +1027,195 @@ export const storage = {
       }
     } catch (error) {
       console.error("Error marking weekly calibration prompted:", error);
+    }
+  },
+
+  async getControlScoreState(): Promise<ControlScoreState> {
+    try {
+      const raw = await AsyncStorage.getItem(STORAGE_KEYS.CONTROL_SCORE_STATE);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Partial<ControlScoreState>;
+        return { ...defaultControlScoreState, ...parsed };
+      }
+      const completedDates = await this.getCompletedDates();
+      const today = todayDateString();
+      const sorted = [...completedDates].filter(Boolean).sort();
+      const backfilled = replaySessionsForBackfill(sorted, today);
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.CONTROL_SCORE_STATE,
+        JSON.stringify(backfilled),
+      );
+      return backfilled;
+    } catch {
+      return { ...defaultControlScoreState };
+    }
+  },
+
+  async saveControlScoreState(state: ControlScoreState): Promise<void> {
+    try {
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.CONTROL_SCORE_STATE,
+        JSON.stringify(state),
+      );
+    } catch (error) {
+      console.error("Error saving control score state:", error);
+    }
+  },
+
+  async applyDailyDecay(
+    today: string = todayDateString(),
+  ): Promise<ControlScoreState> {
+    const state = await this.getControlScoreState();
+    if (!state.lastScoreUpdateDate) {
+      state.lastScoreUpdateDate = today;
+      await this.saveControlScoreState(state);
+      return state;
+    }
+    if (state.lastScoreUpdateDate >= today) {
+      return state;
+    }
+    const completedDates = await this.getCompletedDates();
+    const completedSet = new Set(completedDates);
+    let cursor = state.lastScoreUpdateDate;
+    while (cursor < today) {
+      cursor = addDays(cursor, 1);
+      if (completedSet.has(cursor)) {
+        state.idleDays = 0;
+      } else {
+        if (state.currentStreak > 0) state.currentStreak = 0;
+        state.idleDays += 1;
+        state.controlScore = clampScore(
+          state.controlScore - calculateDecayForIdleDay(state.idleDays),
+        );
+      }
+    }
+    state.currentRank = getRankForScore(state.controlScore);
+    state.lastScoreUpdateDate = today;
+    state.scoreHistory = pushHistory(
+      state.scoreHistory,
+      today,
+      state.controlScore,
+    );
+    await this.saveControlScoreState(state);
+    return state;
+  },
+
+  async completeSessionForScore(today: string = todayDateString()): Promise<{
+    state: ControlScoreState;
+    rankUp: RankName | null;
+    backOnTrack: boolean;
+    gain: number;
+  }> {
+    const state = await this.applyDailyDecay(today);
+    const completedDates = await this.getCompletedDates();
+    const completedSet = new Set(completedDates);
+    if (state.lastSessionDate === today) {
+      return { state, rankUp: null, backOnTrack: false, gain: 0 };
+    }
+    const previousRank = state.currentRank;
+    const wasInactive = state.idleDays >= 3;
+    const yesterday = addDays(today, -1);
+    state.currentStreak = completedSet.has(yesterday)
+      ? state.currentStreak + 1
+      : 1;
+    state.idleDays = 0;
+    completedSet.add(today);
+    const rolling = getCompletedDaysInLast7(completedSet, today);
+    const gain = calculateSessionGain(state.currentStreak, rolling);
+    state.controlScore = clampScore(state.controlScore + gain);
+    state.currentRank = getRankForScore(state.controlScore);
+    state.lastSessionDate = today;
+    state.lastScoreUpdateDate = today;
+    if (state.controlScore > state.highestScoreAchieved) {
+      state.highestScoreAchieved = state.controlScore;
+      state.highestRankAchieved = getRankForScore(state.controlScore);
+    }
+    if (state.controlScore >= 850) state.eliteAchieved = true;
+    state.scoreHistory = pushHistory(
+      state.scoreHistory,
+      today,
+      state.controlScore,
+    );
+    await this.saveControlScoreState(state);
+    let rankUp: RankName | null = null;
+    if (state.currentRank !== previousRank) {
+      const notified = await this.getRanksNotified();
+      if (!notified.includes(state.currentRank)) {
+        rankUp = state.currentRank;
+      }
+    }
+    if (wasInactive) {
+      await AsyncStorage.setItem(STORAGE_KEYS.BACK_ON_TRACK_PENDING, "1");
+    }
+    return { state, rankUp, backOnTrack: wasInactive, gain };
+  },
+
+  async getRanksNotified(): Promise<RankName[]> {
+    try {
+      const raw = await AsyncStorage.getItem(STORAGE_KEYS.RANKS_NOTIFIED);
+      return raw ? (JSON.parse(raw) as RankName[]) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  async markRankNotified(rank: RankName): Promise<void> {
+    try {
+      const list = await this.getRanksNotified();
+      if (!list.includes(rank)) {
+        list.push(rank);
+        await AsyncStorage.setItem(
+          STORAGE_KEYS.RANKS_NOTIFIED,
+          JSON.stringify(list),
+        );
+      }
+    } catch (error) {
+      console.error("Error marking rank notified:", error);
+    }
+  },
+
+  async consumeBackOnTrackPending(): Promise<boolean> {
+    try {
+      const raw = await AsyncStorage.getItem(
+        STORAGE_KEYS.BACK_ON_TRACK_PENDING,
+      );
+      if (raw === "1") {
+        await AsyncStorage.removeItem(STORAGE_KEYS.BACK_ON_TRACK_PENDING);
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  },
+
+  async resetControlScore(preserveHighest: boolean = false): Promise<void> {
+    try {
+      let highestRank: RankName = "Rookie";
+      let highestScore = 0;
+      let elite = false;
+      if (preserveHighest) {
+        const existing = await this.getControlScoreState();
+        highestRank = existing.highestRankAchieved;
+        highestScore = existing.highestScoreAchieved;
+        elite = existing.eliteAchieved;
+      }
+      const fresh: ControlScoreState = {
+        ...defaultControlScoreState,
+        highestRankAchieved: highestRank,
+        highestScoreAchieved: highestScore,
+        eliteAchieved: elite,
+        lastScoreUpdateDate: todayDateString(),
+        backfilled: true,
+      };
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.CONTROL_SCORE_STATE,
+        JSON.stringify(fresh),
+      );
+      await AsyncStorage.removeItem(STORAGE_KEYS.RANKS_NOTIFIED);
+      await AsyncStorage.removeItem(STORAGE_KEYS.BACK_ON_TRACK_PENDING);
+    } catch (error) {
+      console.error("Error resetting control score:", error);
     }
   },
 };

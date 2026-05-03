@@ -33,7 +33,11 @@ import {
   UserSettings,
   UserProgress,
   defaultSettings,
+  ControlScoreState,
 } from "@/lib/storage";
+import { RankName } from "@/lib/controlScore";
+import { ControlScoreCard } from "@/components/ControlScoreCard";
+import { RankUpToast } from "@/components/RankUpToast";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useThemePreference } from "@/contexts/ThemePreferenceContext";
@@ -83,11 +87,26 @@ export default function HomeScreen() {
     "accelerated" | "standard" | "gentle" | null
   >(null);
   const [showCalibrationIntro, setShowCalibrationIntro] = useState(false);
+  const [scoreState, setScoreState] = useState<ControlScoreState | null>(null);
+  const [pendingRankUp, setPendingRankUp] = useState<RankName | null>(null);
+  const [showBackOnTrack, setShowBackOnTrack] = useState(false);
 
   const loadData = useCallback(async () => {
     const startDate = await storage.getProgramStartDate();
 
     await storage.backfillRestDays(startDate);
+    const freshScore = await storage.applyDailyDecay();
+    setScoreState(freshScore);
+    const backOnTrack = await storage.consumeBackOnTrackPending();
+    if (backOnTrack) setShowBackOnTrack(true);
+    const notified = await storage.getRanksNotified();
+    if (
+      freshScore.currentRank !== "Rookie" &&
+      !notified.includes(freshScore.currentRank) &&
+      freshScore.lastSessionDate !== null
+    ) {
+      setPendingRankUp(freshScore.currentRank);
+    }
 
     const [userProgress, userSettings, calibState] = await Promise.all([
       storage.getProgress(),
@@ -390,6 +409,65 @@ export default function HomeScreen() {
             </View>
           </View>
         </Animated.View>
+
+        {scoreState ? (
+          <Animated.View
+            entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(
+              ANIM_DELAY_SHORT,
+            )}
+          >
+            {showBackOnTrack ? (
+              <View
+                style={[
+                  styles.scoreNudge,
+                  {
+                    backgroundColor: `${cp.neonGreen}1A`,
+                    borderColor: `${cp.neonGreen}4D`,
+                  },
+                ]}
+                testID="banner-back-on-track"
+              >
+                <Feather name="check-circle" size={16} color={cp.neonGreen} />
+                <Text style={[styles.scoreNudgeText, { color: cp.text }]}>
+                  Back on track. Decay paused.
+                </Text>
+                <Pressable
+                  hitSlop={10}
+                  onPress={() => setShowBackOnTrack(false)}
+                  testID="button-dismiss-back-on-track"
+                >
+                  <Feather name="x" size={16} color={cp.textMuted} />
+                </Pressable>
+              </View>
+            ) : null}
+            {scoreState.idleDays >= 2 && !showBackOnTrack ? (
+              <View
+                style={[
+                  styles.scoreNudge,
+                  {
+                    backgroundColor: `${cp.neonOrange}1A`,
+                    borderColor: `${cp.neonOrange}4D`,
+                  },
+                ]}
+                testID="banner-control-slipping"
+              >
+                <Feather
+                  name="alert-triangle"
+                  size={16}
+                  color={cp.neonOrange}
+                />
+                <Text style={[styles.scoreNudgeText, { color: cp.text }]}>
+                  {scoreState.idleDays >= 8
+                    ? "8+ days idle. Score is dropping faster."
+                    : scoreState.idleDays >= 3
+                      ? `${scoreState.idleDays} days idle. Score is slipping.`
+                      : "Two days off. One more and your score starts to slip."}
+                </Text>
+              </View>
+            ) : null}
+            <ControlScoreCard state={scoreState} />
+          </Animated.View>
+        ) : null}
 
         <Animated.View
           entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(
@@ -1037,6 +1115,15 @@ export default function HomeScreen() {
           </View>
         </View>
       </Modal>
+      <RankUpToast
+        rank={pendingRankUp}
+        onDismiss={async () => {
+          if (pendingRankUp) {
+            await storage.markRankNotified(pendingRankUp);
+          }
+          setPendingRankUp(null);
+        }}
+      />
     </LinearGradient>
   );
 }
@@ -1051,6 +1138,21 @@ const styles = StyleSheet.create({
   streakContainer: {
     alignItems: "center",
     marginBottom: Spacing["2xl"],
+  },
+  scoreNudge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    marginBottom: Spacing.sm,
+  },
+  scoreNudgeText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: "500",
   },
   streakBadge: {
     alignItems: "center",
