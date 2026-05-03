@@ -43,6 +43,7 @@ import {
   getScheduledDaysForWeek,
   getWorkoutCompletionsForWeek,
   getWeek1WorkoutForDayIndex,
+  getWorkoutForDifficultyPath,
   DayTemplate,
   Week,
 } from "@/data/workoutProgram";
@@ -118,6 +119,19 @@ export default function HomeScreen() {
         workout: adjustedWorkout,
         isRestDay: adjustedWorkout.isRestDay === true,
       });
+    } else if (workout && workout.week.weekNumber >= 2) {
+      const weekPath = await storage.getDifficultyPathForWeek(
+        workout.week.weekNumber,
+      );
+      const adjustedWorkout = getWorkoutForDifficultyPath(
+        workout.workout,
+        weekPath,
+      );
+      setTodaysWorkout({
+        ...workout,
+        workout: adjustedWorkout,
+      });
+      setDifficultyPath(weekPath);
     } else {
       setTodaysWorkout(workout);
     }
@@ -211,7 +225,6 @@ export default function HomeScreen() {
 
   const renderPathBadge = () => {
     if (!pathMeta) return null;
-    if (todaysWorkout?.week.weekNumber !== 1) return null;
     return (
       <View
         style={[

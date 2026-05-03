@@ -43,7 +43,11 @@ import {
   ANIM_DELAY_MED,
   ANIM_DELAY_XL,
 } from "@/constants/animation";
-import { Segment, isRestDayForDate } from "@/data/workoutProgram";
+import {
+  Segment,
+  isRestDayForDate,
+  getLastWorkoutDayIndexForWeek,
+} from "@/data/workoutProgram";
 import { WorkoutEngine, WorkoutState, WorkoutPhase } from "@/lib/workoutEngine";
 import { hapticsManager, HapticPulseController } from "@/lib/hapticsManager";
 import { storage, UserSettings, defaultSettings } from "@/lib/storage";
@@ -89,6 +93,7 @@ export default function WorkoutPlayerScreen() {
   const appStateRef = useRef(AppState.currentState);
   const startTimeRef = useRef<Date | null>(null);
   const shouldRedirectToCalibrationRef = useRef(false);
+  const shouldRedirectToWeeklyCalibrationRef = useRef<number | null>(null);
   const isCompleteRef = useRef(false);
 
   const phaseScale = useSharedValue(1);
@@ -250,6 +255,22 @@ export default function WorkoutPlayerScreen() {
             await storage.markChallengeOptionalSession(today);
           }
 
+          if (
+            weekNumber >= 1 &&
+            weekNumber <= 11 &&
+            typeof dayNumber === "number"
+          ) {
+            const lastDayIdx = getLastWorkoutDayIndexForWeek(weekNumber);
+            if (lastDayIdx >= 0 && dayNumber - 1 === lastDayIdx) {
+              const prompted =
+                await storage.getWeeklyCalibrationPromptedWeeks();
+              if (!prompted.includes(weekNumber)) {
+                shouldRedirectToWeeklyCalibrationRef.current = weekNumber;
+                await storage.markWeeklyCalibrationPrompted(weekNumber);
+              }
+            }
+          }
+
           await rescheduleAfterCompletion();
 
           const awarded = await storage.checkAndAwardBadges();
@@ -370,6 +391,13 @@ export default function WorkoutPlayerScreen() {
   const doGoBack = () => {
     if (isCompleteRef.current && shouldRedirectToCalibrationRef.current) {
       navigation.replace("CalibrationFeedback");
+    } else if (
+      isCompleteRef.current &&
+      shouldRedirectToWeeklyCalibrationRef.current !== null
+    ) {
+      navigation.replace("CalibrationFeedback", {
+        weekNumber: shouldRedirectToWeeklyCalibrationRef.current,
+      });
     } else {
       navigation.goBack();
     }

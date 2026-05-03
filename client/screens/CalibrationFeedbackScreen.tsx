@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { storage } from "@/lib/storage";
@@ -20,6 +20,7 @@ import {
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type RouteProps = RouteProp<RootStackParamList, "CalibrationFeedback">;
 type CalibrationLevel = "easy" | "okay" | "tooHard";
 
 interface Option {
@@ -27,6 +28,7 @@ interface Option {
   label: string;
   icon: React.ComponentProps<typeof Feather>["name"];
   confirmation: string;
+  weeklyConfirmation: string;
   accentKey: "neonGreen" | "neonCyan" | "neonPurple";
 }
 
@@ -37,6 +39,8 @@ const OPTIONS: Option[] = [
     icon: "trending-up",
     confirmation:
       "Nice work. You're stronger than you think. Let's turn it up a little for the rest of the week.",
+    weeklyConfirmation:
+      "Strong week. We'll dial things up a notch so next week keeps challenging you.",
     accentKey: "neonGreen",
   },
   {
@@ -45,6 +49,8 @@ const OPTIONS: Option[] = [
     icon: "check-circle",
     confirmation:
       "Perfect. You're right where you should be. We'll keep going at this pace.",
+    weeklyConfirmation:
+      "Perfect. We'll keep next week at the same pace so you can keep building.",
     accentKey: "neonCyan",
   },
   {
@@ -53,6 +59,8 @@ const OPTIONS: Option[] = [
     icon: "heart",
     confirmation:
       "Hey, that's awesome that you showed up and gave it a go. Don't worry at all. This is just calibration. We'll make it easier for you so you can build up properly.",
+    weeklyConfirmation:
+      "Thanks for being honest. We'll ease next week back so you can build up properly.",
     accentKey: "neonPurple",
   },
 ];
@@ -60,6 +68,9 @@ const OPTIONS: Option[] = [
 export default function CalibrationFeedbackScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<RouteProps>();
+  const weekNumber = route.params?.weekNumber;
+  const isWeekly = typeof weekNumber === "number" && weekNumber >= 1;
   const { cp, isDarkMode } = useThemePreference();
   const { fontScale } = useAccessibility();
 
@@ -76,7 +87,11 @@ export default function CalibrationFeedbackScreen() {
   const handleContinue = async () => {
     if (!selected || isSaving) return;
     setIsSaving(true);
-    await storage.setCalibrationState(selected);
+    if (isWeekly && weekNumber) {
+      await storage.setWeeklyCalibrationLevel(weekNumber, selected);
+    } else {
+      await storage.setCalibrationState(selected);
+    }
     navigation.goBack();
   };
 
@@ -123,7 +138,7 @@ export default function CalibrationFeedbackScreen() {
               { color: cp.neonGreen, fontSize: 11 * fontScale },
             ]}
           >
-            CALIBRATION COMPLETE
+            {isWeekly ? `WEEK ${weekNumber} COMPLETE` : "CALIBRATION COMPLETE"}
           </Text>
           <Text
             style={[
@@ -131,7 +146,9 @@ export default function CalibrationFeedbackScreen() {
               { color: cp.text, fontSize: 26 * fontScale },
             ]}
           >
-            How did that session feel?
+            {isWeekly
+              ? `How did Week ${weekNumber} feel overall?`
+              : "How did that session feel?"}
           </Text>
           <Text
             style={[
@@ -139,7 +156,9 @@ export default function CalibrationFeedbackScreen() {
               { color: cp.textSecondary, fontSize: 15 * fontScale },
             ]}
           >
-            Your answer helps us personalise the rest of this week.
+            {isWeekly
+              ? "Your answer helps us tune the next week to your level."
+              : "Your answer helps us personalise the rest of this week."}
           </Text>
         </Animated.View>
 
@@ -242,7 +261,9 @@ export default function CalibrationFeedbackScreen() {
                   { color: cp.textSecondary, fontSize: 16 * fontScale },
                 ]}
               >
-                {selectedOption!.confirmation}
+                {isWeekly
+                  ? selectedOption!.weeklyConfirmation
+                  : selectedOption!.confirmation}
               </Text>
             </View>
           </Animated.View>

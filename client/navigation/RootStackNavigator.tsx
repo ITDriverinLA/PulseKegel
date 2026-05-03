@@ -46,7 +46,7 @@ export type RootStackParamList = {
   BreathworkSession: { mode: BreathworkMode };
   BreathworkSummary: { mode: BreathworkMode; completed: boolean };
   TechniqueGuide: undefined;
-  CalibrationFeedback: undefined;
+  CalibrationFeedback: { weekNumber?: number } | undefined;
 };
 
 interface StoreUrls {

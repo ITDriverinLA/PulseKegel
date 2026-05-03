@@ -21,7 +21,19 @@ const STORAGE_KEYS = {
   LAST_WEEK_COMPLETE_TRACKED: "pulsekegel_last_week_complete_tracked",
   CHALLENGE_OPTIONAL_DATES: "pulsekegel_challenge_optional_dates",
   CHALLENGE_CALIBRATION: "pulsekegel_challenge_calibration",
+  WEEKLY_CALIBRATION: "pulsekegel_weekly_calibration",
+  WEEKLY_CALIBRATION_PROMPTED: "pulsekegel_weekly_calibration_prompted",
 };
+
+export type CalibrationLevel = "easy" | "okay" | "tooHard";
+export type DifficultyPath = "accelerated" | "standard" | "gentle";
+
+const levelToPath = (level: CalibrationLevel): DifficultyPath =>
+  level === "easy"
+    ? "accelerated"
+    : level === "tooHard"
+      ? "gentle"
+      : "standard";
 
 export interface WeeklyReviewEntry {
   weekNumber: number;
@@ -754,6 +766,8 @@ export const storage = {
         STORAGE_KEYS.LAST_WEEK_COMPLETE_TRACKED,
         STORAGE_KEYS.REVIEW_HISTORY,
         STORAGE_KEYS.CHALLENGE_CALIBRATION,
+        STORAGE_KEYS.WEEKLY_CALIBRATION,
+        STORAGE_KEYS.WEEKLY_CALIBRATION_PROMPTED,
         "pulsekegel_challenge_shown",
       ]);
       await AsyncStorage.setItem("pulsekegel_install_date", today);
@@ -798,12 +812,7 @@ export const storage = {
 
   async setCalibrationState(level: "easy" | "okay" | "tooHard"): Promise<void> {
     try {
-      const difficultyPath =
-        level === "easy"
-          ? "accelerated"
-          : level === "tooHard"
-            ? "gentle"
-            : "standard";
+      const difficultyPath = levelToPath(level);
       const state = {
         calibrationLevel: level,
         difficultyPath,
@@ -815,6 +824,70 @@ export const storage = {
       );
     } catch (error) {
       console.error("Error saving calibration state:", error);
+    }
+  },
+
+  async getWeeklyCalibrationLevels(): Promise<
+    Record<number, CalibrationLevel>
+  > {
+    try {
+      const data = await AsyncStorage.getItem(STORAGE_KEYS.WEEKLY_CALIBRATION);
+      return data ? JSON.parse(data) : {};
+    } catch {
+      return {};
+    }
+  },
+
+  async setWeeklyCalibrationLevel(
+    weekNumber: number,
+    level: CalibrationLevel,
+  ): Promise<void> {
+    try {
+      const levels = await this.getWeeklyCalibrationLevels();
+      levels[weekNumber] = level;
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.WEEKLY_CALIBRATION,
+        JSON.stringify(levels),
+      );
+    } catch (error) {
+      console.error("Error saving weekly calibration:", error);
+    }
+  },
+
+  async getDifficultyPathForWeek(weekNumber: number): Promise<DifficultyPath> {
+    if (weekNumber <= 1) {
+      const initial = await this.getCalibrationState();
+      return initial.difficultyPath ?? "standard";
+    }
+    const levels = await this.getWeeklyCalibrationLevels();
+    const prev = levels[weekNumber - 1];
+    if (prev) return levelToPath(prev);
+    return "standard";
+  },
+
+  async getWeeklyCalibrationPromptedWeeks(): Promise<number[]> {
+    try {
+      const data = await AsyncStorage.getItem(
+        STORAGE_KEYS.WEEKLY_CALIBRATION_PROMPTED,
+      );
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  async markWeeklyCalibrationPrompted(weekNumber: number): Promise<void> {
+    try {
+      const weeks = await this.getWeeklyCalibrationPromptedWeeks();
+      if (!weeks.includes(weekNumber)) {
+        weeks.push(weekNumber);
+        await AsyncStorage.setItem(
+          STORAGE_KEYS.WEEKLY_CALIBRATION_PROMPTED,
+          JSON.stringify(weeks),
+        );
+      }
+    } catch (error) {
+      console.error("Error marking weekly calibration prompted:", error);
     }
   },
 };

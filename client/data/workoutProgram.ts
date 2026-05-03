@@ -1008,6 +1008,57 @@ export const getWeek1WorkoutForDayIndex = (
   return workoutProgram.weeks[0].days[dayIndex];
 };
 
+export const getLastWorkoutDayIndexForWeek = (weekNumber: number): number => {
+  const week = workoutProgram.weeks.find((w) => w.weekNumber === weekNumber);
+  if (!week) return -1;
+  for (let i = week.days.length - 1; i >= 0; i--) {
+    if (!week.days[i].isRestDay) return i;
+  }
+  return -1;
+};
+
+export const getWorkoutForDifficultyPath = (
+  workout: DayTemplate,
+  path: ChallengeDifficultyPath,
+): DayTemplate => {
+  if (!path || path === "standard" || workout.isRestDay) return workout;
+
+  const isAccelerated = path === "accelerated";
+  const repMul = isAccelerated ? 1.2 : 0.7;
+  const setMul = isAccelerated ? 1 : 0.75;
+  const holdDelta = isAccelerated ? 1 : -1;
+  const restDelta = isAccelerated ? 0 : 2;
+
+  const adjusted = workout.segments.map((segment) => {
+    if (
+      segment.type === "blockRest" ||
+      segment.type === "getReady" ||
+      segment.type === "breathing"
+    ) {
+      return segment;
+    }
+    return {
+      ...segment,
+      sets: Math.max(1, Math.round(segment.sets * setMul)),
+      repsPerSet: Math.max(1, Math.round(segment.repsPerSet * repMul)),
+      squeezeSeconds: Math.max(
+        1,
+        segment.squeezeSeconds + (segment.squeezeSeconds > 0 ? holdDelta : 0),
+      ),
+      restSeconds: Math.max(1, segment.restSeconds + restDelta),
+    };
+  });
+
+  return {
+    ...workout,
+    segments: adjusted,
+    estimatedMinutes: Math.max(
+      1,
+      Math.ceil(workout.estimatedMinutes * (isAccelerated ? 1.2 : 0.75)),
+    ),
+  };
+};
+
 export const getWorkoutForRecoveryMode = (
   workout: DayTemplate,
 ): DayTemplate => {
