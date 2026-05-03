@@ -19,6 +19,7 @@ import {
 import {
   type UserProgramProgress,
   type ControlModePath,
+  type ProgramPhase,
   defaultProgramProgress,
   evaluateTwelveWeekCompletion,
   isTwelveWeekWindowComplete,
@@ -1289,11 +1290,19 @@ export const storage = {
         const parsed = JSON.parse(raw) as Partial<UserProgramProgress>;
         return { ...defaultProgramProgress, ...parsed };
       }
-      // Lazy-init for legacy users: if a program start date exists, assume
-      // they are mid-12-week program. Otherwise leave defaults.
-      const startDate = await this.getProgramStartDate();
+      // Lazy-init for legacy users: if calibration is still in progress,
+      // they're mid-7-day-challenge. Otherwise default to the 12-week
+      // program (anchored to programStartDate when present).
+      const [startDate, calib] = await Promise.all([
+        this.getProgramStartDate(),
+        this.getCalibrationState(),
+      ]);
+      const phase: ProgramPhase = calib.calibrationCompleted
+        ? "twelve_week_program"
+        : "seven_day_challenge";
       const fresh: UserProgramProgress = {
         ...defaultProgramProgress,
+        phase,
         twelveWeekStartDate: startDate ?? null,
       };
       await AsyncStorage.setItem(
@@ -1329,10 +1338,16 @@ export const storage = {
       restDates,
       progress.twelveWeekStartDate,
     );
-    if (progress.completionTier !== evaluation.tier) {
+    const completionDate =
+      progress.twelveWeekCompletionDate ?? todayDateString();
+    if (
+      progress.completionTier !== evaluation.tier ||
+      progress.twelveWeekCompletionDate !== completionDate
+    ) {
       await this.saveProgramProgress({
         ...progress,
         completionTier: evaluation.tier,
+        twelveWeekCompletionDate: completionDate,
       });
     }
     return evaluation;
@@ -1349,11 +1364,11 @@ export const storage = {
   },
 
   async _clearWorkoutSessionKeys(): Promise<void> {
+    // NOTE: TOTAL_SESSIONS and TOTAL_MINUTES are intentionally preserved here
+    // so lifetime totals carry across 12-week restart paths.
     await AsyncStorage.multiRemove([
       STORAGE_KEYS.COMPLETED_DATES,
       STORAGE_KEYS.REST_DATES,
-      STORAGE_KEYS.TOTAL_SESSIONS,
-      STORAGE_KEYS.TOTAL_MINUTES,
       STORAGE_KEYS.LAST_WEEKLY_REVIEW,
       STORAGE_KEYS.LAST_WEEK_COMPLETE_TRACKED,
       STORAGE_KEYS.REVIEW_HISTORY,

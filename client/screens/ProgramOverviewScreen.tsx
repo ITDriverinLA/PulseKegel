@@ -16,6 +16,13 @@ import {
   getWorkoutForDifficultyPath,
 } from "@/data/workoutProgram";
 import { storage } from "@/lib/storage";
+import {
+  type UserProgramProgress,
+  CONTROL_MODE_LABEL,
+  CONTROL_MODE_TAGLINE,
+  CONTROL_MODE_WEEKLY_TARGET,
+  getControlModeWeeklyCount,
+} from "@/lib/programCompletion";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import {
@@ -66,7 +73,7 @@ export default function ProgramOverviewScreen() {
   };
 
   const [completedDates, setCompletedDates] = useState<string[]>([]);
-  const [, setRestDates] = useState<string[]>([]);
+  const [restDatesState, setRestDates] = useState<string[]>([]);
   const [programStartDate, setProgramStartDate] = useState<string | null>(null);
   const [currentWeek, setCurrentWeek] = useState(0);
   const [currentDayInWeek, setCurrentDayInWeek] = useState(0);
@@ -74,17 +81,28 @@ export default function ProgramOverviewScreen() {
   const [displayWeeks, setDisplayWeeks] = useState<Week[]>(
     workoutProgram.weeks,
   );
+  const [programProgress, setProgramProgress] =
+    useState<UserProgramProgress | null>(null);
+  const [lifetimeSessions, setLifetimeSessions] = useState(0);
+  const [lifetimeMinutes, setLifetimeMinutes] = useState(0);
 
   const loadData = useCallback(async () => {
-    const [dates, rDates, startDate, calibState] = await Promise.all([
-      storage.getCompletedDates(),
-      storage.getRestDates(),
-      storage.getProgramStartDate(),
-      storage.getCalibrationState(),
-    ]);
+    const [dates, rDates, startDate, calibState, progress, sessions, minutes] =
+      await Promise.all([
+        storage.getCompletedDates(),
+        storage.getRestDates(),
+        storage.getProgramStartDate(),
+        storage.getCalibrationState(),
+        storage.getProgramProgress(),
+        storage.getTotalSessions(),
+        storage.getTotalMinutes(),
+      ]);
     setCompletedDates(dates);
     setRestDates(rDates);
     setProgramStartDate(startDate);
+    setProgramProgress(progress);
+    setLifetimeSessions(sessions);
+    setLifetimeMinutes(minutes);
 
     const week1Path: ChallengeDifficultyPath = calibState.calibrationCompleted
       ? calibState.difficultyPath
@@ -450,6 +468,173 @@ export default function ProgramOverviewScreen() {
       </Animated.View>
     );
   };
+
+  const isControlMode =
+    programProgress?.phase === "control_mode" &&
+    programProgress?.controlModePath != null;
+
+  if (isControlMode && programProgress?.controlModePath) {
+    const path = programProgress.controlModePath;
+    const target = CONTROL_MODE_WEEKLY_TARGET[path];
+    const weeklyCount = getControlModeWeeklyCount(
+      completedDates,
+      restDatesState,
+    );
+    const tierLabel =
+      programProgress.completionTier === "strong"
+        ? "Strong Finish"
+        : programProgress.completionTier === "partial"
+          ? "Solid Finish"
+          : "Restart";
+    return (
+      <View style={styles.container} testID="program-overview-control-mode">
+        <LinearGradient
+          colors={cp.gradient as unknown as [string, string, ...string[]]}
+          style={StyleSheet.absoluteFill}
+        />
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={{
+            paddingTop: headerHeight + Spacing.md,
+            paddingBottom: insets.bottom + Spacing.xl,
+            paddingHorizontal: Spacing.lg,
+          }}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.summarySection}>
+            <Text
+              style={[
+                styles.sectionTitle,
+                { color: cp.text, fontSize: 18 * fontScale },
+              ]}
+            >
+              Control Mode · {CONTROL_MODE_LABEL[path]}
+            </Text>
+            <Text style={[styles.summaryText, { color: cp.textSecondary }]}>
+              {tierLabel}
+            </Text>
+          </View>
+
+          <Animated.View
+            entering={FadeInDown.duration(ANIM_DURATION_ENTER)}
+            style={[
+              styles.weekCard,
+              { backgroundColor: cp.cardBg, borderColor: cp.inputBg },
+            ]}
+            testID="control-mode-summary-card"
+          >
+            <Text
+              style={[
+                styles.weekTitle,
+                { color: cp.text, fontSize: 16 * fontScale },
+              ]}
+            >
+              {CONTROL_MODE_LABEL[path]}
+            </Text>
+            <Text
+              style={[
+                styles.weekSubtitle,
+                { color: cp.textMuted, marginBottom: Spacing.md },
+              ]}
+            >
+              {CONTROL_MODE_TAGLINE[path]}
+            </Text>
+
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginBottom: Spacing.sm,
+              }}
+            >
+              <Text style={{ color: cp.textSecondary, fontSize: 13 }}>
+                This week
+              </Text>
+              <Text
+                style={{ color: cp.neonCyan, fontWeight: "700", fontSize: 13 }}
+                testID="text-control-week-count"
+              >
+                {weeklyCount} / {target} sessions
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.progressBarBg,
+                { backgroundColor: cp.cardBorder, width: "100%", height: 6 },
+              ]}
+            >
+              <View
+                style={[
+                  styles.progressBarFill,
+                  {
+                    width: `${Math.min(1, weeklyCount / target) * 100}%`,
+                    backgroundColor: cp.neonCyan,
+                  },
+                ]}
+              />
+            </View>
+          </Animated.View>
+
+          <View
+            style={[
+              styles.weekCard,
+              { backgroundColor: cp.cardBg, borderColor: cp.inputBg },
+            ]}
+          >
+            <Text
+              style={[
+                styles.weekTitle,
+                { color: cp.text, fontSize: 14 * fontScale },
+              ]}
+            >
+              Lifetime totals
+            </Text>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginTop: Spacing.sm,
+              }}
+            >
+              <View>
+                <Text style={{ color: cp.textMuted, fontSize: 11 }}>
+                  Sessions
+                </Text>
+                <Text
+                  style={{ color: cp.text, fontSize: 18, fontWeight: "700" }}
+                  testID="text-lifetime-sessions"
+                >
+                  {lifetimeSessions}
+                </Text>
+              </View>
+              <View>
+                <Text style={{ color: cp.textMuted, fontSize: 11 }}>
+                  Minutes
+                </Text>
+                <Text
+                  style={{ color: cp.text, fontSize: 18, fontWeight: "700" }}
+                  testID="text-lifetime-minutes"
+                >
+                  {Math.round(lifetimeMinutes)}
+                </Text>
+              </View>
+              <View>
+                <Text style={{ color: cp.textMuted, fontSize: 11 }}>
+                  Programs
+                </Text>
+                <Text
+                  style={{ color: cp.text, fontSize: 18, fontWeight: "700" }}
+                  testID="text-lifetime-programs"
+                >
+                  {programProgress.lifetimeProgramsCompleted}
+                </Text>
+              </View>
+            </View>
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>

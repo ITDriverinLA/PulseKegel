@@ -17,6 +17,7 @@ export type CompletionTier = "strong" | "partial" | "low";
 export interface UserProgramProgress {
   phase: ProgramPhase;
   twelveWeekStartDate: string | null;
+  twelveWeekCompletionDate: string | null;
   twelveWeekDecisionDate: string | null;
   completionTier: CompletionTier | null;
   controlModePath: ControlModePath | null;
@@ -27,6 +28,7 @@ export interface UserProgramProgress {
 export const defaultProgramProgress: UserProgramProgress = {
   phase: "twelve_week_program",
   twelveWeekStartDate: null,
+  twelveWeekCompletionDate: null,
   twelveWeekDecisionDate: null,
   completionTier: null,
   controlModePath: null,
