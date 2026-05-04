@@ -116,6 +116,9 @@ const StatPill: React.FC<StatPillProps> = ({ label, value, accent }) => {
     >
       <Text
         style={[styles.statValue, { color: accent, fontSize: 22 * fontScale }]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.6}
       >
         {value}
       </Text>
