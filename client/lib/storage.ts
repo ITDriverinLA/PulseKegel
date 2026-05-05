@@ -1223,7 +1223,7 @@ export const storage = {
     const state = await this.getControlScoreState();
     const sessionDates = await this.getSessionCompletedDates();
     const completedSet = new Set(sessionDates);
-    if (state.lastSessionDate === today || completedSet.has(today)) {
+    if (state.lastSessionDate === today) {
       return { state, rankUp: null, backOnTrack: false, gain: 0 };
     }
     if (state.lastScoreUpdateDate < today) {
