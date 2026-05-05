@@ -1669,7 +1669,7 @@
         <div><span>●</span>$4.99 / yr</div>
       </div>
       <div class="cta-row reveal-stagger">
-        <a href="https://apps.apple.com/us/app/pulsekegel/id6758308054" target="_blank" rel="noopener" class="btn btn-primary">
+        <a id="cta-hero" href="https://apps.apple.com/us/app/pulsekegel/id6758308054" target="_blank" rel="noopener" class="btn btn-primary">
           Start the 7-Day Challenge <span class="arrow">→</span>
         </a>
         <a href="#locate" class="btn btn-ghost">
@@ -1762,7 +1762,7 @@
       </div>
 
       <div class="cta-row reveal-stagger">
-        <a href="https://apps.apple.com/us/app/pulsekegel/id6758308054" class="btn btn-primary">
+        <a id="cta-locate" href="https://apps.apple.com/us/app/pulsekegel/id6758308054" class="btn btn-primary">
           Once you've found it, train it <span class="arrow">→</span>
         </a>
         <a href="#how-it-works" class="btn btn-ghost">
@@ -2159,6 +2159,20 @@
 </footer>
 
 <script>
+  // ---------- PLATFORM-AWARE CTA ROUTING ----------
+  // Detects Android and swaps every single-destination CTA button to the
+  // Play Store. iOS and desktop keep the App Store default.
+  (function () {
+    var ANDROID_URL = 'https://play.google.com/store/apps/details?id=com.pulsekegel.app&pcampaignid=web_share';
+    var isAndroid = /android/i.test(navigator.userAgent);
+    if (!isAndroid) return;
+    var ids = ['cta-hero', 'cta-locate'];
+    ids.forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.href = ANDROID_URL;
+    });
+  })();
+
   // ---------- SINGLE-BAR LED GAUGE ----------
   // Runs a real squeeze cycle (SQUEEZE → HOLD → RELEASE → REST).
   // Reusable: call runGauge(bar, phaseEl, repEl) for each instance.
