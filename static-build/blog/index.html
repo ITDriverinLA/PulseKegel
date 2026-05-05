@@ -901,7 +901,7 @@
     <nav class="menu" aria-label="Primary">
       <a class="nav-link" href="https://pulsekegel.com/">Home</a>
       <a class="nav-link" href="https://pulsekegel.com/blog/" aria-current="page">Blog</a>
-      <a class="btn-primary" href="https://apps.apple.com/us/app/pulsekegel/id6758308054" target="_blank" rel="noopener">
+      <a id="cta-blog-nav" class="btn-primary" href="https://apps.apple.com/us/app/pulsekegel/id6758308054" target="_blank" rel="noopener">
         Start Training
         <span class="arrow" aria-hidden="true">→</span>
       </a>
@@ -1261,7 +1261,7 @@
     <span class="accent">Training is easier.</span>
   </h2>
   <p>Seven days free. No credit card. 5 to 10 minutes a day. If you want the full year after that, it's $4.99.</p>
-  <a class="btn-primary" href="https://apps.apple.com/us/app/pulsekegel/id6758308054" target="_blank" rel="noopener">
+  <a id="cta-blog-bottom" class="btn-primary" href="https://apps.apple.com/us/app/pulsekegel/id6758308054" target="_blank" rel="noopener">
     Start Training
     <span class="arrow" aria-hidden="true">→</span>
   </a>
@@ -1294,7 +1294,7 @@
       <h4>Get the App</h4>
       <ul>
         <li><a href="https://apps.apple.com/us/app/pulsekegel/id6758308054" target="_blank" rel="noopener">App Store</a></li>
-        <li><a href="#">Google Play (soon)</a></li>
+        <li><a href="https://play.google.com/store/apps/details?id=com.pulsekegel.app&pcampaignid=web_share" target="_blank" rel="noopener">Google Play</a></li>
       </ul>
     </div>
 
@@ -1349,5 +1349,8 @@
   })();
 </script>
 
+<script>
+(function(){var A='https://play.google.com/store/apps/details?id=com.pulsekegel.app&pcampaignid=web_share';if(!/android/i.test(navigator.userAgent))return;['cta-blog-nav','cta-blog-bottom'].forEach(function(id){var e=document.getElementById(id);if(e)e.href=A;});})();
+</script>
 </body>
 </html>

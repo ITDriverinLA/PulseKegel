@@ -7,7 +7,7 @@
 <meta name="description" content="How to do kegels correctly: three simple cues to locate your pelvic floor in 30 seconds, plus what it should and shouldn't feel like. Made for men.">
 <meta name="robots" content="index, follow">
 <title>How to Find Your Pelvic Floor: 3-Step Kegel Guide for Men</title>
-<link rel="canonical" href="https://pulsekegel.com/blog/how-to-find-your-pelvic-floor" />
+<link rel="canonical" href="https://www.pulsekegel.com/blog/how-to-find-your-pelvic-floor" />
 
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://www.pulsekegel.com/blog/how-to-find-your-pelvic-floor" />
@@ -117,239 +117,227 @@
 </script>
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 25%, #16213e 50%, #0f0f23 75%, #0a0a1a 100%);
-      color: rgba(255, 255, 255, 0.88);
-      min-height: 100vh;
-      overflow-x: hidden;
-      line-height: 1.7;
-      font-size: 1rem;
-    }
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-    /* HEADER */
-    .pk-header {
-      padding: 20px 24px;
-      border-bottom: 1px solid rgba(0, 255, 136, 0.15);
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      position: sticky;
-      top: 0;
-      background: rgba(10, 10, 26, 0.85);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      z-index: 100;
-    }
-    .pk-logo {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 1.25rem;
-      font-weight: 700;
-      background: linear-gradient(90deg, #00FF88, #00FFFF);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      text-decoration: none;
-      flex-shrink: 0;
-    }
-    .pk-breadcrumb-sep {
-      color: rgba(255, 255, 255, 0.3);
-      font-size: 0.9rem;
-    }
-    .pk-breadcrumb-link {
-      font-size: 0.875rem;
-      color: rgba(255, 255, 255, 0.55);
-      text-decoration: none;
-      transition: color 0.2s;
-    }
-    .pk-breadcrumb-link:hover { color: #00FFFF; }
-    .pk-header-rule {
-      height: 2px;
-      background: linear-gradient(90deg, #00FF88, #00FFFF, transparent);
-    }
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: #0a0a1a;
+    color: #e0e0e8;
+    line-height: 1.75;
+    font-size: 17px;
+  }
 
-    /* ARTICLE LAYOUT */
-    .pk-article {
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 48px 24px 64px;
-    }
+  /* NAV */
+  .nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(10,10,26,0.92); backdrop-filter: blur(12px);
+    padding: 16px 32px; display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(54,231,179,0.15);
+  }
+  .nav-logo { font-size: 20px; font-weight: 700; color: #36e7b3; letter-spacing: -0.5px; text-decoration: none; }
+  .nav-right { display: flex; align-items: center; gap: 24px; }
+  .nav-link {
+    color: #c8c8d8; font-size: 14px; font-weight: 500; text-decoration: none;
+    transition: color 0.2s;
+  }
+  .nav-link:hover { color: #36e7b3; }
+  .nav-cta {
+    background: #36e7b3; color: #0c0f38; padding: 10px 24px; border-radius: 8px;
+    font-weight: 600; font-size: 14px; text-decoration: none; transition: all 0.2s;
+  }
+  .nav-cta:hover { background: #2dd4a0; transform: translateY(-1px); }
 
-    .pk-article h1 {
-      font-family: 'Orbitron', sans-serif;
-      font-size: clamp(1.5rem, 4vw, 2.25rem);
-      font-weight: 700;
-      line-height: 1.25;
-      margin-bottom: 32px;
-      background: linear-gradient(135deg, #ffffff 0%, #00FFFF 60%, #00FF88 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
+  /* BREADCRUMB */
+  .breadcrumb {
+    max-width: 720px; margin: 100px auto 0; padding: 0 32px;
+    font-size: 13px; color: #6B6E8F; letter-spacing: 0.02em;
+  }
+  .breadcrumb a { color: #6B6E8F; text-decoration: none; transition: color 0.2s; }
+  .breadcrumb a:hover { color: #36e7b3; }
+  .breadcrumb .sep { color: #3a3a55; margin: 0 8px; }
+  .breadcrumb .current { color: #c8c8d8; }
 
-    .pk-article h2 {
-      font-family: 'Orbitron', sans-serif;
-      font-size: clamp(1.1rem, 2.5vw, 1.4rem);
-      font-weight: 600;
-      color: #00FF88;
-      margin-top: 48px;
-      margin-bottom: 16px;
-      line-height: 1.35;
-    }
+  /* RELATED READING */
+  .related-reads {
+    max-width: 720px; margin: 48px auto 0; padding: 0 32px;
+  }
+  .related-reads h3 {
+    font-size: 13px; font-weight: 700; color: #36e7b3; margin-bottom: 16px;
+    text-transform: uppercase; letter-spacing: 0.1em;
+  }
+  .related-reads ul { list-style: none; padding: 0; margin: 0; }
+  .related-reads li { margin-bottom: 10px; }
+  .related-reads a {
+    color: #c8c8d8; text-decoration: none; font-size: 16px; font-weight: 500;
+    border-bottom: 1px solid transparent; transition: all 0.2s;
+  }
+  .related-reads a:hover { color: #36e7b3; border-bottom-color: #36e7b3; }
 
-    .pk-article h3 {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 1rem;
-      font-weight: 600;
-      color: #00FFFF;
-      margin-top: 32px;
-      margin-bottom: 12px;
-      line-height: 1.4;
-    }
+  /* HERO */
+  .hero {
+    padding: 40px 32px 40px; text-align: center;
+    background: linear-gradient(180deg, #0c0f38 0%, #0a0a1a 100%);
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: ''; position: absolute; top: -200px; left: 50%; transform: translateX(-50%);
+    width: 600px; height: 600px; background: radial-gradient(circle, rgba(54,231,179,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-tag {
+    display: inline-block; background: rgba(54,231,179,0.12); color: #36e7b3;
+    padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;
+    letter-spacing: 0.5px; margin-bottom: 24px; text-transform: uppercase;
+  }
+  .hero h1 {
+    font-size: clamp(32px, 5vw, 56px); font-weight: 800; color: #fff;
+    line-height: 1.15; max-width: 820px; margin: 0 auto 24px;
+  }
+  .hero h1 span { color: #36e7b3; }
+  .hero-sub {
+    font-size: 19px; color: #a0a0b8; max-width: 640px; margin: 0 auto 40px; line-height: 1.6;
+  }
+  .hero-meta {
+    display: flex; justify-content: center; gap: 32px; font-size: 14px; color: #707088;
+  }
+  .hero-meta span { display: flex; align-items: center; gap: 6px; }
 
-    .pk-article p {
-      margin-bottom: 18px;
-      color: rgba(255, 255, 255, 0.82);
-    }
+  /* HERO IMAGE (the infographic) */
+  .hero-image {
+    max-width: 560px; margin: 56px auto 0;
+    border-radius: 16px; overflow: hidden;
+    border: 1px solid rgba(54,231,179,0.15);
+    box-shadow: 0 0 48px rgba(54,231,179,0.1);
+  }
+  .hero-image img { width: 100%; height: auto; display: block; }
+  .hero-image-fallback {
+    background: #0c0f38; padding: 80px 40px; text-align: center;
+    font-family: monospace; font-size: 13px; color: #6B6E8F;
+    letter-spacing: 0.2em;
+  }
 
-    .pk-article a {
-      color: #00FFFF;
-      text-decoration: underline;
-      text-decoration-color: rgba(0, 255, 255, 0.35);
-      transition: color 0.2s, text-decoration-color 0.2s;
-    }
-    .pk-article a:hover {
-      color: #00FF88;
-      text-decoration-color: rgba(0, 255, 136, 0.5);
-    }
+  /* CONTENT */
+  article {
+    max-width: 720px; margin: 0 auto; padding: 64px 32px;
+  }
+  article h2 {
+    font-size: 28px; font-weight: 700; color: #fff; margin: 56px 0 20px;
+    line-height: 1.3;
+  }
+  article h2:first-of-type { margin-top: 0; }
+  article h3 {
+    font-size: 22px; font-weight: 700; color: #36e7b3; margin: 32px 0 12px;
+    line-height: 1.3;
+  }
+  article p {
+    margin-bottom: 20px; color: #c8c8d8;
+  }
+  article strong { color: #fff; font-weight: 600; }
 
-    .pk-article ul, .pk-article ol {
-      margin: 0 0 20px 0;
-      padding-left: 0;
-      list-style: none;
-    }
-    .pk-article ul li, .pk-article ol li {
-      position: relative;
-      padding: 6px 0 6px 22px;
-      color: rgba(255, 255, 255, 0.8);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-    }
-    .pk-article ul li:last-child, .pk-article ol li:last-child {
-      border-bottom: none;
-    }
-    .pk-article ul li::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #00FF88;
-      box-shadow: 0 0 6px rgba(0, 255, 136, 0.5);
-    }
-    .pk-article ol {
-      counter-reset: ol-counter;
-    }
-    .pk-article ol li {
-      counter-increment: ol-counter;
-    }
-    .pk-article ol li::before {
-      content: counter(ol-counter) ".";
-      position: absolute;
-      left: 0;
-      color: #00FF88;
-      font-weight: 600;
-      font-size: 0.875rem;
-    }
+  /* PULL QUOTE */
+  .pull-quote {
+    border-left: 3px solid #36e7b3; padding: 24px 0 24px 28px;
+    margin: 40px 0; font-size: 22px; font-weight: 600; color: #36e7b3;
+    line-height: 1.5;
+  }
 
-    .pk-article blockquote {
-      margin: 24px 0;
-      padding: 20px 24px;
-      border-left: 3px solid #00FFFF;
-      background: rgba(0, 255, 255, 0.05);
-      border-radius: 0 12px 12px 0;
-      font-style: italic;
-      color: rgba(255, 255, 255, 0.75);
-    }
+  /* STEP CARDS */
+  .step-row {
+    display: grid; grid-template-columns: 1fr; gap: 16px; margin: 32px 0;
+  }
+  .step-card {
+    background: rgba(54,231,179,0.04); border: 1px solid rgba(54,231,179,0.18);
+    border-radius: 12px; padding: 28px; display: grid; grid-template-columns: 56px 1fr; gap: 20px;
+    align-items: start;
+  }
+  .step-card .num {
+    font-size: 42px; font-weight: 800; color: #36e7b3; line-height: 1;
+    font-family: 'Poppins', monospace;
+  }
+  .step-card h4 {
+    font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 8px; letter-spacing: 0.02em;
+  }
+  .step-card p { font-size: 15px; color: #c8c8d8; margin: 0; line-height: 1.6; }
+  .step-card .accent { color: #36e7b3; font-weight: 600; }
 
-    .pk-article code {
-      font-family: 'Courier New', monospace;
-      font-size: 0.875em;
-      background: rgba(0, 255, 136, 0.08);
-      border: 1px solid rgba(0, 255, 136, 0.2);
-      padding: 2px 6px;
-      border-radius: 4px;
-      color: #00FF88;
-    }
+  /* STAT CARDS */
+  .stat-row {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px; margin: 40px 0;
+  }
+  .stat-card {
+    background: rgba(54,231,179,0.06); border: 1px solid rgba(54,231,179,0.15);
+    border-radius: 12px; padding: 24px; text-align: center;
+  }
+  .stat-card .num {
+    font-size: 36px; font-weight: 800; color: #36e7b3; line-height: 1;
+  }
+  .stat-card .label {
+    font-size: 14px; color: #a0a0b8; margin-top: 8px; line-height: 1.4;
+  }
 
-    .pk-article pre {
-      background: rgba(0, 0, 0, 0.4);
-      border: 1px solid rgba(0, 255, 136, 0.15);
-      border-radius: 12px;
-      padding: 20px 24px;
-      overflow-x: auto;
-      margin-bottom: 20px;
-    }
-    .pk-article pre code {
-      background: none;
-      border: none;
-      padding: 0;
-    }
+  /* COMPARISON TABLE */
+  .compare-table {
+    width: 100%; border-collapse: collapse; margin: 32px 0;
+    font-size: 15px;
+  }
+  .compare-table th {
+    background: rgba(54,231,179,0.1); color: #36e7b3; padding: 14px 16px;
+    text-align: left; font-weight: 600; border-bottom: 2px solid rgba(54,231,179,0.2);
+  }
+  .compare-table td {
+    padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.06); color: #c8c8d8;
+  }
+  .compare-table tr:hover td { background: rgba(54,231,179,0.03); }
+  .check { color: #36e7b3; font-weight: 700; }
+  .cross { color: #ff6b6b; font-weight: 700; }
 
-    /* META */
-    .pk-article .meta {
-      font-size: 0.875rem;
-      color: rgba(255, 255, 255, 0.4);
-      margin-bottom: 24px;
-    }
+  /* TIP BOX */
+  .tip-box {
+    background: rgba(54,231,179,0.06); border: 1px solid rgba(54,231,179,0.2);
+    border-radius: 12px; padding: 24px 28px; margin: 32px 0;
+  }
+  .tip-box .tip-label {
+    font-size: 13px; font-weight: 700; color: #36e7b3;
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;
+  }
+  .tip-box p { margin: 0; color: #c8c8d8; }
 
-    /* FOOTER */
-    .pk-footer {
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-      padding: 40px 24px;
-      text-align: center;
-    }
-    .pk-footer-links {
-      display: flex;
-      justify-content: center;
-      gap: 28px;
-      flex-wrap: wrap;
-      margin-bottom: 16px;
-    }
-    .pk-footer-links a {
-      font-size: 0.875rem;
-      color: rgba(255, 255, 255, 0.5);
-      text-decoration: none;
-      transition: color 0.2s;
-    }
-    .pk-footer-links a:hover { color: #00FF88; }
-    .pk-footer-copy {
-      font-size: 0.8rem;
-      color: rgba(255, 255, 255, 0.28);
-    }
+  /* CTA SECTION */
+  .cta-section {
+    background: linear-gradient(135deg, #0c0f38 0%, #121640 100%);
+    border: 1px solid rgba(54,231,179,0.2); border-radius: 16px;
+    padding: 48px 40px; text-align: center; margin: 56px 0 0;
+  }
+  .cta-section h2 { color: #fff; margin: 0 0 12px; font-size: 28px; }
+  .cta-section p { color: #a0a0b8; margin-bottom: 28px; font-size: 17px; }
+  .cta-btn {
+    display: inline-block; background: #36e7b3; color: #0c0f38; padding: 16px 40px;
+    border-radius: 10px; font-weight: 700; font-size: 17px; text-decoration: none;
+    transition: all 0.2s;
+  }
+  .cta-btn:hover { background: #2dd4a0; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(54,231,179,0.25); }
+  .cta-price { font-size: 14px; color: #707088; margin-top: 16px; }
 
-    @media (max-width: 480px) {
-      .pk-article { padding: 32px 16px 48px; }
-    }
-  </style>
-  <link rel="icon" type="image/png" href="/favicon.png" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  /* FOOTER */
+  footer {
+    text-align: center; padding: 48px 32px; font-size: 14px; color: #505068;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+
+  @media (max-width: 640px) {
+    .hero { padding: 24px 20px 40px; }
+    .breadcrumb { margin-top: 80px; padding: 0 20px; font-size: 12px; }
+    article { padding: 40px 20px; }
+    .hero-meta { flex-direction: column; gap: 8px; }
+    .cta-section { padding: 36px 24px; }
+    .step-card { grid-template-columns: 1fr; gap: 8px; }
+    .step-card .num { font-size: 32px; }
+  }
+</style>
 </head>
 <body>
-  <header class="pk-header">
-    <a href="/" class="pk-logo">PulseKegel</a>
-    <span class="pk-breadcrumb-sep">/</span>
-    <a href="/blog" class="pk-breadcrumb-link">Blog</a>
-  </header>
-  <div class="pk-header-rule"></div>
-  <div class="pk-article">
 
 <!-- NAV -->
 <nav class="nav">
@@ -504,7 +492,7 @@
   <div class="cta-section" id="cta">
     <h2>Train the Muscle You Just Found</h2>
     <p>PulseKegel guides your pelvic floor training with haptic cues — so you know every rep is the right rep. Start with the 7-day challenge.</p>
-    <a href="https://apps.apple.com/us/app/pulsekegel/id6758308054" class="cta-btn">Start the 7-Day Challenge</a>
+    <a id="cta-pf-hero" href="https://apps.apple.com/us/app/pulsekegel/id6758308054" class="cta-btn">Start the 7-Day Challenge</a>
     <div class="cta-price">Free for 7 days, then $4.99 for a full year</div>
   </div>
 
@@ -514,14 +502,8 @@
   &copy; 2026 PulseKegel. All rights reserved.
 </footer>
 
-
-  </div>
-  <footer class="pk-footer">
-    <div class="pk-footer-links">
-      <a href="/blog">Back to Blog</a>
-      <a href="https://apps.apple.com/app/pulsekegel/id6741057595" target="_blank" rel="noopener">Download on the App Store</a>
-    </div>
-    <p class="pk-footer-copy">&copy; 2026 PulseKegel. All rights reserved.</p>
-  </footer>
+<script>
+(function(){var A='https://play.google.com/store/apps/details?id=com.pulsekegel.app&pcampaignid=web_share';if(!/android/i.test(navigator.userAgent))return;var e=document.getElementById('cta-pf-hero');if(e)e.href=A;})();
+</script>
 </body>
 </html>

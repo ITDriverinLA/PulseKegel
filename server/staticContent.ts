@@ -761,7 +761,7 @@ export const privacyPolicyHtml = `<!doctype html>
     <nav class="menu" aria-label="Primary">
       <a class="nav-link" href="https://pulsekegel.com/">Home</a>
       <a class="nav-link" href="https://pulsekegel.com/blog/">Blog</a>
-      <a class="btn-primary" href="https://apps.apple.com/us/app/pulsekegel/id6758308054" target="_blank" rel="noopener">
+      <a id="cta-privacy-nav" class="btn-primary" href="https://apps.apple.com/us/app/pulsekegel/id6758308054" target="_blank" rel="noopener">
         Start Training
         <span class="arrow" aria-hidden="true">→</span>
       </a>
@@ -1099,7 +1099,7 @@ export const privacyPolicyHtml = `<!doctype html>
       <h4>Get the App</h4>
       <ul>
         <li><a href="https://apps.apple.com/us/app/pulsekegel/id6758308054" target="_blank" rel="noopener">App Store</a></li>
-        <li><a href="#">Google Play (soon)</a></li>
+        <li><a href="https://play.google.com/store/apps/details?id=com.pulsekegel.app&pcampaignid=web_share" target="_blank" rel="noopener">Google Play</a></li>
       </ul>
     </div>
 
@@ -1154,6 +1154,9 @@ export const privacyPolicyHtml = `<!doctype html>
   })();
 </script>
 
+<script>
+(function(){var A='https://play.google.com/store/apps/details?id=com.pulsekegel.app&pcampaignid=web_share';if(!/android/i.test(navigator.userAgent))return;var e=document.getElementById('cta-privacy-nav');if(e)e.href=A;})();
+</script>
 </body>
 </html>
 `;
