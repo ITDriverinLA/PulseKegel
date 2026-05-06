@@ -65,6 +65,9 @@ export const ANIM_DURATION_BADGE_SHIMMER = 2000;
 // Loading / skeleton pulse
 export const ANIM_DURATION_PULSE_LOADING = 800;
 
+// Near-instant state reset (used for dashoffset snap-back, etc.)
+export const ANIM_DURATION_RESET_FAST = 50;
+
 // ---------------------------------------------------------------------------
 // Animation delay constants
 // ---------------------------------------------------------------------------

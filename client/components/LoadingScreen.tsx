@@ -7,10 +7,16 @@ import Animated, {
   withRepeat,
   withSequence,
   withDelay,
-  Easing,
   FadeIn,
 } from "react-native-reanimated";
 import Svg, { Path } from "react-native-svg";
+import {
+  ANIM_EASING_LINEAR,
+  ANIM_DURATION_HOLD_PULSE_BOTTOM,
+  ANIM_DURATION_RESET_FAST,
+  ANIM_DELAY_LONG,
+  ANIM_DURATION_CONTENT,
+} from "@/constants/animation";
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -18,30 +24,35 @@ const SCREEN_WIDTH = Dimensions.get("window").width;
 const LINE_WIDTH = Math.min(SCREEN_WIDTH - 64, 300);
 
 // ECG/heartbeat path on a 300×60 canvas.
-// Flat baseline → small pre-dip → sharp spike up → spike down → recovery bump → flat out.
+// Flat baseline → small pre-dip → sharp spike up → spike down → recovery → flat out.
 const ECG_PATH =
   "M 0 30 L 55 30 L 67 37 L 82 4 L 95 56 L 108 24 L 118 30 L 300 30";
 
-// Conservative overestimate of the path length so the full stroke is hidden at offset=PATH_LENGTH.
+// Conservative overestimate of total path length so the stroke is fully hidden at offset = PATH_LENGTH.
 const PATH_LENGTH = 430;
 
 const BG = "#0a0a1a";
 const NEON = "#00FF88";
-const NEON_GLOW = "#00FF8833";
 
 export function LoadingScreen() {
   const dashOffset = useSharedValue(PATH_LENGTH);
 
   useEffect(() => {
-    // Draw the line left-to-right (1 400 ms), pause briefly, then instantly reset and repeat.
+    // Draw the line left-to-right, pause briefly, then snap back and repeat.
     dashOffset.value = withRepeat(
       withSequence(
-        withTiming(0, { duration: 1400, easing: Easing.linear }),
-        withDelay(300, withTiming(PATH_LENGTH, { duration: 16 })),
+        withTiming(0, {
+          duration: ANIM_DURATION_HOLD_PULSE_BOTTOM,
+          easing: ANIM_EASING_LINEAR,
+        }),
+        withDelay(
+          ANIM_DELAY_LONG,
+          withTiming(PATH_LENGTH, { duration: ANIM_DURATION_RESET_FAST }),
+        ),
       ),
       -1,
     );
-  }, []);
+  }, [dashOffset]);
 
   const mainProps = useAnimatedProps(() => ({
     strokeDashoffset: dashOffset.value,
@@ -53,7 +64,10 @@ export function LoadingScreen() {
 
   return (
     <View style={styles.container}>
-      <Animated.View entering={FadeIn.duration(350)} style={styles.content}>
+      <Animated.View
+        entering={FadeIn.duration(ANIM_DURATION_CONTENT)}
+        style={styles.content}
+      >
         <Image
           source={require("../../assets/images/icon.png")}
           style={styles.icon}
@@ -64,7 +78,7 @@ export function LoadingScreen() {
 
         <View style={styles.lineWrapper}>
           <Svg width={LINE_WIDTH} height={60} viewBox="0 0 300 60">
-            {/* Wide, faint glow layer */}
+            {/* Wide faint glow */}
             <AnimatedPath
               d={ECG_PATH}
               stroke={NEON}
@@ -76,7 +90,7 @@ export function LoadingScreen() {
               strokeDasharray={PATH_LENGTH}
               animatedProps={glowProps}
             />
-            {/* Medium glow layer */}
+            {/* Medium glow */}
             <AnimatedPath
               d={ECG_PATH}
               stroke={NEON}
