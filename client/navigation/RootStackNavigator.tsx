@@ -23,6 +23,7 @@ import TechniqueGuideScreen from "@/screens/TechniqueGuideScreen";
 import CalibrationFeedbackScreen from "@/screens/CalibrationFeedbackScreen";
 import ForceUpdateScreen from "@/screens/ForceUpdateScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
+import { LoadingScreen } from "@/components/LoadingScreen";
 import { ANIM_DURATION_ENTER } from "@/constants/animation";
 import { storage } from "@/lib/storage";
 import { getApiUrl } from "@/lib/query-client";
@@ -148,7 +149,7 @@ export default function RootStackNavigator() {
   };
 
   if (isLoading) {
-    return null;
+    return <LoadingScreen />;
   }
 
   if (needsUpdate) {
