@@ -121,9 +121,13 @@ export default function RootStackNavigator() {
     };
 
     const initialize = async () => {
+      const minDisplay = new Promise<void>((resolve) =>
+        setTimeout(resolve, 3000),
+      );
       const [onboardingComplete] = await Promise.all([
         storage.isOnboardingComplete(),
         checkVersion(),
+        minDisplay,
       ]);
       setShowOnboarding(!onboardingComplete);
       setIsLoading(false);
