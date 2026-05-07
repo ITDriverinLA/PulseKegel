@@ -26,6 +26,7 @@ interface AudioContextType {
   playSfx: (effect: SoundEffect) => void;
   startAmbient: () => void;
   stopAmbient: () => void;
+  fadeOutAmbient: () => void;
   previewTrack: (track: TrackKey) => void;
   stopPreview: () => void;
   previewingTrack: AmbientTrack;
@@ -37,6 +38,7 @@ const AudioContext = createContext<AudioContextType>({
   playSfx: () => {},
   startAmbient: () => {},
   stopAmbient: () => {},
+  fadeOutAmbient: () => {},
   previewTrack: () => {},
   stopPreview: () => {},
   previewingTrack: "none",
@@ -54,6 +56,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const lastPlayedTrackRef = useRef<AmbientTrack>("none");
   const audioSettingsLoadedRef = useRef(false);
   const pendingAmbientStartRef = useRef(false);
+  const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     audioSettingsRef.current = audioSettings;
@@ -338,13 +341,80 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   }, [stopAllAmbient, playTrackByKey]);
 
   const stopAmbient = useCallback(() => {
+    // Cancel any in-flight fade and restore volumes immediately.
+    if (fadeIntervalRef.current !== null) {
+      clearInterval(fadeIntervalRef.current);
+      fadeIntervalRef.current = null;
+      const vol = audioSettingsRef.current.ambientVolume;
+      for (const player of Object.values(ambientPlayers)) {
+        if (player) {
+          try {
+            player.volume = vol;
+          } catch {}
+        }
+      }
+    }
     isWorkoutActiveRef.current = false;
     pendingAmbientStartRef.current = false;
     stopAllAmbient();
     setCurrentAmbientTrack("none");
     lastPlayedTrackRef.current = "none";
     currentTrackIndexRef.current = 0;
-  }, [stopAllAmbient]);
+  }, [ambientPlayers, stopAllAmbient]);
+
+  const fadeOutAmbient = useCallback(() => {
+    isWorkoutActiveRef.current = false;
+    pendingAmbientStartRef.current = false;
+
+    // Clear any previously scheduled fade.
+    if (fadeIntervalRef.current !== null) {
+      clearInterval(fadeIntervalRef.current);
+      fadeIntervalRef.current = null;
+    }
+
+    const track = lastPlayedTrackRef.current;
+    if (track === "none") {
+      setCurrentAmbientTrack("none");
+      currentTrackIndexRef.current = 0;
+      return;
+    }
+
+    const player = ambientPlayers[track as TrackKey];
+    if (!player) {
+      stopAllAmbient();
+      setCurrentAmbientTrack("none");
+      lastPlayedTrackRef.current = "none";
+      currentTrackIndexRef.current = 0;
+      return;
+    }
+
+    const FADE_MS = 3000;
+    const STEP_MS = 100;
+    const totalSteps = FADE_MS / STEP_MS;
+    const startVolume = audioSettingsRef.current.ambientVolume;
+    let step = 0;
+
+    fadeIntervalRef.current = setInterval(() => {
+      step += 1;
+      const fraction = Math.max(0, 1 - step / totalSteps);
+      try {
+        player.volume = startVolume * fraction;
+      } catch {}
+
+      if (step >= totalSteps) {
+        clearInterval(fadeIntervalRef.current!);
+        fadeIntervalRef.current = null;
+        stopAllAmbient();
+        // Restore volume so the next workout starts at the right level.
+        try {
+          player.volume = startVolume;
+        } catch {}
+        setCurrentAmbientTrack("none");
+        lastPlayedTrackRef.current = "none";
+        currentTrackIndexRef.current = 0;
+      }
+    }, STEP_MS);
+  }, [ambientPlayers, stopAllAmbient]);
 
   const previewTrack = useCallback(
     (track: TrackKey) => {
@@ -387,6 +457,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         playSfx,
         startAmbient,
         stopAmbient,
+        fadeOutAmbient,
         previewTrack,
         stopPreview,
         previewingTrack,

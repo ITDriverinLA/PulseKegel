@@ -68,7 +68,7 @@ export default function WorkoutPlayerScreen() {
 
   const insets = useSafeAreaInsets();
   const { cp, isDarkMode } = useThemePreference();
-  const { playSfx, startAmbient, stopAmbient } = useAudio();
+  const { playSfx, startAmbient, stopAmbient, fadeOutAmbient } = useAudio();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const { workout, weekNumber, phase, dayNumber } = route.params;
@@ -212,7 +212,7 @@ export default function WorkoutPlayerScreen() {
         },
         onComplete: async (seconds) => {
           hapticPulseRef.current.stop();
-          stopAmbient();
+          fadeOutAmbient();
           playSfx("complete");
           setTotalSeconds(seconds);
           isCompleteRef.current = true;
@@ -338,6 +338,7 @@ export default function WorkoutPlayerScreen() {
     playSfx,
     startAmbient,
     stopAmbient,
+    fadeOutAmbient,
     weekNumber,
     dayNumber,
     phase,
