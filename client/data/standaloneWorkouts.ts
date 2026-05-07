@@ -51,8 +51,8 @@ const createCoolDown = (id: string, seconds: number = 20): Segment =>
     "Relax and breathe deeply",
     1,
     1,
-    0,
     seconds,
+    0,
     "breathing",
   );
 
