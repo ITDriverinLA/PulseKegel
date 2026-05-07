@@ -1189,6 +1189,12 @@ export const storage = {
         );
       }
     }
+    // The while loop processes days from lastScoreUpdateDate+1 up to (but not including)
+    // yesterday — so when lastScoreUpdateDate = yesterday the loop doesn't execute and
+    // yesterday's completed session is never checked. Explicitly correct that here.
+    if (completedSet.has(yesterday)) {
+      state.idleDays = 0;
+    }
     if (completedSet.has(today)) {
       state.idleDays = 0;
     }
