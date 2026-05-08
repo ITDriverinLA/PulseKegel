@@ -63,8 +63,7 @@ export default function ForceUpdateScreen({
     }
   };
 
-  const storeLabel =
-    Platform.OS === "ios" ? "the App Store" : "the Play Store";
+  const storeLabel = Platform.OS === "ios" ? "the App Store" : "the Play Store";
 
   return (
     <Animated.View style={fadeStyle}>
