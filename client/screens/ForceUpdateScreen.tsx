@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -37,6 +37,8 @@ export default function ForceUpdateScreen({
   const insets = useSafeAreaInsets();
   const { cp } = useThemePreference();
   const opacity = useSharedValue(0);
+  const [linkError, setLinkError] = useState(false);
+
   const fadeStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
     flex: 1,
@@ -47,13 +49,22 @@ export default function ForceUpdateScreen({
   }, [opacity]);
 
   const handleUpdate = async () => {
+    setLinkError(false);
     const url = Platform.OS === "ios" ? iosStoreUrl : androidStoreUrl;
     try {
-      await Linking.openURL(url);
+      const canOpen = await Linking.canOpenURL(url);
+      if (canOpen) {
+        await Linking.openURL(url);
+      } else {
+        setLinkError(true);
+      }
     } catch {
-      // Nothing more we can do if the store URL fails to open
+      setLinkError(true);
     }
   };
+
+  const storeLabel =
+    Platform.OS === "ios" ? "the App Store" : "the Play Store";
 
   return (
     <Animated.View style={fadeStyle}>
@@ -107,11 +118,18 @@ export default function ForceUpdateScreen({
             >
               <Text style={styles.updateButtonText}>Update Now</Text>
             </Pressable>
-            <Text style={[styles.hint, { color: cp.textMuted }]}>
-              {Platform.OS === "ios"
-                ? "Opens the App Store"
-                : "Opens the Play Store"}
-            </Text>
+
+            {linkError ? (
+              <Text style={[styles.errorText, { color: cp.neonCyan }]}>
+                {"Could not open " +
+                  storeLabel +
+                  ". Search for\n\u201cPulseKegel\u201d to find the update."}
+              </Text>
+            ) : (
+              <Text style={[styles.hint, { color: cp.textMuted }]}>
+                {"Opens " + storeLabel}
+              </Text>
+            )}
           </Animated.View>
         </View>
       </LinearGradient>
@@ -183,5 +201,10 @@ const styles = StyleSheet.create({
   },
   hint: {
     fontSize: 13,
+  },
+  errorText: {
+    fontSize: 13,
+    textAlign: "center",
+    lineHeight: 20,
   },
 });
