@@ -324,7 +324,7 @@ ${blogUrls}
   app.get("/api/version-check", (_req, res) => {
     res.json({
       minimumVersion: APP_VERSION,
-      iosStoreUrl: 'https://apps.apple.com/app/pulsekegel',
+      iosStoreUrl: 'https://apps.apple.com/app/id6758308054',
       androidStoreUrl: 'https://play.google.com/store/apps/details?id=com.pulsekegel.app',
     });
   });
