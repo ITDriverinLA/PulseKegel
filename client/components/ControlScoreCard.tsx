@@ -16,6 +16,7 @@ import {
 
 interface Props {
   state: ControlScoreState;
+  hideRank?: boolean;
 }
 
 type FeatherIconName = React.ComponentProps<typeof Feather>["name"];
@@ -26,7 +27,7 @@ const TREND_LABELS: Record<Trend, { label: string; icon: FeatherIconName }> = {
   slipping: { label: "Slipping", icon: "trending-down" },
 };
 
-export function ControlScoreCard({ state }: Props) {
+export function ControlScoreCard({ state, hideRank = false }: Props) {
   const { cp, isDarkMode } = useThemePreference();
   const { fontScale } = useAccessibility();
 
@@ -55,50 +56,52 @@ export function ControlScoreCard({ state }: Props) {
       ]}
       testID="control-score-card"
     >
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Text
+      {!hideRank ? (
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Text
+              style={[
+                styles.rankLabel,
+                { color: cp.textMuted, fontSize: 11 * fontScale },
+              ]}
+            >
+              RANK
+            </Text>
+            <Text
+              style={[
+                styles.rankName,
+                {
+                  color: cp.neonCyan,
+                  fontSize: 22 * fontScale,
+                  textShadowColor: isDarkMode ? cp.neonCyan : "transparent",
+                },
+              ]}
+              testID="text-current-rank"
+            >
+              {state.currentRank}
+            </Text>
+          </View>
+          <View
             style={[
-              styles.rankLabel,
-              { color: cp.textMuted, fontSize: 11 * fontScale },
-            ]}
-          >
-            RANK
-          </Text>
-          <Text
-            style={[
-              styles.rankName,
+              styles.trendChip,
               {
-                color: cp.neonCyan,
-                fontSize: 22 * fontScale,
-                textShadowColor: isDarkMode ? cp.neonCyan : "transparent",
+                backgroundColor: `${trendColor}1A`,
+                borderColor: `${trendColor}55`,
               },
             ]}
-            testID="text-current-rank"
           >
-            {state.currentRank}
-          </Text>
+            <Feather name={trendInfo.icon} size={12} color={trendColor} />
+            <Text
+              style={[
+                styles.trendText,
+                { color: trendColor, fontSize: 11 * fontScale },
+              ]}
+            >
+              {trendInfo.label}
+            </Text>
+          </View>
         </View>
-        <View
-          style={[
-            styles.trendChip,
-            {
-              backgroundColor: `${trendColor}1A`,
-              borderColor: `${trendColor}55`,
-            },
-          ]}
-        >
-          <Feather name={trendInfo.icon} size={12} color={trendColor} />
-          <Text
-            style={[
-              styles.trendText,
-              { color: trendColor, fontSize: 11 * fontScale },
-            ]}
-          >
-            {trendInfo.label}
-          </Text>
-        </View>
-      </View>
+      ) : null}
 
       <Text
         style={[

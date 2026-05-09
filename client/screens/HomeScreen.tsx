@@ -35,7 +35,7 @@ import {
   defaultSettings,
   ControlScoreState,
 } from "@/lib/storage";
-import { RankName } from "@/lib/controlScore";
+import { RankName, getTrend, todayDateString } from "@/lib/controlScore";
 import { ControlScoreCard } from "@/components/ControlScoreCard";
 import { RankUpToast } from "@/components/RankUpToast";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
@@ -409,6 +409,32 @@ export default function HomeScreen() {
     });
   };
 
+  const heroTrend = scoreState
+    ? getTrend(
+        scoreState.scoreHistory,
+        scoreState.controlScore,
+        todayDateString(),
+      )
+    : ("holding" as const);
+  const heroTrendColor =
+    heroTrend === "gaining"
+      ? cp.neonGreen
+      : heroTrend === "slipping"
+        ? cp.neonOrange
+        : cp.textSecondary;
+  const heroTrendIcon =
+    heroTrend === "gaining"
+      ? ("trending-up" as const)
+      : heroTrend === "slipping"
+        ? ("trending-down" as const)
+        : ("minus" as const);
+  const heroTrendLabel =
+    heroTrend === "gaining"
+      ? "Gaining"
+      : heroTrend === "slipping"
+        ? "Slipping"
+        : "Holding";
+
   return (
     <LinearGradient
       colors={cp.gradient as unknown as [string, string, ...string[]]}
@@ -435,7 +461,7 @@ export default function HomeScreen() {
             ANIM_DELAY_SHORT,
           )}
         >
-          <View style={styles.streakContainer}>
+          <View style={styles.heroRow}>
             <View
               style={[
                 styles.streakBadge,
@@ -468,6 +494,61 @@ export default function HomeScreen() {
                 Day Streak
               </Text>
             </View>
+            {scoreState ? (
+              <View
+                style={[
+                  styles.rankPanel,
+                  {
+                    backgroundColor: `${cp.neonCyan}1A`,
+                    borderColor: `${cp.neonCyan}4D`,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.rankPanelLabel,
+                    { color: cp.textMuted, fontSize: 11 * fontScale },
+                  ]}
+                >
+                  RANK
+                </Text>
+                <Text
+                  style={[
+                    styles.rankPanelName,
+                    {
+                      color: cp.neonCyan,
+                      fontSize: 22 * fontScale,
+                      textShadowColor: isDarkMode ? cp.neonCyan : "transparent",
+                    },
+                  ]}
+                >
+                  {scoreState.currentRank}
+                </Text>
+                <View
+                  style={[
+                    styles.rankTrendChip,
+                    {
+                      backgroundColor: `${heroTrendColor}1A`,
+                      borderColor: `${heroTrendColor}55`,
+                    },
+                  ]}
+                >
+                  <Feather
+                    name={heroTrendIcon}
+                    size={12}
+                    color={heroTrendColor}
+                  />
+                  <Text
+                    style={[
+                      styles.rankTrendText,
+                      { color: heroTrendColor, fontSize: 11 * fontScale },
+                    ]}
+                  >
+                    {heroTrendLabel}
+                  </Text>
+                </View>
+              </View>
+            ) : null}
           </View>
         </Animated.View>
 
@@ -526,7 +607,7 @@ export default function HomeScreen() {
                 </Text>
               </View>
             ) : null}
-            <ControlScoreCard state={scoreState} />
+            <ControlScoreCard state={scoreState} hideRank />
           </Animated.View>
         ) : null}
 
@@ -1278,8 +1359,9 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  streakContainer: {
-    alignItems: "center",
+  heroRow: {
+    flexDirection: "row",
+    gap: Spacing.md,
     marginBottom: Spacing["2xl"],
   },
   scoreNudge: {
@@ -1298,11 +1380,47 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   streakBadge: {
+    flex: 1,
     alignItems: "center",
     paddingVertical: Spacing.xl,
-    paddingHorizontal: Spacing["3xl"],
+    paddingHorizontal: Spacing.lg,
     borderRadius: BorderRadius["2xl"],
     borderWidth: 1,
+  },
+  rankPanel: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing.xl,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: BorderRadius["2xl"],
+    borderWidth: 1,
+    gap: Spacing.xs,
+  },
+  rankPanelLabel: {
+    fontWeight: "700",
+    letterSpacing: 1.5,
+    marginBottom: 2,
+  },
+  rankPanelName: {
+    fontWeight: "700",
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 12,
+    textAlign: "center",
+  },
+  rankTrendChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    marginTop: Spacing.xs,
+  },
+  rankTrendText: {
+    fontWeight: "600",
+    letterSpacing: 0.3,
   },
   streakNumber: {
     fontSize: 48,
