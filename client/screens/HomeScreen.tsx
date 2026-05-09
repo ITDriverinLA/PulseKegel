@@ -658,7 +658,9 @@ export default function HomeScreen() {
                     </Text>
                   </Animated.View>
                 ) : scoreState.idleDays >= 2 ? (
-                  <View
+                  <Animated.View
+                    entering={FadeInDown.duration(400)}
+                    exiting={FadeOut.duration(500)}
                     style={[
                       styles.rankNudge,
                       {
@@ -683,7 +685,7 @@ export default function HomeScreen() {
                       {scoreState.idleDays === 1 ? "day" : "days"} idle — log a
                       session to stop decay
                     </Text>
-                  </View>
+                  </Animated.View>
                 ) : null}
               </View>
             ) : null}
