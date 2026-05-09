@@ -106,6 +106,7 @@ export default function HomeScreen() {
   >(null);
   const [showCalibrationIntro, setShowCalibrationIntro] = useState(false);
   const [scoreState, setScoreState] = useState<ControlScoreState | null>(null);
+  const [backOnTrack, setBackOnTrack] = useState(false);
   const [pendingRankUp, setPendingRankUp] = useState<RankName | null>(null);
   const [programProgress, setProgramProgress] =
     useState<UserProgramProgress | null>(null);
@@ -117,7 +118,11 @@ export default function HomeScreen() {
     await storage.backfillRestDays(startDate);
     const freshScore = await storage.applyDailyDecay();
     setScoreState(freshScore);
-    await storage.consumeBackOnTrackPending();
+    const isBackOnTrack = await storage.consumeBackOnTrackPending();
+    if (isBackOnTrack) {
+      setBackOnTrack(true);
+      setTimeout(() => setBackOnTrack(false), 6000);
+    }
     const pendingRank = await storage.consumePendingRankUp();
     if (pendingRank) setPendingRankUp(pendingRank);
 
@@ -625,6 +630,59 @@ export default function HomeScreen() {
                     ? `${heroPointsToNext} ${heroPointsToNext === 1 ? "pt" : "pts"} to ${heroNextRank.name}`
                     : "Elite reached — keep your edge."}
                 </Text>
+                {backOnTrack ? (
+                  <View
+                    style={[
+                      styles.rankNudge,
+                      {
+                        backgroundColor: `${cp.neonGreen}1A`,
+                        borderColor: `${cp.neonGreen}55`,
+                      },
+                    ]}
+                    testID="nudge-back-on-track"
+                  >
+                    <Feather
+                      name="check-circle"
+                      size={10}
+                      color={cp.neonGreen}
+                    />
+                    <Text
+                      style={[
+                        styles.rankNudgeText,
+                        { color: cp.neonGreen, fontSize: 10 * fontScale },
+                      ]}
+                    >
+                      Back on track. Decay paused.
+                    </Text>
+                  </View>
+                ) : scoreState.idleDays >= 2 && heroTrend === "slipping" ? (
+                  <View
+                    style={[
+                      styles.rankNudge,
+                      {
+                        backgroundColor: `${cp.neonOrange}1A`,
+                        borderColor: `${cp.neonOrange}55`,
+                      },
+                    ]}
+                    testID="nudge-score-slipping"
+                  >
+                    <Feather
+                      name="alert-circle"
+                      size={10}
+                      color={cp.neonOrange}
+                    />
+                    <Text
+                      style={[
+                        styles.rankNudgeText,
+                        { color: cp.neonOrange, fontSize: 10 * fontScale },
+                      ]}
+                    >
+                      {scoreState.idleDays}{" "}
+                      {scoreState.idleDays === 1 ? "day" : "days"} idle — log a
+                      session to stop decay
+                    </Text>
+                  </View>
+                ) : null}
               </View>
             ) : null}
           </View>
@@ -1473,6 +1531,20 @@ const styles = StyleSheet.create({
   },
   rankNextText: {
     marginTop: 2,
+  },
+  rankNudge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 4,
+    paddingVertical: 3,
+    paddingHorizontal: 6,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+  },
+  rankNudgeText: {
+    fontWeight: "500",
+    flexShrink: 1,
   },
   streakNumber: {
     fontSize: 48,
