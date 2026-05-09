@@ -15,7 +15,7 @@ import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
-import Animated, { FadeInDown } from "react-native-reanimated";
+import Animated, { FadeInDown, FadeOut } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 
 import { Toggle } from "@/components/Toggle";
@@ -631,7 +631,9 @@ export default function HomeScreen() {
                     : "Elite reached — keep your edge."}
                 </Text>
                 {backOnTrack ? (
-                  <View
+                  <Animated.View
+                    entering={FadeInDown.duration(400)}
+                    exiting={FadeOut.duration(500)}
                     style={[
                       styles.rankNudge,
                       {
@@ -654,7 +656,7 @@ export default function HomeScreen() {
                     >
                       Back on track. Decay paused.
                     </Text>
-                  </View>
+                  </Animated.View>
                 ) : scoreState.idleDays >= 2 && heroTrend === "slipping" ? (
                   <View
                     style={[
