@@ -430,7 +430,7 @@ export default function HomeScreen() {
       ? cp.neonGreen
       : heroTrend === "slipping"
         ? cp.neonOrange
-        : cp.textSecondary;
+        : cp.text;
   const heroTrendIcon =
     heroTrend === "gaining"
       ? ("trending-up" as const)
@@ -1461,16 +1461,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.xs,
-    borderRadius: BorderRadius["2xl"],
+    borderRadius: BorderRadius.lg,
     borderWidth: 1,
   },
   rankPanel: {
     flex: 3,
     alignItems: "flex-start",
     justifyContent: "center",
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.md,
-    borderRadius: BorderRadius["2xl"],
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.lg,
     borderWidth: 1,
     gap: Spacing.xs,
   },
