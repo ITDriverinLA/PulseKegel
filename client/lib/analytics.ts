@@ -12,6 +12,10 @@ const DEVICE_ID_KEY = "pulsekegel_analytics_device_id";
 const SESSION_SENT = new Set<string>();
 const ONCE_PER_SESSION_EVENTS = new Set(["app_open"]);
 
+// Timestamp (ms) before which we must not send analytics — set when the server
+// returns a 429 with a Retry-After header.
+let retryAfterMs = 0;
+
 async function getOrCreateDeviceId(): Promise<string> {
   try {
     let deviceId = await AsyncStorage.getItem(DEVICE_ID_KEY);
@@ -41,7 +45,11 @@ export function trackEvent(type: string, data?: Record<string, unknown>): void {
       const url = new URL("/api/analytics", baseUrl);
       const appVersion = Application.nativeApplicationVersion ?? "1.0.0";
 
-      await fetch(url.toString(), {
+      if (Date.now() < retryAfterMs) {
+        return;
+      }
+
+      const response = await fetch(url.toString(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -57,6 +65,16 @@ export function trackEvent(type: string, data?: Record<string, unknown>): void {
           ],
         }),
       });
+
+      if (response.status === 429) {
+        const retryAfter = response.headers.get("Retry-After");
+        if (retryAfter) {
+          const seconds = parseInt(retryAfter, 10);
+          if (!isNaN(seconds) && seconds > 0) {
+            retryAfterMs = Date.now() + seconds * 1000;
+          }
+        }
+      }
     } catch {
       // Silently swallow — analytics must never crash or block the app
     }

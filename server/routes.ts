@@ -369,6 +369,8 @@ ${blogUrls}
     }
     bucket.count += 1;
     if (bucket.count > ANALYTICS_RATE_LIMIT) {
+      const retryAfterSeconds = Math.ceil((bucket.resetAt - now) / 1000);
+      res.setHeader("Retry-After", retryAfterSeconds);
       res.status(429).json({ error: "Too many requests — please slow down" });
       return;
     }
