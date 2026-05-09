@@ -329,10 +329,33 @@ ${blogUrls}
     });
   });
 
+  const ANALYTICS_RATE_LIMIT = 60;        // max requests per window
+  const ANALYTICS_RATE_WINDOW_MS = 60_000; // 1-minute fixed window
+  const ANALYTICS_MAX_EVENTS = 20;         // max events per batch
+  const analyticsRateMap = new Map<string, { count: number; resetAt: number }>();
+
   app.post("/api/analytics", async (req, res) => {
+    const ip = req.ip ?? "unknown";
+
+    const now = Date.now();
+    let bucket = analyticsRateMap.get(ip);
+    if (!bucket || now >= bucket.resetAt) {
+      bucket = { count: 0, resetAt: now + ANALYTICS_RATE_WINDOW_MS };
+      analyticsRateMap.set(ip, bucket);
+    }
+    bucket.count += 1;
+    if (bucket.count > ANALYTICS_RATE_LIMIT) {
+      res.status(429).json({ error: "Too many requests — please slow down" });
+      return;
+    }
+
     const { deviceId, events } = req.body ?? {};
     if (!deviceId || !Array.isArray(events) || events.length === 0) {
       res.status(400).json({ error: "deviceId and events are required" });
+      return;
+    }
+    if (events.length > ANALYTICS_MAX_EVENTS) {
+      res.status(400).json({ error: `Batch too large — max ${ANALYTICS_MAX_EVENTS} events per request` });
       return;
     }
     try {
