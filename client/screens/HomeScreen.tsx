@@ -657,7 +657,7 @@ export default function HomeScreen() {
                       Back on track. Decay paused.
                     </Text>
                   </Animated.View>
-                ) : scoreState.idleDays >= 2 && heroTrend === "slipping" ? (
+                ) : scoreState.idleDays >= 2 ? (
                   <View
                     style={[
                       styles.rankNudge,
