@@ -332,7 +332,18 @@ ${blogUrls}
   const ANALYTICS_RATE_LIMIT = 60;        // max requests per window
   const ANALYTICS_RATE_WINDOW_MS = 60_000; // 1-minute fixed window
   const ANALYTICS_MAX_EVENTS = 20;         // max events per batch
+  const ANALYTICS_RATE_MAP_MAX = 10_000;   // hard cap on tracked IPs
   const analyticsRateMap = new Map<string, { count: number; resetAt: number }>();
+
+  // Evict expired buckets every 5 minutes to prevent unbounded memory growth
+  setInterval(() => {
+    const now = Date.now();
+    for (const [ip, bucket] of analyticsRateMap) {
+      if (now >= bucket.resetAt) {
+        analyticsRateMap.delete(ip);
+      }
+    }
+  }, 5 * 60_000).unref();
 
   app.post("/api/analytics", async (req, res) => {
     const ip = req.ip ?? "unknown";
@@ -340,6 +351,19 @@ ${blogUrls}
     const now = Date.now();
     let bucket = analyticsRateMap.get(ip);
     if (!bucket || now >= bucket.resetAt) {
+      // If the map is at capacity, evict expired entries before adding a new one
+      if (!bucket && analyticsRateMap.size >= ANALYTICS_RATE_MAP_MAX) {
+        for (const [key, entry] of analyticsRateMap) {
+          if (now >= entry.resetAt) {
+            analyticsRateMap.delete(key);
+          }
+          if (analyticsRateMap.size < ANALYTICS_RATE_MAP_MAX) break;
+        }
+        // If still at capacity after eviction, drop the oldest entry
+        if (analyticsRateMap.size >= ANALYTICS_RATE_MAP_MAX) {
+          analyticsRateMap.delete(analyticsRateMap.keys().next().value!);
+        }
+      }
       bucket = { count: 0, resetAt: now + ANALYTICS_RATE_WINDOW_MS };
       analyticsRateMap.set(ip, bucket);
     }

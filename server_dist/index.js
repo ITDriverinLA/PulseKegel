@@ -1490,12 +1490,33 @@ ${blogUrls}
   const ANALYTICS_RATE_LIMIT = 60;
   const ANALYTICS_RATE_WINDOW_MS = 6e4;
   const ANALYTICS_MAX_EVENTS = 20;
+  const ANALYTICS_RATE_MAP_MAX = 1e4;
   const analyticsRateMap = /* @__PURE__ */ new Map();
+  setInterval(() => {
+    const now = Date.now();
+    for (const [ip, bucket] of analyticsRateMap) {
+      if (now >= bucket.resetAt) {
+        analyticsRateMap.delete(ip);
+      }
+    }
+  }, 5 * 6e4).unref();
   app2.post("/api/analytics", async (req, res) => {
     const ip = req.ip ?? "unknown";
     const now = Date.now();
     let bucket = analyticsRateMap.get(ip);
     if (!bucket || now >= bucket.resetAt) {
+      if (!bucket && analyticsRateMap.size >= ANALYTICS_RATE_MAP_MAX) {
+        for (const [key, entry] of analyticsRateMap) {
+          if (now >= entry.resetAt) {
+            analyticsRateMap.delete(key);
+          }
+          if (analyticsRateMap.size < ANALYTICS_RATE_MAP_MAX)
+            break;
+        }
+        if (analyticsRateMap.size >= ANALYTICS_RATE_MAP_MAX) {
+          analyticsRateMap.delete(analyticsRateMap.keys().next().value);
+        }
+      }
       bucket = { count: 0, resetAt: now + ANALYTICS_RATE_WINDOW_MS };
       analyticsRateMap.set(ip, bucket);
     }
