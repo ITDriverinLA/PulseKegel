@@ -35,8 +35,14 @@ import {
   defaultSettings,
   ControlScoreState,
 } from "@/lib/storage";
-import { RankName, getTrend, todayDateString } from "@/lib/controlScore";
-import { ControlScoreCard } from "@/components/ControlScoreCard";
+import {
+  RankName,
+  getTrend,
+  todayDateString,
+  getRankBandProgress,
+  getPointsToNextRank,
+  getNextRank,
+} from "@/lib/controlScore";
 import { RankUpToast } from "@/components/RankUpToast";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -101,7 +107,6 @@ export default function HomeScreen() {
   const [showCalibrationIntro, setShowCalibrationIntro] = useState(false);
   const [scoreState, setScoreState] = useState<ControlScoreState | null>(null);
   const [pendingRankUp, setPendingRankUp] = useState<RankName | null>(null);
-  const [showBackOnTrack, setShowBackOnTrack] = useState(false);
   const [programProgress, setProgramProgress] =
     useState<UserProgramProgress | null>(null);
   const [controlModeWeekCount, setControlModeWeekCount] = useState(0);
@@ -112,8 +117,7 @@ export default function HomeScreen() {
     await storage.backfillRestDays(startDate);
     const freshScore = await storage.applyDailyDecay();
     setScoreState(freshScore);
-    const backOnTrack = await storage.consumeBackOnTrackPending();
-    if (backOnTrack) setShowBackOnTrack(true);
+    await storage.consumeBackOnTrackPending();
     const pendingRank = await storage.consumePendingRankUp();
     if (pendingRank) setPendingRankUp(pendingRank);
 
@@ -434,6 +438,13 @@ export default function HomeScreen() {
       : heroTrend === "slipping"
         ? "Slipping"
         : "Holding";
+  const heroRankProgress = scoreState
+    ? getRankBandProgress(scoreState.controlScore)
+    : 0;
+  const heroPointsToNext = scoreState
+    ? getPointsToNextRank(scoreState.controlScore)
+    : 0;
+  const heroNextRank = scoreState ? getNextRank(scoreState.currentRank) : null;
 
   return (
     <LinearGradient
@@ -472,12 +483,12 @@ export default function HomeScreen() {
                 highContrast && { borderColor: colors.border },
               ]}
             >
-              <Feather name="zap" size={24 * fontScale} color={colors.accent} />
+              <Feather name="zap" size={18 * fontScale} color={colors.accent} />
               <Text
                 style={[
                   styles.streakNumber,
                   {
-                    fontSize: 48 * fontScale,
+                    fontSize: 36 * fontScale,
                     color: cp.neonGreen,
                     textShadowColor: isDarkMode ? cp.neonGreen : "transparent",
                   },
@@ -488,7 +499,7 @@ export default function HomeScreen() {
               <Text
                 style={[
                   styles.streakLabel,
-                  { fontSize: 14 * fontScale, color: cp.textSecondary },
+                  { fontSize: 11 * fontScale, color: cp.textSecondary },
                 ]}
               >
                 Day Streak
@@ -504,112 +515,120 @@ export default function HomeScreen() {
                   },
                 ]}
               >
+                <View style={styles.rankPanelTopRow}>
+                  <View>
+                    <Text
+                      style={[
+                        styles.rankPanelLabel,
+                        { color: cp.textMuted, fontSize: 10 * fontScale },
+                      ]}
+                    >
+                      RANK
+                    </Text>
+                    <Text
+                      style={[
+                        styles.rankPanelName,
+                        {
+                          color: cp.neonCyan,
+                          fontSize: 20 * fontScale,
+                          textShadowColor: isDarkMode
+                            ? cp.neonCyan
+                            : "transparent",
+                        },
+                      ]}
+                    >
+                      {scoreState.currentRank}
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.rankTrendChip,
+                      {
+                        backgroundColor: `${heroTrendColor}1A`,
+                        borderColor: `${heroTrendColor}55`,
+                      },
+                    ]}
+                  >
+                    <Feather
+                      name={heroTrendIcon}
+                      size={11}
+                      color={heroTrendColor}
+                    />
+                    <Text
+                      style={[
+                        styles.rankTrendText,
+                        { color: heroTrendColor, fontSize: 10 * fontScale },
+                      ]}
+                    >
+                      {heroTrendLabel}
+                    </Text>
+                  </View>
+                </View>
+
+                <View
+                  style={[
+                    styles.rankScoreDivider,
+                    { backgroundColor: `${cp.neonCyan}33` },
+                  ]}
+                />
+
                 <Text
                   style={[
                     styles.rankPanelLabel,
-                    { color: cp.textMuted, fontSize: 11 * fontScale },
+                    { color: cp.textMuted, fontSize: 10 * fontScale },
                   ]}
                 >
-                  RANK
+                  CONTROL SCORE
                 </Text>
-                <Text
-                  style={[
-                    styles.rankPanelName,
-                    {
-                      color: cp.neonCyan,
-                      fontSize: 22 * fontScale,
-                      textShadowColor: isDarkMode ? cp.neonCyan : "transparent",
-                    },
-                  ]}
-                >
-                  {scoreState.currentRank}
-                </Text>
-                <View
-                  style={[
-                    styles.rankTrendChip,
-                    {
-                      backgroundColor: `${heroTrendColor}1A`,
-                      borderColor: `${heroTrendColor}55`,
-                    },
-                  ]}
-                >
-                  <Feather
-                    name={heroTrendIcon}
-                    size={12}
-                    color={heroTrendColor}
-                  />
+                <View style={styles.rankScoreRow}>
                   <Text
                     style={[
-                      styles.rankTrendText,
-                      { color: heroTrendColor, fontSize: 11 * fontScale },
+                      styles.rankScoreValue,
+                      { color: cp.text, fontSize: 22 * fontScale },
+                    ]}
+                    testID="text-control-score"
+                  >
+                    {scoreState.controlScore}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.rankScoreMax,
+                      { color: cp.textMuted, fontSize: 12 * fontScale },
                     ]}
                   >
-                    {heroTrendLabel}
+                    / 1000
                   </Text>
                 </View>
+                <View
+                  style={[
+                    styles.rankProgressTrack,
+                    { backgroundColor: cp.divider },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.rankProgressFill,
+                      {
+                        width: `${Math.max(2, heroRankProgress * 100)}%`,
+                        backgroundColor: cp.neonGreen,
+                      },
+                    ]}
+                  />
+                </View>
+                <Text
+                  style={[
+                    styles.rankNextText,
+                    { color: cp.textSecondary, fontSize: 10 * fontScale },
+                  ]}
+                >
+                  {heroNextRank
+                    ? `${heroPointsToNext} ${heroPointsToNext === 1 ? "pt" : "pts"} to ${heroNextRank.name}`
+                    : "Elite reached — keep your edge."}
+                </Text>
               </View>
             ) : null}
           </View>
         </Animated.View>
-
-        {scoreState ? (
-          <Animated.View
-            entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(
-              ANIM_DELAY_SHORT,
-            )}
-          >
-            {showBackOnTrack ? (
-              <View
-                style={[
-                  styles.scoreNudge,
-                  {
-                    backgroundColor: `${cp.neonGreen}1A`,
-                    borderColor: `${cp.neonGreen}4D`,
-                  },
-                ]}
-                testID="banner-back-on-track"
-              >
-                <Feather name="check-circle" size={16} color={cp.neonGreen} />
-                <Text style={[styles.scoreNudgeText, { color: cp.text }]}>
-                  Back on track. Decay paused.
-                </Text>
-                <Pressable
-                  hitSlop={10}
-                  onPress={() => setShowBackOnTrack(false)}
-                  testID="button-dismiss-back-on-track"
-                >
-                  <Feather name="x" size={16} color={cp.textMuted} />
-                </Pressable>
-              </View>
-            ) : null}
-            {scoreState.idleDays >= 2 && !showBackOnTrack ? (
-              <View
-                style={[
-                  styles.scoreNudge,
-                  {
-                    backgroundColor: `${cp.neonOrange}1A`,
-                    borderColor: `${cp.neonOrange}4D`,
-                  },
-                ]}
-                testID="banner-control-slipping"
-              >
-                <Feather
-                  name="alert-triangle"
-                  size={16}
-                  color={cp.neonOrange}
-                />
-                <Text style={[styles.scoreNudgeText, { color: cp.text }]}>
-                  {scoreState.idleDays >= 8
-                    ? "8+ days idle. Score is dropping faster."
-                    : scoreState.idleDays >= 3
-                      ? `${scoreState.idleDays} days idle. Score is slipping.`
-                      : "Two days off. One more and your score starts to slip."}
-                </Text>
-              </View>
-            ) : null}
-            <ControlScoreCard state={scoreState} hideRank />
-          </Animated.View>
-        ) : null}
 
         {programProgress?.phase === "control_mode" &&
         programProgress.controlModePath ? (
@@ -1382,45 +1401,78 @@ const styles = StyleSheet.create({
   streakBadge: {
     flex: 1,
     alignItems: "center",
-    paddingVertical: Spacing.xl,
-    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.xs,
     borderRadius: BorderRadius["2xl"],
     borderWidth: 1,
   },
   rankPanel: {
-    flex: 1,
-    alignItems: "center",
+    flex: 3,
+    alignItems: "flex-start",
     justifyContent: "center",
-    paddingVertical: Spacing.xl,
-    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
     borderRadius: BorderRadius["2xl"],
     borderWidth: 1,
     gap: Spacing.xs,
   },
+  rankPanelTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    width: "100%",
+  },
   rankPanelLabel: {
     fontWeight: "700",
-    letterSpacing: 1.5,
-    marginBottom: 2,
+    letterSpacing: 1.2,
+    marginBottom: 1,
   },
   rankPanelName: {
     fontWeight: "700",
     textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 12,
-    textAlign: "center",
+    textShadowRadius: 10,
   },
   rankTrendChip: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 4,
+    gap: 3,
+    paddingHorizontal: Spacing.xs,
+    paddingVertical: 3,
     borderRadius: BorderRadius.full,
     borderWidth: 1,
-    marginTop: Spacing.xs,
   },
   rankTrendText: {
     fontWeight: "600",
     letterSpacing: 0.3,
+  },
+  rankScoreDivider: {
+    height: 1,
+    width: "100%",
+    marginVertical: Spacing.xs,
+  },
+  rankScoreRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 3,
+  },
+  rankScoreValue: {
+    fontWeight: "700",
+  },
+  rankScoreMax: {
+    fontWeight: "500",
+  },
+  rankProgressTrack: {
+    height: 5,
+    borderRadius: 3,
+    overflow: "hidden",
+    width: "100%",
+  },
+  rankProgressFill: {
+    height: "100%",
+    borderRadius: 3,
+  },
+  rankNextText: {
+    marginTop: 2,
   },
   streakNumber: {
     fontSize: 48,
