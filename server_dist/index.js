@@ -1409,6 +1409,60 @@ Rules: exactly 3-4 sentences. No filler phrases like "Great job!", "Keep it up!"
     }
     res.status(404).send("Not found");
   });
+  app2.get("/llms.txt", (_req, res) => {
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.send(`# PulseKegel
+
+> PulseKegel is an iOS app that guides men through daily pelvic floor (Kegel) workouts using a 12-week progressive program, real-time visual cues, and haptic feedback. Workouts take 5\u201310 minutes a day with no equipment.
+
+## App
+
+- Platform: iOS (App Store: https://apps.apple.com/us/app/pulsekegel/id6758308054)
+- Free 7-day trial, then subscription
+- Android version planned
+
+## Program Structure
+
+- 12-week program divided into four phases: Control (weeks 1\u20132), Strength (weeks 3\u20136), Power (weeks 7\u201310), Maintenance (weeks 11\u201312)
+- 7 exercise types: slow holds, quick flicks, elevator kegels, reverse kegels, contract-relax, breathing coordination, block rests
+- Rest days include optional 5-minute guided breathwork sessions (Calm & Reset, Energize & Focus, Pelvic Floor Connect)
+- Workouts: 3\u201310 minutes depending on week
+
+## Key Features
+
+- Real-time SQUEEZE / REST / BREATHE visual cues with LED power bar and circular progress ring
+- Haptic feedback tuned per exercise type and intensity
+- Progress tracking: streak counter, calendar view, 19 achievement badges
+- AI-generated weekly progress insights
+- Configurable daily reminder notifications
+- Recovery mode for reduced-intensity sessions
+- Sound effects and optional ambient audio during workouts
+- Light and dark themes
+
+## Who It Is For
+
+- Men who want to improve bladder control, core coordination, or recovery after prostate surgery
+- Men who have never been shown how to locate or train the pelvic floor
+- Anyone following a structured, progressive approach to pelvic floor fitness
+
+## Blog & Resources
+
+- Blog index: https://pulsekegel.com/blog
+- How to find your pelvic floor: https://pulsekegel.com/blog/how-to-find-your-pelvic-floor
+- Kegel exercises for men (complete guide): https://pulsekegel.com/blog/kegel-exercises-for-men
+- Pelvic floor exercises for men: https://pulsekegel.com/blog/pelvic-floor-exercises-for-men
+- Best kegel app for men: https://pulsekegel.com/blog/best-kegel-app-for-men
+- Bladder control for men: https://pulsekegel.com/blog/bladder-control-for-men
+- Pelvic floor after prostate surgery: https://pulsekegel.com/blog/pelvic-floor-after-prostate-surgery
+- Daily pelvic floor routine over 40: https://pulsekegel.com/blog/daily-pelvic-floor-routine-over-40
+
+## Links
+
+- Website: https://pulsekegel.com/
+- Privacy policy: https://pulsekegel.com/privacy
+- Sitemap: https://pulsekegel.com/sitemap.xml
+`);
+  });
   app2.get("/robots.txt", (_req, res) => {
     res.setHeader("Content-Type", "text/plain");
     res.send(`User-agent: *
@@ -1416,6 +1470,9 @@ Allow: /
 Disallow: /api/
 
 Sitemap: https://pulsekegel.com/sitemap.xml
+
+# AI crawler index
+LLMs-txt: https://pulsekegel.com/llms.txt
 `);
   });
   app2.get("/sitemap.xml", (_req, res) => {
@@ -1522,6 +1579,8 @@ ${blogUrls}
     }
     bucket.count += 1;
     if (bucket.count > ANALYTICS_RATE_LIMIT) {
+      const retryAfterSeconds = Math.ceil((bucket.resetAt - now) / 1e3);
+      res.setHeader("Retry-After", retryAfterSeconds);
       res.status(429).json({ error: "Too many requests \u2014 please slow down" });
       return;
     }
