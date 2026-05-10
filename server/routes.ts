@@ -284,6 +284,7 @@ Rules: exactly 3-4 sentences. No filler phrases like "Great job!", "Keep it up!"
 - Bladder control for men: https://pulsekegel.com/blog/bladder-control-for-men
 - Pelvic floor after prostate surgery: https://pulsekegel.com/blog/pelvic-floor-after-prostate-surgery
 - Daily pelvic floor routine over 40: https://pulsekegel.com/blog/daily-pelvic-floor-routine-over-40
+- Elevator kegel exercise: https://pulsekegel.com/blog/elevator-kegel-exercise
 
 ## Links
 
