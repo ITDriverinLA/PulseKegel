@@ -1273,6 +1273,26 @@ function readBlogTitle(filePath, slug) {
   }
   return slug;
 }
+function readBlogDescription(filePath) {
+  try {
+    const html = readFileSync(filePath, "utf8");
+    const metaTagRegex = /<meta\s+[^>]+>/gi;
+    let tag;
+    while ((tag = metaTagRegex.exec(html)) !== null) {
+      const t = tag[0];
+      if (!/\bname=(?:"description"|'description')/i.test(t))
+        continue;
+      const dq = t.match(/\bcontent="([^"]*)"/i);
+      if (dq)
+        return dq[1].trim();
+      const sq = t.match(/\bcontent='([^']*)'/i);
+      if (sq)
+        return sq[1].trim();
+    }
+  } catch {
+  }
+  return "";
+}
 function invalidateSitemapCache() {
   blogSlugsCache = null;
 }
@@ -1298,7 +1318,7 @@ function discoverBlogSlugs() {
         continue;
       seen.add(slug);
       const filePath = join(dir, f);
-      slugs.push({ slug, lastmod: readLastmod(filePath), title: readBlogTitle(filePath, slug) });
+      slugs.push({ slug, lastmod: readLastmod(filePath), title: readBlogTitle(filePath, slug), description: readBlogDescription(filePath) });
     }
   }
   slugs.sort((a, b) => a.slug.localeCompare(b.slug));
@@ -1429,7 +1449,10 @@ Rules: exactly 3-4 sentences. No filler phrases like "Great job!", "Keep it up!"
     const blogPosts = discoverBlogSlugs();
     const blogLines = [
       "- Blog index: https://pulsekegel.com/blog",
-      ...blogPosts.map(({ slug, title }) => `- ${title}: https://pulsekegel.com/blog/${slug}`)
+      ...blogPosts.map(({ slug, title, description }) => {
+        const suffix = description ? ` (${description})` : "";
+        return `- ${title}: https://pulsekegel.com/blog/${slug}${suffix}`;
+      })
     ].join("\n");
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.send(`# PulseKegel

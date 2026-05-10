@@ -60,7 +60,7 @@ function readLastmod(filePath: string): string {
 
 const BLOG_SLUGS_TTL_MS = parseInt(process.env.BLOG_SLUGS_TTL_MS ?? '', 10) || 5 * 60 * 1000;
 
-type BlogPost = { slug: string; lastmod: string; title: string };
+type BlogPost = { slug: string; lastmod: string; title: string; description: string };
 
 let blogSlugsCache: { slugs: BlogPost[]; expiresAt: number } | null = null;
 
@@ -74,6 +74,29 @@ function readBlogTitle(filePath: string, slug: string): string {
     // fall through to slug fallback
   }
   return slug;
+}
+
+/** Extracts the <meta name="description"> content from a blog HTML file, returning empty string if absent. */
+function readBlogDescription(filePath: string): string {
+  try {
+    const html = readFileSync(filePath, 'utf8');
+    // Walk each <meta ...> tag individually so attribute order doesn't matter.
+    const metaTagRegex = /<meta\s+[^>]+>/gi;
+    let tag: RegExpExecArray | null;
+    while ((tag = metaTagRegex.exec(html)) !== null) {
+      const t = tag[0];
+      // Only process tags whose name attribute is exactly "description".
+      if (!/\bname=(?:"description"|'description')/i.test(t)) continue;
+      // Extract content using delimiter-safe patterns (double-quote then single-quote).
+      const dq = t.match(/\bcontent="([^"]*)"/i);
+      if (dq) return dq[1].trim();
+      const sq = t.match(/\bcontent='([^']*)'/i);
+      if (sq) return sq[1].trim();
+    }
+  } catch {
+    // fall through
+  }
+  return '';
 }
 
 /** Clears the in-memory sitemap cache so the next request re-scans the filesystem. */
@@ -101,7 +124,7 @@ function discoverBlogSlugs(): BlogPost[] {
       if (seen.has(slug)) continue;
       seen.add(slug);
       const filePath = join(dir, f);
-      slugs.push({ slug, lastmod: readLastmod(filePath), title: readBlogTitle(filePath, slug) });
+      slugs.push({ slug, lastmod: readLastmod(filePath), title: readBlogTitle(filePath, slug), description: readBlogDescription(filePath) });
     }
   }
   slugs.sort((a, b) => a.slug.localeCompare(b.slug));
@@ -257,7 +280,10 @@ Rules: exactly 3-4 sentences. No filler phrases like "Great job!", "Keep it up!"
     const blogPosts = discoverBlogSlugs();
     const blogLines = [
       '- Blog index: https://pulsekegel.com/blog',
-      ...blogPosts.map(({ slug, title }) => `- ${title}: https://pulsekegel.com/blog/${slug}`),
+      ...blogPosts.map(({ slug, title, description }) => {
+        const suffix = description ? ` (${description})` : '';
+        return `- ${title}: https://pulsekegel.com/blog/${slug}${suffix}`;
+      }),
     ].join('\n');
 
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
