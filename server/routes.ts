@@ -60,14 +60,28 @@ function readLastmod(filePath: string): string {
 
 const BLOG_SLUGS_TTL_MS = parseInt(process.env.BLOG_SLUGS_TTL_MS ?? '', 10) || 5 * 60 * 1000;
 
-let blogSlugsCache: { slugs: { slug: string; lastmod: string }[]; expiresAt: number } | null = null;
+type BlogPost = { slug: string; lastmod: string; title: string };
+
+let blogSlugsCache: { slugs: BlogPost[]; expiresAt: number } | null = null;
+
+/** Extracts the <title> text from a blog HTML file, falling back to the slug. */
+function readBlogTitle(filePath: string, slug: string): string {
+  try {
+    const html = readFileSync(filePath, 'utf8');
+    const match = html.match(/<title>([^<]+)<\/title>/i);
+    if (match) return match[1].trim();
+  } catch {
+    // fall through to slug fallback
+  }
+  return slug;
+}
 
 /** Clears the in-memory sitemap cache so the next request re-scans the filesystem. */
 export function invalidateSitemapCache(): void {
   blogSlugsCache = null;
 }
 
-function discoverBlogSlugs(): { slug: string; lastmod: string }[] {
+function discoverBlogSlugs(): BlogPost[] {
   const now = Date.now();
   if (blogSlugsCache && now < blogSlugsCache.expiresAt) {
     return blogSlugsCache.slugs;
@@ -78,7 +92,7 @@ function discoverBlogSlugs(): { slug: string; lastmod: string }[] {
     join(process.cwd(), 'blog-content'),
   ];
   const seen = new Set<string>();
-  const slugs: { slug: string; lastmod: string }[] = [];
+  const slugs: BlogPost[] = [];
   for (const dir of blogDirs) {
     if (!existsSync(dir)) continue;
     for (const f of readdirSync(dir)) {
@@ -86,7 +100,8 @@ function discoverBlogSlugs(): { slug: string; lastmod: string }[] {
       const slug = f.replace(/\.html$/, '');
       if (seen.has(slug)) continue;
       seen.add(slug);
-      slugs.push({ slug, lastmod: readLastmod(join(dir, f)) });
+      const filePath = join(dir, f);
+      slugs.push({ slug, lastmod: readLastmod(filePath), title: readBlogTitle(filePath, slug) });
     }
   }
   slugs.sort((a, b) => a.slug.localeCompare(b.slug));
@@ -239,6 +254,12 @@ Rules: exactly 3-4 sentences. No filler phrases like "Great job!", "Keep it up!"
   });
 
   app.get("/llms.txt", (_req, res) => {
+    const blogPosts = discoverBlogSlugs();
+    const blogLines = [
+      '- Blog index: https://pulsekegel.com/blog',
+      ...blogPosts.map(({ slug, title }) => `- ${title}: https://pulsekegel.com/blog/${slug}`),
+    ].join('\n');
+
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.send(`# PulseKegel
 
@@ -276,15 +297,7 @@ Rules: exactly 3-4 sentences. No filler phrases like "Great job!", "Keep it up!"
 
 ## Blog & Resources
 
-- Blog index: https://pulsekegel.com/blog
-- How to find your pelvic floor: https://pulsekegel.com/blog/how-to-find-your-pelvic-floor
-- Kegel exercises for men (complete guide): https://pulsekegel.com/blog/kegel-exercises-for-men
-- Pelvic floor exercises for men: https://pulsekegel.com/blog/pelvic-floor-exercises-for-men
-- Best kegel app for men: https://pulsekegel.com/blog/best-kegel-app-for-men
-- Bladder control for men: https://pulsekegel.com/blog/bladder-control-for-men
-- Pelvic floor after prostate surgery: https://pulsekegel.com/blog/pelvic-floor-after-prostate-surgery
-- Daily pelvic floor routine over 40: https://pulsekegel.com/blog/daily-pelvic-floor-routine-over-40
-- Elevator kegel exercise: https://pulsekegel.com/blog/elevator-kegel-exercise
+${blogLines}
 
 ## Links
 
