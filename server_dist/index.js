@@ -1275,17 +1275,22 @@ function discoverBlogSlugs() {
     join(process.cwd(), "static-build", "blog"),
     join(process.cwd(), "blog-content")
   ];
-  let slugs = [];
+  const seen = /* @__PURE__ */ new Set();
+  const slugs = [];
   for (const dir of blogDirs) {
-    if (existsSync(dir)) {
-      slugs = readdirSync(dir).filter((f) => f.endsWith(".html") && f !== "index.html").sort().map((f) => {
-        const slug = f.replace(/\.html$/, "");
-        const lastmod = readLastmod(join(dir, f));
-        return { slug, lastmod };
-      });
-      break;
+    if (!existsSync(dir))
+      continue;
+    for (const f of readdirSync(dir)) {
+      if (!f.endsWith(".html") || f === "index.html")
+        continue;
+      const slug = f.replace(/\.html$/, "");
+      if (seen.has(slug))
+        continue;
+      seen.add(slug);
+      slugs.push({ slug, lastmod: readLastmod(join(dir, f)) });
     }
   }
+  slugs.sort((a, b) => a.slug.localeCompare(b.slug));
   blogSlugsCache = { slugs, expiresAt: now + BLOG_SLUGS_TTL_MS };
   return slugs;
 }
@@ -1522,9 +1527,13 @@ ${blogUrls}
     if (slug.endsWith(".html")) {
       return res.redirect(301, `/blog/${slug.replace(".html", "")}`);
     }
-    const filePath = join(process.cwd(), "static-build", "blog", `${slug}.html`);
-    if (existsSync(filePath)) {
-      return res.sendFile(filePath);
+    const staticPath = join(process.cwd(), "static-build", "blog", `${slug}.html`);
+    if (existsSync(staticPath)) {
+      return res.sendFile(staticPath);
+    }
+    const contentPath = join(process.cwd(), "blog-content", `${slug}.html`);
+    if (existsSync(contentPath)) {
+      return res.sendFile(contentPath);
     }
     res.status(404).send("Not found");
   });
