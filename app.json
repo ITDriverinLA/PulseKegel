@@ -56,7 +56,8 @@
     "extra": {
       "eas": {
         "projectId": "4c4c1688-e9c5-4ad2-a214-f437fd890db7"
-      }
+      },
+      "minimumVersion": "1.0.0"
     }
   }
 }

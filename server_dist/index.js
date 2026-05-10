@@ -1235,7 +1235,7 @@ var __dirname = dirname(__filename);
 var APP_VERSION = "0.0.0";
 try {
   const appJson = JSON.parse(readFileSync(join(process.cwd(), "app.json"), "utf8"));
-  APP_VERSION = appJson?.expo?.version ?? "0.0.0";
+  APP_VERSION = appJson?.expo?.extra?.minimumVersion ?? appJson?.expo?.version ?? "0.0.0";
 } catch {
 }
 var analyticsDashboardHtml = "";

@@ -12,13 +12,14 @@ import { sql, countDistinct } from "drizzle-orm";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Read the authoritative app version from app.json once at startup.
-// This becomes the minimum required version — any client older than this
-// will see the force-update screen.
+// Read the minimum required version from app.json once at startup.
+// This is set via expo.extra.minimumVersion and should only be bumped
+// for breaking changes — NOT on every version bump. Bumping expo.version
+// alone does NOT force existing users to update.
 let APP_VERSION = '0.0.0';
 try {
   const appJson = JSON.parse(readFileSync(join(process.cwd(), 'app.json'), 'utf8'));
-  APP_VERSION = appJson?.expo?.version ?? '0.0.0';
+  APP_VERSION = appJson?.expo?.extra?.minimumVersion ?? appJson?.expo?.version ?? '0.0.0';
 } catch {
   // fall back silently — clients will not be blocked
 }
