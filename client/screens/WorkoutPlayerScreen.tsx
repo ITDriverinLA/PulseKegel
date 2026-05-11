@@ -509,6 +509,7 @@ export default function WorkoutPlayerScreen() {
       return `STARTING IN ${workoutState?.secondsRemaining || 5}`;
     }
     if (currentSegment?.type === "blockRest") return "BREATHE";
+    if (currentSegment?.type === "breathing") return "REST";
     if (currentPhase === "squeeze") {
       return currentSegment?.type === "reverse" ? "GENTLE PUSH" : "SQUEEZE";
     }
