@@ -104,7 +104,9 @@ const sessionDatesOnly = (completed: string[], rest: string[]): string[] => {
 const replaySessionsForBackfill = (
   sortedDates: string[],
   today: string,
+  restDates: string[] = [],
 ): ControlScoreState => {
+  const restSet = new Set(restDates);
   const state: ControlScoreState = {
     ...defaultControlScoreState,
     backfilled: true,
@@ -121,19 +123,24 @@ const replaySessionsForBackfill = (
       cursor = addDays(cursor, 1);
       if (cursor === d) break;
       if (!uniqueSet.has(cursor)) {
-        state.currentStreak = 0;
-        state.idleDays += 1;
-        state.controlScore = clampScore(
-          state.controlScore - calculateDecayForIdleDay(state.idleDays),
-        );
+        if (restSet.has(cursor)) {
+          state.idleDays = 0;
+        } else {
+          state.currentStreak = 0;
+          state.idleDays += 1;
+          state.controlScore = clampScore(
+            state.controlScore - calculateDecayForIdleDay(state.idleDays),
+          );
+        }
       }
     }
     if (uniqueSet.has(d)) continue;
     uniqueSet.add(d);
     const yesterday = addDays(d, -1);
-    state.currentStreak = uniqueSet.has(yesterday)
-      ? state.currentStreak + 1
-      : 1;
+    state.currentStreak =
+      uniqueSet.has(yesterday) || restSet.has(yesterday)
+        ? state.currentStreak + 1
+        : 1;
     state.idleDays = 0;
     const rolling = getCompletedDaysInLast7(uniqueSet, d);
     state.controlScore = clampScore(
@@ -151,16 +158,20 @@ const replaySessionsForBackfill = (
   while (cursor < tailEnd) {
     cursor = addDays(cursor, 1);
     if (!uniqueSet.has(cursor)) {
-      state.currentStreak = 0;
-      state.idleDays += 1;
-      state.controlScore = clampScore(
-        state.controlScore - calculateDecayForIdleDay(state.idleDays),
-      );
+      if (restSet.has(cursor)) {
+        state.idleDays = 0;
+      } else {
+        state.currentStreak = 0;
+        state.idleDays += 1;
+        state.controlScore = clampScore(
+          state.controlScore - calculateDecayForIdleDay(state.idleDays),
+        );
+      }
     } else {
       state.idleDays = 0;
     }
   }
-  if (uniqueSet.has(today)) {
+  if (uniqueSet.has(today) || restSet.has(today)) {
     state.idleDays = 0;
   }
   state.currentRank = getRankForScore(state.controlScore);
@@ -1122,10 +1133,13 @@ export const storage = {
         const parsed = JSON.parse(raw) as Partial<ControlScoreState>;
         return { ...defaultControlScoreState, ...parsed };
       }
-      const sessionDates = await this.getSessionCompletedDates();
+      const [sessionDates, restDates] = await Promise.all([
+        this.getSessionCompletedDates(),
+        this.getRestDates(),
+      ]);
       const today = todayDateString();
       const sorted = [...sessionDates].filter(Boolean).sort();
-      const backfilled = replaySessionsForBackfill(sorted, today);
+      const backfilled = replaySessionsForBackfill(sorted, today, restDates);
       await AsyncStorage.setItem(
         STORAGE_KEYS.CONTROL_SCORE_STATE,
         JSON.stringify(backfilled),

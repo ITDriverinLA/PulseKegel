@@ -390,4 +390,41 @@ describe("Rest-day streak preservation", () => {
     // idleDays should be 0 (rest day resets the idle counter).
     expect(state.idleDays).toBe(0);
   });
+
+  it("backfill replay treats consecutive rest days as active so streak is not under-counted", async () => {
+    // Build dates relative to today so no idle gap appears between the history and now.
+    // Layout: 4 workout days (-6 to -3), then 2 consecutive rest days (-2 and -1).
+    // The tail-end backfill loop will see the rest days instead of idle days, so
+    // currentStreak must remain 4 after the replay (rest days don't reset it).
+    const d = (offset: number): string => {
+      const dt = new Date();
+      dt.setDate(dt.getDate() + offset);
+      return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+    };
+
+    const sessionDays = [d(-6), d(-5), d(-4), d(-3)];
+    const restDays = [d(-2), d(-1)];
+
+    await AsyncStorage.setItem(
+      "pulsekegel_completed_dates",
+      JSON.stringify([...sessionDays, ...restDays]),
+    );
+    await AsyncStorage.setItem(
+      "pulsekegel_rest_dates",
+      JSON.stringify(restDays),
+    );
+
+    // No pulsekegel_control_score_state entry — forces backfill path.
+    const state = await storage.getControlScoreState();
+
+    // The backfill should have produced a streak of 4 (the 4 workout days).
+    // The two trailing rest days must NOT have reset the streak counter.
+    expect(state.currentStreak).toBe(4);
+    // Score must have gone up (4 session gains), not decayed by the rest days.
+    expect(state.controlScore).toBeGreaterThan(0);
+    // idleDays must be 0 — the trailing rest days are not idle days.
+    expect(state.idleDays).toBe(0);
+    // Backfill flag must be set.
+    expect(state.backfilled).toBe(true);
+  });
 });
