@@ -215,6 +215,61 @@ describe("storage program-completion helpers", () => {
     expect(await storage.getCompletedDates()).toEqual([]);
   });
 
+  it("restartTwelveWeekProgram after Control Mode: streak stays intact when completed dates are cleared", async () => {
+    // Seed a Control Mode score state: backfillVersion=2 (current), streak=8.
+    await AsyncStorage.setItem(
+      "pulsekegel_control_score_state",
+      JSON.stringify({
+        controlScore: 800,
+        currentRank: "Strong",
+        highestRank: "Strong",
+        highestScore: 800,
+        highestRankAchieved: "Strong",
+        highestScoreAchieved: 800,
+        eliteAchieved: false,
+        currentStreak: 8,
+        longestStreak: 8,
+        idleDays: 0,
+        lastSessionDate: "2026-03-10",
+        lastScoreUpdateDate: "2026-03-10",
+        backfilled: true,
+        backfillVersion: 2,
+        history: [],
+        scoreHistory: [],
+      }),
+    );
+    // Some completed dates from Control Mode activity.
+    await AsyncStorage.setItem(
+      "pulsekegel_completed_dates",
+      JSON.stringify([
+        "2026-03-03",
+        "2026-03-04",
+        "2026-03-05",
+        "2026-03-06",
+        "2026-03-07",
+        "2026-03-08",
+        "2026-03-09",
+        "2026-03-10",
+      ]),
+    );
+
+    // User restarts the 12-week program.
+    await storage.restartTwelveWeekProgram("2026-03-11");
+
+    // Completed dates must be cleared.
+    expect(await storage.getCompletedDates()).toEqual([]);
+
+    // getControlScoreState must NOT mis-count the streak by replaying the now-
+    // empty session history.  backfillVersion=2 matches CURRENT_BACKFILL_VERSION
+    // so no re-backfill runs — the stored streak of 8 is returned verbatim.
+    const score = await storage.getControlScoreState();
+    expect(score.currentStreak).toBe(8);
+    // Core score fields preserved across the restart.
+    expect(score.controlScore).toBe(800);
+    expect(score.currentRank).toBe("Strong");
+    expect(score.backfillVersion).toBe(2);
+  });
+
   it("restartFromWeekFive backdates start date by 28 days and preserves score state", async () => {
     await seedScoreState();
     await storage.restartFromWeekFive("2026-05-01");
