@@ -1173,13 +1173,17 @@ export const storage = {
     if (state.lastScoreUpdateDate >= today) {
       return state;
     }
-    const sessionDates = await this.getSessionCompletedDates();
+    const [sessionDates, restDates] = await Promise.all([
+      this.getSessionCompletedDates(),
+      this.getRestDates(),
+    ]);
     const completedSet = new Set(sessionDates);
+    const restSet = new Set(restDates);
     const yesterday = addDays(today, -1);
     let cursor = state.lastScoreUpdateDate;
     while (cursor < yesterday) {
       cursor = addDays(cursor, 1);
-      if (completedSet.has(cursor)) {
+      if (completedSet.has(cursor) || restSet.has(cursor)) {
         state.idleDays = 0;
       } else {
         if (state.currentStreak > 0) state.currentStreak = 0;
@@ -1192,10 +1196,10 @@ export const storage = {
     // The while loop processes days from lastScoreUpdateDate+1 up to (but not including)
     // yesterday — so when lastScoreUpdateDate = yesterday the loop doesn't execute and
     // yesterday's completed session is never checked. Explicitly correct that here.
-    if (completedSet.has(yesterday)) {
+    if (completedSet.has(yesterday) || restSet.has(yesterday)) {
       state.idleDays = 0;
     }
-    if (completedSet.has(today)) {
+    if (completedSet.has(today) || restSet.has(today)) {
       state.idleDays = 0;
     }
     state.currentRank = getRankForScore(state.controlScore);
@@ -1227,8 +1231,12 @@ export const storage = {
     gain: number;
   }> {
     const state = await this.getControlScoreState();
-    const sessionDates = await this.getSessionCompletedDates();
+    const [sessionDates, restDates] = await Promise.all([
+      this.getSessionCompletedDates(),
+      this.getRestDates(),
+    ]);
     const completedSet = new Set(sessionDates);
+    const restSet = new Set(restDates);
     if (state.lastSessionDate === today) {
       return { state, rankUp: null, backOnTrack: false, gain: 0 };
     }
@@ -1237,7 +1245,7 @@ export const storage = {
       let cursor = state.lastScoreUpdateDate;
       while (cursor < yesterday) {
         cursor = addDays(cursor, 1);
-        if (cursor !== today && completedSet.has(cursor)) {
+        if (cursor !== today && (completedSet.has(cursor) || restSet.has(cursor))) {
           state.idleDays = 0;
         } else {
           if (state.currentStreak > 0) state.currentStreak = 0;
@@ -1252,7 +1260,7 @@ export const storage = {
     const previousRank = state.currentRank;
     const wasInactive = state.idleDays >= 3;
     const prevDay = addDays(today, -1);
-    state.currentStreak = completedSet.has(prevDay)
+    state.currentStreak = (completedSet.has(prevDay) || restSet.has(prevDay))
       ? state.currentStreak + 1
       : 1;
     state.idleDays = 0;

@@ -18,6 +18,7 @@ import {
   ANIM_DELAY_LONG,
 } from "@/constants/animation";
 import { storage } from "@/lib/storage";
+import { todayDateString } from "@/lib/controlScore";
 import { rescheduleAfterCompletion } from "@/lib/notifications";
 import { isRestDayForDate } from "@/data/workoutProgram";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
@@ -37,7 +38,7 @@ export default function BreathworkSummaryScreen() {
 
   const handleLogSession = async () => {
     const now = new Date();
-    const today = now.toISOString().split("T")[0];
+    const today = todayDateString(now);
     await storage.addCompletedDate(today, 5);
     setLogged(true);
     await rescheduleAfterCompletion();

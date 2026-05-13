@@ -294,3 +294,100 @@ describe("Segment-type history window", () => {
     expect(history[0].date).toBe("2026-01-16");
   });
 });
+
+describe("Rest-day streak preservation", () => {
+  beforeEach(() => store.clear());
+
+  it("two consecutive logged rest days do not reset the streak", async () => {
+    // Establish a streak of 5 ending on 2026-03-01.
+    await AsyncStorage.setItem(
+      "pulsekegel_completed_dates",
+      JSON.stringify([
+        "2026-02-25",
+        "2026-02-26",
+        "2026-02-27",
+        "2026-02-28",
+        "2026-03-01",
+        // Two rest days logged via breathwork (addCompletedDate).
+        "2026-03-02",
+        "2026-03-03",
+      ]),
+    );
+    // Backfill / markRestDay also writes to REST_DATES for scheduled rest days.
+    await AsyncStorage.setItem(
+      "pulsekegel_rest_dates",
+      JSON.stringify(["2026-03-02", "2026-03-03"]),
+    );
+    await AsyncStorage.setItem(
+      "pulsekegel_control_score_state",
+      JSON.stringify({
+        controlScore: 200,
+        currentRank: "Journeyman",
+        highestRankAchieved: "Journeyman",
+        highestScoreAchieved: 200,
+        eliteAchieved: false,
+        currentStreak: 5,
+        idleDays: 0,
+        lastSessionDate: "2026-03-01",
+        lastScoreUpdateDate: "2026-03-01",
+        backfilled: true,
+        scoreHistory: [],
+      }),
+    );
+
+    // User completes a workout the day after the two rest days.
+    const result = await storage._completeSessionForScoreUnsafe("2026-03-04");
+
+    // Streak should continue (5 + 1 = 6), not reset to 1.
+    expect(result.state.currentStreak).toBe(6);
+    // Score should have gained points, not decayed.
+    expect(result.state.controlScore).toBeGreaterThanOrEqual(200);
+  });
+
+  it("daily decay does not reset streak or apply score decay for logged rest days", async () => {
+    // User last completed a real workout on 2026-03-01 with streak of 5.
+    // They then had two consecutive rest days that were logged.
+    await AsyncStorage.setItem(
+      "pulsekegel_completed_dates",
+      JSON.stringify([
+        "2026-02-25",
+        "2026-02-26",
+        "2026-02-27",
+        "2026-02-28",
+        "2026-03-01",
+        "2026-03-02",
+        "2026-03-03",
+      ]),
+    );
+    await AsyncStorage.setItem(
+      "pulsekegel_rest_dates",
+      JSON.stringify(["2026-03-02", "2026-03-03"]),
+    );
+    await AsyncStorage.setItem(
+      "pulsekegel_control_score_state",
+      JSON.stringify({
+        controlScore: 200,
+        currentRank: "Journeyman",
+        highestRankAchieved: "Journeyman",
+        highestScoreAchieved: 200,
+        eliteAchieved: false,
+        currentStreak: 5,
+        idleDays: 0,
+        lastSessionDate: "2026-03-01",
+        lastScoreUpdateDate: "2026-03-01",
+        backfilled: true,
+        scoreHistory: [],
+      }),
+    );
+
+    // Simulate applyDailyDecay running on 2026-03-04 (two rest days have passed).
+    const state = await storage._applyDailyDecayUnsafe("2026-03-04");
+
+    // Streak must NOT have been reset to 0.
+    expect(state.currentStreak).toBe(5);
+    // Score must NOT have decayed (rest days are not idle days).
+    expect(state.controlScore).toBe(200);
+    // idleDays should be 0 (rest day resets the idle counter).
+    expect(state.idleDays).toBe(0);
+  });
+});
