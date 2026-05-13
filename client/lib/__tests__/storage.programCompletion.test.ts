@@ -529,6 +529,57 @@ describe("Rest-day streak preservation", () => {
     expect(state.eliteAchieved).toBe(true);
   });
 
+  it("migration also runs when backfillVersion is 1 (< 2 gate)", async () => {
+    const d = (offset: number): string => {
+      const dt = new Date();
+      dt.setDate(dt.getDate() + offset);
+      return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+    };
+
+    const sessionDays = [d(-5), d(-4), d(-3), d(-2)];
+    const restDays = [d(-1)];
+
+    await AsyncStorage.setItem(
+      "pulsekegel_completed_dates",
+      JSON.stringify([...sessionDays, ...restDays]),
+    );
+    await AsyncStorage.setItem(
+      "pulsekegel_rest_dates",
+      JSON.stringify(restDays),
+    );
+
+    // Seed state with backfillVersion: 1 — must trigger re-backfill since 1 < 2.
+    // Under-counted streak of 2 should be corrected to 4.
+    await AsyncStorage.setItem(
+      "pulsekegel_control_score_state",
+      JSON.stringify({
+        controlScore: 80,
+        currentRank: "Rookie",
+        highestRankAchieved: "Journeyman",
+        highestScoreAchieved: 120,
+        eliteAchieved: false,
+        currentStreak: 2,
+        idleDays: 0,
+        lastSessionDate: d(-2),
+        lastScoreUpdateDate: d(-2),
+        backfilled: true,
+        backfillVersion: 1,
+        scoreHistory: [],
+      }),
+    );
+
+    const state = await storage.getControlScoreState();
+
+    // Re-backfill must have run (version was 1, below current 2).
+    expect(state.backfillVersion).toBe(2);
+    // Streak corrected from 2 to 4.
+    expect(state.currentStreak).toBe(4);
+    // highestScoreAchieved must not be downgraded.
+    expect(state.highestScoreAchieved).toBeGreaterThanOrEqual(120);
+    // highestRankAchieved preserved (Journeyman outranks Rookie from replay).
+    expect(state.highestRankAchieved).toBe("Journeyman");
+  });
+
   it("backfill replay treats consecutive rest days as active so streak is not under-counted", async () => {
     // Build dates relative to today so no idle gap appears between the history and now.
     // Layout: 4 workout days (-6 to -3), then 2 consecutive rest days (-2 and -1).
