@@ -71,7 +71,10 @@ export interface ControlScoreState {
   eliteAchieved: boolean;
   scoreHistory: { date: string; score: number }[];
   backfilled: boolean;
+  backfillVersion: number;
 }
+
+const CURRENT_BACKFILL_VERSION = 2;
 
 const defaultControlScoreState: ControlScoreState = {
   controlScore: 0,
@@ -85,6 +88,7 @@ const defaultControlScoreState: ControlScoreState = {
   eliteAchieved: false,
   scoreHistory: [],
   backfilled: false,
+  backfillVersion: CURRENT_BACKFILL_VERSION,
 };
 
 const pushHistory = (
@@ -110,6 +114,7 @@ const replaySessionsForBackfill = (
   const state: ControlScoreState = {
     ...defaultControlScoreState,
     backfilled: true,
+    backfillVersion: CURRENT_BACKFILL_VERSION,
   };
   if (sortedDates.length === 0) {
     state.lastScoreUpdateDate = today;
@@ -1131,7 +1136,49 @@ export const storage = {
       const raw = await AsyncStorage.getItem(STORAGE_KEYS.CONTROL_SCORE_STATE);
       if (raw) {
         const parsed = JSON.parse(raw) as Partial<ControlScoreState>;
-        return { ...defaultControlScoreState, ...parsed };
+        const stored = { ...defaultControlScoreState, ...parsed };
+        const needsRebackfill =
+          stored.backfilled &&
+          (parsed.backfillVersion ?? 0) < CURRENT_BACKFILL_VERSION;
+        if (!needsRebackfill) {
+          return stored;
+        }
+        const [sessionDates, restDates] = await Promise.all([
+          this.getSessionCompletedDates(),
+          this.getRestDates(),
+        ]);
+        const today = todayDateString();
+        const sorted = [...sessionDates].filter(Boolean).sort();
+        const rebackfilled = replaySessionsForBackfill(
+          sorted,
+          today,
+          restDates,
+        );
+        const storedRankIdx = RANKS_ORDER.indexOf(stored.highestRankAchieved);
+        const rebackfilledRankIdx = RANKS_ORDER.indexOf(
+          rebackfilled.highestRankAchieved,
+        );
+        const merged: ControlScoreState = {
+          ...rebackfilled,
+          highestRankAchieved:
+            storedRankIdx >= rebackfilledRankIdx
+              ? stored.highestRankAchieved
+              : rebackfilled.highestRankAchieved,
+          highestScoreAchieved: Math.max(
+            stored.highestScoreAchieved,
+            rebackfilled.highestScoreAchieved,
+          ),
+          eliteAchieved: stored.eliteAchieved || rebackfilled.eliteAchieved,
+          scoreHistory:
+            stored.scoreHistory.length > 0
+              ? stored.scoreHistory
+              : rebackfilled.scoreHistory,
+        };
+        await AsyncStorage.setItem(
+          STORAGE_KEYS.CONTROL_SCORE_STATE,
+          JSON.stringify(merged),
+        );
+        return merged;
       }
       const [sessionDates, restDates] = await Promise.all([
         this.getSessionCompletedDates(),

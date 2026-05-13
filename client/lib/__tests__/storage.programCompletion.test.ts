@@ -54,6 +54,7 @@ const seedScoreState = async () => {
       lastSessionDate: "2026-01-01",
       lastScoreUpdateDate: "2026-01-01",
       backfilled: true,
+      backfillVersion: 2,
       history: [],
     }),
   );
@@ -331,6 +332,7 @@ describe("Rest-day streak preservation", () => {
         lastSessionDate: "2026-03-01",
         lastScoreUpdateDate: "2026-03-01",
         backfilled: true,
+        backfillVersion: 2,
         scoreHistory: [],
       }),
     );
@@ -376,6 +378,7 @@ describe("Rest-day streak preservation", () => {
         lastSessionDate: "2026-03-01",
         lastScoreUpdateDate: "2026-03-01",
         backfilled: true,
+        backfillVersion: 2,
         scoreHistory: [],
       }),
     );
@@ -389,6 +392,141 @@ describe("Rest-day streak preservation", () => {
     expect(state.controlScore).toBe(200);
     // idleDays should be 0 (rest day resets the idle counter).
     expect(state.idleDays).toBe(0);
+  });
+
+  it("re-backfills stored state with missing backfillVersion and corrects under-counted streak", async () => {
+    // Simulate a user whose backfill ran before the rest-day fix.
+    // They have 5 consecutive workout days followed by 2 rest days, but the
+    // old bug would have set currentStreak=3 (only counting workouts after a gap
+    // that didn't exist). We seed backfillVersion=undefined (old format) so the
+    // migration re-runs and produces the correct streak=5.
+    const d = (offset: number): string => {
+      const dt = new Date();
+      dt.setDate(dt.getDate() + offset);
+      return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+    };
+
+    const sessionDays = [d(-6), d(-5), d(-4), d(-3), d(-2)];
+    const restDays = [d(-1)];
+
+    await AsyncStorage.setItem(
+      "pulsekegel_completed_dates",
+      JSON.stringify([...sessionDays, ...restDays]),
+    );
+    await AsyncStorage.setItem(
+      "pulsekegel_rest_dates",
+      JSON.stringify(restDays),
+    );
+
+    // Seed stale state: backfilled=true but NO backfillVersion (old format).
+    // Under-counted streak of 3 — migration should correct it to 5.
+    await AsyncStorage.setItem(
+      "pulsekegel_control_score_state",
+      JSON.stringify({
+        controlScore: 100,
+        currentRank: "Rookie",
+        highestRankAchieved: "Rookie",
+        highestScoreAchieved: 100,
+        eliteAchieved: false,
+        currentStreak: 3,
+        idleDays: 0,
+        lastSessionDate: d(-2),
+        lastScoreUpdateDate: d(-2),
+        backfilled: true,
+        scoreHistory: [],
+      }),
+    );
+
+    const state = await storage.getControlScoreState();
+
+    // Migration must have re-run and corrected the streak to 5.
+    expect(state.currentStreak).toBe(5);
+    // backfillVersion must now be stamped as current.
+    expect(state.backfillVersion).toBe(2);
+    // highestScoreAchieved must not be downgraded (kept max of stored vs rebackfilled).
+    expect(state.highestScoreAchieved).toBeGreaterThanOrEqual(100);
+    // eliteAchieved must be preserved if it was set.
+    expect(state.eliteAchieved).toBe(false);
+  });
+
+  it("migration only runs once — second call returns cached re-backfilled state", async () => {
+    const d = (offset: number): string => {
+      const dt = new Date();
+      dt.setDate(dt.getDate() + offset);
+      return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+    };
+
+    const sessionDays = [d(-4), d(-3), d(-2)];
+    await AsyncStorage.setItem(
+      "pulsekegel_completed_dates",
+      JSON.stringify(sessionDays),
+    );
+    await AsyncStorage.setItem("pulsekegel_rest_dates", JSON.stringify([]));
+
+    // Seed stale state without backfillVersion.
+    await AsyncStorage.setItem(
+      "pulsekegel_control_score_state",
+      JSON.stringify({
+        controlScore: 50,
+        currentRank: "Rookie",
+        highestRankAchieved: "Rookie",
+        highestScoreAchieved: 50,
+        eliteAchieved: false,
+        currentStreak: 1,
+        idleDays: 0,
+        lastSessionDate: d(-2),
+        lastScoreUpdateDate: d(-2),
+        backfilled: true,
+        scoreHistory: [],
+      }),
+    );
+
+    const first = await storage.getControlScoreState();
+    expect(first.backfillVersion).toBe(2);
+
+    const second = await storage.getControlScoreState();
+    // Must return same value without re-running (no change to session data).
+    expect(second.currentStreak).toBe(first.currentStreak);
+    expect(second.backfillVersion).toBe(2);
+  });
+
+  it("migration preserves highestRankAchieved using rank order, not string comparison", async () => {
+    const d = (offset: number): string => {
+      const dt = new Date();
+      dt.setDate(dt.getDate() + offset);
+      return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+    };
+
+    await AsyncStorage.setItem(
+      "pulsekegel_completed_dates",
+      JSON.stringify([d(-2)]),
+    );
+    await AsyncStorage.setItem("pulsekegel_rest_dates", JSON.stringify([]));
+
+    // Stored state claims Elite rank achieved — the rebackfill from 1 session
+    // will produce a much lower rank. The merge must keep Elite.
+    await AsyncStorage.setItem(
+      "pulsekegel_control_score_state",
+      JSON.stringify({
+        controlScore: 900,
+        currentRank: "Elite",
+        highestRankAchieved: "Elite",
+        highestScoreAchieved: 900,
+        eliteAchieved: true,
+        currentStreak: 10,
+        idleDays: 0,
+        lastSessionDate: d(-2),
+        lastScoreUpdateDate: d(-2),
+        backfilled: true,
+        scoreHistory: [],
+      }),
+    );
+
+    const state = await storage.getControlScoreState();
+
+    // Elite rank must not be downgraded even though rebackfill produces Rookie.
+    expect(state.highestRankAchieved).toBe("Elite");
+    expect(state.eliteAchieved).toBe(true);
   });
 
   it("backfill replay treats consecutive rest days as active so streak is not under-counted", async () => {
