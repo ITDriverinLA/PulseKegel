@@ -333,6 +333,60 @@ describe("storage program-completion helpers", () => {
     expect(score.backfillVersion).toBe(2);
   });
 
+  it("restartSevenDayCalibration after Control Mode: streak stays intact when completed dates are cleared", async () => {
+    // Seed a Control Mode score state: backfillVersion=2 (current), streak=7.
+    await AsyncStorage.setItem(
+      "pulsekegel_control_score_state",
+      JSON.stringify({
+        controlScore: 700,
+        currentRank: "Strong",
+        highestRank: "Strong",
+        highestScore: 700,
+        highestRankAchieved: "Strong",
+        highestScoreAchieved: 700,
+        eliteAchieved: false,
+        currentStreak: 7,
+        longestStreak: 7,
+        idleDays: 0,
+        lastSessionDate: "2026-05-07",
+        lastScoreUpdateDate: "2026-05-07",
+        backfilled: true,
+        backfillVersion: 2,
+        history: [],
+        scoreHistory: [],
+      }),
+    );
+    // Seed completed dates from Control Mode activity.
+    await AsyncStorage.setItem(
+      "pulsekegel_completed_dates",
+      JSON.stringify([
+        "2026-05-01",
+        "2026-05-02",
+        "2026-05-03",
+        "2026-05-04",
+        "2026-05-05",
+        "2026-05-06",
+        "2026-05-07",
+      ]),
+    );
+
+    // User restarts the 7-day calibration challenge.
+    await storage.restartSevenDayCalibration("2026-05-08");
+
+    // Completed dates must be cleared.
+    expect(await storage.getCompletedDates()).toEqual([]);
+
+    // getControlScoreState must NOT mis-count the streak by replaying the now-
+    // empty session history. backfillVersion=2 matches CURRENT_BACKFILL_VERSION
+    // so no re-backfill runs — the stored streak of 7 is returned verbatim.
+    const score = await storage.getControlScoreState();
+    expect(score.currentStreak).toBe(7);
+    // Core score fields preserved across the restart.
+    expect(score.controlScore).toBe(700);
+    expect(score.currentRank).toBe("Strong");
+    expect(score.backfillVersion).toBe(2);
+  });
+
   it("switchToControlMode increments lifetimeProgramsCompleted only when prior phase was twelve_week strong", async () => {
     await seedScoreState();
     await storage.saveProgramProgress({
