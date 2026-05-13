@@ -387,6 +387,71 @@ describe("storage program-completion helpers", () => {
     expect(score.backfillVersion).toBe(2);
   });
 
+  it("saveProgramProgress flipping phase to seven_day_challenge does not corrupt streak when backfillVersion=2", async () => {
+    // Seed a Control Mode score state: backfillVersion=2 (current), streak=5.
+    await AsyncStorage.setItem(
+      "pulsekegel_control_score_state",
+      JSON.stringify({
+        controlScore: 500,
+        currentRank: "Journeyman",
+        highestRank: "Journeyman",
+        highestScore: 500,
+        highestRankAchieved: "Journeyman",
+        highestScoreAchieved: 500,
+        eliteAchieved: false,
+        currentStreak: 5,
+        longestStreak: 5,
+        idleDays: 0,
+        lastSessionDate: "2026-02-05",
+        lastScoreUpdateDate: "2026-02-05",
+        backfilled: true,
+        backfillVersion: 2,
+        history: [],
+        scoreHistory: [],
+      }),
+    );
+    // Completed dates from Control Mode activity — NOT cleared by this transition.
+    await AsyncStorage.setItem(
+      "pulsekegel_completed_dates",
+      JSON.stringify([
+        "2026-02-01",
+        "2026-02-02",
+        "2026-02-03",
+        "2026-02-04",
+        "2026-02-05",
+      ]),
+    );
+    // Seed Control Mode program progress.
+    await storage.saveProgramProgress({
+      ...defaultProgramProgress,
+      phase: "control_mode",
+      controlModeUnlocked: true,
+      controlModePath: "maintain",
+    });
+
+    // Simulate a direct phase mutation back to seven_day_challenge without
+    // clearing session dates (the code path exercised here is saveProgramProgress
+    // called with a mutated progress object, not a dedicated restart helper).
+    const current = await storage.getProgramProgress();
+    await storage.saveProgramProgress({
+      ...current,
+      phase: "seven_day_challenge",
+    });
+
+    // getControlScoreState must NOT replay session history and corrupt the streak.
+    // backfillVersion=2 matches CURRENT_BACKFILL_VERSION so no re-backfill runs —
+    // the stored streak of 5 is returned verbatim.
+    const score = await storage.getControlScoreState();
+    expect(score.currentStreak).toBe(5);
+    // Core score fields must be preserved verbatim.
+    expect(score.controlScore).toBe(500);
+    expect(score.currentRank).toBe("Journeyman");
+    expect(score.backfillVersion).toBe(2);
+    // The phase flip must be persisted correctly.
+    const p = await storage.getProgramProgress();
+    expect(p.phase).toBe("seven_day_challenge");
+  });
+
   it("switchToControlMode increments lifetimeProgramsCompleted only when prior phase was twelve_week strong", async () => {
     await seedScoreState();
     await storage.saveProgramProgress({
