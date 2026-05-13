@@ -205,6 +205,15 @@ function configureExpoAndLanding(app: express.Application) {
   log("Expo routing: Checking expo-platform header on / and /manifest");
 }
 
+function setupIndexingHeaders(app: express.Application) {
+  app.use((req, res, next) => {
+    if (!req.path.startsWith("/api")) {
+      res.setHeader("X-Robots-Tag", "index, follow");
+    }
+    next();
+  });
+}
+
 function setupErrorHandler(app: express.Application) {
   app.use((err: unknown, _req: Request, res: Response, next: NextFunction) => {
     const error = err as {
@@ -232,6 +241,7 @@ function setupErrorHandler(app: express.Application) {
   setupBodyParsing(app);
   setupRequestLogging(app);
 
+  setupIndexingHeaders(app);
   configureExpoAndLanding(app);
 
   const server = await registerRoutes(app);
