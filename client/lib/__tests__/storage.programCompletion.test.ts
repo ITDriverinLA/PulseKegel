@@ -642,6 +642,96 @@ describe("Rest-day streak preservation", () => {
     expect(state.highestScoreAchieved).toBeGreaterThanOrEqual(900);
   });
 
+  it("migration handles phase transition from seven_day_challenge to control_mode — streak counted correctly across phase boundary", async () => {
+    // Simulate a user who completed the 7-day challenge and then entered
+    // Control Mode. Their session history spans both phases, so the migration
+    // must replay ALL dates regardless of which phase they belong to.
+    const d = (offset: number): string => {
+      const dt = new Date();
+      dt.setDate(dt.getDate() + offset);
+      return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+    };
+
+    // Seed program progress showing the user is now in Control Mode,
+    // having transitioned from seven_day_challenge.
+    await AsyncStorage.setItem(
+      "pulsekegel_program_progress",
+      JSON.stringify({
+        phase: "control_mode",
+        controlModeUnlocked: true,
+        controlModePath: "maintain",
+      }),
+    );
+
+    // Session history spanning the phase boundary:
+    //   Challenge phase  : 4 workout days (d-11 to d-8)
+    //   Phase boundary   : 1 rest day (d-7) — bridges the transition
+    //   Control mode     : 4 workout days (d-6 to d-3) + 1 trailing rest day (d-2)
+    //   Final session    : 1 workout day (d-1)
+    // Total workout days: 9; rest days maintain the streak so no gap resets it.
+    const challengeDays = [d(-11), d(-10), d(-9), d(-8)];
+    const boundaryRestDay = [d(-7)];
+    const controlDays = [d(-6), d(-5), d(-4), d(-3)];
+    const trailingRestDay = [d(-2)];
+    const finalDay = [d(-1)];
+
+    const allCompletedDates = [
+      ...challengeDays,
+      ...boundaryRestDay,
+      ...controlDays,
+      ...trailingRestDay,
+      ...finalDay,
+    ];
+    const restDays = [...boundaryRestDay, ...trailingRestDay];
+
+    await AsyncStorage.setItem(
+      "pulsekegel_completed_dates",
+      JSON.stringify(allCompletedDates),
+    );
+    await AsyncStorage.setItem(
+      "pulsekegel_rest_dates",
+      JSON.stringify(restDays),
+    );
+
+    // Stale state: backfilled=true but NO backfillVersion (old format).
+    // Streak was under-counted at 4 — only the control-mode days after the
+    // phase switch were counted, ignoring the challenge-phase sessions.
+    await AsyncStorage.setItem(
+      "pulsekegel_control_score_state",
+      JSON.stringify({
+        controlScore: 150,
+        currentRank: "Rookie",
+        highestRankAchieved: "Journeyman",
+        highestScoreAchieved: 250,
+        eliteAchieved: false,
+        currentStreak: 4,
+        idleDays: 0,
+        lastSessionDate: d(-1),
+        lastScoreUpdateDate: d(-1),
+        backfilled: true,
+        scoreHistory: [],
+      }),
+    );
+
+    const state = await storage.getControlScoreState();
+
+    // Migration must replay all 9 workout sessions across both phases.
+    // The rest days (d-7, d-2) bridge the gaps without resetting the streak.
+    // Expected streak: 4 (challenge) + 1 (d-6, rest bridges d-7) + 3 (d-5 to d-3)
+    //                  + 1 (d-1, rest bridges d-2) = 9 total.
+    expect(state.currentStreak).toBe(9);
+    // backfillVersion must now be stamped as 2.
+    expect(state.backfillVersion).toBe(2);
+    // highestRankAchieved must not be downgraded (Journeyman preserved).
+    expect(state.highestRankAchieved).toBe("Journeyman");
+    // Score must be positive from replaying all 9 sessions.
+    expect(state.controlScore).toBeGreaterThan(0);
+    // eliteAchieved preserved from stored state.
+    expect(state.eliteAchieved).toBe(false);
+    // idleDays must be 0 — no idle gap exists in the session history.
+    expect(state.idleDays).toBe(0);
+  });
+
   it("backfill replay treats consecutive rest days as active so streak is not under-counted", async () => {
     // Build dates relative to today so no idle gap appears between the history and now.
     // Layout: 4 workout days (-6 to -3), then 2 consecutive rest days (-2 and -1).
