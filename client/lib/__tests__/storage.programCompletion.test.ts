@@ -280,6 +280,59 @@ describe("storage program-completion helpers", () => {
     expect(score.controlScore).toBe(1234);
   });
 
+  it("restartFromWeekFive after Control Mode: streak stays intact when completed dates are cleared", async () => {
+    // Seed a Control Mode score state: backfillVersion=2 (current), streak=6.
+    await AsyncStorage.setItem(
+      "pulsekegel_control_score_state",
+      JSON.stringify({
+        controlScore: 600,
+        currentRank: "Journeyman",
+        highestRank: "Journeyman",
+        highestScore: 600,
+        highestRankAchieved: "Journeyman",
+        highestScoreAchieved: 600,
+        eliteAchieved: false,
+        currentStreak: 6,
+        longestStreak: 6,
+        idleDays: 0,
+        lastSessionDate: "2026-04-06",
+        lastScoreUpdateDate: "2026-04-06",
+        backfilled: true,
+        backfillVersion: 2,
+        history: [],
+        scoreHistory: [],
+      }),
+    );
+    // Seed completed dates from Control Mode activity.
+    await AsyncStorage.setItem(
+      "pulsekegel_completed_dates",
+      JSON.stringify([
+        "2026-04-01",
+        "2026-04-02",
+        "2026-04-03",
+        "2026-04-04",
+        "2026-04-05",
+        "2026-04-06",
+      ]),
+    );
+
+    // User restarts from Week Five.
+    await storage.restartFromWeekFive("2026-04-07");
+
+    // Completed dates must be cleared.
+    expect(await storage.getCompletedDates()).toEqual([]);
+
+    // getControlScoreState must NOT mis-count the streak by replaying the now-
+    // empty session history. backfillVersion=2 matches CURRENT_BACKFILL_VERSION
+    // so no re-backfill runs — the stored streak of 6 is returned verbatim.
+    const score = await storage.getControlScoreState();
+    expect(score.currentStreak).toBe(6);
+    // Core score fields preserved across the restart.
+    expect(score.controlScore).toBe(600);
+    expect(score.currentRank).toBe("Journeyman");
+    expect(score.backfillVersion).toBe(2);
+  });
+
   it("switchToControlMode increments lifetimeProgramsCompleted only when prior phase was twelve_week strong", async () => {
     await seedScoreState();
     await storage.saveProgramProgress({
