@@ -1245,7 +1245,10 @@ export const storage = {
       let cursor = state.lastScoreUpdateDate;
       while (cursor < yesterday) {
         cursor = addDays(cursor, 1);
-        if (cursor !== today && (completedSet.has(cursor) || restSet.has(cursor))) {
+        if (
+          cursor !== today &&
+          (completedSet.has(cursor) || restSet.has(cursor))
+        ) {
           state.idleDays = 0;
         } else {
           if (state.currentStreak > 0) state.currentStreak = 0;
@@ -1260,9 +1263,10 @@ export const storage = {
     const previousRank = state.currentRank;
     const wasInactive = state.idleDays >= 3;
     const prevDay = addDays(today, -1);
-    state.currentStreak = (completedSet.has(prevDay) || restSet.has(prevDay))
-      ? state.currentStreak + 1
-      : 1;
+    state.currentStreak =
+      completedSet.has(prevDay) || restSet.has(prevDay)
+        ? state.currentStreak + 1
+        : 1;
     state.idleDays = 0;
     completedSet.add(today);
     const rolling = getCompletedDaysInLast7(completedSet, today);
