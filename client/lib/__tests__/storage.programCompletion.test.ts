@@ -580,6 +580,68 @@ describe("Rest-day streak preservation", () => {
     expect(state.highestRankAchieved).toBe("Journeyman");
   });
 
+  it("migration runs correctly for a Control Mode user — streak corrected and backfillVersion stamped", async () => {
+    // Simulate a user who has graduated to Control Mode.  The re-backfill
+    // migration in getControlScoreState() must behave identically regardless of
+    // which phase is stored in pulsekegel_program_progress.
+    const d = (offset: number): string => {
+      const dt = new Date();
+      dt.setDate(dt.getDate() + offset);
+      return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+    };
+
+    // Seed program progress indicating the user is in Control Mode.
+    await AsyncStorage.setItem(
+      "pulsekegel_program_progress",
+      JSON.stringify({ phase: "control_mode" }),
+    );
+
+    // Session history: 5 consecutive workout days followed by 1 rest day.
+    const sessionDays = [d(-6), d(-5), d(-4), d(-3), d(-2)];
+    const restDays = [d(-1)];
+
+    await AsyncStorage.setItem(
+      "pulsekegel_completed_dates",
+      JSON.stringify([...sessionDays, ...restDays]),
+    );
+    await AsyncStorage.setItem(
+      "pulsekegel_rest_dates",
+      JSON.stringify(restDays),
+    );
+
+    // Stale state: backfilled=true but NO backfillVersion (old format).
+    // Under-counted streak of 2 and eliteAchieved preserved from before.
+    await AsyncStorage.setItem(
+      "pulsekegel_control_score_state",
+      JSON.stringify({
+        controlScore: 300,
+        currentRank: "Journeyman",
+        highestRankAchieved: "Elite",
+        highestScoreAchieved: 900,
+        eliteAchieved: true,
+        currentStreak: 2,
+        idleDays: 0,
+        lastSessionDate: d(-2),
+        lastScoreUpdateDate: d(-2),
+        backfilled: true,
+        scoreHistory: [],
+      }),
+    );
+
+    const state = await storage.getControlScoreState();
+
+    // Migration must have re-run: streak corrected from 2 to 5.
+    expect(state.currentStreak).toBe(5);
+    // backfillVersion must now be stamped as the current version.
+    expect(state.backfillVersion).toBe(2);
+    // highestRankAchieved must not be downgraded (Elite preserved over replay result).
+    expect(state.highestRankAchieved).toBe("Elite");
+    // eliteAchieved flag must be preserved.
+    expect(state.eliteAchieved).toBe(true);
+    // highestScoreAchieved must not be downgraded.
+    expect(state.highestScoreAchieved).toBeGreaterThanOrEqual(900);
+  });
+
   it("backfill replay treats consecutive rest days as active so streak is not under-counted", async () => {
     // Build dates relative to today so no idle gap appears between the history and now.
     // Layout: 4 workout days (-6 to -3), then 2 consecutive rest days (-2 and -1).
