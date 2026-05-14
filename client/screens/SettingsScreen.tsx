@@ -1268,9 +1268,7 @@ export default function SettingsScreen() {
                 }
                 autoCapitalize="characters"
                 autoCorrect={false}
-                placeholder={
-                  dangerModal?.mode === "reset" ? "RESET" : "DELETE"
-                }
+                placeholder={dangerModal?.mode === "reset" ? "RESET" : "DELETE"}
                 placeholderTextColor={
                   isDarkMode ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.25)"
                 }
