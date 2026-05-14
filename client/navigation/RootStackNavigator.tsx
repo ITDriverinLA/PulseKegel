@@ -113,8 +113,9 @@ export default function RootStackNavigator() {
             });
           }
         }
-      } catch {
+      } catch (err) {
         // Network error or timeout — fail open, never block the user
+        console.warn("[PulseKegel] Version check failed (fail open):", err);
       } finally {
         clearTimeout(timeoutId);
       }
