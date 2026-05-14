@@ -588,6 +588,7 @@ export const storage = {
           STORAGE_KEYS.CONTROL_SCORE_STATE,
           JSON.stringify(fresh),
         );
+        await AsyncStorage.setItem(STORAGE_KEYS.ONBOARDING_COMPLETE, "true");
       }
     } catch (error) {
       console.error("Error clearing data:", error);

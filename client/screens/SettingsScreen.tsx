@@ -71,7 +71,10 @@ export default function SettingsScreen() {
   const [isRestoring, setIsRestoring] = useState(false);
 
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [dangerModal, setDangerModal] = useState<{
+    mode: "reset" | "delete";
+    typed: string;
+  } | null>(null);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [permissionRevoked, setPermissionRevoked] = useState(false);
   const [difficultyPath, setDifficultyPath] = useState<
@@ -237,57 +240,24 @@ export default function SettingsScreen() {
   };
 
   const handleResetProgress = () => {
-    if (Platform.OS === "web") {
-      if (confirm("This will delete all your progress. Are you sure?")) {
-        storage.clearAllData({ preserveHighestRank: true });
-        loadSettings();
-      }
-    } else {
-      Alert.alert(
-        "Reset All Progress",
-        "This will delete all your workout history and settings. This action cannot be undone.",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Reset",
-            style: "destructive",
-            onPress: async () => {
-              await storage.clearAllData({ preserveHighestRank: true });
-              await loadSettings();
-              await hapticsManager.triggerWarning();
-            },
-          },
-        ],
-      );
-    }
+    setDangerModal({ mode: "reset", typed: "" });
   };
 
   const handleDeleteAllData = () => {
-    if (Platform.OS === "web") {
-      setShowDeleteModal(true);
-    } else {
-      Alert.alert(
-        "Delete All My Data",
-        "This will permanently delete all your personal information, settings, and workout history. The app will restart and you will need to set up again.\n\nThis action cannot be undone.",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Delete Everything",
-            style: "destructive",
-            onPress: async () => {
-              await storage.clearAllData();
-              await reloadAppAsync();
-            },
-          },
-        ],
-      );
-    }
+    setDangerModal({ mode: "delete", typed: "" });
   };
 
-  const confirmDeleteAllData = async () => {
-    setShowDeleteModal(false);
-    await storage.clearAllData();
-    await reloadAppAsync();
+  const confirmDangerAction = async () => {
+    if (!dangerModal) return;
+    setDangerModal(null);
+    if (dangerModal.mode === "reset") {
+      await storage.clearAllData({ preserveHighestRank: true });
+      await loadSettings();
+      await hapticsManager.triggerWarning();
+    } else {
+      await storage.clearAllData();
+      await reloadAppAsync();
+    }
   };
 
   const handleRestorePurchases = async () => {
@@ -1215,10 +1185,10 @@ export default function SettingsScreen() {
       </ScrollView>
 
       <Modal
-        visible={showDeleteModal}
+        visible={dangerModal !== null}
         transparent
         animationType="fade"
-        onRequestClose={() => setShowDeleteModal(false)}
+        onRequestClose={() => setDangerModal(null)}
       >
         <View style={styles.modalOverlay}>
           <View
@@ -1242,7 +1212,9 @@ export default function SettingsScreen() {
               </View>
 
               <Text style={[styles.modalTitle, { color: cp.text }]}>
-                Delete All My Data
+                {dangerModal?.mode === "reset"
+                  ? "Reset All Progress"
+                  : "Delete All My Data"}
               </Text>
 
               <Text
@@ -1255,20 +1227,9 @@ export default function SettingsScreen() {
                   },
                 ]}
               >
-                This will permanently delete all your personal information,
-                settings, and workout history.
-              </Text>
-              <Text
-                style={[
-                  styles.modalMessage,
-                  {
-                    color: isDarkMode
-                      ? "rgba(255,255,255,0.8)"
-                      : "rgba(0,0,0,0.7)",
-                  },
-                ]}
-              >
-                The app will restart and you will need to set up again.
+                {dangerModal?.mode === "reset"
+                  ? "This will delete all your workout history and settings. Your onboarding preferences will be kept."
+                  : "This will permanently delete all your personal information, settings, and workout history. The app will restart and you will need to set up again."}
               </Text>
               <Text
                 style={[
@@ -1279,9 +1240,57 @@ export default function SettingsScreen() {
                 This action cannot be undone.
               </Text>
 
+              <Text
+                style={[
+                  styles.modalMessage,
+                  {
+                    color: isDarkMode
+                      ? "rgba(255,255,255,0.6)"
+                      : "rgba(0,0,0,0.5)",
+                    marginTop: Spacing.lg,
+                    marginBottom: Spacing.xs,
+                  },
+                ]}
+              >
+                Type{" "}
+                <Text style={{ fontWeight: "700", color: cp.neonPink }}>
+                  {dangerModal?.mode === "reset" ? "RESET" : "DELETE"}
+                </Text>{" "}
+                to confirm
+              </Text>
+
+              <TextInput
+                value={dangerModal?.typed ?? ""}
+                onChangeText={(t) =>
+                  setDangerModal((prev) =>
+                    prev ? { ...prev, typed: t.toUpperCase() } : prev,
+                  )
+                }
+                autoCapitalize="characters"
+                autoCorrect={false}
+                placeholder={
+                  dangerModal?.mode === "reset" ? "RESET" : "DELETE"
+                }
+                placeholderTextColor={
+                  isDarkMode ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.25)"
+                }
+                style={[
+                  styles.modalConfirmInput,
+                  {
+                    backgroundColor: cp.inputBg,
+                    borderColor:
+                      dangerModal?.typed ===
+                      (dangerModal?.mode === "reset" ? "RESET" : "DELETE")
+                        ? cp.neonPink
+                        : cp.cardBorder,
+                    color: cp.text,
+                  },
+                ]}
+              />
+
               <View style={styles.modalButtons}>
                 <Pressable
-                  onPress={() => setShowDeleteModal(false)}
+                  onPress={() => setDangerModal(null)}
                   style={[
                     styles.modalCancelButton,
                     { backgroundColor: cp.inputBg },
@@ -1298,15 +1307,27 @@ export default function SettingsScreen() {
                 </Pressable>
 
                 <Pressable
-                  onPress={confirmDeleteAllData}
-                  style={styles.modalDeleteButton}
+                  onPress={confirmDangerAction}
+                  disabled={
+                    dangerModal?.typed !==
+                    (dangerModal?.mode === "reset" ? "RESET" : "DELETE")
+                  }
+                  style={[
+                    styles.modalDeleteButton,
+                    dangerModal?.typed !==
+                      (dangerModal?.mode === "reset" ? "RESET" : "DELETE") && {
+                      opacity: 0.4,
+                    },
+                  ]}
                 >
                   <LinearGradient
                     colors={[cp.neonPink, "#cc2952"]}
                     style={styles.modalDeleteGradient}
                   >
                     <Text style={styles.modalDeleteText}>
-                      Delete Everything
+                      {dangerModal?.mode === "reset"
+                        ? "Reset Progress"
+                        : "Delete Everything"}
                     </Text>
                   </LinearGradient>
                 </Pressable>
@@ -1488,6 +1509,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     fontSize: 16,
     borderWidth: 1,
+  },
+  modalConfirmInput: {
+    width: "100%",
+    height: 44,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md,
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: 2,
+    borderWidth: 1,
+    marginTop: Spacing.xs,
+    textAlign: "center",
   },
   modalOverlay: {
     flex: 1,
