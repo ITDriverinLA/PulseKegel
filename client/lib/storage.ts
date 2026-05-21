@@ -32,6 +32,7 @@ const RANKS_ORDER: RankName[] = RANKS.map((r) => r.name);
 const STORAGE_KEYS = {
   COMPLETED_DATES: "pulsekegel_completed_dates",
   REST_DATES: "pulsekegel_rest_dates",
+  WORKOUT_DATES: "pulsekegel_workout_dates",
   TOTAL_SESSIONS: "pulsekegel_total_sessions",
   TOTAL_MINUTES: "pulsekegel_total_minutes",
   SETTINGS: "pulsekegel_settings",
@@ -303,6 +304,28 @@ export const storage = {
 
   async addCompletedDate(date: string, minutes: number): Promise<void> {
     try {
+      const workoutDatesRaw = await AsyncStorage.getItem(
+        STORAGE_KEYS.WORKOUT_DATES,
+      );
+      const workoutDates: string[] = workoutDatesRaw
+        ? JSON.parse(workoutDatesRaw)
+        : [];
+      const isNewWorkout = !workoutDates.includes(date);
+
+      if (isNewWorkout) {
+        workoutDates.push(date);
+        await AsyncStorage.setItem(
+          STORAGE_KEYS.WORKOUT_DATES,
+          JSON.stringify(workoutDates),
+        );
+
+        const totalSessions = await this.getTotalSessions();
+        await AsyncStorage.setItem(
+          STORAGE_KEYS.TOTAL_SESSIONS,
+          String(totalSessions + 1),
+        );
+      }
+
       const dates = await this.getCompletedDates();
       if (!dates.includes(date)) {
         dates.push(date);
@@ -311,12 +334,6 @@ export const storage = {
           JSON.stringify(dates),
         );
       }
-
-      const totalSessions = await this.getTotalSessions();
-      await AsyncStorage.setItem(
-        STORAGE_KEYS.TOTAL_SESSIONS,
-        String(totalSessions + 1),
-      );
 
       const totalMinutes = await this.getTotalMinutes();
       await AsyncStorage.setItem(

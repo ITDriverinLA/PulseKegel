@@ -343,4 +343,14 @@ describe("markRestDay — breathwork streak deduplication", () => {
     const totalSessions = await storage.getTotalSessions();
     expect(totalSessions).toBe(1);
   });
+
+  it("does not inflate totalSessions when a workout follows a breathwork session on the same day", async () => {
+    jest.useFakeTimers({ now: new Date(`${TODAY}T12:00:00.000Z`) });
+
+    await storage.markRestDay(TODAY);
+    await storage.addCompletedDate(TODAY, 5);
+
+    const totalSessions = await storage.getTotalSessions();
+    expect(totalSessions).toBe(1);
+  });
 });
