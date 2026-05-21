@@ -248,3 +248,70 @@ describe("applyDailyDecay — rest days suppress score decay", () => {
     expect(result.idleDays).toBeGreaterThan(0);
   });
 });
+
+describe("program wrap-around after 84 days — streak protection", () => {
+  const actualIsRestDayForDate = jest.requireActual<
+    typeof import("@/data/workoutProgram")
+  >("@/data/workoutProgram").isRestDayForDate;
+
+  // programStartDate 85 days before TODAY (2026-05-21) = 2026-02-25
+  // day 83 (TWO_DAYS_AGO  2026-05-19): dayInProgram=83, week 12 day 7 → Rest
+  // day 84 (YESTERDAY     2026-05-20): dayInProgram=0,  week 1  day 1 → Strength (NOT rest)
+  // day 85 (TODAY         2026-05-21): dayInProgram=1,  week 1  day 2 → Rest
+  const PROGRAM_START_85_DAYS_AGO = "2026-02-25";
+
+  beforeEach(() => {
+    jest.useFakeTimers({ now: new Date(`${TODAY}T12:00:00.000Z`) });
+    mockIsRestDayForDate.mockImplementation(actualIsRestDayForDate);
+  });
+
+  it("isRestDayForDate wraps to week-1 rest pattern on day 85 of the program", () => {
+    expect(
+      actualIsRestDayForDate(new Date(TODAY), PROGRAM_START_85_DAYS_AGO),
+    ).toBe(true);
+
+    expect(
+      actualIsRestDayForDate(new Date(YESTERDAY), PROGRAM_START_85_DAYS_AGO),
+    ).toBe(false);
+
+    expect(
+      actualIsRestDayForDate(new Date(TWO_DAYS_AGO), PROGRAM_START_85_DAYS_AGO),
+    ).toBe(true);
+  });
+
+  it("backfillRestDays includes rest days near the 84-day wrap point in completedDates and restDates", async () => {
+    await AsyncStorage.setItem(
+      "pulsekegel_completed_dates",
+      JSON.stringify([YESTERDAY]),
+    );
+
+    const changed = await storage.backfillRestDays(PROGRAM_START_85_DAYS_AGO);
+
+    const completedDates: string[] = JSON.parse(
+      (await AsyncStorage.getItem("pulsekegel_completed_dates")) ?? "[]",
+    );
+    const restDates: string[] = JSON.parse(
+      (await AsyncStorage.getItem("pulsekegel_rest_dates")) ?? "[]",
+    );
+
+    expect(changed).toBe(true);
+    expect(completedDates).toContain(TODAY);
+    expect(restDates).toContain(TODAY);
+    expect(completedDates).toContain(TWO_DAYS_AGO);
+    expect(restDates).toContain(TWO_DAYS_AGO);
+    expect(restDates).not.toContain(YESTERDAY);
+  });
+
+  it("getProgress streak is not broken when rest days span the 84-day wrap boundary", async () => {
+    await AsyncStorage.setItem(
+      "pulsekegel_completed_dates",
+      JSON.stringify([YESTERDAY]),
+    );
+
+    await storage.backfillRestDays(PROGRAM_START_85_DAYS_AGO);
+
+    const progress = await storage.getProgress();
+    expect(progress.currentStreak).toBeGreaterThan(0);
+    expect(progress.currentStreak).toBe(3);
+  });
+});
