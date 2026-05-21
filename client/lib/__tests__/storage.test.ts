@@ -315,3 +315,22 @@ describe("program wrap-around after 84 days — streak protection", () => {
     expect(progress.currentStreak).toBe(3);
   });
 });
+
+describe("markRestDay — breathwork streak deduplication", () => {
+  it("does not double-count a day when a workout and breathwork session both occur on the same date", async () => {
+    jest.useFakeTimers({ now: new Date(`${TODAY}T12:00:00.000Z`) });
+
+    await storage.addCompletedDate(TODAY, 5);
+    await storage.markRestDay(TODAY);
+
+    const completedDates: string[] = JSON.parse(
+      (await AsyncStorage.getItem("pulsekegel_completed_dates")) ?? "[]",
+    );
+
+    const todayCount = completedDates.filter((d) => d === TODAY).length;
+    expect(todayCount).toBe(1);
+
+    const progress = await storage.getProgress();
+    expect(progress.currentStreak).toBe(1);
+  });
+});
