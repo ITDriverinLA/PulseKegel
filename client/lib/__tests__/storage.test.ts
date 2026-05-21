@@ -140,6 +140,31 @@ describe("backfillRestDays — rest-day streak regression", () => {
   });
 });
 
+describe("markRestDay — breathwork rest-day streak regression", () => {
+  it("streak is not 0 after marking today as a rest day with no prior activity", async () => {
+    jest.useFakeTimers({ now: new Date(`${TODAY}T12:00:00.000Z`) });
+
+    await storage.markRestDay(TODAY);
+
+    const progress = await storage.getProgress();
+    expect(progress.currentStreak).toBeGreaterThan(0);
+  });
+
+  it("streak is 2 after marking today as a rest day when a workout was completed yesterday", async () => {
+    jest.useFakeTimers({ now: new Date(`${TODAY}T12:00:00.000Z`) });
+
+    await AsyncStorage.setItem(
+      "pulsekegel_completed_dates",
+      JSON.stringify([YESTERDAY]),
+    );
+
+    await storage.markRestDay(TODAY);
+
+    const progress = await storage.getProgress();
+    expect(progress.currentStreak).toBe(2);
+  });
+});
+
 describe("applyDailyDecay — rest days suppress score decay", () => {
   it("does not apply decay when today is a backfilled rest day (app opened on rest day after session yesterday)", async () => {
     await AsyncStorage.setItem(
