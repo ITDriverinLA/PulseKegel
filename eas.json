@@ -9,12 +9,15 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_DOMAIN": "pulsekegel.com"
+      }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_DOMAIN": "www.pulsekegel.com"
+        "EXPO_PUBLIC_DOMAIN": "pulsekegel.com"
       }
     }
   },
