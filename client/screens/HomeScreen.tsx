@@ -808,8 +808,9 @@ export default function HomeScreen() {
                           },
                         ]}
                       >
-                        Week {todaysWorkout.week.weekNumber} -{" "}
-                        {todaysWorkout.week.phase}
+                        {todaysWorkout.week.weekNumber > 0
+                          ? `Week ${todaysWorkout.week.weekNumber} - ${todaysWorkout.week.phase}`
+                          : todaysWorkout.week.phaseDescription}
                       </Text>
                       <Text
                         style={[
@@ -937,8 +938,9 @@ export default function HomeScreen() {
                           },
                         ]}
                       >
-                        Week {todaysWorkout.week.weekNumber} -{" "}
-                        {todaysWorkout.week.phase}
+                        {todaysWorkout.week.weekNumber > 0
+                          ? `Week ${todaysWorkout.week.weekNumber} - ${todaysWorkout.week.phase}`
+                          : todaysWorkout.week.phaseDescription}
                       </Text>
                       <Text
                         style={[
@@ -1072,8 +1074,9 @@ export default function HomeScreen() {
                           },
                         ]}
                       >
-                        Week {todaysWorkout.week.weekNumber} -{" "}
-                        {todaysWorkout.week.phase}
+                        {todaysWorkout.week.weekNumber > 0
+                          ? `Week ${todaysWorkout.week.weekNumber} - ${todaysWorkout.week.phase}`
+                          : todaysWorkout.week.phaseDescription}
                       </Text>
                       <Text
                         style={[
