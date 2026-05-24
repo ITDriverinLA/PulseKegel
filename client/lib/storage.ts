@@ -486,8 +486,10 @@ export const storage = {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const start = new Date(programStartDate);
-    start.setHours(0, 0, 0, 0);
+    // Parse as local midnight — new Date("YYYY-MM-DD") is treated as UTC midnight
+    // by the JS spec, which shifts the date by one day for UTC-negative timezones.
+    const [sy, sm, sd] = programStartDate.split("-").map(Number);
+    const start = new Date(sy, sm - 1, sd);
 
     let changed = false;
     const current = new Date(start);

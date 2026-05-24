@@ -316,6 +316,69 @@ describe("program wrap-around after 84 days — streak protection", () => {
   });
 });
 
+describe("isRestDayForDate — UTC-negative timezone regression", () => {
+  // new Date("YYYY-MM-DD") parses as UTC midnight, which lands on the *previous*
+  // calendar day for users in UTC-negative timezones (US, Canada, etc.).
+  // The fix uses new Date(y, m-1, d) — local midnight — so daysSinceStart is
+  // always computed correctly regardless of the device's UTC offset.
+  //
+  // These tests simulate the scenario by using Date objects built with the local
+  // constructor (matching what backfillRestDays now passes to isRestDayForDate)
+  // and verifying that the day-index arithmetic is correct.
+
+  const actualIsRestDayForDate = jest.requireActual<
+    typeof import("@/data/workoutProgram")
+  >("@/data/workoutProgram").isRestDayForDate;
+
+  // Week 1 pattern (0-indexed days):
+  //   0 → Strength Training (workout)
+  //   1 → Rest  ← day 1 MUST be a rest day
+  //   2 → Strength Training (workout)
+  //   3 → Rest
+  //   4 → Speed Training (workout)
+  //   5 → Rest
+  //   6 → Rest
+  const START = "2026-05-01";
+
+  it("day 0 (program start) is NOT a rest day", () => {
+    const [y, m, d] = START.split("-").map(Number);
+    const date = new Date(y, m - 1, d); // local midnight — same as fixed backfillRestDays
+    expect(actualIsRestDayForDate(date, START)).toBe(false);
+  });
+
+  it("day 1 (second day of program) IS a rest day", () => {
+    const [y, m, d] = START.split("-").map(Number);
+    const date = new Date(y, m - 1, d + 1); // May 2
+    expect(actualIsRestDayForDate(date, START)).toBe(true);
+  });
+
+  it("day 2 (third day) is NOT a rest day", () => {
+    const [y, m, d] = START.split("-").map(Number);
+    const date = new Date(y, m - 1, d + 2); // May 3
+    expect(actualIsRestDayForDate(date, START)).toBe(false);
+  });
+
+  it("backfillRestDays marks day-1 date (not day-0 date) as rest in completedDates", async () => {
+    jest.useFakeTimers({ now: new Date("2026-05-02T12:00:00.000Z") });
+    mockIsRestDayForDate.mockImplementation(actualIsRestDayForDate);
+
+    // Program started May 1; today is May 2 (day 1 = rest day)
+    const changed = await storage.backfillRestDays(START);
+
+    const completedDates: string[] = JSON.parse(
+      (await AsyncStorage.getItem("pulsekegel_completed_dates")) ?? "[]",
+    );
+    const restDates: string[] = JSON.parse(
+      (await AsyncStorage.getItem("pulsekegel_rest_dates")) ?? "[]",
+    );
+
+    expect(changed).toBe(true);
+    expect(restDates).toContain("2026-05-02"); // day 1 = rest
+    expect(completedDates).toContain("2026-05-02");
+    expect(restDates).not.toContain("2026-05-01"); // day 0 = workout, must NOT be marked rest
+  });
+});
+
 describe("markRestDay — breathwork streak deduplication", () => {
   it("does not double-count a day when a workout and breathwork session both occur on the same date", async () => {
     jest.useFakeTimers({ now: new Date(`${TODAY}T12:00:00.000Z`) });

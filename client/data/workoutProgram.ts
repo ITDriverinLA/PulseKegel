@@ -598,8 +598,8 @@ export const getTodaysWorkout = (
 };
 
 export const isRestDayForDate = (date: Date, startDate: string): boolean => {
-  const start = new Date(startDate);
-  start.setHours(0, 0, 0, 0);
+  const [sy, sm, sd] = startDate.split("-").map(Number);
+  const start = new Date(sy, sm - 1, sd); // local midnight — avoids UTC-parse shift
   const target = new Date(date);
   target.setHours(0, 0, 0, 0);
 
