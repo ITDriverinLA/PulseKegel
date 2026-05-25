@@ -521,7 +521,11 @@ export const storage = {
     // Rebuild both lists from clean sources.
     const newRestDates = [...correctRestSet].sort();
     const newCompletedDates = [
-      ...new Set([...preProgramDates, ...workoutCompletions, ...correctRestSet]),
+      ...new Set([
+        ...preProgramDates,
+        ...workoutCompletions,
+        ...correctRestSet,
+      ]),
     ].sort();
 
     const oldRestSorted = [...existingRestDates].sort().join(",");
