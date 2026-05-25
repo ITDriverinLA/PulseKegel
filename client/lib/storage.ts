@@ -243,6 +243,7 @@ export const defaultSettings: UserSettings = {
 
 export interface UserProgress {
   completedDates: string[];
+  workoutDates: string[];
   totalSessions: number;
   totalMinutes: number;
   currentStreak: number;
@@ -417,6 +418,12 @@ export const storage = {
     const totalSessions = await this.getTotalSessions();
     const totalMinutes = await this.getTotalMinutes();
     const currentStreak = calculateStreak(completedDates);
+    const workoutDatesRaw = await AsyncStorage.getItem(
+      STORAGE_KEYS.WORKOUT_DATES,
+    );
+    const workoutDates: string[] = workoutDatesRaw
+      ? JSON.parse(workoutDatesRaw)
+      : [];
 
     const sortedDates = [...completedDates].sort().reverse();
 
@@ -439,6 +446,7 @@ export const storage = {
 
     return {
       completedDates,
+      workoutDates,
       totalSessions,
       totalMinutes,
       currentStreak,

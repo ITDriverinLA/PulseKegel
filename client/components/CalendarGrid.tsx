@@ -7,6 +7,7 @@ import { Spacing, BorderRadius } from "@/constants/theme";
 
 interface CalendarGridProps {
   completedDates: string[];
+  workoutDates?: string[];
   restDates?: string[];
   currentMonth: Date;
   onMonthChange: (date: Date) => void;
@@ -16,6 +17,7 @@ const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
 
 export function CalendarGrid({
   completedDates,
+  workoutDates = [],
   restDates = [],
   currentMonth,
   onMonthChange,
@@ -54,6 +56,7 @@ export function CalendarGrid({
   }, [currentMonth]);
 
   const completedSet = useMemo(() => new Set(completedDates), [completedDates]);
+  const workoutSet = useMemo(() => new Set(workoutDates), [workoutDates]);
   const restSet = useMemo(() => new Set(restDates), [restDates]);
 
   const getDateStr = (day: number): string => {
@@ -89,27 +92,19 @@ export function CalendarGrid({
     onMonthChange(newDate);
   };
 
+  const isRealWorkout = (day: number): boolean => {
+    return workoutSet.has(getDateStr(day));
+  };
+
   const getDayStyle = (day: number) => {
+    const realWorkout = isRealWorkout(day);
     const rest = isRestDay(day);
     const completed = isCompleted(day);
     const today = isToday(day);
 
-    if (rest) {
-      return {
-        circle: {
-          backgroundColor: cp.neonCyan + "30",
-          borderWidth: 1,
-          borderColor: cp.neonCyan + "60",
-        },
-        text: {
-          color: cp.neonCyan,
-          fontWeight: "500" as const,
-          fontSize: 12,
-          textAlign: "center" as const,
-        },
-      };
-    }
-    if (completed) {
+    // Real workout completions (recorded by the user) always render green,
+    // even if the scheduled program marks that day as a rest day.
+    if (realWorkout || (!rest && completed)) {
       return {
         circle: {
           backgroundColor: cp.neonGreen,
@@ -122,6 +117,21 @@ export function CalendarGrid({
         text: {
           color: "#FFFFFF",
           fontWeight: "600" as const,
+          fontSize: 12,
+          textAlign: "center" as const,
+        },
+      };
+    }
+    if (rest) {
+      return {
+        circle: {
+          backgroundColor: cp.neonCyan + "30",
+          borderWidth: 1,
+          borderColor: cp.neonCyan + "60",
+        },
+        text: {
+          color: cp.neonCyan,
+          fontWeight: "500" as const,
           fontSize: 12,
           textAlign: "center" as const,
         },

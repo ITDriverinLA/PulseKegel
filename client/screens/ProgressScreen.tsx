@@ -265,6 +265,7 @@ export default function ProgressScreen() {
             >
               <CalendarGrid
                 completedDates={progress.completedDates}
+                workoutDates={progress.workoutDates}
                 restDates={restDates}
                 currentMonth={currentMonth}
                 onMonthChange={setCurrentMonth}
