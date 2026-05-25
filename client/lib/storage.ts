@@ -483,7 +483,8 @@ export const storage = {
     if (!programStartDate) return false;
 
     const completedDates = await this.getCompletedDates();
-    const restDates = await this.getRestDates();
+    const existingRestDates = await this.getRestDates();
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -491,33 +492,55 @@ export const storage = {
     // by the JS spec, which shifts the date by one day for UTC-negative timezones.
     const [sy, sm, sd] = programStartDate.split("-").map(Number);
     const start = new Date(sy, sm - 1, sd);
+    const startStr = formatDate(start);
+    const todayStr = formatDate(today);
 
-    let changed = false;
+    // Recompute the authoritative rest-day set from scratch so that stale
+    // entries written by previous buggy versions of this function are purged.
+    const correctRestSet = new Set<string>();
     const current = new Date(start);
-
     while (current <= today) {
-      const dateStr = formatDate(current);
       if (isRestDayForDate(current, programStartDate)) {
-        if (!completedDates.includes(dateStr)) {
-          completedDates.push(dateStr);
-          changed = true;
-        }
-        if (!restDates.includes(dateStr)) {
-          restDates.push(dateStr);
-          changed = true;
-        }
+        correctRestSet.add(formatDate(current));
       }
       current.setDate(current.getDate() + 1);
     }
 
+    // Actual workout completions: dates between start and today that the user
+    // manually completed (i.e. present in completedDates but NOT in the old
+    // restDates — those were added by backfill, not by the user).
+    const existingRestSet = new Set(existingRestDates);
+    const workoutCompletions = completedDates.filter(
+      (d) => d >= startStr && d <= todayStr && !existingRestSet.has(d),
+    );
+
+    // Dates before the program start are kept as-is (breathwork or other
+    // pre-program entries shouldn't be touched).
+    const preProgramDates = completedDates.filter((d) => d < startStr);
+
+    // Rebuild both lists from clean sources.
+    const newRestDates = [...correctRestSet].sort();
+    const newCompletedDates = [
+      ...new Set([...preProgramDates, ...workoutCompletions, ...correctRestSet]),
+    ].sort();
+
+    const oldRestSorted = [...existingRestDates].sort().join(",");
+    const newRestSorted = newRestDates.join(",");
+    const oldCompletedSorted = [...completedDates].sort().join(",");
+    const newCompletedSorted = newCompletedDates.join(",");
+
+    const changed =
+      oldRestSorted !== newRestSorted ||
+      oldCompletedSorted !== newCompletedSorted;
+
     if (changed) {
       await AsyncStorage.setItem(
         STORAGE_KEYS.COMPLETED_DATES,
-        JSON.stringify(completedDates),
+        JSON.stringify(newCompletedDates),
       );
       await AsyncStorage.setItem(
         STORAGE_KEYS.REST_DATES,
-        JSON.stringify(restDates),
+        JSON.stringify(newRestDates),
       );
     }
 
