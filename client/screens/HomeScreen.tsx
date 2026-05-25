@@ -375,6 +375,11 @@ export default function HomeScreen() {
     navigation.navigate("WorkoutPicker");
   };
 
+  const handleRedoWorkout = async () => {
+    await storage.uncompleteToday();
+    setIsTodayComplete(false);
+  };
+
   const handleWeeklyReviewClose = async () => {
     if (weeklyReviewData && pendingReviewMessage) {
       await storage.saveWeeklyReviewToHistory({
@@ -1057,6 +1062,21 @@ export default function HomeScreen() {
                       </Text>
                     </Pressable>
                   </View>
+                  <Pressable
+                    onPress={handleRedoWorkout}
+                    testID="button-redo-workout"
+                    style={[
+                      styles.redoWorkoutButton,
+                      { borderColor: cp.cardBorder },
+                    ]}
+                  >
+                    <Feather name="refresh-cw" size={14} color={cp.textMuted} />
+                    <Text
+                      style={[styles.redoWorkoutText, { color: cp.textMuted }]}
+                    >
+                      {"Redo Today's Workout"}
+                    </Text>
+                  </Pressable>
                 </>
               ) : (
                 <>
@@ -1828,6 +1848,18 @@ const styles = StyleSheet.create({
   secondaryActionText: {
     fontSize: 14,
     fontWeight: "600",
+  },
+  redoWorkoutButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    borderTopWidth: 1,
+  },
+  redoWorkoutText: {
+    fontSize: 13,
   },
   introOverlay: {
     flex: 1,

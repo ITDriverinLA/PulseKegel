@@ -492,11 +492,10 @@ export const storage = {
     // by the JS spec, which shifts the date by one day for UTC-negative timezones.
     const [sy, sm, sd] = programStartDate.split("-").map(Number);
     const start = new Date(sy, sm - 1, sd);
-    const startStr = formatDate(start);
-    const todayStr = formatDate(today);
 
-    // Recompute the authoritative rest-day set from scratch so that stale
-    // entries written by previous buggy versions of this function are purged.
+    // Recompute the authoritative rest-day set from scratch (start → today
+    // inclusive). Rebuilding on every call purges stale entries written by
+    // previous buggy versions of this function.
     const correctRestSet = new Set<string>();
     const current = new Date(start);
     while (current <= today) {
@@ -506,27 +505,17 @@ export const storage = {
       current.setDate(current.getDate() + 1);
     }
 
-    // Actual workout completions: dates between start and today that the user
-    // manually completed (i.e. present in completedDates but NOT in the old
-    // restDates — those were added by backfill, not by the user).
-    const existingRestSet = new Set(existingRestDates);
-    const workoutCompletions = completedDates.filter(
-      (d) => d >= startStr && d <= todayStr && !existingRestSet.has(d),
-    );
-
-    // Dates before the program start are kept as-is (breathwork or other
-    // pre-program entries shouldn't be touched).
-    const preProgramDates = completedDates.filter((d) => d < startStr);
-
-    // Rebuild both lists from clean sources.
+    // restDates is replaced with the freshly computed set.
     const newRestDates = [...correctRestSet].sort();
-    const newCompletedDates = [
-      ...new Set([
-        ...preProgramDates,
-        ...workoutCompletions,
-        ...correctRestSet,
-      ]),
-    ].sort();
+
+    // completedDates: NEVER remove existing entries (they represent real user
+    // activity — workouts the user has completed). Only add rest days that
+    // aren't already present.
+    const completedSet = new Set(completedDates);
+    for (const d of correctRestSet) {
+      completedSet.add(d);
+    }
+    const newCompletedDates = [...completedSet].sort();
 
     const oldRestSorted = [...existingRestDates].sort().join(",");
     const newRestSorted = newRestDates.join(",");
@@ -549,6 +538,23 @@ export const storage = {
     }
 
     return changed;
+  },
+
+  async uncompleteToday(): Promise<void> {
+    try {
+      const today = new Date();
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+      const completedDates = await this.getCompletedDates();
+      const filtered = completedDates.filter((d) => d !== todayStr);
+      if (filtered.length !== completedDates.length) {
+        await AsyncStorage.setItem(
+          STORAGE_KEYS.COMPLETED_DATES,
+          JSON.stringify(filtered),
+        );
+      }
+    } catch (error) {
+      console.error("Error uncompleting today:", error);
+    }
   },
 
   async getSettings(): Promise<UserSettings> {
