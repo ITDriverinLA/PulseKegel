@@ -379,6 +379,90 @@ describe("isRestDayForDate — UTC-negative timezone regression", () => {
   });
 });
 
+describe("DST off-by-one — two consecutive rest days do not break streak", () => {
+  // Root cause: isRestDayForDate computed daysSinceStart by dividing the ms
+  // difference between two *local* midnight Date objects. When DST springs
+  // forward, one calendar day is only 23 h long, so Math.floor rounds down by
+  // 1. That makes the first consecutive rest day look like the preceding
+  // workout day (not a rest day) — it is never backfilled — leaving a gap in
+  // completedDates. The second rest day IS backfilled (its off-by-one index
+  // still lands on a rest-day slot), so completedDates shows:
+  //   [..., workoutDay, <gap>, restDay2]  → diff = 2 → streak = 0.
+  //
+  // Fix: dstSafeDaysBetween() uses Date.UTC with local date components so DST
+  // transitions never affect the calendar-day count.
+  //
+  // This suite tests the full backfill → getProgress streak pipeline for
+  // consecutive rest days (week 1 days 5 & 6 of the 12-week program).
+
+  const actualIsRestDayForDate = jest.requireActual<
+    typeof import("@/data/workoutProgram")
+  >("@/data/workoutProgram").isRestDayForDate;
+
+  // Program starts 2026-05-01.
+  // Week 1 day 6 (index 6) is a strength finale workout — NOT a rest day.
+  // The two CONSECUTIVE rest days first appear in Week 2 (program days 12 & 13):
+  //
+  //   Week 2 (days 7-13 since start):
+  //   Day 7   May 8   Strength Training  (workout)
+  //   Day 8   May 9   Rest
+  //   Day 9   May 10  Strength Training  (workout)
+  //   Day 10  May 11  Rest
+  //   Day 11  May 12  Speed Training     (workout)
+  //   Day 12  May 13  Rest               ← first  consecutive rest
+  //   Day 13  May 14  Rest               ← second consecutive rest
+  const START = "2026-05-01";
+
+  beforeEach(() => {
+    mockIsRestDayForDate.mockImplementation(actualIsRestDayForDate);
+  });
+
+  it("identifies both consecutive rest days correctly (week 2 days 12 and 13)", () => {
+    const day12 = new Date(2026, 4, 13); // May 13 — local midnight (program day 12)
+    const day13 = new Date(2026, 4, 14); // May 14 — local midnight (program day 13)
+    expect(actualIsRestDayForDate(day12, START)).toBe(true);
+    expect(actualIsRestDayForDate(day13, START)).toBe(true);
+  });
+
+  it("streak is preserved through two consecutive rest days using backfill", async () => {
+    // User completed a workout on May 12 (program day 11 = Speed Training).
+    await AsyncStorage.setItem(
+      "pulsekegel_completed_dates",
+      JSON.stringify(["2026-05-12"]),
+    );
+
+    // May 14 — second consecutive rest day.  Backfill must add BOTH May 13
+    // and May 14 so completedDates = [May 12, May 13, May 14] (no gap).
+    jest.useFakeTimers({ now: new Date("2026-05-14T12:00:00.000Z") });
+    await storage.backfillRestDays(START);
+
+    const completedDates: string[] = JSON.parse(
+      (await AsyncStorage.getItem("pulsekegel_completed_dates")) ?? "[]",
+    );
+
+    expect(completedDates).toContain("2026-05-13"); // first rest day backfilled
+    expect(completedDates).toContain("2026-05-14"); // second rest day backfilled
+
+    const progress = await storage.getProgress();
+    // May 12 (workout) + May 13 (rest) + May 14 (rest, today) = streak ≥ 3
+    expect(progress.currentStreak).toBeGreaterThanOrEqual(3);
+  });
+
+  it("streak breaks when first rest day is missing from completedDates (simulates old DST bug)", async () => {
+    // Reproduce the DST off-by-one bug state: May 12 workout + May 14 rest,
+    // with May 13 absent because the old code miscounted it as a workout day.
+    await AsyncStorage.setItem(
+      "pulsekegel_completed_dates",
+      JSON.stringify(["2026-05-12", "2026-05-14"]),
+    );
+
+    jest.useFakeTimers({ now: new Date("2026-05-14T12:00:00.000Z") });
+    const progress = await storage.getProgress();
+    // Gap of 2 days between May 12 and May 14 → streak resets to 1 (only today).
+    expect(progress.currentStreak).toBe(1);
+  });
+});
+
 describe("markRestDay — breathwork streak deduplication", () => {
   it("does not double-count a day when a workout and breathwork session both occur on the same date", async () => {
     jest.useFakeTimers({ now: new Date(`${TODAY}T12:00:00.000Z`) });

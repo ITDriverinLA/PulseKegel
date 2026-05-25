@@ -568,14 +568,18 @@ export const getTodaysWorkout = (
 
   let start: Date;
   if (startDate) {
-    start = new Date(startDate);
+    const [sy, sm, sd] = startDate.split("-").map(Number);
+    start = new Date(sy, sm - 1, sd); // local midnight — avoids UTC-parse shift
   } else {
     start = new Date(today);
   }
-  start.setHours(0, 0, 0, 0);
 
-  const daysSinceStart = Math.floor(
-    (today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
+  // Use Date.UTC with local date parts so DST transitions (23-hour days) do
+  // not cause an off-by-one in the day count.
+  const daysSinceStart = Math.round(
+    (Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()) -
+      Date.UTC(start.getFullYear(), start.getMonth(), start.getDate())) /
+      86400000,
   );
 
   // Each week is exactly 7 days, total program is 12 weeks = 84 days
@@ -603,8 +607,12 @@ export const isRestDayForDate = (date: Date, startDate: string): boolean => {
   const target = new Date(date);
   target.setHours(0, 0, 0, 0);
 
-  const daysSinceStart = Math.floor(
-    (target.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
+  // Use Date.UTC with local date parts so DST transitions (23-hour days) do
+  // not cause an off-by-one in the day count.
+  const daysSinceStart = Math.round(
+    (Date.UTC(target.getFullYear(), target.getMonth(), target.getDate()) -
+      Date.UTC(start.getFullYear(), start.getMonth(), start.getDate())) /
+      86400000,
   );
 
   if (daysSinceStart < 0) return false;

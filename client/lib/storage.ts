@@ -12,6 +12,7 @@ import {
   calculateDecayForIdleDay,
   calculateSessionGain,
   clampScore,
+  dstSafeDaysBetween,
   getCompletedDaysInLast7,
   getRankForScore,
   todayDateString,
@@ -670,9 +671,7 @@ export const storage = {
 
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const daysSinceStart = Math.floor(
-      (today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
-    );
+    const daysSinceStart = dstSafeDaysBetween(startDate, today);
     const completedWeeks = Math.floor(daysSinceStart / 7);
 
     const lastReviewedWeek = await this.getLastWeeklyReview();
@@ -736,9 +735,7 @@ export const storage = {
     const startDate = new Date(startParts[0], startParts[1] - 1, startParts[2]);
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const daysSinceStart = Math.floor(
-      (today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
-    );
+    const daysSinceStart = dstSafeDaysBetween(startDate, today);
     const completedWeeks = Math.floor(daysSinceStart / 7);
 
     const lastReviewedWeek = await this.getLastWeeklyReview();
@@ -847,9 +844,7 @@ export const storage = {
               now.getMonth(),
               now.getDate(),
             );
-            const daysSinceStart = Math.floor(
-              (today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
-            );
+            const daysSinceStart = dstSafeDaysBetween(start, today);
             const completedWeeks = Math.floor(daysSinceStart / 7);
             earned =
               completedWeeks >= badge.criteria.value &&
@@ -871,9 +866,7 @@ export const storage = {
               now.getMonth(),
               now.getDate(),
             );
-            const daysSinceStart = Math.floor(
-              (today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
-            );
+            const daysSinceStart = dstSafeDaysBetween(start, today);
             const completedWeeks = Math.floor(daysSinceStart / 7);
             earned = completedWeeks >= 12 && progress.completedDates.length > 0;
           }
@@ -893,9 +886,7 @@ export const storage = {
               now.getMonth(),
               now.getDate(),
             );
-            const daysSinceStart = Math.floor(
-              (today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
-            );
+            const daysSinceStart = dstSafeDaysBetween(start, today);
             const completedWeeks = Math.floor(daysSinceStart / 7);
 
             for (let w = 0; w < completedWeeks; w++) {

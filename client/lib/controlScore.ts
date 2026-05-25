@@ -162,6 +162,19 @@ export function calculateDecayForIdleDay(idleDays: number): number {
   return 5;
 }
 
+/**
+ * Returns the number of calendar days from Date `a` to Date `b`, using local
+ * date components (year/month/day) so that DST transitions — where two local
+ * midnights are only 23 h apart — never cause an off-by-one error.
+ *
+ * Usage: dstSafeDaysBetween(start, target)  →  target_day − start_day in days
+ */
+export function dstSafeDaysBetween(a: Date, b: Date): number {
+  const utcA = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+  const utcB = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+  return Math.round((utcB - utcA) / 86400000);
+}
+
 export function addDays(dateStr: string, days: number): string {
   const [y, m, d] = dateStr.split("-").map(Number);
   const dt = new Date(y, m - 1, d);
