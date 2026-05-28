@@ -2,7 +2,7 @@
   "expo": {
     "name": "PulseKegel",
     "slug": "pulsekegel",
-    "version": "1.4.10",
+    "version": "1.4.11",
     "icon": "./assets/images/icon.png",
     "scheme": "pulsekegel",
     "userInterfaceStyle": "automatic",
