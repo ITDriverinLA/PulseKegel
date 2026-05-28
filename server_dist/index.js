@@ -5,12 +5,13 @@ var __export = (target, all) => {
 };
 
 // server/index.ts
-import express from "express";
+import express2 from "express";
 
 // server/routes.ts
+import express from "express";
 import { createServer } from "node:http";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
-import { join, dirname } from "node:path";
+import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import OpenAI from "openai";
 
@@ -1367,6 +1368,7 @@ function buildFallback(daysWorkedOut, scheduledDays, weekNumber) {
   return `${daysWorkedOut} of ${scheduledDays} scheduled sessions completed this week \u2014 ${missedDays} missed. That is not the week you needed. Next week, start on day one and do not let the first miss become two.`;
 }
 async function registerRoutes(app2) {
+  app2.use("/sounds", express.static(resolve(process.cwd(), "client", "assets", "sounds")));
   app2.post("/api/invalidate-sitemap-cache", (req, res) => {
     const token = process.env.INVALIDATE_CACHE_TOKEN;
     if (token) {
@@ -1531,6 +1533,12 @@ LLMs-txt: https://pulsekegel.com/llms.txt
     <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://pulsekegel.com/music</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
   </url>`;
     const blogUrls = discoverBlogSlugs().map(
       ({ slug, lastmod }) => `  <url>
@@ -1566,6 +1574,14 @@ ${blogUrls}
     const contentPath = join(process.cwd(), "blog-content", `${slug}.html`);
     if (existsSync(contentPath)) {
       return res.sendFile(contentPath);
+    }
+    res.status(404).send("Not found");
+  });
+  app2.get("/music", (_req, res) => {
+    const musicPagePath = join(__dirname, "templates", "music-page.html");
+    if (existsSync(musicPagePath)) {
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      return res.sendFile(musicPagePath);
     }
     res.status(404).send("Not found");
   });
@@ -1739,7 +1755,7 @@ ${blogUrls}
 // server/index.ts
 import * as fs from "fs";
 import * as path from "path";
-var app = express();
+var app = express2();
 var log = console.log;
 function setupCors(app2) {
   app2.use((req, res, next) => {
@@ -1771,13 +1787,13 @@ function setupCors(app2) {
 }
 function setupBodyParsing(app2) {
   app2.use(
-    express.json({
+    express2.json({
       verify: (req, _res, buf) => {
         req.rawBody = buf;
       }
     })
   );
-  app2.use(express.urlencoded({ extended: false }));
+  app2.use(express2.urlencoded({ extended: false }));
 }
 function setupRequestLogging(app2) {
   app2.use((req, res, next) => {
@@ -1880,9 +1896,9 @@ function configureExpoAndLanding(app2) {
     }
     next();
   });
-  app2.use("/assets", express.static(path.resolve(process.cwd(), "assets")));
-  app2.use(express.static(path.resolve(process.cwd(), "server", "public")));
-  app2.use(express.static(path.resolve(process.cwd(), "static-build")));
+  app2.use("/assets", express2.static(path.resolve(process.cwd(), "assets")));
+  app2.use(express2.static(path.resolve(process.cwd(), "server", "public")));
+  app2.use(express2.static(path.resolve(process.cwd(), "static-build")));
   log("Expo routing: Checking expo-platform header on / and /manifest");
 }
 function setupIndexingHeaders(app2) {

@@ -1,7 +1,8 @@
+import express from "express";
 import type { Express } from "express";
 import { createServer, type Server } from "node:http";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
-import { join, dirname } from "node:path";
+import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import OpenAI from "openai";
 import { privacyPolicyHtml } from "./staticContent";
@@ -180,6 +181,9 @@ function buildFallback(daysWorkedOut: number, scheduledDays: number, weekNumber:
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Serve ambient music tracks for the /music web page
+  app.use("/sounds", express.static(resolve(process.cwd(), "client", "assets", "sounds")));
+
   // Internal cache-invalidation endpoint — clears the sitemap slug cache immediately
   // so a freshly published blog post appears on the next /sitemap.xml request
   // without waiting for the TTL to expire.
@@ -367,6 +371,12 @@ LLMs-txt: https://pulsekegel.com/llms.txt
     <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://pulsekegel.com/music</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
   </url>`;
 
     const blogUrls = discoverBlogSlugs()
@@ -408,6 +418,15 @@ ${blogUrls}
     const contentPath = join(process.cwd(), 'blog-content', `${slug}.html`);
     if (existsSync(contentPath)) {
       return res.sendFile(contentPath);
+    }
+    res.status(404).send('Not found');
+  });
+
+  app.get("/music", (_req, res) => {
+    const musicPagePath = join(__dirname, 'templates', 'music-page.html');
+    if (existsSync(musicPagePath)) {
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      return res.sendFile(musicPagePath);
     }
     res.status(404).send('Not found');
   });
