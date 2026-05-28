@@ -861,11 +861,7 @@ export default function HomeScreen() {
                       },
                     ]}
                   >
-                    <Feather
-                      name="shield"
-                      size={16}
-                      color={cp.neonGreen}
-                    />
+                    <Feather name="shield" size={16} color={cp.neonGreen} />
                     <Text
                       style={[
                         styles.streakProtectedText,
