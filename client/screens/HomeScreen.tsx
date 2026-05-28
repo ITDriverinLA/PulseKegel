@@ -852,6 +852,30 @@ export default function HomeScreen() {
                     rest!
                   </Text>
 
+                  <View
+                    style={[
+                      styles.streakProtectedBadge,
+                      {
+                        backgroundColor: `${cp.neonGreen}18`,
+                        borderColor: `${cp.neonGreen}40`,
+                      },
+                    ]}
+                  >
+                    <Feather
+                      name="shield"
+                      size={16}
+                      color={cp.neonGreen}
+                    />
+                    <Text
+                      style={[
+                        styles.streakProtectedText,
+                        { color: cp.neonGreen },
+                      ]}
+                    >
+                      Streak protected — rest day logged
+                    </Text>
+                  </View>
+
                   <View style={styles.restDayContent}>
                     <View style={styles.restDayIcon}>
                       <Feather
@@ -1846,6 +1870,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   secondaryActionText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  streakProtectedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    marginBottom: Spacing.md,
+  },
+  streakProtectedText: {
     fontSize: 14,
     fontWeight: "600",
   },

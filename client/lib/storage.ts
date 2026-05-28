@@ -258,30 +258,46 @@ const formatDate = (date: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
-const calculateStreak = (completedDates: string[]): number => {
-  if (completedDates.length === 0) return 0;
+const calculateStreak = (
+  completedDates: string[],
+  programStartDate: string | null,
+): number => {
+  const completedSet = new Set(completedDates);
 
-  const sortedDates = [...completedDates].sort().reverse();
-  const today = formatDate(new Date());
-  const yesterday = formatDate(new Date(Date.now() - 86400000));
+  const todayDate = new Date();
+  todayDate.setHours(0, 0, 0, 0);
 
-  if (sortedDates[0] !== today && sortedDates[0] !== yesterday) {
-    return 0;
+  // Parse program start once for boundary checks
+  let programStart: Date | null = null;
+  if (programStartDate) {
+    const [sy, sm, sd] = programStartDate.split("-").map(Number);
+    programStart = new Date(sy, sm - 1, sd);
+    programStart.setHours(0, 0, 0, 0);
   }
 
-  let streak = 1;
-  for (let i = 1; i < sortedDates.length; i++) {
-    const currentDate = new Date(sortedDates[i - 1]);
-    const prevDate = new Date(sortedDates[i]);
-    const diffDays = Math.floor(
-      (currentDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24),
-    );
+  // A day counts toward the streak if it is in completedDates (workout done
+  // or backfilled rest day) OR if the program schedule marks it as a rest
+  // day (resilient against backfill failures for edge-case days).
+  const dayIsActive = (d: Date): boolean => {
+    const str = formatDate(d);
+    if (completedSet.has(str)) return true;
+    if (programStart && d < programStart) return false;
+    return !!programStartDate && isRestDayForDate(d, programStartDate);
+  };
 
-    if (diffDays === 1) {
-      streak++;
-    } else {
-      break;
-    }
+  // Streak must start from today or yesterday — otherwise it is 0.
+  const yesterdayDate = new Date(todayDate);
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  if (!dayIsActive(todayDate) && !dayIsActive(yesterdayDate)) return 0;
+
+  // Walk backwards from today counting consecutive active days.
+  let streak = 0;
+  const cursor = new Date(todayDate);
+  while (true) {
+    if (programStart && cursor < programStart) break;
+    if (!dayIsActive(cursor)) break;
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
   }
 
   return streak;
@@ -417,7 +433,8 @@ export const storage = {
     const completedDates = await this.getCompletedDates();
     const totalSessions = await this.getTotalSessions();
     const totalMinutes = await this.getTotalMinutes();
-    const currentStreak = calculateStreak(completedDates);
+    const programStartDate = await this.getProgramStartDate();
+    const currentStreak = calculateStreak(completedDates, programStartDate);
     const workoutDatesRaw = await AsyncStorage.getItem(
       STORAGE_KEYS.WORKOUT_DATES,
     );
