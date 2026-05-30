@@ -1510,8 +1510,7 @@ Disallow: /api/
 
 Sitemap: https://pulsekegel.com/sitemap.xml
 
-# AI crawler index
-LLMs-txt: https://pulsekegel.com/llms.txt
+# AI index: https://pulsekegel.com/llms.txt
 `);
   });
   app2.get("/sitemap.xml", (_req, res) => {
@@ -1555,7 +1554,7 @@ ${staticUrls}
 ${blogUrls}
 </urlset>`);
   });
-  app2.get("/blog", (_req, res) => {
+  app2.get(["/blog", "/blog/"], (_req, res) => {
     const blogIndex = join(process.cwd(), "static-build", "blog", "index.html");
     if (existsSync(blogIndex)) {
       return res.sendFile(blogIndex);

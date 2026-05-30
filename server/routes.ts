@@ -346,8 +346,7 @@ Disallow: /api/
 
 Sitemap: https://pulsekegel.com/sitemap.xml
 
-# AI crawler index
-LLMs-txt: https://pulsekegel.com/llms.txt
+# AI index: https://pulsekegel.com/llms.txt
 `);
   });
 
@@ -398,7 +397,7 @@ ${blogUrls}
 </urlset>`);
   });
 
-  app.get("/blog", (_req, res) => {
+  app.get(["/blog", "/blog/"], (_req, res) => {
     const blogIndex = join(process.cwd(), 'static-build', 'blog', 'index.html');
     if (existsSync(blogIndex)) {
       return res.sendFile(blogIndex);
