@@ -290,9 +290,13 @@ const calculateStreak = (
   yesterdayDate.setDate(yesterdayDate.getDate() - 1);
   if (!dayIsActive(todayDate) && !dayIsActive(yesterdayDate)) return 0;
 
-  // Walk backwards from today counting consecutive active days.
+  // Walk backwards from the most recent active day. If today's workout has not
+  // been done yet, begin from yesterday so the streak built through previous
+  // days (including protected rest days) is not erased mid-day.
   let streak = 0;
-  const cursor = new Date(todayDate);
+  const cursor = dayIsActive(todayDate)
+    ? new Date(todayDate)
+    : new Date(yesterdayDate);
   while (true) {
     if (programStart && cursor < programStart) break;
     if (!dayIsActive(cursor)) break;

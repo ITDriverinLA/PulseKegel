@@ -140,6 +140,52 @@ describe("backfillRestDays — rest-day streak regression", () => {
   });
 });
 
+describe("calculateStreak — mid-day workout-not-yet-done regression", () => {
+  // Bug: the while loop always started from today. If today is a scheduled
+  // workout day that hasn't been completed yet, dayIsActive(today) = false
+  // and the loop broke immediately, returning 0 — even when yesterday was a
+  // protected rest day that kept the streak alive.
+  // Fix: start the cursor from yesterday when today is not yet active.
+
+  it("streak is preserved on a workout day when yesterday was a rest day and today is not done", async () => {
+    jest.useFakeTimers({ now: new Date(`${TODAY}T12:00:00.000Z`) });
+
+    // TWO_DAYS_AGO: workout completed. YESTERDAY: rest day (backfilled).
+    // TODAY: workout day — not yet completed.
+    await AsyncStorage.setItem(
+      "pulsekegel_completed_dates",
+      JSON.stringify([TWO_DAYS_AGO, YESTERDAY]),
+    );
+
+    // yesterday = rest day, today = workout day (not a rest day)
+    mockIsRestDayForDate.mockImplementation((date: Date) => {
+      return localDateStr(date) === YESTERDAY;
+    });
+
+    const progress = await storage.getProgress();
+    // TWO_DAYS_AGO (workout) + YESTERDAY (rest) = 2-day streak, not 0
+    expect(progress.currentStreak).toBe(2);
+  });
+
+  it("streak is 1 on a workout day when only yesterday was a rest day with no prior activity", async () => {
+    jest.useFakeTimers({ now: new Date(`${TODAY}T12:00:00.000Z`) });
+
+    // Only yesterday is in completedDates (first-ever session was a rest day).
+    await AsyncStorage.setItem(
+      "pulsekegel_completed_dates",
+      JSON.stringify([YESTERDAY]),
+    );
+
+    // yesterday = rest day, today = workout day
+    mockIsRestDayForDate.mockImplementation((date: Date) => {
+      return localDateStr(date) === YESTERDAY;
+    });
+
+    const progress = await storage.getProgress();
+    expect(progress.currentStreak).toBe(1);
+  });
+});
+
 describe("markRestDay — breathwork rest-day streak regression", () => {
   it("streak is not 0 after marking today as a rest day with no prior activity", async () => {
     jest.useFakeTimers({ now: new Date(`${TODAY}T12:00:00.000Z`) });
