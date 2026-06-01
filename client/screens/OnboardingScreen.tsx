@@ -352,7 +352,15 @@ function KnowledgeScreen({
       </View>
 
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        <View style={{ alignItems: "center", justifyContent: "center" }}>
+        {/* Sized container so text renders below, not on top of circle */}
+        <View
+          style={{
+            width: CIRCLE_SIZE + 40,
+            height: CIRCLE_SIZE + 40,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
           <Animated.View
             style={[
               styles.qGlow,
@@ -365,7 +373,7 @@ function KnowledgeScreen({
               ringStyle,
             ]}
           />
-          <Animated.View style={[circleStyle, { position: "absolute" }]}>
+          <Animated.View style={circleStyle}>
             <Svg width={CIRCLE_SIZE} height={CIRCLE_SIZE}>
               <Circle
                 cx={CIRCLE_SIZE / 2}
@@ -644,60 +652,73 @@ function CtaScreen({
         },
       ];
 
-  const HERO_H = Math.min(height * 0.32, 280);
+  const HERO_H = height * 0.45;
 
   return (
     <ScrollView
       style={{ flex: 1 }}
       contentContainerStyle={[
         styles.ctaScroll,
-        { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 24 },
+        { paddingBottom: insets.bottom + 24 },
       ]}
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.ctaLogoRow}>
-        <Text style={styles.logoText}>
-          <Text style={{ color: TEXT }}>PULSE</Text>
-          <Text style={{ color: accent }}>KEGEL</Text>
-        </Text>
-      </View>
-
-      <Image
-        source={isMale ? MAN_HERO : WOMAN_HERO}
-        style={[styles.ctaHero, { height: HERO_H }]}
-        resizeMode="cover"
-      />
-
-      <View style={styles.ctaTextBlock}>
-        <Text style={styles.ctaHeadline}>{headline}</Text>
-        <Text style={[styles.ctaSubline, { color: accent }]}>{subline}</Text>
-      </View>
-
-      <View style={styles.benefitsRow}>
-        {benefits.map((b) => (
-          <View key={b.label} style={styles.benefitItem}>
-            <View style={[styles.benefitIcon, { backgroundColor: accentDim }]}>
-              <Feather name={b.icon} size={18} color={accent} />
-            </View>
-            <Text style={styles.benefitLabel}>{b.label}</Text>
-            <Text style={styles.benefitSub}>{b.sub}</Text>
-          </View>
-        ))}
-      </View>
-
-      <View style={styles.ctaButtonBlock}>
-        <PrimaryButton
-          label="Start My 7-Day Challenge"
-          accent={accent}
-          icon="send"
-          onPress={onStart}
-          testID="button-start-challenge"
+      {/* Edge-to-edge hero image with logo overlaid */}
+      <View style={[styles.ctaHeroContainer, { height: HERO_H }]}>
+        <Image
+          source={isMale ? MAN_HERO : WOMAN_HERO}
+          style={StyleSheet.absoluteFill}
+          resizeMode="cover"
         />
-        <View style={styles.footer}>
-          <Feather name="lock" size={11} color={TEXT_MUTED} />
-          <Text style={styles.footerText}>
-            Takes less than 5 minutes a day. Your data stays private.
+        {/* Gradient fade at bottom of image into background */}
+        <LinearGradient
+          colors={["transparent", BG_GRADIENT[1]]}
+          style={[StyleSheet.absoluteFill, { top: "50%" }]}
+        />
+        {/* Logo overlaid at top of image */}
+        <View style={[styles.ctaLogoOverlay, { top: insets.top + 12 }]}>
+          <Text style={styles.logoText}>
+            <Text style={{ color: TEXT }}>PULSE</Text>
+            <Text style={{ color: accent }}>KEGEL</Text>
           </Text>
+        </View>
+      </View>
+
+      {/* Content below image */}
+      <View style={styles.ctaContent}>
+        <View style={styles.ctaTextBlock}>
+          <Text style={styles.ctaHeadline}>{headline}</Text>
+          <Text style={[styles.ctaSubline, { color: accent }]}>{subline}</Text>
+        </View>
+
+        <View style={styles.benefitsRow}>
+          {benefits.map((b) => (
+            <View key={b.label} style={styles.benefitItem}>
+              <View
+                style={[styles.benefitIcon, { backgroundColor: accentDim }]}
+              >
+                <Feather name={b.icon} size={18} color={accent} />
+              </View>
+              <Text style={styles.benefitLabel}>{b.label}</Text>
+              <Text style={styles.benefitSub}>{b.sub}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.ctaButtonBlock}>
+          <PrimaryButton
+            label="Start My 7-Day Challenge"
+            accent={accent}
+            icon="send"
+            onPress={onStart}
+            testID="button-start-challenge"
+          />
+          <View style={styles.footer}>
+            <Feather name="lock" size={11} color={TEXT_MUTED} />
+            <Text style={styles.footerText}>
+              Takes less than 5 minutes a day. Your data stays private.
+            </Text>
+          </View>
         </View>
       </View>
     </ScrollView>
@@ -983,17 +1004,23 @@ const styles = StyleSheet.create({
 
   // CTA screen
   ctaScroll: {
-    paddingHorizontal: Spacing.xl,
-    gap: 20,
+    gap: 0,
   },
-  ctaLogoRow: {
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  ctaHero: {
+  ctaHeroContainer: {
     width: "100%",
-    borderRadius: BorderRadius.lg,
     overflow: "hidden",
+    position: "relative",
+  },
+  ctaLogoOverlay: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    alignItems: "center",
+  },
+  ctaContent: {
+    paddingHorizontal: Spacing.xl,
+    paddingTop: 16,
+    gap: 20,
   },
   ctaTextBlock: {
     alignItems: "center",
