@@ -1,0 +1,73 @@
+PulseKegel – Onboarding Flow Requirements
+Version: 1.0
+Goal: Quick, respectful, gender-aware onboarding that gets users into the 7-day challenge as fast as possible while making them feel understood.
+1. Screen 1 – Welcome / Gender Selection
+Headline (large, centered):
+Most people lose strength in their pelvic floor over time.
+You can train it — and you should.
+Sub-headline (smaller):
+Let’s get started.
+Two large buttons (side by side or stacked):
+
+I’m a Man
+I’m a Woman
+
+Flow:
+User taps one → immediately goes to Screen 2.
+
+2. Screen 2 – Kegel Knowledge Check
+Headline:
+Do you know how to do Kegels?
+Two buttons:
+
+Yes, I know how
+No, show me how
+
+Flow:
+
+If Yes → go directly to Screen 4 (Final CTA)
+If No → go to Screen 3 (Tutorial)
+
+
+3. Screen 3 – Tutorial (only shown if “No” was chosen)
+Two-step animation / illustration (simple, clean, gender-specific)
+For Men:
+
+Step 1 – Find the muscle
+Squeeze the same muscle you use to stop your pee mid-flow.
+(Highlight the pelvic floor muscle on a simple male silhouette)
+Step 2 – Activate it
+Now lift your balls upward using just that muscle.
+That’s a Kegel. No one can see you doing it.
+
+For Women:
+
+Step 1 – Find the muscle
+Gently squeeze the same muscles you use to stop the flow of urine.
+Step 2 – Activate it
+Now slowly draw that area upward and inward — like you’re lifting a marble inside you.
+That’s a Kegel.
+
+Button at bottom:
+Got it – Let’s begin
+Flow: After tapping “Got it” → go to Screen 4.
+
+4. Screen 4 – Final Call-to-Action (shown for both paths)
+Headline (gender-specific):
+For Men:
+Your pelvic floor affects your bladder control, confidence, and performance.
+Most men never train it.
+For Women:
+Your pelvic floor affects bladder control, core strength, and intimacy.
+Most women only start training it after they notice a problem.
+Big primary button (centered, high contrast):
+Start My 7-Day Challenge
+Secondary text (small, below button):
+Takes less than 5 minutes a day. Your data stays private.
+
+Additional Notes for Developer:
+
+Keep the entire flow to maximum 4 screens (including tutorial).
+Use large, tappable buttons and generous spacing.
+Make the gender-specific headlines and tutorial text feel supportive, not clinical.
+After “Start My 7-Day Challenge” → drop user straight into the first day of the challenge (no extra friction).
