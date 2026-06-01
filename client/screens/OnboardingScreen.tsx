@@ -660,7 +660,7 @@ function CtaScreen({
         },
       ];
 
-  const HERO_H = height * 0.45;
+  const HERO_H = height * 0.55;
 
   return (
     <ScrollView
@@ -675,13 +675,13 @@ function CtaScreen({
       <View style={[styles.ctaHeroContainer, { height: HERO_H }]}>
         <Image
           source={isMale ? MAN_HERO : WOMAN_HERO}
-          style={StyleSheet.absoluteFill}
-          resizeMode="cover"
+          style={{ width: "100%", height: "100%" }}
+          resizeMode="contain"
         />
         {/* Gradient fade at bottom of image into background */}
         <LinearGradient
           colors={["transparent", BG_GRADIENT[1]]}
-          style={[StyleSheet.absoluteFill, { top: "50%" }]}
+          style={[StyleSheet.absoluteFill, { top: "60%" }]}
         />
         {/* Logo overlaid at top of image */}
         <View style={[styles.ctaLogoOverlay, { top: insets.top + 12 }]}>
