@@ -37,8 +37,7 @@ interface OnboardingScreenProps {
 
 const { width, height } = Dimensions.get("window");
 
-const MAN_HERO = require("../assets/images/onboarding/male-hero.png");
-const WOMAN_HERO = require("../assets/images/onboarding/female-hero.png");
+const HERO_COMBINED = require("../assets/images/onboarding/hero-combined.png");
 const MALE_STEP1 = require("../assets/images/onboarding/male-anatomy-step1.png");
 const MALE_STEP2 = require("../assets/images/onboarding/male-anatomy-step2.png");
 const FEMALE_STEP1 = require("../assets/images/onboarding/female-anatomy-step1.png");
@@ -199,13 +198,8 @@ function GenderScreen({
 
       <View style={styles.genderHeroRow}>
         <Image
-          source={MAN_HERO}
+          source={HERO_COMBINED}
           style={styles.genderHeroImage}
-          resizeMode="cover"
-        />
-        <Image
-          source={WOMAN_HERO}
-          style={[styles.genderHeroImage, { marginLeft: -8 }]}
           resizeMode="cover"
         />
       </View>
@@ -826,16 +820,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   genderHeroRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "flex-end",
     flex: 1,
     overflow: "hidden",
     borderRadius: BorderRadius.lg,
     marginHorizontal: -Spacing.xl,
   },
   genderHeroImage: {
-    width: "50%",
+    width: "100%",
     height: "100%",
   },
   genderTextBlock: {
