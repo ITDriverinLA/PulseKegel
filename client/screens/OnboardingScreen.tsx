@@ -1,1029 +1,1081 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   StyleSheet,
   View,
   Image,
   Dimensions,
   Pressable,
-  TextInput,
   ScrollView,
   Text,
-  Switch,
+  Animated as RNAnimated,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
   useAnimatedStyle,
-  withSpring,
+  withRepeat,
+  withSequence,
   withTiming,
-  runOnJS,
-  SlideInRight,
-  SlideOutLeft,
   useSharedValue,
-  WithSpringConfig,
 } from "react-native-reanimated";
-import { Feather } from "@expo/vector-icons";
-import Slider from "@react-native-community/slider";
-
-import { ThemedText } from "@/components/ThemedText";
-import { Spacing, BorderRadius } from "@/constants/theme";
 import {
-  ANIM_DURATION_ENTER,
-  ANIM_DURATION_EXIT_COMPLETE,
+  ANIM_DURATION_HOLD_PULSE,
+  ANIM_DURATION_MICRO,
+  ANIM_DURATION_RESET_FAST,
+  ANIM_EASING_PULSE,
 } from "@/constants/animation";
-import { storage, AnatomyType, defaultSettings } from "@/lib/storage";
+import { Feather } from "@expo/vector-icons";
+import Svg, { Circle, Text as SvgText } from "react-native-svg";
+
+import { Spacing, BorderRadius } from "@/constants/theme";
+import { storage, AnatomyType } from "@/lib/storage";
 import { trackOnboardingComplete } from "@/lib/analytics";
-import { useThemePreference } from "@/contexts/ThemePreferenceContext";
-import { useAudio } from "@/contexts/AudioContext";
-import { ALL_AMBIENT_TRACKS } from "@/lib/audioManager";
 
 interface OnboardingScreenProps {
   onComplete: () => void;
 }
 
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 
-type PageEntry = {
-  type?: string;
-  title: string;
-  description: string;
-  image?: ReturnType<typeof require>;
-};
+const MAN_HERO = require("../../assets/images/onboarding/male-hero.png");
+const WOMAN_HERO = require("../../assets/images/onboarding/female-hero.png");
+const MALE_STEP1 = require("../../assets/images/onboarding/male-anatomy-step1.png");
+const MALE_STEP2 = require("../../assets/images/onboarding/male-anatomy-step2.png");
+const FEMALE_STEP1 = require("../../assets/images/onboarding/female-anatomy-step1.png");
+const FEMALE_STEP2 = require("../../assets/images/onboarding/female-anatomy-step2.png");
 
-const pages: PageEntry[] = [
-  {
-    image: require("../../assets/images/onboarding-welcome.png"),
-    title: "Welcome to PulseKegel",
-    description:
-      "Build pelvic floor strength with guided daily workouts. Visual cues and haptic feedback help you train effectively.",
-  },
-  {
-    image: require("../../assets/images/onboarding-safety.png"),
-    title: "Safety First",
-    description:
-      "This app is for wellness purposes only and is not medical advice. Stop immediately if you experience pain, urinary urgency, or pelvic pressure.",
-  },
-  {
-    type: "guide",
-    image: require("../../assets/images/find-the-target.png"),
-    title: "Find the Target",
-    description:
-      "The pelvic floor is the hidden control system at the base of your body. Lift, don't clench \u2014 think elevator, not fist.",
-  },
-  {
-    type: "name",
-    title: "What's Your Name?",
-    description:
-      "We'll use your name to personalize your weekly progress updates.",
-  },
-  {
-    type: "anatomy",
-    title: "Personalize Your Experience",
-    description:
-      "Select your anatomy type to receive tailored health insights and exercise guidance.",
-  },
-  {
-    type: "settings",
-    title: "Set Your Preferences",
-    description:
-      "Customize the experience to match how you like to train. You can always adjust these in Settings later.",
-  },
-  {
-    image: require("../../assets/images/icon.png"),
-    title: "Start Your 7-Day Challenge",
-    description:
-      "Kick things off with a 7-day challenge — the first week of your full 12-week program. Each workout adapts to how you're progressing.",
-  },
+const BLUE = "#00AAFF";
+const BLUE_DIM = "rgba(0,170,255,0.15)";
+const BLUE_BORDER = "rgba(0,170,255,0.4)";
+const PINK = "#FF2D78";
+const PINK_DIM = "rgba(255,45,120,0.15)";
+const PINK_BORDER = "rgba(255,45,120,0.4)";
+const CARD_BG = "rgba(255,255,255,0.06)";
+const CARD_BORDER = "rgba(255,255,255,0.1)";
+const TEXT = "#F0F2FF";
+const TEXT_SEC = "rgba(240,242,255,0.65)";
+const TEXT_MUTED = "rgba(240,242,255,0.38)";
+const BG_GRADIENT: [string, string, string, string] = [
+  "#07081A",
+  "#0A0B22",
+  "#0D0E28",
+  "#070818",
 ];
 
-const springConfig: WithSpringConfig = {
-  damping: 15,
-  mass: 0.3,
-  stiffness: 150,
-  overshootClamping: true,
-  energyThreshold: 0.001,
-};
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+type Step = "gender" | "knowledge" | "tutorial" | "cta";
 
 export default function OnboardingScreen({
   onComplete,
 }: OnboardingScreenProps) {
-  const [currentPage, setCurrentPage] = useState(0);
-  const [selectedAnatomy, setSelectedAnatomy] = useState<AnatomyType>(null);
-  const [userName, setUserName] = useState("");
-  const [restDuration, setRestDuration] = useState(
-    defaultSettings.restDuration,
-  );
-  const [blockRestDuration, setBlockRestDuration] = useState(
-    defaultSettings.blockRestDuration,
-  );
   const insets = useSafeAreaInsets();
-  const { cp, isDarkMode, toggleDarkMode } = useThemePreference();
-  const { audioSettings, updateAudioSettings } = useAudio();
+  const [step, setStep] = React.useState<Step>("gender");
+  const [gender, setGender] = React.useState<AnatomyType>(null);
 
-  const screenOpacity = useSharedValue(0);
-
-  const screenAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: screenOpacity.value,
-  }));
+  const screenOpacity = useRef(new RNAnimated.Value(0)).current;
 
   useEffect(() => {
-    screenOpacity.value = withTiming(1, { duration: ANIM_DURATION_ENTER });
+    RNAnimated.timing(screenOpacity, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: true,
+    }).start();
   }, [screenOpacity]);
 
-  const isLastPage = currentPage === pages.length - 1;
-  const isAnatomyPage = pages[currentPage].type === "anatomy";
-  const isNamePage = pages[currentPage].type === "name";
-  const isSettingsPage = pages[currentPage].type === "settings";
-  const isGuidePage = pages[currentPage].type === "guide";
+  const fadeToStep = (next: Step) => {
+    RNAnimated.sequence([
+      RNAnimated.timing(screenOpacity, {
+        toValue: 0,
+        duration: 180,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setStep(next);
+      RNAnimated.timing(screenOpacity, {
+        toValue: 1,
+        duration: 280,
+        useNativeDriver: true,
+      }).start();
+    });
+  };
 
-  useEffect(() => {
-    if (isSettingsPage) {
-      storage.getSettings().then((s) => {
-        setRestDuration(s.restDuration);
-        setBlockRestDuration(s.blockRestDuration);
-      });
-    }
-  }, [isSettingsPage]);
+  const handleGenderSelect = (g: "male" | "female") => {
+    setGender(g);
+    fadeToStep("knowledge");
+  };
 
-  const handleNext = async () => {
-    if (isLastPage) {
-      trackOnboardingComplete({ anatomyType: selectedAnatomy });
-      screenOpacity.value = withTiming(
-        0,
-        { duration: ANIM_DURATION_ENTER },
-        (finished) => {
-          if (finished) {
-            runOnJS(onComplete)();
-          }
-        },
-      );
+  const handleKnowledge = (knows: boolean) => {
+    if (knows) {
+      fadeToStep("cta");
     } else {
-      setCurrentPage((prev) => prev + 1);
+      fadeToStep("tutorial");
     }
   };
 
-  const handleNameSubmit = async () => {
-    if (userName.trim()) {
-      await storage.saveSettings({ userName: userName.trim() });
-    }
-    setCurrentPage((prev) => prev + 1);
+  const handleTutorialDone = () => {
+    fadeToStep("cta");
   };
 
-  const handleAnatomySelect = async (type: AnatomyType) => {
-    setSelectedAnatomy(type);
-    await storage.saveSettings({ anatomyType: type });
-    setCurrentPage((prev) => prev + 1);
+  const handleStart = async () => {
+    await storage.saveSettings({ anatomyType: gender });
+    trackOnboardingComplete({ anatomyType: gender });
+    await storage.setOnboardingComplete();
+    onComplete();
   };
 
-  const handleSelectTheme = async (wantDark: boolean) => {
-    if (isDarkMode !== wantDark) {
-      await toggleDarkMode();
-    }
-  };
-
-  const handleRestDurationChange = async (value: number) => {
-    setRestDuration(value);
-    await storage.saveSettings({ restDuration: value });
-  };
-
-  const handleBlockRestDurationChange = async (value: number) => {
-    setBlockRestDuration(value);
-    await storage.saveSettings({ blockRestDuration: value });
-  };
-
-  const handleMusicToggle = async (enabled: boolean) => {
-    if (enabled) {
-      await updateAudioSettings({ selectedTracks: ALL_AMBIENT_TRACKS });
-    } else {
-      await updateAudioSettings({ selectedTracks: [] });
-    }
-  };
-
-  const musicEnabled = audioSettings.selectedTracks.length > 0;
+  const accent = gender === "female" ? PINK : BLUE;
+  const accentDim = gender === "female" ? PINK_DIM : BLUE_DIM;
+  const accentBorder = gender === "female" ? PINK_BORDER : BLUE_BORDER;
 
   return (
-    <Animated.View style={[styles.container, screenAnimatedStyle]}>
-      <LinearGradient
-        colors={cp.gradient as unknown as [string, string, ...string[]]}
-        style={StyleSheet.absoluteFill}
-      />
-      <View
-        style={[
-          styles.content,
-          {
-            paddingTop: insets.top + Spacing["3xl"],
-            paddingBottom: insets.bottom + Spacing.xl,
-          },
-        ]}
-      >
-        <View style={styles.pageContent}>
-          {isNamePage ? (
-            <Animated.View
-              key={currentPage}
-              entering={SlideInRight.duration(ANIM_DURATION_ENTER)}
-              exiting={SlideOutLeft.duration(ANIM_DURATION_EXIT_COMPLETE)}
-              style={styles.nameContainer}
-            >
-              <Feather
-                name="user"
-                size={64}
-                color={cp.neonGreen}
-                style={styles.nameIcon}
-              />
-              <ThemedText type="h1" style={[styles.title, { color: cp.text }]}>
-                {pages[currentPage].title}
-              </ThemedText>
-              <ThemedText
-                type="body"
-                style={[styles.description, { color: cp.textSecondary }]}
-              >
-                {pages[currentPage].description}
-              </ThemedText>
+    <RNAnimated.View style={[styles.root, { opacity: screenOpacity }]}>
+      <LinearGradient colors={BG_GRADIENT} style={StyleSheet.absoluteFill} />
 
-              <TextInput
-                style={[
-                  styles.nameInput,
-                  {
-                    backgroundColor: cp.cardBorder,
-                    color: cp.text,
-                    borderColor: `${cp.neonGreen}4D`,
-                  },
-                ]}
-                placeholder="Enter your name"
-                placeholderTextColor={cp.textMuted}
-                value={userName}
-                onChangeText={setUserName}
-                autoCapitalize="words"
-                autoCorrect={false}
-                returnKeyType="done"
-                onSubmitEditing={handleNameSubmit}
-              />
-
-              <Pressable style={styles.nameButton} onPress={handleNameSubmit}>
-                <LinearGradient
-                  colors={[cp.neonGreen, cp.neonCyan]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.nameButtonGradient}
-                >
-                  <ThemedText style={styles.nameButtonText}>
-                    {userName.trim() ? "Continue" : "Skip"}
-                  </ThemedText>
-                </LinearGradient>
-              </Pressable>
-            </Animated.View>
-          ) : isAnatomyPage ? (
-            <Animated.View
-              key={currentPage}
-              entering={SlideInRight.duration(ANIM_DURATION_ENTER)}
-              exiting={SlideOutLeft.duration(ANIM_DURATION_EXIT_COMPLETE)}
-              style={styles.anatomyContainer}
-            >
-              <ThemedText type="h1" style={[styles.title, { color: cp.text }]}>
-                {pages[currentPage].title}
-              </ThemedText>
-              <ThemedText
-                type="body"
-                style={[styles.description, { color: cp.textSecondary }]}
-              >
-                {pages[currentPage].description}
-              </ThemedText>
-
-              <View style={styles.anatomyButtons}>
-                <Pressable
-                  style={styles.anatomyButton}
-                  onPress={() => handleAnatomySelect("female")}
-                >
-                  <LinearGradient
-                    colors={[cp.neonPink, "#FF6699"]}
-                    style={styles.anatomyButtonGradient}
-                  >
-                    <Feather name="heart" size={32} color={cp.text} />
-                    <ThemedText
-                      style={[styles.anatomyButtonText, { color: cp.text }]}
-                    >
-                      Female
-                    </ThemedText>
-                  </LinearGradient>
-                </Pressable>
-
-                <Pressable
-                  style={styles.anatomyButton}
-                  onPress={() => handleAnatomySelect("male")}
-                >
-                  <LinearGradient
-                    colors={[cp.neonCyan, "#00CCFF"]}
-                    style={styles.anatomyButtonGradient}
-                  >
-                    <Feather name="shield" size={32} color={cp.text} />
-                    <ThemedText
-                      style={[styles.anatomyButtonText, { color: cp.text }]}
-                    >
-                      Male
-                    </ThemedText>
-                  </LinearGradient>
-                </Pressable>
-              </View>
-            </Animated.View>
-          ) : isGuidePage ? (
-            <Animated.View
-              key={currentPage}
-              entering={SlideInRight.duration(ANIM_DURATION_ENTER)}
-              exiting={SlideOutLeft.duration(ANIM_DURATION_EXIT_COMPLETE)}
-              style={styles.guideContainer}
-            >
-              <ScrollView
-                style={styles.guideScroll}
-                contentContainerStyle={styles.guideScrollContent}
-                showsVerticalScrollIndicator={false}
-              >
-                <Image
-                  source={pages[currentPage].image!}
-                  style={styles.guideImage}
-                  resizeMode="contain"
-                />
-                <ThemedText
-                  type="h1"
-                  style={[styles.title, { color: cp.text }]}
-                >
-                  {pages[currentPage].title}
-                </ThemedText>
-                <ThemedText
-                  type="body"
-                  style={[styles.description, { color: cp.textSecondary }]}
-                >
-                  {pages[currentPage].description}
-                </ThemedText>
-              </ScrollView>
-            </Animated.View>
-          ) : isSettingsPage ? (
-            <Animated.View
-              key={currentPage}
-              entering={SlideInRight.duration(ANIM_DURATION_ENTER)}
-              exiting={SlideOutLeft.duration(ANIM_DURATION_EXIT_COMPLETE)}
-              style={styles.settingsContainer}
-            >
-              <ThemedText type="h1" style={[styles.title, { color: cp.text }]}>
-                {pages[currentPage].title}
-              </ThemedText>
-              <ThemedText
-                type="body"
-                style={[styles.description, { color: cp.textSecondary }]}
-              >
-                {pages[currentPage].description}
-              </ThemedText>
-
-              <ScrollView
-                style={styles.settingsScroll}
-                contentContainerStyle={styles.settingsScrollContent}
-                showsVerticalScrollIndicator={false}
-              >
-                <View
-                  style={[
-                    styles.settingsCard,
-                    { backgroundColor: cp.cardBg, borderColor: cp.cardBorder },
-                  ]}
-                >
-                  <View style={styles.settingsSectionHeader}>
-                    <Feather name="sun" size={16} color={cp.neonCyan} />
-                    <Text
-                      style={[
-                        styles.settingsSectionLabel,
-                        { color: cp.neonCyan },
-                      ]}
-                    >
-                      THEME
-                    </Text>
-                  </View>
-                  <View style={styles.themeCards}>
-                    <Pressable
-                      style={[
-                        styles.themeCard,
-                        {
-                          backgroundColor: isDarkMode
-                            ? `${cp.neonGreen}22`
-                            : cp.cardBorder,
-                          borderColor: isDarkMode ? cp.neonGreen : cp.divider,
-                        },
-                      ]}
-                      onPress={() => handleSelectTheme(true)}
-                    >
-                      <View
-                        style={[styles.themePreview, styles.themePreviewDark]}
-                      >
-                        <View style={styles.themePreviewBar} />
-                        <View
-                          style={[
-                            styles.themePreviewBar,
-                            { opacity: 0.6, width: "70%" },
-                          ]}
-                        />
-                      </View>
-                      <Feather
-                        name="moon"
-                        size={18}
-                        color={isDarkMode ? cp.neonGreen : cp.textMuted}
-                      />
-                      <Text
-                        style={[
-                          styles.themeCardLabel,
-                          { color: isDarkMode ? cp.neonGreen : cp.textMuted },
-                        ]}
-                      >
-                        Dark
-                      </Text>
-                      {isDarkMode ? (
-                        <View
-                          style={[
-                            styles.themeCheckmark,
-                            { backgroundColor: cp.neonGreen },
-                          ]}
-                        >
-                          <Feather name="check" size={10} color="#000" />
-                        </View>
-                      ) : null}
-                    </Pressable>
-
-                    <Pressable
-                      style={[
-                        styles.themeCard,
-                        {
-                          backgroundColor: !isDarkMode
-                            ? `${cp.neonGreen}22`
-                            : cp.cardBorder,
-                          borderColor: !isDarkMode ? cp.neonGreen : cp.divider,
-                        },
-                      ]}
-                      onPress={() => handleSelectTheme(false)}
-                    >
-                      <View
-                        style={[styles.themePreview, styles.themePreviewLight]}
-                      >
-                        <View
-                          style={[
-                            styles.themePreviewBar,
-                            { backgroundColor: "rgba(0,0,0,0.2)" },
-                          ]}
-                        />
-                        <View
-                          style={[
-                            styles.themePreviewBar,
-                            {
-                              backgroundColor: "rgba(0,0,0,0.12)",
-                              width: "70%",
-                            },
-                          ]}
-                        />
-                      </View>
-                      <Feather
-                        name="sun"
-                        size={18}
-                        color={!isDarkMode ? cp.neonGreen : cp.textMuted}
-                      />
-                      <Text
-                        style={[
-                          styles.themeCardLabel,
-                          { color: !isDarkMode ? cp.neonGreen : cp.textMuted },
-                        ]}
-                      >
-                        Light
-                      </Text>
-                      {!isDarkMode ? (
-                        <View
-                          style={[
-                            styles.themeCheckmark,
-                            { backgroundColor: cp.neonGreen },
-                          ]}
-                        >
-                          <Feather name="check" size={10} color="#000" />
-                        </View>
-                      ) : null}
-                    </Pressable>
-                  </View>
-                </View>
-
-                <View
-                  style={[
-                    styles.settingsCard,
-                    { backgroundColor: cp.cardBg, borderColor: cp.cardBorder },
-                  ]}
-                >
-                  <View style={styles.settingsSectionHeader}>
-                    <Feather name="clock" size={16} color={cp.neonCyan} />
-                    <Text
-                      style={[
-                        styles.settingsSectionLabel,
-                        { color: cp.neonCyan },
-                      ]}
-                    >
-                      WORKOUT TIMINGS
-                    </Text>
-                  </View>
-
-                  <View style={styles.sliderBlock}>
-                    <View style={styles.sliderRow}>
-                      <Text style={[styles.sliderLabel, { color: cp.text }]}>
-                        Rest between reps
-                      </Text>
-                      <Text
-                        style={[styles.sliderValue, { color: cp.neonGreen }]}
-                      >
-                        {restDuration}s
-                      </Text>
-                    </View>
-                    <Slider
-                      style={styles.slider}
-                      minimumValue={2}
-                      maximumValue={10}
-                      step={1}
-                      value={restDuration}
-                      onValueChange={(value: number) => setRestDuration(value)}
-                      onSlidingComplete={handleRestDurationChange}
-                      minimumTrackTintColor={cp.neonGreen}
-                      maximumTrackTintColor={cp.inputBg}
-                      thumbTintColor={cp.neonGreen}
-                    />
-                    <Text style={[styles.sliderHint, { color: cp.textMuted }]}>
-                      2 – 10 seconds
-                    </Text>
-                  </View>
-
-                  <View
-                    style={[
-                      styles.sliderDivider,
-                      { backgroundColor: cp.divider },
-                    ]}
-                  />
-
-                  <View style={styles.sliderBlock}>
-                    <View style={styles.sliderRow}>
-                      <Text style={[styles.sliderLabel, { color: cp.text }]}>
-                        Rest between blocks
-                      </Text>
-                      <Text
-                        style={[styles.sliderValue, { color: cp.neonCyan }]}
-                      >
-                        {blockRestDuration}s
-                      </Text>
-                    </View>
-                    <Slider
-                      style={styles.slider}
-                      minimumValue={10}
-                      maximumValue={45}
-                      step={5}
-                      value={blockRestDuration}
-                      onValueChange={(value: number) =>
-                        setBlockRestDuration(value)
-                      }
-                      onSlidingComplete={handleBlockRestDurationChange}
-                      minimumTrackTintColor={cp.neonCyan}
-                      maximumTrackTintColor={cp.inputBg}
-                      thumbTintColor={cp.neonCyan}
-                    />
-                    <Text style={[styles.sliderHint, { color: cp.textMuted }]}>
-                      10 – 45 seconds
-                    </Text>
-                  </View>
-                </View>
-
-                <View
-                  style={[
-                    styles.settingsCard,
-                    { backgroundColor: cp.cardBg, borderColor: cp.cardBorder },
-                  ]}
-                >
-                  <View style={styles.settingsSectionHeader}>
-                    <Feather name="music" size={16} color={cp.neonCyan} />
-                    <Text
-                      style={[
-                        styles.settingsSectionLabel,
-                        { color: cp.neonCyan },
-                      ]}
-                    >
-                      AMBIENT MUSIC
-                    </Text>
-                  </View>
-                  <View style={styles.musicToggleRow}>
-                    <View style={styles.musicToggleText}>
-                      <Text style={[styles.sliderLabel, { color: cp.text }]}>
-                        Play music during workouts
-                      </Text>
-                      <Text
-                        style={[
-                          styles.sliderHint,
-                          { color: cp.textMuted, marginTop: 2 },
-                        ]}
-                      >
-                        {musicEnabled
-                          ? `All ${ALL_AMBIENT_TRACKS.length} tracks enabled`
-                          : "Off"}
-                      </Text>
-                    </View>
-                    <Switch
-                      value={musicEnabled}
-                      onValueChange={handleMusicToggle}
-                      trackColor={{
-                        false: cp.inputBg,
-                        true: `${cp.neonGreen}66`,
-                      }}
-                      thumbColor={musicEnabled ? cp.neonGreen : cp.textMuted}
-                      ios_backgroundColor={cp.inputBg}
-                    />
-                  </View>
-                  <Text
-                    style={[
-                      styles.musicHint,
-                      { color: cp.textMuted, borderTopColor: cp.divider },
-                    ]}
-                  >
-                    Manage individual tracks in Settings after setup.
-                  </Text>
-                </View>
-              </ScrollView>
-            </Animated.View>
-          ) : (
-            <Animated.View
-              key={currentPage}
-              entering={SlideInRight.duration(ANIM_DURATION_ENTER)}
-              exiting={SlideOutLeft.duration(ANIM_DURATION_EXIT_COMPLETE)}
-              style={styles.defaultPageContainer}
-            >
-              <View style={styles.imageContainer}>
-                <Image
-                  source={pages[currentPage].image}
-                  style={styles.image}
-                  resizeMode="contain"
-                />
-              </View>
-
-              <View style={styles.textContainer}>
-                <ThemedText
-                  type="h1"
-                  style={[styles.title, { color: cp.text }]}
-                >
-                  {pages[currentPage].title}
-                </ThemedText>
-                <ThemedText
-                  type="body"
-                  style={[styles.description, { color: cp.textSecondary }]}
-                >
-                  {pages[currentPage].description}
-                </ThemedText>
-              </View>
-            </Animated.View>
-          )}
-        </View>
-
-        <View style={styles.footer}>
-          <View style={styles.pagination}>
-            {pages.map((_, index) => (
-              <PageDot
-                key={index}
-                active={index === currentPage}
-                color={cp.neonGreen}
-              />
-            ))}
-          </View>
-
-          {!isAnatomyPage && !isNamePage ? (
-            <NeonButton onPress={handleNext} cp={cp}>
-              {isLastPage ? "Start your 7-Day Challenge" : "Continue"}
-            </NeonButton>
-          ) : null}
-        </View>
-      </View>
-    </Animated.View>
+      {step === "gender" && (
+        <GenderScreen insets={insets} onSelect={handleGenderSelect} />
+      )}
+      {step === "knowledge" && (
+        <KnowledgeScreen
+          insets={insets}
+          accent={accent}
+          onAnswer={handleKnowledge}
+        />
+      )}
+      {step === "tutorial" && (
+        <TutorialScreen
+          insets={insets}
+          gender={gender}
+          accent={accent}
+          accentDim={accentDim}
+          accentBorder={accentBorder}
+          onDone={handleTutorialDone}
+        />
+      )}
+      {step === "cta" && (
+        <CtaScreen
+          insets={insets}
+          gender={gender}
+          accent={accent}
+          accentDim={accentDim}
+          onStart={handleStart}
+        />
+      )}
+    </RNAnimated.View>
   );
 }
 
-function PageDot({ active, color }: { active: boolean; color: string }) {
-  const animatedStyle = useAnimatedStyle(() => ({
-    width: withSpring(active ? 24 : 8, { damping: 15, stiffness: 150 }),
-    opacity: withSpring(active ? 1 : 0.4, { damping: 15, stiffness: 150 }),
-  }));
-
+function GenderScreen({
+  insets,
+  onSelect,
+}: {
+  insets: ReturnType<typeof useSafeAreaInsets>;
+  onSelect: (g: "male" | "female") => void;
+}) {
   return (
-    <View style={active ? [styles.dotGlow, { shadowColor: color }] : undefined}>
-      <Animated.View
-        style={[styles.dot, { backgroundColor: color }, animatedStyle]}
-      />
+    <View
+      style={[
+        styles.screen,
+        { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 24 },
+      ]}
+    >
+      <View style={styles.genderHeader}>
+        <Text style={styles.logoText}>
+          <Text style={{ color: TEXT }}>PULSE</Text>
+          <Text style={{ color: BLUE }}>KEGEL</Text>
+        </Text>
+        <Text style={styles.logoTagline}>STRONGER. CONFIDENT. IN CONTROL.</Text>
+      </View>
+
+      <View style={styles.genderHeroRow}>
+        <Image
+          source={MAN_HERO}
+          style={styles.genderHeroImage}
+          resizeMode="cover"
+        />
+        <Image
+          source={WOMAN_HERO}
+          style={[styles.genderHeroImage, { marginLeft: -8 }]}
+          resizeMode="cover"
+        />
+      </View>
+
+      <View style={styles.genderTextBlock}>
+        <Text style={styles.genderHeadline}>
+          Most people lose strength in their pelvic floor over time.
+        </Text>
+        <Text style={styles.genderSubline}>
+          You can train it — and you should.
+        </Text>
+        <Text style={[styles.genderCta, { color: BLUE }]}>
+          {"Let's get started."}
+        </Text>
+      </View>
+
+      <View style={styles.genderButtons}>
+        <GenderButton
+          label="I'm a Man"
+          icon="male"
+          color={BLUE}
+          dimColor={BLUE_DIM}
+          borderColor={BLUE_BORDER}
+          onPress={() => onSelect("male")}
+          testID="button-gender-man"
+        />
+        <GenderButton
+          label="I'm a Woman"
+          icon="female"
+          color={PINK}
+          dimColor={PINK_DIM}
+          borderColor={PINK_BORDER}
+          onPress={() => onSelect("female")}
+          testID="button-gender-woman"
+        />
+      </View>
+
+      <View style={styles.footer}>
+        <Feather name="lock" size={11} color={TEXT_MUTED} />
+        <Text style={styles.footerText}>Private. Secure. Just for you.</Text>
+      </View>
     </View>
   );
 }
 
-function NeonButton({
+function GenderButton({
+  label,
+  icon,
+  color,
+  dimColor,
+  borderColor,
   onPress,
-  children,
-  cp,
+  testID,
 }: {
+  label: string;
+  icon: string;
+  color: string;
+  dimColor: string;
+  borderColor: string;
   onPress: () => void;
-  children: React.ReactNode;
-  cp: { neonGreen: string; neonCyan: string };
+  testID?: string;
+}) {
+  return (
+    <Pressable
+      testID={testID}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.genderBtn,
+        {
+          backgroundColor: pressed ? color + "22" : dimColor,
+          borderColor: pressed ? color : borderColor,
+        },
+      ]}
+    >
+      <Text style={[styles.genderBtnSymbol, { color }]}>
+        {icon === "male" ? "♂" : "♀"}
+      </Text>
+      <Text style={[styles.genderBtnLabel, { color }]}>{label}</Text>
+      <Feather
+        name="chevron-right"
+        size={18}
+        color={color}
+        style={{ marginLeft: "auto" }}
+      />
+    </Pressable>
+  );
+}
+
+function KnowledgeScreen({
+  insets,
+  accent,
+  onAnswer,
+}: {
+  insets: ReturnType<typeof useSafeAreaInsets>;
+  accent: string;
+  onAnswer: (knows: boolean) => void;
 }) {
   const scale = useSharedValue(1);
+  const glow = useSharedValue(0.5);
 
-  const animatedStyle = useAnimatedStyle(() => ({
+  useEffect(() => {
+    scale.value = withRepeat(
+      withSequence(
+        withTiming(1.08, {
+          duration: ANIM_DURATION_HOLD_PULSE,
+          easing: ANIM_EASING_PULSE,
+        }),
+        withTiming(1.0, {
+          duration: ANIM_DURATION_HOLD_PULSE,
+          easing: ANIM_EASING_PULSE,
+        }),
+      ),
+      -1,
+      false,
+    );
+    glow.value = withRepeat(
+      withSequence(
+        withTiming(1, {
+          duration: ANIM_DURATION_HOLD_PULSE,
+          easing: ANIM_EASING_PULSE,
+        }),
+        withTiming(0.4, {
+          duration: ANIM_DURATION_HOLD_PULSE,
+          easing: ANIM_EASING_PULSE,
+        }),
+      ),
+      -1,
+      false,
+    );
+  }, [scale, glow]);
+
+  const ringStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: glow.value,
+  }));
+
+  const circleStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
-  const handlePressIn = () => {
-    scale.value = withSpring(0.98, springConfig);
-  };
-
-  const handlePressOut = () => {
-    scale.value = withSpring(1, springConfig);
-  };
+  const CIRCLE_SIZE = Math.min(width * 0.52, 220);
 
   return (
-    <AnimatedPressable
-      onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      style={[styles.buttonWrapper, animatedStyle]}
+    <View
+      style={[
+        styles.screen,
+        styles.centered,
+        { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 32 },
+      ]}
     >
-      <View style={[styles.buttonGlow, { shadowColor: cp.neonGreen }]}>
-        <LinearGradient
-          colors={[cp.neonGreen, cp.neonCyan, cp.neonGreen]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.button}
-        >
-          <ThemedText type="body" style={styles.buttonText}>
-            {children}
-          </ThemedText>
-        </LinearGradient>
+      <View style={styles.knowledgeLogo}>
+        <Text style={styles.logoText}>
+          <Text style={{ color: TEXT }}>PULSE</Text>
+          <Text style={{ color: accent }}>KEGEL</Text>
+        </Text>
       </View>
-    </AnimatedPressable>
+
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+        <View style={{ alignItems: "center", justifyContent: "center" }}>
+          <Animated.View
+            style={[
+              styles.qGlow,
+              {
+                width: CIRCLE_SIZE + 40,
+                height: CIRCLE_SIZE + 40,
+                borderRadius: (CIRCLE_SIZE + 40) / 2,
+                shadowColor: accent,
+              },
+              ringStyle,
+            ]}
+          />
+          <Animated.View style={[circleStyle, { position: "absolute" }]}>
+            <Svg width={CIRCLE_SIZE} height={CIRCLE_SIZE}>
+              <Circle
+                cx={CIRCLE_SIZE / 2}
+                cy={CIRCLE_SIZE / 2}
+                r={CIRCLE_SIZE / 2 - 3}
+                stroke={accent}
+                strokeWidth={2.5}
+                fill="rgba(0,0,0,0.35)"
+              />
+              <SvgText
+                x={CIRCLE_SIZE / 2}
+                y={CIRCLE_SIZE / 2 + 28}
+                textAnchor="middle"
+                fontSize={CIRCLE_SIZE * 0.52}
+                fontWeight="300"
+                fill={accent}
+              >
+                ?
+              </SvgText>
+            </Svg>
+          </Animated.View>
+        </View>
+
+        <Text style={styles.knowledgeHeadline}>
+          Do you know how to do Kegels?
+        </Text>
+
+        <View style={styles.knowledgeButtons}>
+          <OptionButton
+            icon="check"
+            label="Yes, I know how"
+            accent={accent}
+            onPress={() => onAnswer(true)}
+            testID="button-knows-yes"
+          />
+          <OptionButton
+            icon="x"
+            label="No, show me how"
+            accent={TEXT_MUTED}
+            onPress={() => onAnswer(false)}
+            testID="button-knows-no"
+          />
+        </View>
+      </View>
+
+      <View style={styles.footer}>
+        <Feather name="shield" size={11} color={TEXT_MUTED} />
+        <Text style={styles.footerText}>Takes less than 1 minute</Text>
+      </View>
+    </View>
+  );
+}
+
+function OptionButton({
+  icon,
+  label,
+  accent,
+  onPress,
+  testID,
+}: {
+  icon: "check" | "x";
+  label: string;
+  accent: string;
+  onPress: () => void;
+  testID?: string;
+}) {
+  return (
+    <Pressable
+      testID={testID}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.optionBtn,
+        {
+          backgroundColor: pressed ? "rgba(255,255,255,0.08)" : CARD_BG,
+          borderColor: pressed ? accent : CARD_BORDER,
+        },
+      ]}
+    >
+      <View
+        style={[
+          styles.optionIcon,
+          { backgroundColor: accent + "22", borderColor: accent + "55" },
+        ]}
+      >
+        <Feather name={icon} size={18} color={accent} />
+      </View>
+      <Text style={[styles.optionLabel, { color: TEXT }]}>{label}</Text>
+      <Feather name="chevron-right" size={18} color={TEXT_MUTED} />
+    </Pressable>
+  );
+}
+
+function TutorialScreen({
+  insets,
+  gender,
+  accent,
+  accentDim,
+  accentBorder,
+  onDone,
+}: {
+  insets: ReturnType<typeof useSafeAreaInsets>;
+  gender: AnatomyType;
+  accent: string;
+  accentDim: string;
+  accentBorder: string;
+  onDone: () => void;
+}) {
+  const isMale = gender !== "female";
+
+  const steps = isMale
+    ? [
+        {
+          image: MALE_STEP1,
+          title: "Find the muscle",
+          body: "Squeeze the same muscle you use to stop your pee mid-flow.",
+        },
+        {
+          image: MALE_STEP2,
+          title: "Activate it",
+          body: "Now lift your balls upward using just that muscle. That's a Kegel. No one can see you doing it.",
+        },
+      ]
+    : [
+        {
+          image: FEMALE_STEP1,
+          title: "Find the muscle",
+          body: "Gently squeeze the same muscles you use to stop the flow of urine.",
+        },
+        {
+          image: FEMALE_STEP2,
+          title: "Activate it",
+          body: "Now slowly draw that area upward and inward — like you're lifting a marble inside you. That's a Kegel.",
+        },
+      ];
+
+  const STEP_IMAGE_H = Math.min(height * 0.2, 160);
+
+  return (
+    <View
+      style={[
+        styles.screen,
+        { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 24 },
+      ]}
+    >
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.tutorialScroll}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.tutorialHeadline}>How to do Kegels</Text>
+
+        <View
+          style={[
+            styles.genderPill,
+            { backgroundColor: accentDim, borderColor: accentBorder },
+          ]}
+        >
+          <Text style={[styles.genderPillText, { color: accent }]}>
+            {isMale ? "For Men" : "For Women"}
+          </Text>
+        </View>
+
+        {steps.map((s, idx) => (
+          <View
+            key={idx}
+            style={[
+              styles.stepCard,
+              { backgroundColor: CARD_BG, borderColor: CARD_BORDER },
+            ]}
+          >
+            <Image
+              source={s.image}
+              style={[styles.stepImage, { height: STEP_IMAGE_H }]}
+              resizeMode="cover"
+            />
+            <View style={styles.stepBody}>
+              <View
+                style={[
+                  styles.stepBadge,
+                  { backgroundColor: accentDim, borderColor: accentBorder },
+                ]}
+              >
+                <Text style={[styles.stepBadgeText, { color: accent }]}>
+                  {idx + 1}
+                </Text>
+              </View>
+              <Text style={styles.stepTitle}>{s.title}</Text>
+              <Text style={styles.stepDesc}>{s.body}</Text>
+            </View>
+          </View>
+        ))}
+
+        <View style={styles.dotRow}>
+          {[0, 1, 2].map((i) => (
+            <View
+              key={i}
+              style={[
+                styles.dot,
+                i === 1
+                  ? { backgroundColor: accent, width: 20 }
+                  : { backgroundColor: TEXT_MUTED, width: 8 },
+              ]}
+            />
+          ))}
+        </View>
+      </ScrollView>
+
+      <View style={styles.tutorialFooter}>
+        <PrimaryButton
+          label="Got it — Let's begin"
+          accent={accent}
+          onPress={onDone}
+          testID="button-tutorial-done"
+        />
+      </View>
+    </View>
+  );
+}
+
+function CtaScreen({
+  insets,
+  gender,
+  accent,
+  accentDim,
+  onStart,
+}: {
+  insets: ReturnType<typeof useSafeAreaInsets>;
+  gender: AnatomyType;
+  accent: string;
+  accentDim: string;
+  onStart: () => void;
+}) {
+  const isMale = gender !== "female";
+
+  const headline = isMale
+    ? "Your pelvic floor affects your bladder control, confidence, and performance."
+    : "Your pelvic floor affects bladder control, core strength, and intimacy.";
+
+  const subline = isMale
+    ? "Most men never train it."
+    : "Most women only start training it after they notice a problem.";
+
+  const benefits = isMale
+    ? [
+        {
+          icon: "shield" as const,
+          label: "Control",
+          sub: "Stronger bladder control",
+        },
+        {
+          icon: "user" as const,
+          label: "Confidence",
+          sub: "Feel ready every day",
+        },
+        {
+          icon: "zap" as const,
+          label: "Performance",
+          sub: "Show up at your best",
+        },
+      ]
+    : [
+        {
+          icon: "shield" as const,
+          label: "Control",
+          sub: "Feel confident every day",
+        },
+        {
+          icon: "layers" as const,
+          label: "Core",
+          sub: "Stronger from the inside out",
+        },
+        {
+          icon: "heart" as const,
+          label: "Intimacy",
+          sub: "Stronger connection, more confidence",
+        },
+      ];
+
+  const HERO_H = Math.min(height * 0.32, 280);
+
+  return (
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={[
+        styles.ctaScroll,
+        { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 24 },
+      ]}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.ctaLogoRow}>
+        <Text style={styles.logoText}>
+          <Text style={{ color: TEXT }}>PULSE</Text>
+          <Text style={{ color: accent }}>KEGEL</Text>
+        </Text>
+      </View>
+
+      <Image
+        source={isMale ? MAN_HERO : WOMAN_HERO}
+        style={[styles.ctaHero, { height: HERO_H }]}
+        resizeMode="cover"
+      />
+
+      <View style={styles.ctaTextBlock}>
+        <Text style={styles.ctaHeadline}>{headline}</Text>
+        <Text style={[styles.ctaSubline, { color: accent }]}>{subline}</Text>
+      </View>
+
+      <View style={styles.benefitsRow}>
+        {benefits.map((b) => (
+          <View key={b.label} style={styles.benefitItem}>
+            <View style={[styles.benefitIcon, { backgroundColor: accentDim }]}>
+              <Feather name={b.icon} size={18} color={accent} />
+            </View>
+            <Text style={styles.benefitLabel}>{b.label}</Text>
+            <Text style={styles.benefitSub}>{b.sub}</Text>
+          </View>
+        ))}
+      </View>
+
+      <View style={styles.ctaButtonBlock}>
+        <PrimaryButton
+          label="Start My 7-Day Challenge"
+          accent={accent}
+          icon="send"
+          onPress={onStart}
+          testID="button-start-challenge"
+        />
+        <View style={styles.footer}>
+          <Feather name="lock" size={11} color={TEXT_MUTED} />
+          <Text style={styles.footerText}>
+            Takes less than 5 minutes a day. Your data stays private.
+          </Text>
+        </View>
+      </View>
+    </ScrollView>
+  );
+}
+
+function PrimaryButton({
+  label,
+  accent,
+  icon,
+  onPress,
+  testID,
+}: {
+  label: string;
+  accent: string;
+  icon?: string;
+  onPress: () => void;
+  testID?: string;
+}) {
+  const scale = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Animated.View style={[styles.primaryBtnWrapper, animStyle]}>
+      <Pressable
+        testID={testID}
+        onPress={onPress}
+        onPressIn={() => {
+          scale.value = withTiming(0.97, {
+            duration: ANIM_DURATION_RESET_FAST,
+          });
+        }}
+        onPressOut={() => {
+          scale.value = withTiming(1, { duration: ANIM_DURATION_MICRO });
+        }}
+        style={[
+          styles.primaryBtn,
+          { backgroundColor: accent, shadowColor: accent },
+        ]}
+      >
+        {icon ? (
+          <Feather
+            name={icon as "send"}
+            size={18}
+            color="#fff"
+            style={{ marginRight: 8 }}
+          />
+        ) : null}
+        <Text style={styles.primaryBtnText}>{label}</Text>
+        <Feather
+          name="chevron-right"
+          size={18}
+          color="#fff"
+          style={{ marginLeft: 4 }}
+        />
+      </Pressable>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
   },
-  content: {
+  screen: {
     flex: 1,
     paddingHorizontal: Spacing.xl,
   },
-  pageContent: {
-    flex: 1,
-    justifyContent: "center",
+  centered: {
+    alignItems: "stretch",
   },
-  defaultPageContainer: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  imageContainer: {
-    alignItems: "center",
-    marginBottom: Spacing["4xl"],
-  },
-  image: {
-    width: width * 0.6,
-    height: width * 0.6,
-    borderRadius: BorderRadius.xl,
-  },
-  textContainer: {
-    alignItems: "center",
-  },
-  title: {
+
+  logoText: {
+    fontSize: 22,
+    fontWeight: "800",
+    letterSpacing: 1.5,
     textAlign: "center",
-    marginBottom: Spacing.lg,
   },
-  description: {
+  logoTagline: {
+    fontSize: 10,
+    fontWeight: "600",
+    letterSpacing: 1.8,
+    color: TEXT_MUTED,
     textAlign: "center",
-    lineHeight: 24,
-    paddingHorizontal: Spacing.lg,
+    marginTop: 2,
   },
-  footer: {
-    paddingBottom: Spacing.lg,
+
+  // Gender screen
+  genderHeader: {
+    alignItems: "center",
+    marginBottom: 12,
   },
-  pagination: {
+  genderHeroRow: {
     flexDirection: "row",
     justifyContent: "center",
+    alignItems: "flex-end",
+    flex: 1,
+    overflow: "hidden",
+    borderRadius: BorderRadius.lg,
+    marginHorizontal: -Spacing.xl,
+  },
+  genderHeroImage: {
+    width: "50%",
+    height: "100%",
+  },
+  genderTextBlock: {
     alignItems: "center",
-    marginBottom: Spacing["2xl"],
-    gap: Spacing.sm,
+    paddingVertical: 20,
+    paddingHorizontal: 8,
+  },
+  genderHeadline: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: TEXT,
+    textAlign: "center",
+    lineHeight: 32,
+  },
+  genderSubline: {
+    fontSize: 16,
+    color: TEXT_SEC,
+    textAlign: "center",
+    marginTop: 8,
+  },
+  genderCta: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginTop: 6,
+  },
+  genderButtons: {
+    gap: 12,
+    marginBottom: 16,
+  },
+  genderBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+    gap: 12,
+  },
+  genderBtnSymbol: {
+    fontSize: 22,
+    fontWeight: "300",
+    width: 26,
+    textAlign: "center",
+  },
+  genderBtnLabel: {
+    fontSize: 17,
+    fontWeight: "600",
+    flex: 1,
+  },
+
+  // Knowledge screen
+  knowledgeLogo: {
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  knowledgeHeadline: {
+    fontSize: 26,
+    fontWeight: "700",
+    color: TEXT,
+    textAlign: "center",
+    marginTop: 36,
+    lineHeight: 34,
+    paddingHorizontal: 8,
+  },
+  qGlow: {
+    position: "absolute",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.7,
+    shadowRadius: 32,
+    elevation: 20,
+    backgroundColor: "transparent",
+  },
+  knowledgeButtons: {
+    gap: 12,
+    marginTop: 36,
+    width: "100%",
+  },
+  optionBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 18,
+    paddingHorizontal: 18,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    gap: 14,
+  },
+  optionIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  optionLabel: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+
+  // Tutorial screen
+  tutorialScroll: {
+    paddingBottom: 16,
+    gap: 16,
+    alignItems: "center",
+  },
+  tutorialHeadline: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: TEXT,
+    textAlign: "center",
+    marginTop: 8,
+  },
+  genderPill: {
+    paddingVertical: 5,
+    paddingHorizontal: 16,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+  },
+  genderPillText: {
+    fontSize: 13,
+    fontWeight: "600",
+    letterSpacing: 0.5,
+  },
+  stepCard: {
+    width: "100%",
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  stepImage: {
+    width: "100%",
+  },
+  stepBody: {
+    padding: 16,
+    gap: 6,
+  },
+  stepBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  stepBadgeText: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  stepTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: TEXT,
+  },
+  stepDesc: {
+    fontSize: 14,
+    color: TEXT_SEC,
+    lineHeight: 20,
+  },
+  dotRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 4,
   },
   dot: {
     height: 8,
     borderRadius: 4,
   },
-  dotGlow: {
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 8,
-    elevation: 8,
+  tutorialFooter: {
+    paddingTop: 12,
+    paddingBottom: 4,
   },
-  buttonWrapper: {
+
+  // CTA screen
+  ctaScroll: {
+    paddingHorizontal: Spacing.xl,
+    gap: 20,
+  },
+  ctaLogoRow: {
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  ctaHero: {
     width: "100%",
-  },
-  buttonGlow: {
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 16,
-    elevation: 12,
-  },
-  button: {
-    height: Spacing.buttonHeight,
-    borderRadius: BorderRadius.full,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  buttonText: {
-    fontWeight: "600",
-    color: "#000",
-  },
-  anatomyContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  anatomyButtons: {
-    flexDirection: "row",
-    gap: Spacing.lg,
-    marginTop: Spacing["3xl"],
-  },
-  anatomyButton: {
-    borderRadius: BorderRadius.xl,
-    overflow: "hidden",
-  },
-  anatomyButtonGradient: {
-    paddingVertical: Spacing["2xl"],
-    paddingHorizontal: Spacing["2xl"],
-    alignItems: "center",
-    justifyContent: "center",
-    gap: Spacing.md,
-    minWidth: 120,
-  },
-  anatomyButtonText: {
-    fontWeight: "600",
-    fontSize: 16,
-  },
-  guideContainer: {
-    flex: 1,
-  },
-  guideScroll: {
-    flex: 1,
-  },
-  guideScrollContent: {
-    alignItems: "center",
-    paddingBottom: Spacing.lg,
-  },
-  guideImage: {
-    width: width * 0.9,
-    height: width * 0.9 * (1024 / 576),
-    marginBottom: Spacing.xl,
-    borderRadius: BorderRadius.xl,
-  },
-  nameContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: Spacing.lg,
-  },
-  nameIcon: {
-    marginBottom: Spacing.xl,
-  },
-  nameInput: {
-    width: "100%",
-    height: 56,
     borderRadius: BorderRadius.lg,
-    paddingHorizontal: Spacing.lg,
-    marginTop: Spacing["2xl"],
-    fontSize: 18,
-    borderWidth: 1,
-  },
-  nameButton: {
-    width: "100%",
-    marginTop: Spacing.xl,
-    borderRadius: BorderRadius.full,
     overflow: "hidden",
   },
-  nameButtonGradient: {
-    height: Spacing.buttonHeight,
+  ctaTextBlock: {
     alignItems: "center",
-    justifyContent: "center",
+    gap: 10,
   },
-  nameButtonText: {
-    color: "#000",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-  settingsContainer: {
-    flex: 1,
-  },
-  settingsScroll: {
-    flex: 1,
-    marginTop: Spacing.xl,
-  },
-  settingsScrollContent: {
-    gap: Spacing.lg,
-    paddingBottom: Spacing.md,
-  },
-  settingsCard: {
-    borderRadius: BorderRadius.xl,
-    borderWidth: 1,
-    padding: Spacing.lg,
-  },
-  settingsSectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-    marginBottom: Spacing.lg,
-  },
-  settingsSectionLabel: {
-    fontSize: 11,
+  ctaHeadline: {
+    fontSize: 24,
     fontWeight: "700",
-    letterSpacing: 1.2,
+    color: TEXT,
+    textAlign: "center",
+    lineHeight: 32,
   },
-  themeCards: {
-    flexDirection: "row",
-    gap: Spacing.md,
-  },
-  themeCard: {
-    flex: 1,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1.5,
-    padding: Spacing.md,
-    alignItems: "center",
-    gap: Spacing.sm,
-    position: "relative",
-  },
-  themePreview: {
-    width: "100%",
-    height: 48,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.sm,
-    gap: Spacing.xs,
-    marginBottom: Spacing.xs,
-    justifyContent: "center",
-  },
-  themePreviewDark: {
-    backgroundColor: "#0a0a1a",
-  },
-  themePreviewLight: {
-    backgroundColor: "#f0f2f7",
-  },
-  themePreviewBar: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "rgba(0,255,136,0.6)",
-    width: "85%",
-  },
-  themeCardLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  themeCheckmark: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sliderBlock: {
-    gap: Spacing.xs,
-  },
-  sliderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  sliderLabel: {
-    fontSize: 14,
+  ctaSubline: {
+    fontSize: 15,
+    fontStyle: "italic",
+    textAlign: "center",
     fontWeight: "500",
   },
-  sliderValue: {
-    fontSize: 14,
+  benefitsRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    gap: 8,
+  },
+  benefitItem: {
+    flex: 1,
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 4,
+  },
+  benefitIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  benefitLabel: {
+    fontSize: 13,
     fontWeight: "700",
+    color: TEXT,
+    textAlign: "center",
   },
-  slider: {
-    width: "100%",
-    height: 36,
-  },
-  sliderHint: {
+  benefitSub: {
     fontSize: 11,
+    color: TEXT_MUTED,
+    textAlign: "center",
+    lineHeight: 15,
   },
-  sliderDivider: {
-    height: 1,
-    marginVertical: Spacing.md,
+  ctaButtonBlock: {
+    gap: 16,
   },
-  musicToggleRow: {
+
+  // Primary button
+  primaryBtnWrapper: {
+    width: "100%",
+  },
+  primaryBtn: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: Spacing.md,
+    justifyContent: "center",
+    height: 56,
+    borderRadius: BorderRadius.full,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.55,
+    shadowRadius: 18,
+    elevation: 12,
   },
-  musicToggleText: {
-    flex: 1,
+  primaryBtnText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#fff",
+    letterSpacing: 0.3,
   },
-  musicHint: {
-    fontSize: 11,
-    marginTop: Spacing.md,
-    paddingTop: Spacing.md,
-    borderTopWidth: 1,
+
+  // Footer
+  footer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  footerText: {
+    fontSize: 12,
+    color: TEXT_MUTED,
+    textAlign: "center",
   },
 });

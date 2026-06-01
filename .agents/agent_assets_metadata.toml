@@ -1,0 +1,38 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "MgRhLXcOHRBdcRWhcaX8k"
+uri = "file://client/assets/images/onboarding/male-hero.png"
+type = "image"
+title = "male hero neon blue"
+
+[[generated]]
+id = "wB0LgSdIm2V30xrm0wGoL"
+uri = "file://client/assets/images/onboarding/female-hero.png"
+type = "image"
+title = "female hero neon pink"
+
+[[generated]]
+id = "rMV8WLS9_l8TuORV9E0tO"
+uri = "file://client/assets/images/onboarding/male-anatomy-step1.png"
+type = "image"
+title = "male anatomy step1 blue"
+
+[[generated]]
+id = "f4im-amCNqaOxvQEkLOWw"
+uri = "file://client/assets/images/onboarding/male-anatomy-step2.png"
+type = "image"
+title = "male anatomy step2 contracting"
+
+[[generated]]
+id = "Xp4ODnfoJvt_4WnPlODdv"
+uri = "file://client/assets/images/onboarding/female-anatomy-step1.png"
+type = "image"
+title = "female anatomy step1 pink"
+
+[[generated]]
+id = "rK8RyN_SBhNhS_E6he2OK"
+uri = "file://client/assets/images/onboarding/female-anatomy-step2.png"
+type = "image"
+title = "female anatomy step2 lifting"
