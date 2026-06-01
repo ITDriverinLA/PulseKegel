@@ -85,6 +85,7 @@ export default function HomeScreen() {
 
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
+  const pendingAutoStartRef = useRef(false);
   const [todaysWorkout, setTodaysWorkout] = useState<{
     week: Week;
     dayIndex: number;
@@ -113,6 +114,14 @@ export default function HomeScreen() {
   const [controlModeWeekCount, setControlModeWeekCount] = useState(0);
 
   const loadData = useCallback(async () => {
+    try {
+      const flag = await AsyncStorage.getItem("pendingAutoStart");
+      if (flag === "true") {
+        pendingAutoStartRef.current = true;
+        await AsyncStorage.removeItem("pendingAutoStart");
+      }
+    } catch {}
+
     const startDate = await storage.getProgramStartDate();
 
     await storage.backfillRestDays(startDate);
@@ -274,6 +283,18 @@ export default function HomeScreen() {
     const unsubscribe = navigation.addListener("focus", loadData);
     return unsubscribe;
   }, [navigation, loadData]);
+
+  useEffect(() => {
+    if (
+      pendingAutoStartRef.current &&
+      todaysWorkout &&
+      !todaysWorkout.isRestDay
+    ) {
+      pendingAutoStartRef.current = false;
+      startWorkoutNavigation();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [todaysWorkout]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

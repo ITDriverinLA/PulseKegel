@@ -9,6 +9,7 @@ import {
   Text,
   Animated as RNAnimated,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
@@ -120,6 +121,7 @@ export default function OnboardingScreen({
     await storage.saveSettings({ anatomyType: gender });
     trackOnboardingComplete({ anatomyType: gender });
     await storage.setOnboardingComplete();
+    await AsyncStorage.setItem("pendingAutoStart", "true");
     onComplete();
   };
 
