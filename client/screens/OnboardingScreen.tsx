@@ -907,7 +907,6 @@ const styles = StyleSheet.create({
   tutorialScroll: {
     paddingBottom: 16,
     gap: 16,
-    alignItems: "center",
   },
   tutorialHeadline: {
     fontSize: 28,
@@ -915,12 +914,14 @@ const styles = StyleSheet.create({
     color: TEXT,
     textAlign: "center",
     marginTop: 8,
+    alignSelf: "center",
   },
   genderPill: {
     paddingVertical: 5,
     paddingHorizontal: 16,
     borderRadius: BorderRadius.full,
     borderWidth: 1,
+    alignSelf: "center",
   },
   genderPillText: {
     fontSize: 13,
@@ -967,6 +968,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    alignSelf: "center",
     gap: 6,
     marginTop: 4,
   },

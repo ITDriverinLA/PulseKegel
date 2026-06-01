@@ -5,13 +5,13 @@ outputs = []
 id = "MgRhLXcOHRBdcRWhcaX8k"
 uri = "file://client/assets/images/onboarding/male-hero.png"
 type = "image"
-title = "male hero neon blue"
+title = "photorealistic male hero neon"
 
 [[generated]]
 id = "wB0LgSdIm2V30xrm0wGoL"
 uri = "file://client/assets/images/onboarding/female-hero.png"
 type = "image"
-title = "female hero neon pink"
+title = "photorealistic female hero neon"
 
 [[generated]]
 id = "rMV8WLS9_l8TuORV9E0tO"
