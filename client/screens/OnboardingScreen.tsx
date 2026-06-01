@@ -185,6 +185,18 @@ function GenderScreen({
         <Text style={styles.logoTagline}>STRONGER. CONFIDENT. IN CONTROL.</Text>
       </View>
 
+      <View style={styles.genderTextBlock}>
+        <Text style={styles.genderHeadline}>
+          Most people lose strength in their pelvic floor over time.
+        </Text>
+        <Text style={styles.genderSubline}>
+          You can train it — and you should.
+        </Text>
+        <Text style={[styles.genderCta, { color: BLUE }]}>
+          {"Let's get started."}
+        </Text>
+      </View>
+
       <View style={styles.genderHeroRow}>
         <Image
           source={MAN_HERO}
@@ -198,18 +210,6 @@ function GenderScreen({
         />
       </View>
 
-      <View style={styles.genderTextBlock}>
-        <Text style={styles.genderHeadline}>
-          Most people lose strength in their pelvic floor over time.
-        </Text>
-        <Text style={styles.genderSubline}>
-          You can train it — and you should.
-        </Text>
-        <Text style={[styles.genderCta, { color: BLUE }]}>
-          {"Let's get started."}
-        </Text>
-      </View>
-
       <View style={styles.genderButtons}>
         <GenderButton
           label="I'm a Man"
@@ -217,6 +217,7 @@ function GenderScreen({
           color={BLUE}
           dimColor={BLUE_DIM}
           borderColor={BLUE_BORDER}
+          filled
           onPress={() => onSelect("male")}
           testID="button-gender-man"
         />
@@ -245,6 +246,7 @@ function GenderButton({
   color,
   dimColor,
   borderColor,
+  filled = false,
   onPress,
   testID,
 }: {
@@ -253,29 +255,43 @@ function GenderButton({
   color: string;
   dimColor: string;
   borderColor: string;
+  filled?: boolean;
   onPress: () => void;
   testID?: string;
 }) {
+  const labelColor = filled ? "#fff" : color;
   return (
     <Pressable
       testID={testID}
       onPress={onPress}
       style={({ pressed }) => [
         styles.genderBtn,
-        {
-          backgroundColor: pressed ? color + "22" : dimColor,
-          borderColor: pressed ? color : borderColor,
-        },
+        filled
+          ? {
+              backgroundColor: pressed ? color + "CC" : color,
+              borderColor: color,
+              shadowColor: color,
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0.5,
+              shadowRadius: 14,
+              elevation: 10,
+            }
+          : {
+              backgroundColor: pressed ? color + "22" : dimColor,
+              borderColor: pressed ? color : borderColor,
+            },
       ]}
     >
-      <Text style={[styles.genderBtnSymbol, { color }]}>
+      <Text style={[styles.genderBtnSymbol, { color: labelColor }]}>
         {icon === "male" ? "♂" : "♀"}
       </Text>
-      <Text style={[styles.genderBtnLabel, { color }]}>{label}</Text>
+      <Text style={[styles.genderBtnLabel, { color: labelColor }]}>
+        {label}
+      </Text>
       <Feather
         name="chevron-right"
         size={18}
-        color={color}
+        color={labelColor}
         style={{ marginLeft: "auto" }}
       />
     </Pressable>
@@ -712,7 +728,7 @@ function CtaScreen({
           <View style={styles.footer}>
             <Feather name="lock" size={11} color={TEXT_MUTED} />
             <Text style={styles.footerText}>
-              Takes less than 5 minutes a day. Your data stays private.
+              Less than 10 mins a day. Your data stays private.
             </Text>
           </View>
         </View>
