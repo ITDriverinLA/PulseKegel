@@ -27,10 +27,10 @@ import {
 
 const { height } = Dimensions.get("window");
 
-const MALE_STEP1 = require("../assets/images/onboarding/male-anatomy-step1.png");
-const MALE_STEP2 = require("../assets/images/onboarding/male-anatomy-step2.png");
-const FEMALE_STEP1 = require("../assets/images/onboarding/female-anatomy-step1.png");
-const FEMALE_STEP2 = require("../assets/images/onboarding/female-anatomy-step2.png");
+const MALE_STEP1 = require("../assets/images/onboarding/male-anatomy-step1.jpg");
+const MALE_STEP2 = require("../assets/images/onboarding/male-anatomy-step2.jpg");
+const FEMALE_STEP1 = require("../assets/images/onboarding/female-anatomy-step1.jpg");
+const FEMALE_STEP2 = require("../assets/images/onboarding/female-anatomy-step2.jpg");
 
 const BLUE = "#00AAFF";
 const BLUE_DIM = "rgba(0,170,255,0.15)";
