@@ -1128,6 +1128,20 @@ export default function SettingsScreen() {
           >
             <Pressable
               style={styles.settingsRow}
+              onPress={() => navigation.navigate("KegelsGuide")}
+              testID="button-kegels-guide"
+            >
+              <Feather name="book-open" size={20} color={cp.neonCyan} />
+              <Text style={[styles.settingsRowText, { color: cp.text }]}>
+                How to do Kegels
+              </Text>
+              <Feather name="chevron-right" size={18} color={cp.textMuted} />
+            </Pressable>
+
+            <View style={[styles.divider, { backgroundColor: cp.divider }]} />
+
+            <Pressable
+              style={styles.settingsRow}
               onPress={() => navigation.navigate("TechniqueGuide")}
               testID="button-muscle-guide"
             >

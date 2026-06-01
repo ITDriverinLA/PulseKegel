@@ -20,6 +20,7 @@ import BreathworkModeSelectorScreen from "@/screens/BreathworkModeSelectorScreen
 import BreathworkSessionScreen from "@/screens/BreathworkSessionScreen";
 import BreathworkSummaryScreen from "@/screens/BreathworkSummaryScreen";
 import TechniqueGuideScreen from "@/screens/TechniqueGuideScreen";
+import KegelsGuideScreen from "@/screens/KegelsGuideScreen";
 import CalibrationFeedbackScreen from "@/screens/CalibrationFeedbackScreen";
 import ForceUpdateScreen from "@/screens/ForceUpdateScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
@@ -49,6 +50,7 @@ export type RootStackParamList = {
   BreathworkSession: { mode: BreathworkMode };
   BreathworkSummary: { mode: BreathworkMode; completed: boolean };
   TechniqueGuide: undefined;
+  KegelsGuide: undefined;
   CalibrationFeedback: { weekNumber?: number } | undefined;
 };
 
@@ -268,6 +270,14 @@ export default function RootStackNavigator() {
         <Stack.Screen
           name="TechniqueGuide"
           component={TechniqueGuideScreen}
+          options={{
+            presentation: "modal",
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="KegelsGuide"
+          component={KegelsGuideScreen}
           options={{
             presentation: "modal",
             headerShown: false,
