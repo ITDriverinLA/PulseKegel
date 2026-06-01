@@ -512,15 +512,13 @@ function TutorialScreen({
   const STEP_IMAGE_H = Math.min(height * 0.2, 160);
 
   return (
-    <View
-      style={[
-        styles.screen,
-        { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 24 },
-      ]}
-    >
+    <View style={[styles.screen, { paddingTop: insets.top + 16 }]}>
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={styles.tutorialScroll}
+        contentContainerStyle={[
+          styles.tutorialScroll,
+          { paddingBottom: insets.bottom + 24 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.tutorialHeadline}>How to do Kegels</Text>
@@ -579,16 +577,14 @@ function TutorialScreen({
             />
           ))}
         </View>
-      </ScrollView>
 
-      <View style={styles.tutorialFooter}>
         <PrimaryButton
           label="Got it — Let's begin"
           accent={accent}
           onPress={onDone}
           testID="button-tutorial-done"
         />
-      </View>
+      </ScrollView>
     </View>
   );
 }

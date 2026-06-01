@@ -263,7 +263,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: Spacing.xl,
     gap: 16,
-    alignItems: "center",
   },
   headline: {
     fontSize: 28,
@@ -272,10 +271,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 4,
     marginBottom: 4,
+    alignSelf: "center",
   },
   pillRow: {
     flexDirection: "row",
     gap: 10,
+    alignSelf: "center",
   },
   pill: {
     paddingVertical: 6,
