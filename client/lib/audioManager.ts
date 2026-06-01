@@ -53,8 +53,8 @@ export const defaultAudioSettings: AudioSettings = {
   sfxEnabled: true,
   sfxVolume: 0.7,
   ambientVolume: 0.3,
-  selectedTracks: [],
-  shuffleEnabled: false,
+  selectedTracks: [...ALL_AMBIENT_TRACKS],
+  shuffleEnabled: true,
 };
 
 export const AMBIENT_TRACK_LABELS: Record<AmbientTrack, string> = {
