@@ -1730,16 +1730,35 @@ ${blogUrls}
           ORDER BY count DESC
         `
       );
+      const wauByPlatformRaw = await db.execute(
+        sql2`
+          SELECT
+            COALESCE(platform, 'unknown') AS platform,
+            COUNT(DISTINCT device_id)::int AS count
+          FROM analytics_events
+          WHERE created_at >= ${d7}
+          GROUP BY COALESCE(platform, 'unknown')
+          ORDER BY count DESC
+        `
+      );
+      const [installsNoChallenge] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(
+        sql2`${analyticsEvents.deviceId} NOT IN (
+            SELECT DISTINCT device_id FROM analytics_events
+            WHERE event_type = 'session_complete'
+          )`
+      );
       res.json({
         totalDevices: totalDevices?.count ?? 0,
         dau: dau?.count ?? 0,
         wau: wau?.count ?? 0,
         mau: mau?.count ?? 0,
         newDevicesLast7Days: newDevicesWeek?.count ?? 0,
+        installsNoChallenge: installsNoChallenge?.count ?? 0,
         eventsByType: eventCounts,
         topWeeklyDevices,
         dailyUniqueUsers: dailyUniqueUsersRaw.rows,
         devicesByPlatform: devicesByPlatformRaw.rows,
+        wauByPlatform: wauByPlatformRaw.rows,
         challengeResultBreakdown: challengeResultBreakdownRaw.rows
       });
     } catch (err) {

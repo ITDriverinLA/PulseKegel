@@ -145,8 +145,9 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 16px;
-    margin-bottom: 56px;
+    margin-bottom: 16px;
   }
+  .stat-grid-last { margin-bottom: 56px; }
   @media (max-width: 700px) {
     .stat-grid { grid-template-columns: repeat(2, 1fr); }
   }
@@ -475,11 +476,17 @@
 
   <!-- Stat cards -->
   <div class="section-label">Overview</div>
-  <div class="stat-grid" id="stat-grid">
+  <div class="stat-grid">
     <div class="stat-card"><div class="stat-label">Total Devices</div><div class="stat-value loading" id="s-total">—</div></div>
     <div class="stat-card"><div class="stat-label">DAU (24 h)</div><div class="stat-value loading" id="s-dau">—</div></div>
     <div class="stat-card"><div class="stat-label">WAU (7 d)</div><div class="stat-value loading" id="s-wau">—</div></div>
     <div class="stat-card"><div class="stat-label">MAU (30 d)</div><div class="stat-value loading" id="s-mau">—</div></div>
+  </div>
+  <div class="stat-grid stat-grid-last">
+    <div class="stat-card"><div class="stat-label">New This Week</div><div class="stat-value loading" id="s-new7">—</div><div class="stat-sub">First seen in last 7 d</div></div>
+    <div class="stat-card"><div class="stat-label">7-Day Active — iOS</div><div class="stat-value loading" id="s-wau-ios">—</div><div class="stat-sub">Unique devices, last 7 d</div></div>
+    <div class="stat-card"><div class="stat-label">7-Day Active — Android</div><div class="stat-value loading" id="s-wau-android">—</div><div class="stat-sub">Unique devices, last 7 d</div></div>
+    <div class="stat-card"><div class="stat-label">Installed, Not Started</div><div class="stat-value loading" id="s-no-start">—</div><div class="stat-sub">All-time, no session completed</div></div>
   </div>
 
   <!-- Platform breakdown -->
@@ -563,11 +570,19 @@
       document.getElementById('ts').textContent =
         'Updated ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-      // Stat cards
+      // Stat cards — row 1
       setValue('s-total', d.totalDevices ?? 0);
       setValue('s-dau',   d.dau ?? 0);
       setValue('s-wau',   d.wau ?? 0);
       setValue('s-mau',   d.mau ?? 0);
+
+      // Stat cards — row 2
+      setValue('s-new7',    d.newDevicesLast7Days ?? 0);
+      setValue('s-no-start', d.installsNoChallenge ?? 0);
+      const wauPlatMap = {};
+      (d.wauByPlatform || []).forEach(r => { wauPlatMap[String(r.platform).toLowerCase()] = Number(r.count) || 0; });
+      setValue('s-wau-ios',     wauPlatMap['ios']     ?? 0);
+      setValue('s-wau-android', wauPlatMap['android'] ?? 0);
 
       // Platform breakdown
       renderPlatform(d.devicesByPlatform || []);
