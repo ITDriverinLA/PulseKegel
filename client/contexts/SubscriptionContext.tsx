@@ -232,6 +232,27 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           return;
         }
 
+        // Identify this device in RevenueCat so trial users appear in the
+        // dashboard from first open. Reuse the analytics device ID so events
+        // from both systems can be correlated.
+        try {
+          const analyticsDeviceId = await AsyncStorage.getItem(
+            "pulsekegel_analytics_device_id",
+          );
+          if (analyticsDeviceId) {
+            await Purchases.logIn(analyticsDeviceId);
+            console.log(
+              "[PulseKegel] RevenueCat: identified user",
+              analyticsDeviceId.slice(0, 8) + "…",
+            );
+          }
+        } catch (loginError) {
+          console.warn(
+            "[PulseKegel] RevenueCat logIn failed (non-fatal):",
+            loginError,
+          );
+        }
+
         let subscribed = false;
         try {
           const customerInfo: CustomerInfo = await Purchases.getCustomerInfo();
@@ -243,6 +264,22 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
         if (!subscribed) {
           await checkTrialStatus();
+
+          // Stamp the trial start date as a RevenueCat customer attribute so
+          // it surfaces in the RC dashboard alongside the customer record.
+          try {
+            const installDate = await AsyncStorage.getItem(
+              STORAGE_KEYS.INSTALL_DATE,
+            );
+            if (installDate) {
+              await Purchases.setAttributes({
+                trialStartDate: installDate,
+                isTrialUser: "true",
+              });
+            }
+          } catch {
+            // Non-fatal — attributes are best-effort
+          }
         }
 
         try {
