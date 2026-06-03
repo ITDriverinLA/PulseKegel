@@ -423,20 +423,31 @@
     color: var(--gray); font-size: 15px; line-height: 1.6;
     max-width: 400px;
   }
-  .btn-primary {
+  .cta-buttons {
+    display: flex; flex-direction: column; gap: 10px; flex-shrink: 0;
+  }
+  .btn-primary, .btn-secondary {
     display: inline-flex; align-items: center; gap: 8px;
-    background: var(--teal); color: var(--navy-deep);
     font-family: 'JetBrains Mono', monospace;
     font-size: 12px; font-weight: 700;
     letter-spacing: 0.1em; text-transform: uppercase;
     text-decoration: none;
-    padding: 14px 28px; border-radius: 8px;
+    padding: 13px 24px; border-radius: 8px;
     white-space: nowrap;
     transition: opacity 0.2s, transform 0.15s;
   }
-  .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+  .btn-primary {
+    background: var(--teal); color: var(--navy-deep);
+  }
+  .btn-secondary {
+    background: transparent; color: var(--teal);
+    border: 1px solid rgba(54, 231, 179, 0.4);
+  }
+  .btn-primary:hover, .btn-secondary:hover { opacity: 0.88; transform: translateY(-1px); }
   @media (max-width: 640px) {
     .cta-strip { padding: 28px 24px; }
+    .cta-buttons { width: 100%; }
+    .btn-primary, .btn-secondary { justify-content: center; }
   }
 
   /* ── FOOTER ── */
@@ -911,9 +922,14 @@
       <h2>Train with these tracks in the app</h2>
       <p>PulseKegel plays your selected tracks automatically during workout sessions with independent volume control and shuffle mode.</p>
     </div>
-    <a href="https://apps.apple.com/us/app/pulsekegel/id6758308054" target="_blank" rel="noopener" class="btn-primary">
-      Download on iOS &nbsp;→
-    </a>
+    <div class="cta-buttons">
+      <a href="https://apps.apple.com/app/id6758308054" target="_blank" rel="noopener" class="btn-primary">
+        Download on the App Store &nbsp;→
+      </a>
+      <a href="https://play.google.com/store/apps/details?id=com.pulsekegel.app" target="_blank" rel="noopener" class="btn-secondary">
+        Get it on Google Play &nbsp;→
+      </a>
+    </div>
   </div>
 
   <!-- Footer -->
