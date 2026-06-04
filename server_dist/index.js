@@ -1766,6 +1766,23 @@ ${blogUrls}
       res.status(500).json({ error: "Failed to load analytics summary" });
     }
   });
+  app2.delete("/api/analytics/reset", async (req, res) => {
+    const token = process.env.INVALIDATE_CACHE_TOKEN;
+    if (token) {
+      const auth = req.headers.authorization ?? "";
+      if (auth !== `Bearer ${token}`) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+    }
+    try {
+      await db.execute(sql2`TRUNCATE TABLE analytics_events RESTART IDENTITY`);
+      res.json({ ok: true, message: "Analytics reset" });
+    } catch (err) {
+      console.error("Analytics reset error:", err);
+      res.status(500).json({ error: "Failed to reset analytics" });
+    }
+  });
   const httpServer = createServer(app2);
   return httpServer;
 }
