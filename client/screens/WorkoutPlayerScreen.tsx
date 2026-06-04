@@ -704,7 +704,7 @@ export default function WorkoutPlayerScreen() {
             <Feather name="x" size={24} color={cp.text} />
           </Pressable>
           <ThemedText type="small" style={{ color: cp.textMuted }}>
-            Week {weekNumber} - {phase}
+            {weekNumber > 0 ? `Week ${weekNumber} - ${phase}` : phase}
           </ThemedText>
           <Pressable
             onPress={() => setShowTips(true)}
