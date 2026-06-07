@@ -57,6 +57,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const audioSettingsLoadedRef = useRef(false);
   const pendingAmbientStartRef = useRef(false);
   const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const trackHasPlayedRef = useRef(false);
 
   useEffect(() => {
     audioSettingsRef.current = audioSettings;
@@ -213,6 +214,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   }, [audioSettings.ambientVolume, ambientPlayers]);
 
   const stopAllAmbient = useCallback(() => {
+    trackHasPlayedRef.current = false;
     for (const player of Object.values(ambientPlayers)) {
       if (player) {
         try {
@@ -234,6 +236,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
           player.play();
           setCurrentAmbientTrack(track);
           lastPlayedTrackRef.current = track;
+          trackHasPlayedRef.current = true;
         } catch {}
       }
     },
@@ -268,7 +271,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       const current = lastPlayedTrackRef.current;
       if (current === "none") return;
       const player = ambientPlayers[current as TrackKey];
-      if (player && !player.playing && player.currentTime > 0) {
+      if (player && !player.playing && trackHasPlayedRef.current) {
         const next = pickNextTrack();
         if (next) {
           stopAllAmbient();
