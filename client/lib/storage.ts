@@ -258,9 +258,16 @@ const formatDate = (date: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
+type ControlModeStreakInfo = {
+  path: ControlModePath;
+  controlModeStartDate: string;
+  pinnedRestWeekdays: number[];
+};
+
 const calculateStreak = (
   completedDates: string[],
   programStartDate: string | null,
+  controlModeInfo?: ControlModeStreakInfo,
 ): number => {
   const completedSet = new Set(completedDates);
 
@@ -282,6 +289,32 @@ const calculateStreak = (
     const str = formatDate(d);
     if (completedSet.has(str)) return true;
     if (programStart && d < programStart) return false;
+
+    // For Control Mode days (day 84+ from program start), use the correct
+    // Control Mode rest-day logic instead of wrapping back through the
+    // 12-week schedule.
+    if (controlModeInfo && programStart) {
+      const daysSinceStart = Math.round(
+        (Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) -
+          Date.UTC(
+            programStart.getFullYear(),
+            programStart.getMonth(),
+            programStart.getDate(),
+          )) /
+          86400000,
+      );
+      if (daysSinceStart >= 84) {
+        const { path, controlModeStartDate, pinnedRestWeekdays } =
+          controlModeInfo;
+        if (path === "rebuild") {
+          return isRestDayForDate(d, controlModeStartDate);
+        }
+        // maintain / build / precision: weekday-anchored rest days
+        const weekdayMF = (d.getDay() + 6) % 7; // Mon=0 … Sun=6
+        return pinnedRestWeekdays.includes(weekdayMF);
+      }
+    }
+
     return !!programStartDate && isRestDayForDate(d, programStartDate);
   };
 
@@ -434,11 +467,37 @@ export const storage = {
   },
 
   async getProgress(): Promise<UserProgress> {
-    const completedDates = await this.getCompletedDates();
-    const totalSessions = await this.getTotalSessions();
-    const totalMinutes = await this.getTotalMinutes();
-    const programStartDate = await this.getProgramStartDate();
-    const currentStreak = calculateStreak(completedDates, programStartDate);
+    const [
+      completedDates,
+      totalSessions,
+      totalMinutes,
+      programStartDate,
+      progProgress,
+    ] = await Promise.all([
+      this.getCompletedDates(),
+      this.getTotalSessions(),
+      this.getTotalMinutes(),
+      this.getProgramStartDate(),
+      this.getProgramProgress(),
+    ]);
+
+    const controlModeInfo: ControlModeStreakInfo | undefined =
+      progProgress.phase === "control_mode" &&
+      progProgress.controlModePath &&
+      progProgress.controlModeStartDate
+        ? {
+            path: progProgress.controlModePath,
+            controlModeStartDate: progProgress.controlModeStartDate,
+            pinnedRestWeekdays:
+              progProgress.controlModePinnedRestWeekdays ?? [],
+          }
+        : undefined;
+
+    const currentStreak = calculateStreak(
+      completedDates,
+      programStartDate,
+      controlModeInfo,
+    );
     const workoutDatesRaw = await AsyncStorage.getItem(
       STORAGE_KEYS.WORKOUT_DATES,
     );
@@ -522,13 +581,54 @@ export const storage = {
     const [sy, sm, sd] = programStartDate.split("-").map(Number);
     const start = new Date(sy, sm - 1, sd);
 
+    // Load Control Mode info so we can apply the correct rest-day schedule for
+    // days beyond the 12-week program (day 84+).  For maintain/build/precision
+    // paths, rest days are weekday-anchored (pinnedRestWeekdays); for rebuild,
+    // they mirror the source week relative to controlModeStartDate.
+    const progProgress = await this.getProgramProgress();
+    const cmInfo =
+      progProgress.phase === "control_mode" &&
+      progProgress.controlModePath &&
+      progProgress.controlModeStartDate
+        ? {
+            path: progProgress.controlModePath,
+            startDate: progProgress.controlModeStartDate,
+            pinnedRestWeekdays:
+              progProgress.controlModePinnedRestWeekdays ?? [],
+          }
+        : null;
+
     // Recompute the authoritative rest-day set from scratch (start → today
     // inclusive). Rebuilding on every call purges stale entries written by
     // previous buggy versions of this function.
     const correctRestSet = new Set<string>();
     const current = new Date(start);
     while (current <= today) {
-      if (isRestDayForDate(current, programStartDate)) {
+      const daysSinceStart = Math.round(
+        (Date.UTC(
+          current.getFullYear(),
+          current.getMonth(),
+          current.getDate(),
+        ) -
+          Date.UTC(start.getFullYear(), start.getMonth(), start.getDate())) /
+          86400000,
+      );
+
+      let isRest: boolean;
+      if (daysSinceStart >= 84 && cmInfo) {
+        // Control Mode territory: use the correct schedule for this path.
+        if (cmInfo.path === "rebuild") {
+          isRest = isRestDayForDate(current, cmInfo.startDate);
+        } else {
+          // maintain / build / precision: rest days are weekday-anchored
+          const weekdayMF = (current.getDay() + 6) % 7; // Mon=0 … Sun=6
+          isRest = cmInfo.pinnedRestWeekdays.includes(weekdayMF);
+        }
+      } else {
+        isRest = isRestDayForDate(current, programStartDate);
+      }
+
+      if (isRest) {
         correctRestSet.add(formatDate(current));
       }
       current.setDate(current.getDate() + 1);

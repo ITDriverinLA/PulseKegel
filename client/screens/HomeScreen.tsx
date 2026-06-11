@@ -199,39 +199,38 @@ export default function HomeScreen() {
           todayStr,
         ),
       );
-      return;
-    }
-
-    const workout = getTodaysWorkout(
-      userProgress.completedDates,
-      startDate || undefined,
-    );
-
-    if (workout && workout.week.weekNumber === 1) {
-      const adjustedWorkout = getWeek1WorkoutForDayIndex(
-        workout.dayIndex,
-        calibState.difficultyPath,
-      );
-      setTodaysWorkout({
-        ...workout,
-        workout: adjustedWorkout,
-        isRestDay: adjustedWorkout.isRestDay === true,
-      });
-    } else if (workout && workout.week.weekNumber >= 2) {
-      const weekPath = await storage.getDifficultyPathForWeek(
-        workout.week.weekNumber,
-      );
-      const adjustedWorkout = getWorkoutForDifficultyPath(
-        workout.workout,
-        weekPath,
-      );
-      setTodaysWorkout({
-        ...workout,
-        workout: adjustedWorkout,
-      });
-      setDifficultyPath(weekPath);
     } else {
-      setTodaysWorkout(workout);
+      const workout = getTodaysWorkout(
+        userProgress.completedDates,
+        startDate || undefined,
+      );
+
+      if (workout && workout.week.weekNumber === 1) {
+        const adjustedWorkout = getWeek1WorkoutForDayIndex(
+          workout.dayIndex,
+          calibState.difficultyPath,
+        );
+        setTodaysWorkout({
+          ...workout,
+          workout: adjustedWorkout,
+          isRestDay: adjustedWorkout.isRestDay === true,
+        });
+      } else if (workout && workout.week.weekNumber >= 2) {
+        const weekPath = await storage.getDifficultyPathForWeek(
+          workout.week.weekNumber,
+        );
+        const adjustedWorkout = getWorkoutForDifficultyPath(
+          workout.workout,
+          weekPath,
+        );
+        setTodaysWorkout({
+          ...workout,
+          workout: adjustedWorkout,
+        });
+        setDifficultyPath(weekPath);
+      } else {
+        setTodaysWorkout(workout);
+      }
     }
 
     const reviewCheck = await storage.shouldShowWeeklyReview(

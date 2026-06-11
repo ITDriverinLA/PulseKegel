@@ -1,0 +1,1 @@
+- [Control Mode rest-day scheduling](control-mode-rest-days.md) — isRestDayForDate wraps % 84; for day 84+ use pinnedRestWeekdays (maintain/build/precision) or controlModeStartDate (rebuild).
