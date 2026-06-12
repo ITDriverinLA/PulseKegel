@@ -1748,7 +1748,7 @@ ${blogUrls}
           )`
       );
       const [neverOnboarded] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(
-        sql2`${analyticsEvents.event_type} = 'app_open'
+        sql2`${analyticsEvents.eventType} = 'app_open'
             AND ${analyticsEvents.deviceId} NOT IN (
               SELECT DISTINCT device_id FROM analytics_events
               WHERE event_type = 'onboarding_complete'

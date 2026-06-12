@@ -658,7 +658,7 @@ ${blogUrls}
         .select({ count: countDistinct(analyticsEvents.deviceId) })
         .from(analyticsEvents)
         .where(
-          sql`${analyticsEvents.event_type} = 'app_open'
+          sql`${analyticsEvents.eventType} = 'app_open'
             AND ${analyticsEvents.deviceId} NOT IN (
               SELECT DISTINCT device_id FROM analytics_events
               WHERE event_type = 'onboarding_complete'
