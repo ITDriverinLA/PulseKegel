@@ -484,6 +484,7 @@
     <div class="stat-card"><div class="stat-label">7-Day Active — iOS</div><div class="stat-value loading" id="s-wau-ios">—</div><div class="stat-sub">Unique devices, last 7 d</div></div>
     <div class="stat-card"><div class="stat-label">7-Day Active — Android</div><div class="stat-value loading" id="s-wau-android">—</div><div class="stat-sub">Unique devices, last 7 d</div></div>
     <div class="stat-card"><div class="stat-label">Installed, Not Started</div><div class="stat-value loading" id="s-no-start">—</div><div class="stat-sub">All-time, no session completed</div></div>
+    <div class="stat-card"><div class="stat-label">Opened, Not Onboarded</div><div class="stat-value loading" id="s-no-onboard">—</div><div class="stat-sub">All-time, app opened but skipped setup</div></div>
   </div>
 
   <!-- Platform breakdown -->
@@ -575,7 +576,8 @@
 
       // Stat cards — row 2
       setValue('s-new7',    d.newDevicesLast7Days ?? 0);
-      setValue('s-no-start', d.installsNoChallenge ?? 0);
+      setValue('s-no-start',    d.installsNoChallenge ?? 0);
+      setValue('s-no-onboard', d.neverOnboarded ?? 0);
       const wauPlatMap = {};
       (d.wauByPlatform || []).forEach(r => { wauPlatMap[String(r.platform).toLowerCase()] = Number(r.count) || 0; });
       setValue('s-wau-ios',     wauPlatMap['ios']     ?? 0);

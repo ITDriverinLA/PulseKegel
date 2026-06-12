@@ -653,6 +653,18 @@ ${blogUrls}
           )`
         );
 
+      // All-time devices that opened the app but never completed onboarding.
+      const [neverOnboarded] = await db
+        .select({ count: countDistinct(analyticsEvents.deviceId) })
+        .from(analyticsEvents)
+        .where(
+          sql`${analyticsEvents.event_type} = 'app_open'
+            AND ${analyticsEvents.deviceId} NOT IN (
+              SELECT DISTINCT device_id FROM analytics_events
+              WHERE event_type = 'onboarding_complete'
+            )`
+        );
+
       res.json({
         totalDevices: totalDevices?.count ?? 0,
         dau: dau?.count ?? 0,
@@ -660,6 +672,7 @@ ${blogUrls}
         mau: mau?.count ?? 0,
         newDevicesLast7Days: newDevicesWeek?.count ?? 0,
         installsNoChallenge: installsNoChallenge?.count ?? 0,
+        neverOnboarded: neverOnboarded?.count ?? 0,
         eventsByType: eventCounts,
         topWeeklyDevices,
         dailyUniqueUsers: dailyUniqueUsersRaw.rows,
