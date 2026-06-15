@@ -27,6 +27,7 @@
         "backgroundColor": "#0B1840"
       },
       "edgeToEdgeEnabled": true,
+      "softwareKeyboardLayoutMode": "pan",
       "package": "com.pulsekegel.app"
     },
     "web": {
