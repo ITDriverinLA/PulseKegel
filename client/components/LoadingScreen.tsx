@@ -32,7 +32,7 @@ const ECG_PATH =
 const PATH_LENGTH = 430;
 
 const BG = "#0a0a1a";
-const NEON = "#00FF88";
+const NEON = "#5CE8E0";
 
 export function LoadingScreen() {
   const dashOffset = useSharedValue(PATH_LENGTH);
