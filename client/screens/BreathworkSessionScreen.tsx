@@ -24,7 +24,6 @@ import {
   getModeConfig,
   ENERGIZE_SIGH_PHASES,
 } from "@/constants/breathworkModes";
-import { useTheme } from "@/hooks/useTheme";
 import { useThemePreference } from "@/contexts/ThemePreferenceContext";
 import {
   ANIM_DURATION_ENTER,
@@ -52,9 +51,8 @@ export default function BreathworkSessionScreen() {
   const route = useRoute<SessionRoute>();
   const { mode } = route.params;
   const config = getModeConfig(mode);
-  const { isDark } = useTheme();
-  const { cp } = useThemePreference();
-  const bwColors = getBreathworkColors(isDark);
+  const { cp, theme } = useThemePreference();
+  const bwColors = getBreathworkColors(theme);
 
   const [sessionState, setSessionState] = useState<SessionState>("intro");
   const [currentPhase, setCurrentPhase] = useState<BreathPhase>("inhale");

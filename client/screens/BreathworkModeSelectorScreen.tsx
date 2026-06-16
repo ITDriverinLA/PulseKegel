@@ -11,7 +11,7 @@ import {
   BreathworkMode,
   getBreathworkColors,
 } from "@/constants/breathworkModes";
-import { useTheme } from "@/hooks/useTheme";
+import { useThemePreference } from "@/contexts/ThemePreferenceContext";
 import {
   ANIM_DURATION_CONTENT,
   ANIM_DELAY_STAGGER_BASE,
@@ -38,12 +38,23 @@ const MODE_GRADIENTS_LIGHT: Record<BreathworkMode, [string, string]> = {
   pelvic_floor: ["#E8F5E9", "#C8E6C9"],
 };
 
+const MODE_GRADIENTS_POWER: Record<BreathworkMode, [string, string]> = {
+  calm: ["#1E1828", "#130F1D"],
+  energize: ["#21183A", "#150F2A"],
+  pelvic_floor: ["#1B1430", "#110E20"],
+};
+
 export default function BreathworkModeSelectorScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
-  const { isDark } = useTheme();
-  const bwColors = getBreathworkColors(isDark);
-  const gradients = isDark ? MODE_GRADIENTS_DARK : MODE_GRADIENTS_LIGHT;
+  const { theme, isDarkMode } = useThemePreference();
+  const bwColors = getBreathworkColors(theme);
+  const gradients =
+    theme === "power"
+      ? MODE_GRADIENTS_POWER
+      : isDarkMode
+        ? MODE_GRADIENTS_DARK
+        : MODE_GRADIENTS_LIGHT;
 
   const handleSelectMode = (mode: BreathworkMode) => {
     navigation.navigate("BreathworkSession", { mode });

@@ -10,7 +10,7 @@ import {
   getModeConfig,
   getBreathworkColors,
 } from "@/constants/breathworkModes";
-import { useTheme } from "@/hooks/useTheme";
+import { useThemePreference } from "@/contexts/ThemePreferenceContext";
 import {
   ANIM_DURATION_CONTENT_SLOW,
   ANIM_DELAY_SHORT,
@@ -33,8 +33,8 @@ export default function BreathworkSummaryScreen() {
   const { mode } = route.params;
   const config = getModeConfig(mode);
   const [logged, setLogged] = useState(false);
-  const { isDark } = useTheme();
-  const bwColors = getBreathworkColors(isDark);
+  const { theme } = useThemePreference();
+  const bwColors = getBreathworkColors(theme);
 
   const handleLogSession = async () => {
     const now = new Date();
@@ -161,9 +161,7 @@ export default function BreathworkSummaryScreen() {
               testID="breathwork-log-button"
             >
               <LinearGradient
-                colors={
-                  isDark ? ["#00B4C5", "#0090A0"] : ["#00ACC1", "#00838F"]
-                }
+                colors={bwColors.logButtonGradient}
                 style={styles.logButton}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}

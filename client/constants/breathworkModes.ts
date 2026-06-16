@@ -43,6 +43,7 @@ export const BREATHWORK_COLORS = {
     circleActive: "#4ADE80",
     glowActive: "#BBFFD0",
     streamDim: "#6EE7B7",
+    logButtonGradient: ["#00B4C5", "#0090A0"] as [string, string],
   },
   light: {
     accent: "#0097A7",
@@ -54,13 +55,32 @@ export const BREATHWORK_COLORS = {
     circleActive: "#AB47BC",
     glowActive: "#CE93D8",
     streamDim: "#26A69A",
+    logButtonGradient: ["#00ACC1", "#00838F"] as [string, string],
+  },
+  power: {
+    accent: "#8B5CF6",
+    accentSoft: "rgba(139, 92, 246, 0.15)",
+    phase_label: "#FFFFFF",
+    bg_session: "#0E0E0E",
+    timer_text: "#B0A8C8",
+    modalBg: "#1E1828",
+    circleActive: "#C084FC",
+    glowActive: "#E9D5FF",
+    streamDim: "#A78BFA",
+    logButtonGradient: ["#7C3AED", "#5B21B6"] as [string, string],
   },
 };
 
 export type BreathworkThemeColors = typeof BREATHWORK_COLORS.dark;
 
-export function getBreathworkColors(isDark: boolean): BreathworkThemeColors {
-  return isDark ? BREATHWORK_COLORS.dark : BREATHWORK_COLORS.light;
+export type BreathworkThemeMode = "dark" | "light" | "power";
+
+export function getBreathworkColors(
+  themeMode: BreathworkThemeMode,
+): BreathworkThemeColors {
+  if (themeMode === "power") return BREATHWORK_COLORS.power;
+  if (themeMode === "light") return BREATHWORK_COLORS.light;
+  return BREATHWORK_COLORS.dark;
 }
 
 export const BREATHWORK_AUDIO_SOURCES = {
