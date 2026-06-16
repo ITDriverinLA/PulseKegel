@@ -25,6 +25,7 @@ import {
   ENERGIZE_SIGH_PHASES,
 } from "@/constants/breathworkModes";
 import { useTheme } from "@/hooks/useTheme";
+import { useThemePreference } from "@/contexts/ThemePreferenceContext";
 import {
   ANIM_DURATION_ENTER,
   ANIM_DURATION_CONTENT,
@@ -52,6 +53,7 @@ export default function BreathworkSessionScreen() {
   const { mode } = route.params;
   const config = getModeConfig(mode);
   const { isDark } = useTheme();
+  const { cp } = useThemePreference();
   const bwColors = getBreathworkColors(isDark);
 
   const [sessionState, setSessionState] = useState<SessionState>("intro");
@@ -911,10 +913,17 @@ export default function BreathworkSessionScreen() {
               </Pressable>
               <Pressable
                 onPress={confirmExit}
-                style={[styles.modalButton, styles.modalButtonDanger]}
+                style={[
+                  styles.modalButton,
+                  { backgroundColor: `${cp.neonPink}26` },
+                ]}
                 testID="breathwork-end-button"
               >
-                <Text style={styles.modalButtonTextDanger}>End</Text>
+                <Text
+                  style={[styles.modalButtonTextDanger, { color: cp.neonPink }]}
+                >
+                  End
+                </Text>
               </Pressable>
             </View>
           </View>
@@ -1045,9 +1054,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
   },
-  modalButtonDanger: {
-    backgroundColor: "rgba(255, 51, 102, 0.15)",
-  },
   modalButtonTextPrimary: {
     fontSize: 16,
     fontWeight: "600",
@@ -1055,6 +1061,5 @@ const styles = StyleSheet.create({
   modalButtonTextDanger: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#FF3366",
   },
 });
