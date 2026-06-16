@@ -911,9 +911,13 @@ export default function BreathworkSessionScreen() {
               </Pressable>
               <Pressable
                 onPress={confirmExit}
-                style={[
+                style={({ pressed }) => [
                   styles.modalButton,
-                  { backgroundColor: `${cp.neonPink}26` },
+                  {
+                    backgroundColor: pressed
+                      ? `${cp.neonPink}55`
+                      : `${cp.neonPink}26`,
+                  },
                 ]}
                 testID="breathwork-end-button"
               >
