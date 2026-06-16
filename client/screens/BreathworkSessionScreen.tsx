@@ -747,6 +747,9 @@ export default function BreathworkSessionScreen() {
     return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
+  const phaseLabelColor =
+    theme === "power" ? bwColors.accent : bwColors.phase_label;
+
   const totalCycles = config.cyclesEstimate;
   const progressDots = Math.min(totalCycles, 20);
   const filledDots = Math.min(
@@ -818,7 +821,7 @@ export default function BreathworkSessionScreen() {
             style={styles.introContainer}
           >
             <BreathCircle phase="hold_top" phaseDuration={5} />
-            <Text style={[styles.phaseText, { color: bwColors.phase_label }]}>
+            <Text style={[styles.phaseText, { color: phaseLabelColor }]}>
               {phaseLabel}
             </Text>
           </Animated.View>
@@ -848,7 +851,7 @@ export default function BreathworkSessionScreen() {
               exiting={FadeOut.duration(ANIM_DURATION_MICRO_SETTLE)}
             >
               <Text
-                style={[styles.phaseText, { color: bwColors.phase_label }]}
+                style={[styles.phaseText, { color: phaseLabelColor }]}
                 testID="breathwork-phase-label"
               >
                 {phaseLabel}

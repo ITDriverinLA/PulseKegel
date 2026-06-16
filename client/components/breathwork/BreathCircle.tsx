@@ -186,7 +186,7 @@ export default function BreathCircle({
   isPaused,
   elapsedSeconds,
 }: BreathCircleProps) {
-  const { theme, cp } = useThemePreference();
+  const { theme } = useThemePreference();
 
   let brightPalette: string[];
   let dimPalette: string[];
@@ -194,28 +194,28 @@ export default function BreathCircle({
 
   if (theme === "power") {
     brightPalette = [
-      cp.neonGreen,
-      cp.neonCyan,
-      cp.neonPink,
-      cp.neonGreen,
-      cp.neonCyan,
-      cp.neonGreen,
+      "#C084FC",
+      "#8B5CF6",
+      "#A78BFA",
+      "#C084FC",
+      "#8B5CF6",
+      "#C084FC",
     ];
     dimPalette = [
-      hexToRgba(cp.neonGreen, 0.55),
-      hexToRgba(cp.neonCyan, 0.55),
-      hexToRgba(cp.neonPink, 0.55),
-      hexToRgba(cp.neonGreen, 0.55),
-      hexToRgba(cp.neonCyan, 0.55),
-      hexToRgba(cp.neonGreen, 0.55),
+      hexToRgba("#A78BFA", 0.55),
+      hexToRgba("#8B5CF6", 0.55),
+      hexToRgba("#C084FC", 0.55),
+      hexToRgba("#A78BFA", 0.55),
+      hexToRgba("#8B5CF6", 0.55),
+      hexToRgba("#A78BFA", 0.55),
     ];
     glowPalette = [
-      hexToRgba(cp.neonGreen, 0.3),
-      hexToRgba(cp.neonCyan, 0.3),
-      hexToRgba(cp.neonPink, 0.3),
-      hexToRgba(cp.neonGreen, 0.3),
-      hexToRgba(cp.neonCyan, 0.3),
-      hexToRgba(cp.neonGreen, 0.3),
+      hexToRgba("#E9D5FF", 0.3),
+      hexToRgba("#C084FC", 0.3),
+      hexToRgba("#E9D5FF", 0.3),
+      hexToRgba("#C084FC", 0.3),
+      hexToRgba("#E9D5FF", 0.3),
+      hexToRgba("#E9D5FF", 0.3),
     ];
   } else if (theme === "dark") {
     brightPalette = DARK_BRIGHT;
