@@ -2,11 +2,13 @@ import { Colors } from "@/constants/theme";
 import { useThemePreference } from "@/contexts/ThemePreferenceContext";
 
 export function useTheme() {
-  const { isDarkMode } = useThemePreference();
-  const theme = Colors[isDarkMode ? "dark" : "light"];
+  const { theme, isDarkMode } = useThemePreference();
+  const themeKey =
+    theme === "power" ? "power" : theme === "light" ? "light" : "dark";
+  const resolvedTheme = Colors[themeKey];
 
   return {
-    theme,
+    theme: resolvedTheme,
     isDark: isDarkMode,
   };
 }

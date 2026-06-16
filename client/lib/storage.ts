@@ -220,9 +220,12 @@ export interface UserSettings {
   anatomyType: AnatomyType;
   userName: string;
   darkMode: boolean;
+  theme: ThemeMode;
   reminderEnabled: boolean;
   reminderTime: string;
 }
+
+export type ThemeMode = "dark" | "light" | "power";
 
 export const defaultSettings: UserSettings = {
   hapticsEnabled: true,
@@ -237,6 +240,7 @@ export const defaultSettings: UserSettings = {
   anatomyType: null,
   userName: "",
   darkMode: true,
+  theme: "dark",
   reminderEnabled: false,
   reminderTime: "08:00",
 };
@@ -689,9 +693,13 @@ export const storage = {
   async getSettings(): Promise<UserSettings> {
     try {
       const data = await AsyncStorage.getItem(STORAGE_KEYS.SETTINGS);
-      return data
-        ? { ...defaultSettings, ...JSON.parse(data) }
-        : defaultSettings;
+      if (!data) return defaultSettings;
+      const parsed = JSON.parse(data);
+      const merged: UserSettings = { ...defaultSettings, ...parsed };
+      if (!parsed.theme) {
+        merged.theme = parsed.darkMode === false ? "light" : "dark";
+      }
+      return merged;
     } catch {
       return defaultSettings;
     }

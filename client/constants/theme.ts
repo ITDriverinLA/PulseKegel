@@ -50,6 +50,24 @@ export const Colors = {
     rest: "#00FF88",
     primary: "#00FF88",
   },
+  power: {
+    text: "#FFFFFF",
+    textSecondary: "#B0A8C8",
+    buttonText: "#FFFFFF",
+    tabIconDefault: "#6B5F88",
+    tabIconSelected: "#8B5CF6",
+    link: "#A78BFA",
+    backgroundRoot: "#0E0E0E",
+    backgroundDefault: "#161220",
+    backgroundSecondary: "#1E1828",
+    backgroundTertiary: "#261E34",
+    border: "#2D1F45",
+    success: "#8B5CF6",
+    warning: "#F59E0B",
+    squeeze: "#C084FC",
+    rest: "#8B5CF6",
+    primary: "#8B5CF6",
+  },
 };
 
 export const Spacing = {

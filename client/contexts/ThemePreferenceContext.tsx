@@ -6,7 +6,9 @@ import React, {
   useCallback,
   ReactNode,
 } from "react";
-import { storage } from "../lib/storage";
+import { storage, ThemeMode } from "../lib/storage";
+
+export type { ThemeMode };
 
 export interface CyberpunkColors {
   gradient: readonly [string, string, string, string];
@@ -71,44 +73,89 @@ const lightColors: CyberpunkColors = {
   statusBarStyle: "dark",
 };
 
+const powerColors: CyberpunkColors = {
+  gradient: ["#0E0E0E", "#130D1A", "#1A0E2A", "#0E0E0E"],
+  bg: "#0E0E0E",
+  cardBg: "rgba(139,92,246,0.07)",
+  cardBorder: "rgba(139,92,246,0.18)",
+  cardBgPressed: "rgba(139,92,246,0.14)",
+  text: "#FFFFFF",
+  textSecondary: "rgba(255,255,255,0.6)",
+  textMuted: "rgba(255,255,255,0.38)",
+  neonGreen: "#8B5CF6",
+  neonCyan: "#A78BFA",
+  neonPink: "#C084FC",
+  neonPurple: "#7C3AED",
+  neonOrange: "#F59E0B",
+  overlay: "rgba(0,0,0,0.78)",
+  inputBg: "rgba(139,92,246,0.08)",
+  divider: "rgba(139,92,246,0.14)",
+  tabBarBg: "rgba(14,14,14,0.95)",
+  statusBarStyle: "light",
+};
+
+function resolveColors(theme: ThemeMode): CyberpunkColors {
+  if (theme === "light") return lightColors;
+  if (theme === "power") return powerColors;
+  return darkColors;
+}
+
 interface ThemePreferenceContextType {
+  theme: ThemeMode;
   isDarkMode: boolean;
   toggleDarkMode: () => Promise<void>;
+  setTheme: (t: ThemeMode) => Promise<void>;
   cp: CyberpunkColors;
   refresh: () => Promise<void>;
 }
 
 const ThemePreferenceContext = createContext<ThemePreferenceContextType>({
+  theme: "dark",
   isDarkMode: true,
   toggleDarkMode: async () => {},
+  setTheme: async () => {},
   cp: darkColors,
   refresh: async () => {},
 });
 
 export function ThemePreferenceProvider({ children }: { children: ReactNode }) {
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [theme, setThemeState] = useState<ThemeMode>("dark");
 
   const loadTheme = useCallback(async () => {
     const settings = await storage.getSettings();
-    setIsDarkMode(settings.darkMode);
+    setThemeState(settings.theme);
   }, []);
 
   useEffect(() => {
     loadTheme();
   }, [loadTheme]);
 
-  const toggleDarkMode = useCallback(async () => {
-    const newValue = !isDarkMode;
-    setIsDarkMode(newValue);
-    const settings = await storage.getSettings();
-    await storage.saveSettings({ ...settings, darkMode: newValue });
-  }, [isDarkMode]);
+  const setTheme = useCallback(async (newTheme: ThemeMode) => {
+    setThemeState(newTheme);
+    await storage.saveSettings({
+      theme: newTheme,
+      darkMode: newTheme !== "light",
+    });
+  }, []);
 
-  const cp = isDarkMode ? darkColors : lightColors;
+  const toggleDarkMode = useCallback(async () => {
+    const next: ThemeMode = theme !== "light" ? "light" : "dark";
+    await setTheme(next);
+  }, [theme, setTheme]);
+
+  const isDarkMode = theme !== "light";
+  const cp = resolveColors(theme);
 
   return (
     <ThemePreferenceContext.Provider
-      value={{ isDarkMode, toggleDarkMode, cp, refresh: loadTheme }}
+      value={{
+        theme,
+        isDarkMode,
+        toggleDarkMode,
+        setTheme,
+        cp,
+        refresh: loadTheme,
+      }}
     >
       {children}
     </ThemePreferenceContext.Provider>

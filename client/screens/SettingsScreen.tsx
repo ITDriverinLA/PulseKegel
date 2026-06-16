@@ -51,12 +51,25 @@ import { storage, UserSettings, defaultSettings } from "@/lib/storage";
 import { hapticsManager } from "@/lib/hapticsManager";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { useThemePreference } from "@/contexts/ThemePreferenceContext";
+import {
+  useThemePreference,
+  ThemeMode,
+} from "@/contexts/ThemePreferenceContext";
 import { useAudio } from "@/contexts/AudioContext";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+const THEME_OPTIONS: {
+  value: string;
+  label: string;
+  dots: [string, string, string];
+}[] = [
+  { value: "dark", label: "Dark", dots: ["#0a0a1a", "#00FF88", "#00FFFF"] },
+  { value: "light", label: "Light", dots: ["#f0f2f7", "#00B86B", "#0099CC"] },
+  { value: "power", label: "Power", dots: ["#0E0E0E", "#8B5CF6", "#C084FC"] },
+];
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -66,7 +79,7 @@ export default function SettingsScreen() {
   const { refresh: refreshAccessibility } = useAccessibility();
   const { isSubscribed, isTrialActive, trialDaysRemaining, restorePurchases } =
     useSubscription();
-  const { cp, isDarkMode, toggleDarkMode } = useThemePreference();
+  const { cp, isDarkMode, theme, setTheme } = useThemePreference();
   const { audioSettings, updateAudioSettings, playSfx } = useAudio();
   const [isRestoring, setIsRestoring] = useState(false);
 
@@ -335,13 +348,51 @@ export default function SettingsScreen() {
               { backgroundColor: cp.cardBg, borderColor: cp.cardBorder },
             ]}
           >
-            <Toggle
-              label="Dark Mode"
-              value={isDarkMode}
-              onValueChange={toggleDarkMode}
-              activeColor={cp.neonGreen}
-              labelColor={cp.text}
-            />
+            <Text style={[styles.settingLabel, { color: cp.text }]}>Theme</Text>
+            <View style={styles.themePickerRow}>
+              {THEME_OPTIONS.map((opt) => {
+                const isSelected = theme === opt.value;
+                return (
+                  <Pressable
+                    key={opt.value}
+                    style={[
+                      styles.themeOption,
+                      {
+                        borderColor: isSelected ? cp.neonGreen : cp.divider,
+                        backgroundColor: isSelected
+                          ? `${cp.neonGreen}12`
+                          : cp.inputBg,
+                      },
+                    ]}
+                    onPress={() => setTheme(opt.value as ThemeMode)}
+                    testID={`theme-option-${opt.value}`}
+                  >
+                    <View style={styles.themeSwatchRow}>
+                      {opt.dots.map((color, i) => (
+                        <View
+                          key={i}
+                          style={[styles.themeDot, { backgroundColor: color }]}
+                        />
+                      ))}
+                    </View>
+                    <Text
+                      style={[
+                        styles.themeOptionLabel,
+                        {
+                          color: isSelected ? cp.neonGreen : cp.textSecondary,
+                          fontWeight: isSelected ? "700" : "400",
+                        },
+                      ]}
+                    >
+                      {opt.label}
+                    </Text>
+                    {isSelected ? (
+                      <Feather name="check" size={12} color={cp.neonGreen} />
+                    ) : null}
+                  </Pressable>
+                );
+              })}
+            </View>
           </View>
         </Animated.View>
 
@@ -1683,5 +1734,31 @@ const styles = StyleSheet.create({
   },
   pathTextWrap: {
     flex: 1,
+  },
+  themePickerRow: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+    marginTop: Spacing.sm,
+  },
+  themeOption: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.xs,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1.5,
+    gap: 6,
+  },
+  themeSwatchRow: {
+    flexDirection: "row",
+    gap: 4,
+  },
+  themeDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  themeOptionLabel: {
+    fontSize: 12,
   },
 });
