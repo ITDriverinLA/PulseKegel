@@ -13,6 +13,7 @@ import Animated, {
 import Svg, { Circle } from "react-native-svg";
 
 import { SegmentType } from "@/data/workoutProgram";
+import { useThemePreference } from "@/contexts/ThemePreferenceContext";
 import {
   ANIM_DURATION_MICRO,
   ANIM_DURATION_PROGRESS_DRAIN,
@@ -36,10 +37,6 @@ interface CircularProgressRingProps {
 
 const TRACK_COLOR = "rgba(0, 0, 0, 0.06)";
 
-const RING_COLORS_START = "#10B981";
-const RING_COLORS_MID = "#F59E0B";
-const RING_COLORS_END = "#EF4444";
-
 export function CircularProgressRing({
   phase,
   segmentType,
@@ -50,8 +47,13 @@ export function CircularProgressRing({
   rampSteps,
   children,
 }: CircularProgressRingProps) {
+  const { cp } = useThemePreference();
   const progress = useSharedValue(0);
   const phaseKeyRef = useRef(0);
+
+  // Squeeze phase: neonGreen (low) → neonCyan (full); rest phase: neonGreen
+  const squeezeColorLow = cp.neonGreen;
+  const squeezeColorHigh = cp.neonCyan;
 
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -143,8 +145,8 @@ export function CircularProgressRing({
       strokeDashoffset,
       stroke: interpolateColor(
         progress.value,
-        [0, 0.5, 1],
-        [RING_COLORS_START, RING_COLORS_MID, RING_COLORS_END],
+        [0, 1],
+        [squeezeColorLow, squeezeColorHigh],
       ),
     };
   });
@@ -155,8 +157,8 @@ export function CircularProgressRing({
       shadowRadius: 12 + progress.value * 8,
       shadowColor: interpolateColor(
         progress.value,
-        [0, 0.5, 1],
-        [RING_COLORS_START, RING_COLORS_MID, RING_COLORS_END],
+        [0, 1],
+        [squeezeColorLow, squeezeColorHigh],
       ),
     };
   });

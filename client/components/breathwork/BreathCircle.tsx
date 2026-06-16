@@ -12,7 +12,7 @@ import Animated, {
 } from "react-native-reanimated";
 import Svg, { Rect } from "react-native-svg";
 import { BreathPhase } from "@/constants/breathworkModes";
-import { useTheme } from "@/hooks/useTheme";
+import { useThemePreference } from "@/contexts/ThemePreferenceContext";
 import {
   ANIM_DURATION_PULSE,
   ANIM_DURATION_COLOR_CYCLE,
@@ -100,6 +100,14 @@ const LIGHT_GLOW = [
   "#B2DFDB",
 ];
 
+function hexToRgba(hex: string, alpha: number): string {
+  const clean = hex.replace("#", "");
+  const r = parseInt(clean.slice(0, 2), 16);
+  const g = parseInt(clean.slice(2, 4), 16);
+  const b = parseInt(clean.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 interface BreathBarProps {
   index: number;
   progress: SharedValue<number>;
@@ -178,11 +186,46 @@ export default function BreathCircle({
   isPaused,
   elapsedSeconds,
 }: BreathCircleProps) {
-  const { isDark } = useTheme();
+  const { theme, cp } = useThemePreference();
 
-  const brightPalette = isDark ? DARK_BRIGHT : LIGHT_BRIGHT;
-  const dimPalette = isDark ? DARK_DIM : LIGHT_DIM;
-  const glowPalette = isDark ? DARK_GLOW : LIGHT_GLOW;
+  let brightPalette: string[];
+  let dimPalette: string[];
+  let glowPalette: string[];
+
+  if (theme === "power") {
+    brightPalette = [
+      cp.neonGreen,
+      cp.neonCyan,
+      cp.neonPink,
+      cp.neonGreen,
+      cp.neonCyan,
+      cp.neonGreen,
+    ];
+    dimPalette = [
+      hexToRgba(cp.neonGreen, 0.55),
+      hexToRgba(cp.neonCyan, 0.55),
+      hexToRgba(cp.neonPink, 0.55),
+      hexToRgba(cp.neonGreen, 0.55),
+      hexToRgba(cp.neonCyan, 0.55),
+      hexToRgba(cp.neonGreen, 0.55),
+    ];
+    glowPalette = [
+      hexToRgba(cp.neonGreen, 0.3),
+      hexToRgba(cp.neonCyan, 0.3),
+      hexToRgba(cp.neonPink, 0.3),
+      hexToRgba(cp.neonGreen, 0.3),
+      hexToRgba(cp.neonCyan, 0.3),
+      hexToRgba(cp.neonGreen, 0.3),
+    ];
+  } else if (theme === "dark") {
+    brightPalette = DARK_BRIGHT;
+    dimPalette = DARK_DIM;
+    glowPalette = DARK_GLOW;
+  } else {
+    brightPalette = LIGHT_BRIGHT;
+    dimPalette = LIGHT_DIM;
+    glowPalette = LIGHT_GLOW;
+  }
 
   const progress = useSharedValue(0);
   const pulse = useSharedValue(0);

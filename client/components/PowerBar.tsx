@@ -33,41 +33,61 @@ interface PowerBarProps {
 const SEGMENT_COUNT = 15;
 const SEGMENT_GAP = 3;
 
-const SEGMENT_COLORS = [
-  "#00FF88",
-  "#00FF88",
-  "#00FF88",
-  "#00FF88",
-  "#00FF88",
-  "#39FF14",
-  "#39FF14",
-  "#FFFF00",
-  "#FFFF00",
-  "#FF9500",
-  "#FF9500",
-  "#FF6B00",
-  "#FF3366",
-  "#FF3366",
-  "#FF0055",
-];
+function hexToRgba(hex: string, alpha: number): string {
+  const clean = hex.replace("#", "");
+  const r = parseInt(clean.slice(0, 2), 16);
+  const g = parseInt(clean.slice(2, 4), 16);
+  const b = parseInt(clean.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
-const SEGMENT_GLOW_COLORS = [
-  "rgba(0, 255, 136, 0.6)",
-  "rgba(0, 255, 136, 0.6)",
-  "rgba(0, 255, 136, 0.6)",
-  "rgba(0, 255, 136, 0.6)",
-  "rgba(0, 255, 136, 0.6)",
-  "rgba(57, 255, 20, 0.6)",
-  "rgba(57, 255, 20, 0.6)",
-  "rgba(255, 255, 0, 0.6)",
-  "rgba(255, 255, 0, 0.6)",
-  "rgba(255, 149, 0, 0.6)",
-  "rgba(255, 149, 0, 0.6)",
-  "rgba(255, 107, 0, 0.6)",
-  "rgba(255, 51, 102, 0.6)",
-  "rgba(255, 51, 102, 0.6)",
-  "rgba(255, 0, 85, 0.6)",
-];
+function buildSegmentColors(
+  neonGreen: string,
+  neonCyan: string,
+  neonPink: string,
+): string[] {
+  return [
+    neonGreen,
+    neonGreen,
+    neonGreen,
+    neonGreen,
+    neonGreen,
+    neonGreen,
+    neonCyan,
+    neonCyan,
+    neonCyan,
+    neonCyan,
+    neonCyan,
+    neonPink,
+    neonPink,
+    neonPink,
+    neonPink,
+  ];
+}
+
+function buildSegmentGlowColors(
+  neonGreen: string,
+  neonCyan: string,
+  neonPink: string,
+): string[] {
+  return [
+    hexToRgba(neonGreen, 0.6),
+    hexToRgba(neonGreen, 0.6),
+    hexToRgba(neonGreen, 0.6),
+    hexToRgba(neonGreen, 0.6),
+    hexToRgba(neonGreen, 0.6),
+    hexToRgba(neonGreen, 0.6),
+    hexToRgba(neonCyan, 0.6),
+    hexToRgba(neonCyan, 0.6),
+    hexToRgba(neonCyan, 0.6),
+    hexToRgba(neonCyan, 0.6),
+    hexToRgba(neonCyan, 0.6),
+    hexToRgba(neonPink, 0.6),
+    hexToRgba(neonPink, 0.6),
+    hexToRgba(neonPink, 0.6),
+    hexToRgba(neonPink, 0.6),
+  ];
+}
 
 function PowerBarSegment({
   index,
@@ -75,20 +95,24 @@ function PowerBarSegment({
   segmentHeight,
   width,
   inactiveColor,
+  segmentColors,
+  segmentGlowColors,
 }: {
   index: number;
   progress: { value: number };
   segmentHeight: number;
   width: number;
   inactiveColor: string;
+  segmentColors: string[];
+  segmentGlowColors: string[];
 }) {
   const threshold = (index + 0.5) / SEGMENT_COUNT;
 
   const animatedStyle = useAnimatedStyle(() => {
     const isLit = progress.value >= threshold;
     return {
-      backgroundColor: isLit ? SEGMENT_COLORS[index] : inactiveColor,
-      shadowColor: isLit ? SEGMENT_GLOW_COLORS[index] : "transparent",
+      backgroundColor: isLit ? segmentColors[index] : inactiveColor,
+      shadowColor: isLit ? segmentGlowColors[index] : "transparent",
       shadowOpacity: isLit ? 1 : 0,
       shadowRadius: isLit ? 12 : 0,
       shadowOffset: { width: 0, height: 0 },
@@ -120,11 +144,22 @@ export function PowerBar({
   width = 140,
   rampSteps,
 }: PowerBarProps) {
-  const { isDarkMode } = useThemePreference();
+  const { isDarkMode, cp } = useThemePreference();
   const progress = useSharedValue(0);
   const segmentHeight =
     (height - (SEGMENT_COUNT - 1) * SEGMENT_GAP - 32) / SEGMENT_COUNT;
   const phaseKeyRef = useRef(0);
+
+  const segmentColors = buildSegmentColors(
+    cp.neonGreen,
+    cp.neonCyan,
+    cp.neonPink,
+  );
+  const segmentGlowColors = buildSegmentGlowColors(
+    cp.neonGreen,
+    cp.neonCyan,
+    cp.neonPink,
+  );
 
   const inactiveColor = isDarkMode
     ? "rgba(20, 20, 30, 0.9)"
@@ -231,6 +266,8 @@ export function PowerBar({
         segmentHeight={segmentHeight}
         width={width}
         inactiveColor={inactiveColor}
+        segmentColors={segmentColors}
+        segmentGlowColors={segmentGlowColors}
       />,
     );
   }
