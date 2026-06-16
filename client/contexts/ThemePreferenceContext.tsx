@@ -6,7 +6,9 @@ import React, {
   useCallback,
   ReactNode,
 } from "react";
+import * as Font from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
+import { Feather } from "@expo/vector-icons";
 import { storage, ThemeMode } from "../lib/storage";
 
 export type { ThemeMode };
@@ -130,7 +132,7 @@ export function ThemePreferenceProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     (async () => {
-      await loadTheme();
+      await Promise.all([loadTheme(), Font.loadAsync(Feather.font)]);
       setLoaded(true);
       SplashScreen.hideAsync().catch(() => {});
     })();
