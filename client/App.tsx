@@ -19,6 +19,7 @@ import {
   ThemePreferenceProvider,
   useThemePreference,
 } from "@/contexts/ThemePreferenceContext";
+import { StartupProvider, useStartup } from "@/contexts/StartupContext";
 import { storage } from "@/lib/storage";
 import { scheduleDailyReminder } from "@/lib/notifications";
 import { trackAppOpen } from "@/lib/analytics";
@@ -27,40 +28,33 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function AppContent() {
   const { cp } = useThemePreference();
+  const { initialSettings, initialProgress, programStartDate } = useStartup();
 
   useEffect(() => {
     (async () => {
       try {
-        const settings = await storage.getSettings();
-        if (settings.reminderEnabled) {
-          await scheduleDailyReminder(settings.reminderTime);
+        if (initialSettings.reminderEnabled) {
+          await scheduleDailyReminder(initialSettings.reminderTime);
         }
       } catch {}
     })();
 
-    (async () => {
-      try {
-        const [progress, settings, programStartDate] = await Promise.all([
-          storage.getProgress(),
-          storage.getSettings(),
-          storage.getProgramStartDate(),
-        ]);
-        let programWeek: number | undefined;
-        if (programStartDate) {
-          const startMs = new Date(programStartDate).getTime();
-          const diffDays = Math.floor(
-            (Date.now() - startMs) / (1000 * 60 * 60 * 24),
-          );
-          programWeek = Math.min(Math.floor(diffDays / 7) + 1, 12);
-        }
-        trackAppOpen({
-          programWeek,
-          streak: progress.currentStreak,
-          totalSessions: progress.totalSessions,
-          anatomyType: settings.anatomyType,
-        });
-      } catch {}
-    })();
+    try {
+      let programWeek: number | undefined;
+      if (programStartDate) {
+        const startMs = new Date(programStartDate).getTime();
+        const diffDays = Math.floor(
+          (Date.now() - startMs) / (1000 * 60 * 60 * 24),
+        );
+        programWeek = Math.min(Math.floor(diffDays / 7) + 1, 12);
+      }
+      trackAppOpen({
+        programWeek,
+        streak: initialProgress.currentStreak,
+        totalSessions: initialProgress.totalSessions,
+        anatomyType: initialSettings.anatomyType,
+      });
+    } catch {}
   }, []);
 
   return (
@@ -82,13 +76,15 @@ export default function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <SubscriptionProvider>
-          <ThemePreferenceProvider>
-            <AccessibilityProvider>
-              <AudioProvider>
-                <AppContent />
-              </AudioProvider>
-            </AccessibilityProvider>
-          </ThemePreferenceProvider>
+          <StartupProvider>
+            <ThemePreferenceProvider>
+              <AccessibilityProvider>
+                <AudioProvider>
+                  <AppContent />
+                </AudioProvider>
+              </AccessibilityProvider>
+            </ThemePreferenceProvider>
+          </StartupProvider>
         </SubscriptionProvider>
       </QueryClientProvider>
     </ErrorBoundary>

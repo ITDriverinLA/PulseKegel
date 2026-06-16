@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import { storage } from "../lib/storage";
 import { useThemePreference } from "./ThemePreferenceContext";
+import { useStartup } from "./StartupContext";
 
 interface AccessibilityContextType {
   highContrast: boolean;
@@ -73,8 +74,9 @@ const AccessibilityContext = createContext<AccessibilityContextType>({
 });
 
 export function AccessibilityProvider({ children }: { children: ReactNode }) {
-  const [highContrast, setHighContrast] = useState(false);
-  const [largeText, setLargeText] = useState(false);
+  const { initialSettings } = useStartup();
+  const [highContrast, setHighContrast] = useState(initialSettings.highContrastMode);
+  const [largeText, setLargeText] = useState(initialSettings.largeTextMode);
   const { isDarkMode } = useThemePreference();
 
   const loadSettings = async () => {
@@ -82,10 +84,6 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
     setHighContrast(settings.highContrastMode);
     setLargeText(settings.largeTextMode);
   };
-
-  useEffect(() => {
-    loadSettings();
-  }, []);
 
   const fontScale = largeText ? 1.25 : 1;
 

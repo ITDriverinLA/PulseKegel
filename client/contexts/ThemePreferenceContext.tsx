@@ -2,14 +2,11 @@ import React, {
   createContext,
   useContext,
   useState,
-  useEffect,
   useCallback,
   ReactNode,
 } from "react";
-import * as Font from "expo-font";
-import * as SplashScreen from "expo-splash-screen";
-import { Feather } from "@expo/vector-icons";
 import { storage, ThemeMode } from "../lib/storage";
+import { useStartup } from "./StartupContext";
 
 export type { ThemeMode };
 
@@ -122,21 +119,14 @@ const ThemePreferenceContext = createContext<ThemePreferenceContextType>({
 });
 
 export function ThemePreferenceProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeMode>("dark");
-  const [loaded, setLoaded] = useState(false);
+  const { initialSettings } = useStartup();
+  const [theme, setThemeState] = useState<ThemeMode>(initialSettings.theme);
 
-  const loadTheme = useCallback(async () => {
+  const refresh = useCallback(async () => {
     const settings = await storage.getSettings();
     setThemeState(settings.theme);
   }, []);
 
-  useEffect(() => {
-    (async () => {
-      await Promise.all([loadTheme(), Font.loadAsync(Feather.font)]);
-      setLoaded(true);
-      SplashScreen.hideAsync().catch(() => {});
-    })();
-  }, [loadTheme]);
 
   const setTheme = useCallback(async (newTheme: ThemeMode) => {
     setThemeState(newTheme);
@@ -162,10 +152,10 @@ export function ThemePreferenceProvider({ children }: { children: ReactNode }) {
         toggleDarkMode,
         setTheme,
         cp,
-        refresh: loadTheme,
+        refresh,
       }}
     >
-      {loaded ? children : null}
+      {children}
     </ThemePreferenceContext.Provider>
   );
 }
