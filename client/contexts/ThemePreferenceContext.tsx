@@ -6,6 +6,7 @@ import React, {
   useCallback,
   ReactNode,
 } from "react";
+import * as SplashScreen from "expo-splash-screen";
 import { storage, ThemeMode } from "../lib/storage";
 
 export type { ThemeMode };
@@ -120,6 +121,7 @@ const ThemePreferenceContext = createContext<ThemePreferenceContextType>({
 
 export function ThemePreferenceProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<ThemeMode>("dark");
+  const [loaded, setLoaded] = useState(false);
 
   const loadTheme = useCallback(async () => {
     const settings = await storage.getSettings();
@@ -127,7 +129,11 @@ export function ThemePreferenceProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    loadTheme();
+    (async () => {
+      await loadTheme();
+      setLoaded(true);
+      SplashScreen.hideAsync().catch(() => {});
+    })();
   }, [loadTheme]);
 
   const setTheme = useCallback(async (newTheme: ThemeMode) => {
@@ -157,7 +163,7 @@ export function ThemePreferenceProvider({ children }: { children: ReactNode }) {
         refresh: loadTheme,
       }}
     >
-      {children}
+      {loaded ? children : null}
     </ThemePreferenceContext.Provider>
   );
 }

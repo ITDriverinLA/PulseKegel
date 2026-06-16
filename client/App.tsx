@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { StyleSheet } from "react-native";
+import * as SplashScreen from "expo-splash-screen";
 import { NavigationContainer } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
@@ -21,6 +22,8 @@ import {
 import { storage } from "@/lib/storage";
 import { scheduleDailyReminder } from "@/lib/notifications";
 import { trackAppOpen } from "@/lib/analytics";
+
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function AppContent() {
   const { cp } = useThemePreference();
