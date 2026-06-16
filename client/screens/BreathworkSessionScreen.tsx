@@ -897,9 +897,13 @@ export default function BreathworkSessionScreen() {
             <View style={styles.modalButtons}>
               <Pressable
                 onPress={() => setShowExitModal(false)}
-                style={[
+                style={({ pressed }) => [
                   styles.modalButton,
-                  { backgroundColor: bwColors.accentSoft },
+                  {
+                    backgroundColor: pressed
+                      ? `${bwColors.accent}55`
+                      : bwColors.accentSoft,
+                  },
                 ]}
                 testID="breathwork-continue-button"
               >
