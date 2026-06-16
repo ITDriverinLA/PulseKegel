@@ -67,7 +67,7 @@ export default function WorkoutPlayerScreen() {
   useKeepAwake();
 
   const insets = useSafeAreaInsets();
-  const { cp, isDarkMode } = useThemePreference();
+  const { cp, isDarkMode, theme } = useThemePreference();
   const { playSfx, startAmbient, stopAmbient, fadeOutAmbient } = useAudio();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
@@ -749,7 +749,7 @@ export default function WorkoutPlayerScreen() {
             </Animated.Text>
           </Animated.View>
 
-          {isDarkMode ? (
+          {theme !== "light" ? (
             <View style={styles.powerBarContainer}>
               <PowerBar
                 phase={currentPhase}
@@ -878,7 +878,14 @@ export default function WorkoutPlayerScreen() {
             style={[styles.mainButton, { shadowColor: cp.neonGreen }]}
           >
             <LinearGradient
-              colors={[cp.neonGreen, isDarkMode ? "#00CC66" : "#00994D"]}
+              colors={[
+                cp.neonGreen,
+                theme === "power"
+                  ? "#6D28D9"
+                  : theme === "dark"
+                    ? "#00CC66"
+                    : "#00994D",
+              ]}
               style={styles.mainButtonGradient}
             >
               <Feather

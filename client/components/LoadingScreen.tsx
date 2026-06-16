@@ -17,6 +17,7 @@ import {
   ANIM_DELAY_LONG,
   ANIM_DURATION_CONTENT,
 } from "@/constants/animation";
+import { useThemePreference } from "@/contexts/ThemePreferenceContext";
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -31,10 +32,8 @@ const ECG_PATH =
 // Conservative overestimate of total path length so the stroke is fully hidden at offset = PATH_LENGTH.
 const PATH_LENGTH = 430;
 
-const BG = "#0a0a1a";
-const NEON = "#5CE8E0";
-
 export function LoadingScreen() {
+  const { cp } = useThemePreference();
   const dashOffset = useSharedValue(PATH_LENGTH);
 
   useEffect(() => {
@@ -63,7 +62,7 @@ export function LoadingScreen() {
   }));
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: cp.bg }]}>
       <Animated.View
         entering={FadeIn.duration(ANIM_DURATION_CONTENT)}
         style={styles.content}
@@ -74,14 +73,14 @@ export function LoadingScreen() {
           resizeMode="contain"
         />
 
-        <Text style={styles.title}>PulseKegel</Text>
+        <Text style={[styles.title, { color: cp.text }]}>PulseKegel</Text>
 
         <View style={styles.lineWrapper}>
           <Svg width={LINE_WIDTH} height={60} viewBox="0 0 300 60">
             {/* Wide faint glow */}
             <AnimatedPath
               d={ECG_PATH}
-              stroke={NEON}
+              stroke={cp.neonCyan}
               strokeWidth={10}
               strokeOpacity={0.15}
               fill="none"
@@ -93,7 +92,7 @@ export function LoadingScreen() {
             {/* Medium glow */}
             <AnimatedPath
               d={ECG_PATH}
-              stroke={NEON}
+              stroke={cp.neonCyan}
               strokeWidth={4}
               strokeOpacity={0.35}
               fill="none"
@@ -105,7 +104,7 @@ export function LoadingScreen() {
             {/* Crisp main line */}
             <AnimatedPath
               d={ECG_PATH}
-              stroke={NEON}
+              stroke={cp.neonCyan}
               strokeWidth={2}
               fill="none"
               strokeLinecap="round"
@@ -123,7 +122,6 @@ export function LoadingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: BG,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -139,7 +137,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "700",
-    color: "#ECEDEE",
     letterSpacing: 1,
   },
   lineWrapper: {
