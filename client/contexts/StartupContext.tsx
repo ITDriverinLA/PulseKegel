@@ -8,7 +8,12 @@ import React, {
 import * as Font from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { Feather } from "@expo/vector-icons";
-import { storage, UserSettings, UserProgress, defaultSettings } from "../lib/storage";
+import {
+  storage,
+  UserSettings,
+  UserProgress,
+  defaultSettings,
+} from "../lib/storage";
 
 const defaultProgress: UserProgress = {
   completedDates: [],
@@ -36,8 +41,10 @@ const StartupContext = createContext<StartupContextType>({
 
 export function StartupProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
-  const [initialSettings, setInitialSettings] = useState<UserSettings>(defaultSettings);
-  const [initialProgress, setInitialProgress] = useState<UserProgress>(defaultProgress);
+  const [initialSettings, setInitialSettings] =
+    useState<UserSettings>(defaultSettings);
+  const [initialProgress, setInitialProgress] =
+    useState<UserProgress>(defaultProgress);
   const [programStartDate, setProgramStartDate] = useState<string | null>(null);
 
   useEffect(() => {

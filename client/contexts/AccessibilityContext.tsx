@@ -1,10 +1,4 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-} from "react";
+import React, { createContext, useContext, useState, ReactNode } from "react";
 import { storage } from "../lib/storage";
 import { useThemePreference } from "./ThemePreferenceContext";
 import { useStartup } from "./StartupContext";
@@ -75,7 +69,9 @@ const AccessibilityContext = createContext<AccessibilityContextType>({
 
 export function AccessibilityProvider({ children }: { children: ReactNode }) {
   const { initialSettings } = useStartup();
-  const [highContrast, setHighContrast] = useState(initialSettings.highContrastMode);
+  const [highContrast, setHighContrast] = useState(
+    initialSettings.highContrastMode,
+  );
   const [largeText, setLargeText] = useState(initialSettings.largeTextMode);
   const { isDarkMode } = useThemePreference();
 

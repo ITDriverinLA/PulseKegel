@@ -20,7 +20,6 @@ import {
   useThemePreference,
 } from "@/contexts/ThemePreferenceContext";
 import { StartupProvider, useStartup } from "@/contexts/StartupContext";
-import { storage } from "@/lib/storage";
 import { scheduleDailyReminder } from "@/lib/notifications";
 import { trackAppOpen } from "@/lib/analytics";
 
@@ -55,7 +54,7 @@ function AppContent() {
         anatomyType: initialSettings.anatomyType,
       });
     } catch {}
-  }, []);
+  }, [initialSettings, initialProgress, programStartDate]);
 
   return (
     <SafeAreaProvider>

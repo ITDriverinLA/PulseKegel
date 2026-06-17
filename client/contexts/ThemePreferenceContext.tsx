@@ -127,7 +127,6 @@ export function ThemePreferenceProvider({ children }: { children: ReactNode }) {
     setThemeState(settings.theme);
   }, []);
 
-
   const setTheme = useCallback(async (newTheme: ThemeMode) => {
     setThemeState(newTheme);
     await storage.saveSettings({
