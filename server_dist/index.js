@@ -1754,6 +1754,120 @@ ${blogUrls}
               WHERE event_type = 'onboarding_complete'
             )`
       );
+      const retentionRaw = await db.execute(
+        sql2`
+          WITH cohort AS (
+            SELECT device_id, MIN(created_at) AS first_seen
+            FROM analytics_events
+            GROUP BY device_id
+          )
+          SELECT 'D1' AS period,
+            COUNT(*)::int AS total,
+            COUNT(CASE WHEN EXISTS (
+              SELECT 1 FROM analytics_events r
+              WHERE r.device_id = cohort.device_id
+                AND r.created_at >= cohort.first_seen + INTERVAL '23 hours'
+                AND r.created_at <  cohort.first_seen + INTERVAL '48 hours'
+            ) THEN 1 END)::int AS returned
+          FROM cohort WHERE cohort.first_seen <= NOW() - INTERVAL '1 day'
+          UNION ALL
+          SELECT 'D7',
+            COUNT(*)::int,
+            COUNT(CASE WHEN EXISTS (
+              SELECT 1 FROM analytics_events r
+              WHERE r.device_id = cohort.device_id
+                AND r.created_at >= cohort.first_seen + INTERVAL '6 days 23 hours'
+                AND r.created_at <  cohort.first_seen + INTERVAL '14 days'
+            ) THEN 1 END)::int
+          FROM cohort WHERE cohort.first_seen <= NOW() - INTERVAL '7 days'
+          UNION ALL
+          SELECT 'D30',
+            COUNT(*)::int,
+            COUNT(CASE WHEN EXISTS (
+              SELECT 1 FROM analytics_events r
+              WHERE r.device_id = cohort.device_id
+                AND r.created_at >= cohort.first_seen + INTERVAL '29 days 23 hours'
+                AND r.created_at <  cohort.first_seen + INTERVAL '60 days'
+            ) THEN 1 END)::int
+          FROM cohort WHERE cohort.first_seen <= NOW() - INTERVAL '30 days'
+        `
+      );
+      const [funnelOnboarded] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(sql2`${analyticsEvents.eventType} = 'onboarding_complete'`);
+      const [funnelSession] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(sql2`${analyticsEvents.eventType} = 'session_complete'`);
+      const programWeekDistRaw = await db.execute(
+        sql2`
+          SELECT
+            event_data->>'programWeek' AS week,
+            COUNT(DISTINCT device_id)::int AS count
+          FROM analytics_events
+          WHERE event_type = 'app_open'
+            AND event_data->>'programWeek' IS NOT NULL
+            AND created_at >= NOW() - INTERVAL '30 days'
+          GROUP BY event_data->>'programWeek'
+          ORDER BY (event_data->>'programWeek')::int
+        `
+      );
+      const workoutTypeRaw = await db.execute(
+        sql2`
+          SELECT
+            COALESCE(event_data->>'workoutType', 'unknown') AS "workoutType",
+            COUNT(*)::int AS count
+          FROM analytics_events
+          WHERE event_type = 'session_complete'
+          GROUP BY COALESCE(event_data->>'workoutType', 'unknown')
+          ORDER BY count DESC
+        `
+      );
+      const anatomySplitRaw = await db.execute(
+        sql2`
+          SELECT
+            COALESCE(event_data->>'anatomyType', 'unknown') AS "anatomyType",
+            COUNT(DISTINCT device_id)::int AS count
+          FROM analytics_events
+          WHERE event_type = 'onboarding_complete'
+          GROUP BY COALESCE(event_data->>'anatomyType', 'unknown')
+          ORDER BY count DESC
+        `
+      );
+      const appVersionRaw = await db.execute(
+        sql2`
+          SELECT
+            COALESCE(app_version, 'unknown') AS "appVersion",
+            COUNT(DISTINCT device_id)::int AS count
+          FROM analytics_events
+          WHERE created_at >= NOW() - INTERVAL '7 days'
+          GROUP BY COALESCE(app_version, 'unknown')
+          ORDER BY count DESC
+          LIMIT 10
+        `
+      );
+      const [sessionsInWau] = await db.select({ count: sql2`count(*)::int` }).from(analyticsEvents).where(
+        sql2`${analyticsEvents.eventType} = 'session_complete'
+            AND ${analyticsEvents.createdAt} >= ${d7}`
+      );
+      const wauCount = Number(wau?.count ?? 0);
+      const avgSessionsPerWau = wauCount > 0 ? Math.round(Number(sessionsInWau?.count ?? 0) / wauCount * 10) / 10 : 0;
+      const weekCompletionRaw = await db.execute(
+        sql2`
+          SELECT
+            ROUND(
+              AVG(
+                LEAST(
+                  (event_data->>'daysWorkedOut')::numeric
+                    / NULLIF((event_data->>'scheduledDays')::numeric, 0),
+                  1.0
+                )
+              ) * 100,
+              1
+            )::text AS avg_rate,
+            COUNT(*)::int AS total_weeks
+          FROM analytics_events
+          WHERE event_type = 'week_complete'
+            AND event_data->>'daysWorkedOut' IS NOT NULL
+            AND event_data->>'scheduledDays' IS NOT NULL
+            AND created_at >= NOW() - INTERVAL '30 days'
+        `
+      );
       res.json({
         totalDevices: totalDevices?.count ?? 0,
         dau: dau?.count ?? 0,
@@ -1767,7 +1881,22 @@ ${blogUrls}
         dailyUniqueUsers: dailyUniqueUsersRaw.rows,
         devicesByPlatform: devicesByPlatformRaw.rows,
         wauByPlatform: wauByPlatformRaw.rows,
-        challengeResultBreakdown: challengeResultBreakdownRaw.rows
+        challengeResultBreakdown: challengeResultBreakdownRaw.rows,
+        retention: retentionRaw.rows,
+        funnel: {
+          opens: totalDevices?.count ?? 0,
+          onboarded: funnelOnboarded?.count ?? 0,
+          sessions: funnelSession?.count ?? 0
+        },
+        programWeekDist: programWeekDistRaw.rows,
+        workoutTypeBreakdown: workoutTypeRaw.rows,
+        anatomySplit: anatomySplitRaw.rows,
+        appVersionDist: appVersionRaw.rows,
+        avgSessionsPerWau,
+        weekCompletionRate: {
+          avgRate: weekCompletionRaw.rows[0]?.avg_rate ?? null,
+          totalWeeks: Number(weekCompletionRaw.rows[0]?.total_weeks ?? 0)
+        }
       });
     } catch (err) {
       console.error("Analytics summary error:", err);
