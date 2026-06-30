@@ -313,8 +313,12 @@ const calculateStreak = (
           86400000,
       );
       if (daysSinceStart >= 84) {
-        const { path, controlModeStartDate, pinnedRestWeekdays, preferredRestWeekdays } =
-          controlModeInfo;
+        const {
+          path,
+          controlModeStartDate,
+          pinnedRestWeekdays,
+          preferredRestWeekdays,
+        } = controlModeInfo;
         if (path === "rebuild") {
           return isRestDayForDate(d, controlModeStartDate);
         }
