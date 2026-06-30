@@ -4,6 +4,10 @@ import {
   getWorkoutCompletionsForWeek,
   getScheduledDaysForWeek,
 } from "@/data/workoutProgram";
+import {
+  buildHabitSchedule,
+  type ControlPath,
+} from "@/data/controlModeWorkouts";
 import { BADGE_DEFINITIONS, type EarnedBadge } from "@/data/badges";
 import {
   RankName,
@@ -266,6 +270,7 @@ type ControlModeStreakInfo = {
   path: ControlModePath;
   controlModeStartDate: string;
   pinnedRestWeekdays: number[];
+  preferredRestWeekdays: number[];
 };
 
 const calculateStreak = (
@@ -308,14 +313,20 @@ const calculateStreak = (
           86400000,
       );
       if (daysSinceStart >= 84) {
-        const { path, controlModeStartDate, pinnedRestWeekdays } =
+        const { path, controlModeStartDate, pinnedRestWeekdays, preferredRestWeekdays } =
           controlModeInfo;
         if (path === "rebuild") {
           return isRestDayForDate(d, controlModeStartDate);
         }
-        // maintain / build / precision: weekday-anchored rest days
+        // maintain / build / precision: weekday-anchored rest days.
+        // Use the union of explicitly-pinned days and auto-detected preferred
+        // rest days so that users with all-AUTO schedules (empty pinnedRestWeekdays)
+        // still have their rest days recognised and their streak preserved.
         const weekdayMF = (d.getDay() + 6) % 7; // Mon=0 … Sun=6
-        return pinnedRestWeekdays.includes(weekdayMF);
+        return (
+          pinnedRestWeekdays.includes(weekdayMF) ||
+          preferredRestWeekdays.includes(weekdayMF)
+        );
       }
     }
 
@@ -485,6 +496,37 @@ export const storage = {
       this.getProgramProgress(),
     ]);
 
+    // workoutDates is loaded before the streak calculation so we can derive
+    // the auto-tuned preferred rest weekdays (for all-AUTO Control Mode users
+    // whose pinnedRestWeekdays array is empty).
+    const workoutDatesRaw = await AsyncStorage.getItem(
+      STORAGE_KEYS.WORKOUT_DATES,
+    );
+    const workoutDates: string[] = workoutDatesRaw
+      ? JSON.parse(workoutDatesRaw)
+      : [];
+
+    const pinnedRestWeekdays = progProgress.controlModePinnedRestWeekdays ?? [];
+
+    // For maintain/build/precision paths, derive the preferred (auto-detected)
+    // rest weekdays from the habit scheduler so that users with all-AUTO
+    // schedules (empty pinnedRestWeekdays) still have their rest days counted
+    // toward the streak.
+    let preferredRestWeekdays: number[] = [];
+    if (
+      progProgress.phase === "control_mode" &&
+      progProgress.controlModePath &&
+      progProgress.controlModePath !== "rebuild" &&
+      workoutDates.length > 0
+    ) {
+      preferredRestWeekdays = buildHabitSchedule(
+        progProgress.controlModePath as ControlPath,
+        workoutDates,
+        todayDateString(),
+        pinnedRestWeekdays,
+      ).preferredRestWeekdays;
+    }
+
     const controlModeInfo: ControlModeStreakInfo | undefined =
       progProgress.phase === "control_mode" &&
       progProgress.controlModePath &&
@@ -492,8 +534,8 @@ export const storage = {
         ? {
             path: progProgress.controlModePath,
             controlModeStartDate: progProgress.controlModeStartDate,
-            pinnedRestWeekdays:
-              progProgress.controlModePinnedRestWeekdays ?? [],
+            pinnedRestWeekdays,
+            preferredRestWeekdays,
           }
         : undefined;
 
@@ -502,12 +544,6 @@ export const storage = {
       programStartDate,
       controlModeInfo,
     );
-    const workoutDatesRaw = await AsyncStorage.getItem(
-      STORAGE_KEYS.WORKOUT_DATES,
-    );
-    const workoutDates: string[] = workoutDatesRaw
-      ? JSON.parse(workoutDatesRaw)
-      : [];
 
     const sortedDates = [...completedDates].sort().reverse();
 
@@ -587,9 +623,35 @@ export const storage = {
 
     // Load Control Mode info so we can apply the correct rest-day schedule for
     // days beyond the 12-week program (day 84+).  For maintain/build/precision
-    // paths, rest days are weekday-anchored (pinnedRestWeekdays); for rebuild,
-    // they mirror the source week relative to controlModeStartDate.
+    // paths, rest days are weekday-anchored; for rebuild they mirror the source
+    // week relative to controlModeStartDate.
     const progProgress = await this.getProgramProgress();
+
+    // Load actual workout dates (no backfilled rest days) so we can derive the
+    // auto-tuned preferred rest weekdays for all-AUTO Control Mode schedules.
+    const workoutDatesRaw = await AsyncStorage.getItem(
+      STORAGE_KEYS.WORKOUT_DATES,
+    );
+    const workoutDatesForHabit: string[] = workoutDatesRaw
+      ? JSON.parse(workoutDatesRaw)
+      : [];
+
+    const cmPinned = progProgress.controlModePinnedRestWeekdays ?? [];
+    let cmPreferred: number[] = [];
+    if (
+      progProgress.phase === "control_mode" &&
+      progProgress.controlModePath &&
+      progProgress.controlModePath !== "rebuild" &&
+      workoutDatesForHabit.length > 0
+    ) {
+      cmPreferred = buildHabitSchedule(
+        progProgress.controlModePath as ControlPath,
+        workoutDatesForHabit,
+        todayDateString(),
+        cmPinned,
+      ).preferredRestWeekdays;
+    }
+
     const cmInfo =
       progProgress.phase === "control_mode" &&
       progProgress.controlModePath &&
@@ -597,8 +659,8 @@ export const storage = {
         ? {
             path: progProgress.controlModePath,
             startDate: progProgress.controlModeStartDate,
-            pinnedRestWeekdays:
-              progProgress.controlModePinnedRestWeekdays ?? [],
+            pinnedRestWeekdays: cmPinned,
+            preferredRestWeekdays: cmPreferred,
           }
         : null;
 
@@ -624,9 +686,13 @@ export const storage = {
         if (cmInfo.path === "rebuild") {
           isRest = isRestDayForDate(current, cmInfo.startDate);
         } else {
-          // maintain / build / precision: rest days are weekday-anchored
+          // maintain / build / precision: rest days are weekday-anchored.
+          // Use the union of pinned + auto-detected preferred weekdays so that
+          // all-AUTO users (empty pinnedRestWeekdays) still get rest days backfilled.
           const weekdayMF = (current.getDay() + 6) % 7; // Mon=0 … Sun=6
-          isRest = cmInfo.pinnedRestWeekdays.includes(weekdayMF);
+          isRest =
+            cmInfo.pinnedRestWeekdays.includes(weekdayMF) ||
+            cmInfo.preferredRestWeekdays.includes(weekdayMF);
         }
       } else {
         isRest = isRestDayForDate(current, programStartDate);
