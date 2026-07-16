@@ -30,6 +30,7 @@ import { storage } from "@/lib/storage";
 import { getApiUrl } from "@/lib/query-client";
 import { DayTemplate } from "@/data/workoutProgram";
 import { BreathworkMode } from "@/constants/breathworkModes";
+import { PaywallSource } from "@/lib/analytics";
 
 export type RootStackParamList = {
   Main: undefined;
@@ -41,7 +42,7 @@ export type RootStackParamList = {
   };
   WorkoutPicker: undefined;
   Onboarding: undefined;
-  Paywall: undefined;
+  Paywall: { source?: PaywallSource } | undefined;
   ChallengeComplete: undefined;
   ProgramComplete: undefined;
   Week1Review: undefined;

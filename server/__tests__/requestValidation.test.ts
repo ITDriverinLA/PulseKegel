@@ -47,6 +47,37 @@ describe("analyticsBatchSchema", () => {
       type: "challenge_cta_tapped",
       data: { result: "partial", button: "primary", action: "continue" },
     },
+    {
+      type: "session_started",
+      data: { workoutType: "strength", weekNumber: 1, dayNumber: 1 },
+    },
+    {
+      type: "paywall_viewed",
+      data: {
+        source: "challenge_complete",
+        trialDaysRemaining: 0,
+        completedCoreSessions: 3,
+        totalCoreSessions: 3,
+      },
+    },
+    {
+      type: "subscribe_tapped",
+      data: {
+        source: "challenge_complete",
+        packageIdentifier: "$rc_annual",
+        productIdentifier: "pulsekegel_annual",
+        displayedPrice: "$4.99",
+      },
+    },
+    {
+      type: "purchase_completed",
+      data: {
+        result: "completed",
+        packageIdentifier: "$rc_annual",
+        productIdentifier: "pulsekegel_annual",
+      },
+    },
+    { type: "restore_not_found", data: { result: "not_found" } },
   ])("accepts the current app payload for $type", (event) => {
     expect(
       analyticsBatchSchema.safeParse({ deviceId, events: [event] }).success,

@@ -1247,7 +1247,6 @@ export const storage = {
 
   async resetChallengeProgress(): Promise<void> {
     try {
-      const today = new Date().toISOString();
       await AsyncStorage.multiRemove([
         STORAGE_KEYS.COMPLETED_DATES,
         STORAGE_KEYS.REST_DATES,
@@ -1261,7 +1260,6 @@ export const storage = {
         STORAGE_KEYS.WEEKLY_CALIBRATION_PROMPTED,
         "pulsekegel_challenge_shown",
       ]);
-      await AsyncStorage.setItem("pulsekegel_install_date", today);
     } catch (error) {
       console.error("Error resetting challenge progress:", error);
     }

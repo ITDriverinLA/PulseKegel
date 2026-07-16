@@ -181,7 +181,7 @@ export default function Week1ReviewScreen() {
   const accentColor = getAccentColor();
 
   const doNavigate = () => {
-    navigation.replace("ChallengeComplete");
+    navigation.replace("Paywall", { source: "challenge_complete" });
   };
 
   const handleContinue = async () => {
