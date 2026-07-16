@@ -86,6 +86,77 @@ afterAll(() => {
 });
 
 describe("backfillRestDays — rest-day streak regression", () => {
+  it("does not auto-complete accelerated Day 2 as a rest day", async () => {
+    jest.useFakeTimers({ now: new Date(`${TODAY}T12:00:00.000Z`) });
+    await AsyncStorage.setItem(
+      "pulsekegel_completed_dates",
+      JSON.stringify([YESTERDAY, TODAY]),
+    );
+    await AsyncStorage.setItem(
+      "pulsekegel_rest_dates",
+      JSON.stringify([TODAY]),
+    );
+    await AsyncStorage.setItem(
+      "pulsekegel_workout_dates",
+      JSON.stringify([YESTERDAY]),
+    );
+    await AsyncStorage.setItem(
+      "pulsekegel_challenge_calibration",
+      JSON.stringify({
+        calibrationLevel: "easy",
+        difficultyPath: "accelerated",
+        calibrationCompleted: true,
+      }),
+    );
+
+    mockIsRestDayForDate.mockImplementation(
+      (_date: Date, _startDate: string, difficultyPath) =>
+        difficultyPath !== "accelerated",
+    );
+
+    await storage.backfillRestDays(PROGRAM_START_DATE);
+
+    const completedDates: string[] = JSON.parse(
+      (await AsyncStorage.getItem("pulsekegel_completed_dates")) ?? "[]",
+    );
+    const restDates: string[] = JSON.parse(
+      (await AsyncStorage.getItem("pulsekegel_rest_dates")) ?? "[]",
+    );
+
+    expect(mockIsRestDayForDate).toHaveBeenCalledWith(
+      expect.any(Date),
+      PROGRAM_START_DATE,
+      "accelerated",
+    );
+    expect(completedDates).not.toContain(TODAY);
+    expect(completedDates).toContain(YESTERDAY);
+    expect(restDates).not.toContain(TODAY);
+  });
+
+  it("preserves a real workout even if an old rest marker exists for its date", async () => {
+    jest.useFakeTimers({ now: new Date(`${TODAY}T12:00:00.000Z`) });
+    await AsyncStorage.setItem(
+      "pulsekegel_completed_dates",
+      JSON.stringify([TODAY]),
+    );
+    await AsyncStorage.setItem(
+      "pulsekegel_rest_dates",
+      JSON.stringify([TODAY]),
+    );
+    await AsyncStorage.setItem(
+      "pulsekegel_workout_dates",
+      JSON.stringify([TODAY]),
+    );
+    mockIsRestDayForDate.mockReturnValue(false);
+
+    await storage.backfillRestDays(PROGRAM_START_DATE);
+
+    const completedDates: string[] = JSON.parse(
+      (await AsyncStorage.getItem("pulsekegel_completed_dates")) ?? "[]",
+    );
+    expect(completedDates).toContain(TODAY);
+  });
+
   it("adds today to completedDates and restDates when today is a scheduled program rest day", async () => {
     jest.useFakeTimers({ now: new Date(`${TODAY}T12:00:00.000Z`) });
 
@@ -313,15 +384,15 @@ describe("program wrap-around after 84 days — streak protection", () => {
 
   it("isRestDayForDate wraps to week-1 rest pattern on day 85 of the program", () => {
     expect(
-      actualIsRestDayForDate(new Date(TODAY), PROGRAM_START_85_DAYS_AGO),
+      actualIsRestDayForDate(new Date(2026, 4, 21), PROGRAM_START_85_DAYS_AGO),
     ).toBe(true);
 
     expect(
-      actualIsRestDayForDate(new Date(YESTERDAY), PROGRAM_START_85_DAYS_AGO),
+      actualIsRestDayForDate(new Date(2026, 4, 20), PROGRAM_START_85_DAYS_AGO),
     ).toBe(false);
 
     expect(
-      actualIsRestDayForDate(new Date(TWO_DAYS_AGO), PROGRAM_START_85_DAYS_AGO),
+      actualIsRestDayForDate(new Date(2026, 4, 19), PROGRAM_START_85_DAYS_AGO),
     ).toBe(true);
   });
 

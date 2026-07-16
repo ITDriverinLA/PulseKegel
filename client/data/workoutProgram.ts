@@ -601,7 +601,11 @@ export const getTodaysWorkout = (
   };
 };
 
-export const isRestDayForDate = (date: Date, startDate: string): boolean => {
+export const isRestDayForDate = (
+  date: Date,
+  startDate: string,
+  difficultyPath: ChallengeDifficultyPath = null,
+): boolean => {
   const [sy, sm, sd] = startDate.split("-").map(Number);
   const start = new Date(sy, sm - 1, sd); // local midnight — avoids UTC-parse shift
   const target = new Date(date);
@@ -624,7 +628,14 @@ export const isRestDayForDate = (date: Date, startDate: string): boolean => {
 
   const week = workoutProgram.weeks[weekIndex];
   if (!week) return false;
-  const workout = week.days[dayIndex];
+  // Week 1 is personalized after the calibration workout. In particular,
+  // accelerated users train on Day 2 while the standard schedule rests.
+  // Every rest-day consumer must use that personalized schedule or Day 2 is
+  // incorrectly backfilled as already complete.
+  const workout =
+    daysSinceStart < 7
+      ? getWeek1WorkoutForDayIndex(dayIndex, difficultyPath)
+      : week.days[dayIndex];
   return workout?.isRestDay === true;
 };
 

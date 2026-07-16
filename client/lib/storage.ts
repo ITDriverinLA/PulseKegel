@@ -3,6 +3,7 @@ import {
   isRestDayForDate,
   getWorkoutCompletionsForWeek,
   getScheduledDaysForWeek,
+  type ChallengeDifficultyPath,
 } from "@/data/workoutProgram";
 import {
   buildHabitSchedule,
@@ -277,6 +278,7 @@ const calculateStreak = (
   completedDates: string[],
   programStartDate: string | null,
   controlModeInfo?: ControlModeStreakInfo,
+  difficultyPath: ChallengeDifficultyPath = null,
 ): number => {
   const completedSet = new Set(completedDates);
 
@@ -334,7 +336,10 @@ const calculateStreak = (
       }
     }
 
-    return !!programStartDate && isRestDayForDate(d, programStartDate);
+    return (
+      !!programStartDate &&
+      isRestDayForDate(d, programStartDate, difficultyPath)
+    );
   };
 
   // Streak must start from today or yesterday — otherwise it is 0.
@@ -492,12 +497,14 @@ export const storage = {
       totalMinutes,
       programStartDate,
       progProgress,
+      calibrationState,
     ] = await Promise.all([
       this.getCompletedDates(),
       this.getTotalSessions(),
       this.getTotalMinutes(),
       this.getProgramStartDate(),
       this.getProgramProgress(),
+      this.getCalibrationState(),
     ]);
 
     // workoutDates is loaded before the streak calculation so we can derive
@@ -547,6 +554,7 @@ export const storage = {
       completedDates,
       programStartDate,
       controlModeInfo,
+      calibrationState.difficultyPath,
     );
 
     const sortedDates = [...completedDates].sort().reverse();
@@ -630,6 +638,7 @@ export const storage = {
     // paths, rest days are weekday-anchored; for rebuild they mirror the source
     // week relative to controlModeStartDate.
     const progProgress = await this.getProgramProgress();
+    const calibrationState = await this.getCalibrationState();
 
     // Load actual workout dates (no backfilled rest days) so we can derive the
     // auto-tuned preferred rest weekdays for all-AUTO Control Mode schedules.
@@ -672,6 +681,7 @@ export const storage = {
     // inclusive). Rebuilding on every call purges stale entries written by
     // previous buggy versions of this function.
     const correctRestSet = new Set<string>();
+    const firstWeekDates = new Set<string>();
     const current = new Date(start);
     while (current <= today) {
       const daysSinceStart = Math.round(
@@ -683,6 +693,8 @@ export const storage = {
           Date.UTC(start.getFullYear(), start.getMonth(), start.getDate())) /
           86400000,
       );
+      const currentDateStr = formatDate(current);
+      if (daysSinceStart < 7) firstWeekDates.add(currentDateStr);
 
       let isRest: boolean;
       if (daysSinceStart >= 84 && cmInfo) {
@@ -699,11 +711,15 @@ export const storage = {
             cmInfo.preferredRestWeekdays.includes(weekdayMF);
         }
       } else {
-        isRest = isRestDayForDate(current, programStartDate);
+        isRest = isRestDayForDate(
+          current,
+          programStartDate,
+          calibrationState.difficultyPath,
+        );
       }
 
       if (isRest) {
-        correctRestSet.add(formatDate(current));
+        correctRestSet.add(currentDateStr);
       }
       current.setDate(current.getDate() + 1);
     }
@@ -711,10 +727,20 @@ export const storage = {
     // restDates is replaced with the freshly computed set.
     const newRestDates = [...correctRestSet].sort();
 
-    // completedDates: NEVER remove existing entries (they represent real user
-    // activity — workouts the user has completed). Only add rest days that
-    // aren't already present.
-    const completedSet = new Set(completedDates);
+    // Remove only personalized Week 1 dates that the old standard schedule
+    // incorrectly auto-completed as rest days. Preserve every date backed by
+    // a real recorded workout, and leave older history untouched.
+    const existingRestSet = new Set(existingRestDates);
+    const workoutDateSet = new Set(workoutDatesForHabit);
+    const completedSet = new Set(
+      completedDates.filter(
+        (date) =>
+          !firstWeekDates.has(date) ||
+          !existingRestSet.has(date) ||
+          correctRestSet.has(date) ||
+          workoutDateSet.has(date),
+      ),
+    );
     for (const d of correctRestSet) {
       completedSet.add(d);
     }
@@ -1044,11 +1070,13 @@ export const storage = {
   },
 
   async checkAndAwardBadges(): Promise<string[]> {
-    const [progress, earnedBadges, programStartDate] = await Promise.all([
-      this.getProgress(),
-      this.getEarnedBadges(),
-      this.getProgramStartDate(),
-    ]);
+    const [progress, earnedBadges, programStartDate, calibrationState] =
+      await Promise.all([
+        this.getProgress(),
+        this.getEarnedBadges(),
+        this.getProgramStartDate(),
+        this.getCalibrationState(),
+      ]);
 
     const earnedIds = new Set(earnedBadges.map((b) => b.badgeId));
     const newBadgeIds: string[] = [];
@@ -1136,7 +1164,11 @@ export const storage = {
                 const dayDate = new Date(start);
                 dayDate.setDate(dayDate.getDate() + w * 7 + d);
                 const dateStr = formatDate(dayDate);
-                const isRest = isRestDayForDate(dayDate, programStartDate);
+                const isRest = isRestDayForDate(
+                  dayDate,
+                  programStartDate,
+                  calibrationState.difficultyPath,
+                );
                 if (!isRest) {
                   scheduledDays++;
                   if (progress.completedDates.includes(dateStr)) {

@@ -164,8 +164,13 @@ export async function scheduleDailyReminder(timeStr: string): Promise<void> {
     const earnedBadges = await storage.getEarnedBadges();
     const earnedIds = earnedBadges.map((b: { badgeId: string }) => b.badgeId);
     const programStartDate = await storage.getProgramStartDate();
+    const calibrationState = await storage.getCalibrationState();
     const isRestDay = programStartDate
-      ? isRestDayForDate(new Date(), programStartDate)
+      ? isRestDayForDate(
+          new Date(),
+          programStartDate,
+          calibrationState.difficultyPath,
+        )
       : false;
 
     const yesterday = new Date();
@@ -237,11 +242,16 @@ export async function rescheduleAfterCompletion(): Promise<void> {
     const earnedBadges = await storage.getEarnedBadges();
     const earnedIds = earnedBadges.map((b: { badgeId: string }) => b.badgeId);
     const programStartDate = await storage.getProgramStartDate();
+    const calibrationState = await storage.getCalibrationState();
 
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const isRestDay = programStartDate
-      ? isRestDayForDate(tomorrow, programStartDate)
+      ? isRestDayForDate(
+          tomorrow,
+          programStartDate,
+          calibrationState.difficultyPath,
+        )
       : false;
 
     const isFirstEver = progress.totalSessions <= 1;

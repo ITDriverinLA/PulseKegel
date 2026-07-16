@@ -283,7 +283,15 @@ export default function WorkoutPlayerScreen() {
             (todayDate.getTime() - startDateObj.getTime()) /
               (1000 * 60 * 60 * 24),
           );
-          if (daysSinceStart < 7 && isRestDayForDate(now, effectiveStartDate)) {
+          const calibrationState = await storage.getCalibrationState();
+          if (
+            daysSinceStart < 7 &&
+            isRestDayForDate(
+              now,
+              effectiveStartDate,
+              calibrationState.difficultyPath,
+            )
+          ) {
             await storage.markChallengeOptionalSession(today);
           }
 

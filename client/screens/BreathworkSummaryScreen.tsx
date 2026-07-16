@@ -56,7 +56,11 @@ export default function BreathworkSummaryScreen() {
           startDateObj.getTime()) /
           (1000 * 60 * 60 * 24),
       );
-      if (daysSinceStart < 7 && isRestDayForDate(now, programStartDate)) {
+      const calibrationState = await storage.getCalibrationState();
+      if (
+        daysSinceStart < 7 &&
+        isRestDayForDate(now, programStartDate, calibrationState.difficultyPath)
+      ) {
         await storage.markChallengeOptionalSession(today);
       }
     }
