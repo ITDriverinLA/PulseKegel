@@ -15,6 +15,7 @@ import Purchases, {
 } from "react-native-purchases";
 
 import { GENERATED_ENV } from "@/lib/env-config.generated";
+import { trackPurchaseResult, trackRestoreResult } from "@/lib/analytics";
 
 const STORAGE_KEYS = {
   INSTALL_DATE: "pulsekegel_install_date",
@@ -25,6 +26,8 @@ const TRIAL_DURATION_DAYS = 7;
 
 const TEST_PAYWALL_MODE = false;
 
+export type PurchaseResult = "success" | "cancelled" | "failed" | "unavailable";
+
 interface SubscriptionContextType {
   isSubscribed: boolean;
   isTrialActive: boolean;
@@ -32,7 +35,7 @@ interface SubscriptionContextType {
   daysSinceInstall: number;
   isLoading: boolean;
   packages: PurchasesPackage[];
-  purchasePackage: (pkg: PurchasesPackage) => Promise<boolean>;
+  purchasePackage: (pkg: PurchasesPackage) => Promise<PurchaseResult>;
   restorePurchases: () => Promise<boolean>;
   checkSubscription: () => Promise<void>;
   hasAccess: boolean;
@@ -45,7 +48,7 @@ const SubscriptionContext = createContext<SubscriptionContextType>({
   daysSinceInstall: 0,
   isLoading: true,
   packages: [],
-  purchasePackage: async () => false,
+  purchasePackage: async () => "unavailable",
   restorePurchases: async () => false,
   checkSubscription: async () => {},
   hasAccess: true,
@@ -110,15 +113,25 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const purchasePackage = useCallback(
-    async (pkg: PurchasesPackage): Promise<boolean> => {
+    async (pkg: PurchasesPackage): Promise<PurchaseResult> => {
       if (!configuredRef.current) {
         console.log(
           "[PulseKegel] Purchase attempted but RevenueCat not configured",
         );
-        return false;
+        trackPurchaseResult({
+          result: "unavailable",
+          packageIdentifier: pkg.identifier,
+          productIdentifier: pkg.product.identifier,
+        });
+        return "unavailable";
       }
 
       try {
+        trackPurchaseResult({
+          result: "started",
+          packageIdentifier: pkg.identifier,
+          productIdentifier: pkg.product.identifier,
+        });
         console.log(
           "[PulseKegel] Attempting purchase for package:",
           pkg.identifier,
@@ -131,17 +144,41 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           Object.keys(customerInfo.entitlements.active),
         );
         setIsSubscribed(hasActiveEntitlement);
-        return hasActiveEntitlement;
+        if (hasActiveEntitlement) {
+          trackPurchaseResult({
+            result: "completed",
+            packageIdentifier: pkg.identifier,
+            productIdentifier: pkg.product.identifier,
+          });
+          return "success";
+        }
+        trackPurchaseResult({
+          result: "failed",
+          packageIdentifier: pkg.identifier,
+          productIdentifier: pkg.product.identifier,
+        });
+        return "failed";
       } catch (error: any) {
         if (!error.userCancelled) {
           console.error(
             "[PulseKegel] Purchase failed:",
             error.message || error,
           );
+          trackPurchaseResult({
+            result: "failed",
+            packageIdentifier: pkg.identifier,
+            productIdentifier: pkg.product.identifier,
+            errorCode: typeof error.code === "string" ? error.code : undefined,
+          });
         } else {
           console.log("[PulseKegel] Purchase cancelled by user");
+          trackPurchaseResult({
+            result: "cancelled",
+            packageIdentifier: pkg.identifier,
+            productIdentifier: pkg.product.identifier,
+          });
         }
-        return false;
+        return error.userCancelled ? "cancelled" : "failed";
       }
     },
     [],
@@ -157,6 +194,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
     try {
       console.log("[PulseKegel] Restoring purchases...");
+      trackRestoreResult({ result: "started" });
       const customerInfo = await Purchases.restorePurchases();
       const hasActiveEntitlement =
         Object.keys(customerInfo.entitlements.active).length > 0;
@@ -165,9 +203,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         Object.keys(customerInfo.entitlements.active),
       );
       setIsSubscribed(hasActiveEntitlement);
+      trackRestoreResult({
+        result: hasActiveEntitlement ? "completed" : "not_found",
+      });
       return hasActiveEntitlement;
     } catch (error) {
       console.error("[PulseKegel] Restore failed:", error);
+      trackRestoreResult({ result: "failed" });
       return false;
     }
   }, []);

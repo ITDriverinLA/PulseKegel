@@ -313,10 +313,10 @@ export default function HomeScreen() {
         await AsyncStorage.setItem("pulsekegel_challenge_shown", "true");
         navigation.navigate("Week1Review");
       } else {
-        navigation.navigate("Paywall");
+        navigation.navigate("Paywall", { source: "workout_gate" });
       }
     } catch {
-      navigation.navigate("Paywall");
+      navigation.navigate("Paywall", { source: "workout_gate" });
     }
   };
 

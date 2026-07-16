@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -16,16 +16,45 @@ import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import {
   ANIM_DELAY_SHORT,
   ANIM_DELAY_MED,
-  ANIM_DELAY_LONG,
   ANIM_DELAY_XL,
 } from "@/constants/animation";
-import { useNavigation } from "@react-navigation/native";
+import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-import Purchases from "react-native-purchases";
+import Purchases, { PurchasesPackage } from "react-native-purchases";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { useThemePreference } from "@/contexts/ThemePreferenceContext";
+import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { storage } from "@/lib/storage";
+import {
+  trackPaywallViewed,
+  trackPurchaseResult,
+  trackSubscribeTapped,
+} from "@/lib/analytics";
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type PaywallRouteProp = RouteProp<RootStackParamList, "Paywall">;
+
+interface ChallengeStats {
+  completedCoreSessions: number;
+  totalCoreSessions: number;
+  completedOptionalSessions: number;
+}
+
+function chooseAnnualPackage(pkgs: PurchasesPackage[]): PurchasesPackage | null {
+  return (
+    pkgs.find(
+      (pkg) =>
+        String(pkg.packageType).toLowerCase().includes("annual") ||
+        pkg.identifier.toLowerCase().includes("annual") ||
+        pkg.product.identifier.toLowerCase().includes("annual"),
+    ) ??
+    pkgs[0] ??
+    null
+  );
+}
 
 interface PaywallScreenProps {
   onClose?: () => void;
@@ -33,7 +62,9 @@ interface PaywallScreenProps {
 
 export default function PaywallScreen({ onClose }: PaywallScreenProps) {
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<PaywallRouteProp>();
+  const source = route.params?.source ?? "unknown";
   const { fontScale } = useAccessibility();
   const {
     packages,
@@ -47,10 +78,53 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [localPackages, setLocalPackages] = useState(packages);
+  const [challengeStats, setChallengeStats] = useState<ChallengeStats | null>(
+    null,
+  );
+  const paywallTrackedRef = useRef(false);
 
   React.useEffect(() => {
     setLocalPackages(packages);
   }, [packages]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const stats =
+        source === "challenge_complete"
+          ? await storage.getChallengeStats()
+          : null;
+      if (cancelled) return;
+      setChallengeStats(stats);
+      if (!paywallTrackedRef.current) {
+        paywallTrackedRef.current = true;
+        trackPaywallViewed({
+          source,
+          trialDaysRemaining,
+          completedCoreSessions: stats?.completedCoreSessions,
+          totalCoreSessions: stats?.totalCoreSessions,
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [source, trialDaysRemaining]);
+
+  const selectedPackage = chooseAnnualPackage(localPackages);
+  const displayedPrice = selectedPackage?.product.priceString ?? "$4.99";
+  const isChallengeConversion = source === "challenge_complete";
+
+  const challengeTitle = (() => {
+    if (!challengeStats) return "Keep Your Momentum Going";
+    if (challengeStats.completedCoreSessions === 0)
+      return "Your Training Is Ready";
+    if (
+      challengeStats.completedCoreSessions >= challengeStats.totalCoreSessions
+    )
+      return "You Built the Foundation";
+    return "Keep Your Momentum Going";
+  })();
 
   const handlePurchase = async () => {
     let pkgs = localPackages;
@@ -84,6 +158,7 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
     }
 
     if (pkgs.length === 0) {
+      trackPurchaseResult({ result: "unavailable" });
       Alert.alert(
         "Not Available",
         "Subscriptions are not available right now. Please check your internet connection and try again.",
@@ -92,12 +167,27 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
       return;
     }
 
+    const pkg = chooseAnnualPackage(pkgs);
+    if (!pkg) return;
+
+    trackSubscribeTapped({
+      source,
+      packageIdentifier: pkg.identifier,
+      productIdentifier: pkg.product.identifier,
+      displayedPrice: pkg.product.priceString,
+    });
     setIsPurchasing(true);
     try {
-      const success = await purchasePackage(pkgs[0]);
-      if (success) {
+      const result = await purchasePackage(pkg);
+      if (result === "success") {
         onClose?.();
         navigation.goBack();
+      } else if (result === "failed" || result === "unavailable") {
+        Alert.alert(
+          "Purchase Not Completed",
+          "We could not complete your subscription. Please check your connection and payment settings, then try again.",
+          [{ text: "OK" }],
+        );
       }
     } finally {
       setIsPurchasing(false);
@@ -137,18 +227,19 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
   const features = [
     {
       icon: "zap",
-      title: "12-Week Program",
-      desc: "Progressive training plan",
+      title: "Build Lasting Control",
+      desc: "A progressive 12-week training plan",
     },
-    { icon: "smartphone", title: "Haptic Feedback", desc: "Feel the rhythm" },
     {
-      icon: "bar-chart-2",
-      title: "Visual Power Bar",
-      desc: "Real-time guidance",
+      icon: "trending-up",
+      title: "Keep Making Progress",
+      desc: "Guided sessions, ranks, and weekly insights",
     },
-    { icon: "sun", title: "Weekly AI Reviews", desc: "Personalized insights" },
-    { icon: "shield", title: "Private & Secure", desc: "Data stays on device" },
-    { icon: "clock", title: "Quick Sessions", desc: "5-10 minutes daily" },
+    {
+      icon: "shield",
+      title: "Train Completely Privately",
+      desc: "No account and your data stays on your device",
+    },
   ];
 
   return (
@@ -191,14 +282,29 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
               },
             ]}
           >
-            <Feather name="lock" size={32} color={cp.neonGreen} />
+            <Feather
+              name={isChallengeConversion ? "award" : "lock"}
+              size={32}
+              color={cp.neonGreen}
+            />
           </View>
           <Text
             style={[styles.title, { fontSize: 28 * fontScale, color: cp.text }]}
           >
-            Unlock Full Access
+            {isChallengeConversion ? challengeTitle : "Unlock Full Access"}
           </Text>
-          {trialDaysRemaining > 0 ? (
+          {isChallengeConversion ? (
+            <Text
+              style={[
+                styles.subtitle,
+                { fontSize: 16 * fontScale, color: cp.textSecondary },
+              ]}
+            >
+              {challengeStats
+                ? `You completed ${challengeStats.completedCoreSessions} of ${challengeStats.totalCoreSessions} challenge sessions. Continue building control with the full 12-week program.`
+                : "Your seven-day challenge is complete. Continue building control with the full 12-week program."}
+            </Text>
+          ) : trialDaysRemaining > 0 ? (
             <Text
               style={[
                 styles.subtitle,
@@ -223,6 +329,100 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
         <Animated.View
           entering={FadeInDown.delay(ANIM_DELAY_MED)}
           style={[
+            styles.pricingCard,
+            {
+              backgroundColor: `${cp.neonGreen}1A`,
+              borderColor: `${cp.neonGreen}4D`,
+            },
+          ]}
+        >
+          <View style={[styles.priceBadge, { backgroundColor: cp.neonPink }]}>
+            <Text style={[styles.priceBadgeText, { color: cp.text }]}>
+              FULL 12-WEEK PROGRAM
+            </Text>
+          </View>
+          <Text
+            style={[
+              styles.price,
+              {
+                fontSize: 36 * fontScale,
+                color: cp.neonGreen,
+                textShadowColor: `${cp.neonGreen}80`,
+              },
+            ]}
+          >
+            {displayedPrice}
+          </Text>
+          <Text
+            style={[
+              styles.priceSubtext,
+              { fontSize: 16 * fontScale, color: cp.text },
+            ]}
+          >
+            per year
+          </Text>
+          <Text
+            style={[
+              styles.priceNote,
+              { fontSize: 12 * fontScale, color: cp.textMuted },
+            ]}
+          >
+            One year of guided, private training
+          </Text>
+        </Animated.View>
+
+        <Animated.View
+          entering={FadeInUp.delay(ANIM_DELAY_XL)}
+          style={styles.ctaSection}
+        >
+          <Pressable
+            style={[
+              styles.subscribeButton,
+              { backgroundColor: cp.neonGreen, shadowColor: cp.neonGreen },
+              (isPurchasing || isLoading) && styles.buttonDisabled,
+            ]}
+            onPress={handlePurchase}
+            disabled={isPurchasing || isLoading}
+            testID="button-subscribe"
+          >
+            {isPurchasing ? (
+              <ActivityIndicator color={cp.bg} />
+            ) : (
+              <>
+                <Feather name="unlock" size={20} color={cp.bg} />
+                <Text style={[styles.subscribeButtonText, { color: cp.bg }]}>
+                  {isChallengeConversion
+                    ? `Continue My Training — ${displayedPrice}/year`
+                    : `Subscribe — ${displayedPrice}/year`}
+                </Text>
+              </>
+            )}
+          </Pressable>
+
+          <Pressable
+            style={styles.restoreButton}
+            onPress={handleRestore}
+            disabled={isRestoring}
+            testID="button-restore"
+          >
+            {isRestoring ? (
+              <ActivityIndicator color={cp.neonCyan} size="small" />
+            ) : (
+              <Text
+                style={[
+                  styles.restoreButtonText,
+                  { fontSize: 14 * fontScale, color: cp.neonCyan },
+                ]}
+              >
+                Restore Purchases
+              </Text>
+            )}
+          </Pressable>
+        </Animated.View>
+
+        <Animated.View
+          entering={FadeInUp.delay(ANIM_DELAY_XL)}
+          style={[
             styles.featuresGrid,
             {
               backgroundColor: isDarkMode
@@ -232,7 +432,7 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
             },
           ]}
         >
-          {features.map((feature, index) => (
+          {features.map((feature) => (
             <View key={feature.title} style={styles.featureItem}>
               <View
                 style={[
@@ -266,98 +466,6 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
               </View>
             </View>
           ))}
-        </Animated.View>
-
-        <Animated.View
-          entering={FadeInUp.delay(ANIM_DELAY_LONG)}
-          style={[
-            styles.pricingCard,
-            {
-              backgroundColor: `${cp.neonGreen}1A`,
-              borderColor: `${cp.neonGreen}4D`,
-            },
-          ]}
-        >
-          <View style={[styles.priceBadge, { backgroundColor: cp.neonPink }]}>
-            <Text style={[styles.priceBadgeText, { color: cp.text }]}>
-              INTRO OFFER
-            </Text>
-          </View>
-          <Text
-            style={[
-              styles.price,
-              {
-                fontSize: 36 * fontScale,
-                color: cp.neonGreen,
-                textShadowColor: `${cp.neonGreen}80`,
-              },
-            ]}
-          >
-            $4.99
-          </Text>
-          <Text
-            style={[
-              styles.priceSubtext,
-              { fontSize: 16 * fontScale, color: cp.text },
-            ]}
-          >
-            for 12 months
-          </Text>
-          <Text
-            style={[
-              styles.priceNote,
-              { fontSize: 12 * fontScale, color: cp.textMuted },
-            ]}
-          >
-            {"That's just $0.42 per month"}
-          </Text>
-        </Animated.View>
-
-        <Animated.View
-          entering={FadeInUp.delay(ANIM_DELAY_XL)}
-          style={styles.ctaSection}
-        >
-          <Pressable
-            style={[
-              styles.subscribeButton,
-              { backgroundColor: cp.neonGreen, shadowColor: cp.neonGreen },
-              (isPurchasing || isLoading) && styles.buttonDisabled,
-            ]}
-            onPress={handlePurchase}
-            disabled={isPurchasing || isLoading}
-            testID="button-subscribe"
-          >
-            {isPurchasing ? (
-              <ActivityIndicator color={cp.bg} />
-            ) : (
-              <>
-                <Feather name="unlock" size={20} color={cp.bg} />
-                <Text style={[styles.subscribeButtonText, { color: cp.bg }]}>
-                  Subscribe Now
-                </Text>
-              </>
-            )}
-          </Pressable>
-
-          <Pressable
-            style={styles.restoreButton}
-            onPress={handleRestore}
-            disabled={isRestoring}
-            testID="button-restore"
-          >
-            {isRestoring ? (
-              <ActivityIndicator color={cp.neonCyan} size="small" />
-            ) : (
-              <Text
-                style={[
-                  styles.restoreButtonText,
-                  { fontSize: 14 * fontScale, color: cp.neonCyan },
-                ]}
-              >
-                Restore Purchases
-              </Text>
-            )}
-          </Pressable>
         </Animated.View>
 
         <View style={styles.legalSection}>

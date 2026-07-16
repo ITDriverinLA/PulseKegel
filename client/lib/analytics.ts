@@ -139,3 +139,50 @@ export function trackChallengeCta(data: {
 }): void {
   trackEvent("challenge_cta_tapped", data as Record<string, unknown>);
 }
+
+export type PaywallSource =
+  | "challenge_complete"
+  | "workout_gate"
+  | "settings"
+  | "unknown";
+
+export function trackPaywallViewed(data: {
+  source: PaywallSource;
+  trialDaysRemaining: number;
+  completedCoreSessions?: number;
+  totalCoreSessions?: number;
+}): void {
+  trackEvent("paywall_viewed", data as Record<string, unknown>);
+}
+
+export function trackSubscribeTapped(data: {
+  source: PaywallSource;
+  packageIdentifier?: string;
+  productIdentifier?: string;
+  displayedPrice?: string;
+}): void {
+  trackEvent("subscribe_tapped", data as Record<string, unknown>);
+}
+
+export function trackPurchaseResult(data: {
+  result: "started" | "completed" | "cancelled" | "failed" | "unavailable";
+  packageIdentifier?: string;
+  productIdentifier?: string;
+  errorCode?: string;
+}): void {
+  trackEvent(`purchase_${data.result}`, data as Record<string, unknown>);
+}
+
+export function trackRestoreResult(data: {
+  result: "started" | "completed" | "not_found" | "failed";
+}): void {
+  trackEvent(`restore_${data.result}`, data as Record<string, unknown>);
+}
+
+export function trackSessionStarted(data: {
+  workoutType?: string;
+  weekNumber?: number;
+  dayNumber?: number;
+}): void {
+  trackEvent("session_started", data as Record<string, unknown>);
+}

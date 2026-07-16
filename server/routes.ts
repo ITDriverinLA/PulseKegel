@@ -720,6 +720,31 @@ ${blogUrls}
         .from(analyticsEvents)
         .where(sql`${analyticsEvents.eventType} = 'session_complete'`);
 
+      const [funnelSessionStarted] = await db
+        .select({ count: countDistinct(analyticsEvents.deviceId) })
+        .from(analyticsEvents)
+        .where(sql`${analyticsEvents.eventType} = 'session_started'`);
+
+      const subscriptionFunnelRaw = await db.execute<{
+        event_type: string;
+        count: number;
+      }>(sql`
+        SELECT event_type, COUNT(DISTINCT device_id)::int AS count
+        FROM analytics_events
+        WHERE event_type IN (
+          'paywall_viewed',
+          'subscribe_tapped',
+          'purchase_completed'
+        )
+        GROUP BY event_type
+      `);
+      const subscriptionFunnel = Object.fromEntries(
+        subscriptionFunnelRaw.rows.map((row) => [
+          row.event_type,
+          Number(row.count) || 0,
+        ]),
+      );
+
       // 3. Program week distribution (last 30 days, from app_open)
       const programWeekDistRaw = await db.execute<{ week: string; count: number }>(
         sql`
@@ -834,7 +859,13 @@ ${blogUrls}
         funnel: {
           opens: totalDevices?.count ?? 0,
           onboarded: funnelOnboarded?.count ?? 0,
+          started: funnelSessionStarted?.count ?? 0,
           sessions: funnelSession?.count ?? 0,
+        },
+        subscriptionFunnel: {
+          viewed: subscriptionFunnel.paywall_viewed ?? 0,
+          tapped: subscriptionFunnel.subscribe_tapped ?? 0,
+          purchased: subscriptionFunnel.purchase_completed ?? 0,
         },
         programWeekDist: programWeekDistRaw.rows,
         workoutTypeBreakdown: workoutTypeRaw.rows,

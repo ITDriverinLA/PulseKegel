@@ -58,7 +58,7 @@ import {
   sendBadgeEarnedNotification,
 } from "@/lib/notifications";
 import { getBadgeById } from "@/data/badges";
-import { trackSessionComplete } from "@/lib/analytics";
+import { trackSessionComplete, trackSessionStarted } from "@/lib/analytics";
 
 type RouteProps = RouteProp<RootStackParamList, "WorkoutPlayer">;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -95,6 +95,7 @@ export default function WorkoutPlayerScreen() {
   const shouldRedirectToCalibrationRef = useRef(false);
   const shouldRedirectToWeeklyCalibrationRef = useRef<number | null>(null);
   const isCompleteRef = useRef(false);
+  const sessionStartedTrackedRef = useRef(false);
 
   const phaseScale = useSharedValue(1);
   const phaseOpacity = useSharedValue(1);
@@ -102,6 +103,16 @@ export default function WorkoutPlayerScreen() {
   const backgroundPulse = useSharedValue(0);
   const phaseColorValue = useSharedValue(0);
   const screenOpacity = useSharedValue(1);
+
+  useEffect(() => {
+    if (sessionStartedTrackedRef.current) return;
+    sessionStartedTrackedRef.current = true;
+    trackSessionStarted({
+      workoutType: workout.dayType,
+      weekNumber,
+      dayNumber,
+    });
+  }, [workout.dayType, weekNumber, dayNumber]);
 
   const loadSettings = useCallback(async () => {
     const userSettings = await storage.getSettings();

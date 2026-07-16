@@ -308,7 +308,7 @@ export default function SettingsScreen() {
   };
 
   const handleManageSubscription = () => {
-    navigation.navigate("Paywall");
+    navigation.navigate("Paywall", { source: "settings" });
   };
 
   return (

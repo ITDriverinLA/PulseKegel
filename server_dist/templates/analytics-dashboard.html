@@ -732,9 +732,42 @@
         </div>
         <div class="funnel-arrow">→</div>
         <div class="funnel-step">
+          <div class="funnel-num" id="fn-started">—</div>
+          <div class="funnel-label">Session Started</div>
+          <div class="funnel-pct" id="fn-started-pct"></div>
+        </div>
+        <div class="funnel-arrow">→</div>
+        <div class="funnel-step">
           <div class="funnel-num" id="fn-sessions">—</div>
           <div class="funnel-label">Session Completed</div>
           <div class="funnel-pct" id="fn-sessions-pct"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Subscription funnel -->
+  <div class="funnel-section">
+    <div class="section-label">Paywall → Purchase Funnel</div>
+    <div class="section-sub">All-time unique devices at each subscription stage</div>
+    <div class="funnel-wrap">
+      <div class="funnel-steps">
+        <div class="funnel-step">
+          <div class="funnel-num" id="sub-viewed">—</div>
+          <div class="funnel-label">Paywall Viewed</div>
+          <div class="funnel-pct"></div>
+        </div>
+        <div class="funnel-arrow">→</div>
+        <div class="funnel-step">
+          <div class="funnel-num" id="sub-tapped">—</div>
+          <div class="funnel-label">Subscribe Tapped</div>
+          <div class="funnel-pct" id="sub-tapped-pct"></div>
+        </div>
+        <div class="funnel-arrow">→</div>
+        <div class="funnel-step">
+          <div class="funnel-num" id="sub-purchased">—</div>
+          <div class="funnel-label">Purchase Completed</div>
+          <div class="funnel-pct" id="sub-purchased-pct"></div>
         </div>
       </div>
     </div>
@@ -844,6 +877,7 @@
 
       // Funnel
       renderFunnel(d.funnel || {});
+      renderSubscriptionFunnel(d.subscriptionFunnel || {});
 
       // Program week distribution
       renderWeekDist(d.programWeekDist || []);
@@ -1056,16 +1090,36 @@
   function renderFunnel(funnel) {
     const opens     = Number(funnel.opens)     || 0;
     const onboarded = Number(funnel.onboarded) || 0;
+    const started   = Number(funnel.started)   || 0;
     const sessions  = Number(funnel.sessions)  || 0;
     document.getElementById('fn-opens').textContent     = opens.toLocaleString();
     document.getElementById('fn-onboarded').textContent = onboarded.toLocaleString();
+    document.getElementById('fn-started').textContent   = started.toLocaleString();
     document.getElementById('fn-sessions').textContent  = sessions.toLocaleString();
     const onbPct = opens > 0 ? Math.round((onboarded / opens) * 100) : null;
+    const startedPct = opens > 0 ? Math.round((started / opens) * 100) : null;
     const sesPct = opens > 0 ? Math.round((sessions  / opens) * 100) : null;
     const onbEl = document.getElementById('fn-onboarded-pct');
+    const startedEl = document.getElementById('fn-started-pct');
     const sesEl = document.getElementById('fn-sessions-pct');
     if (onbEl) onbEl.textContent = onbPct != null ? onbPct + '% of opens' : '';
+    if (startedEl) startedEl.textContent = startedPct != null ? startedPct + '% of opens' : '';
     if (sesEl) sesEl.textContent = sesPct != null ? sesPct + '% of opens' : '';
+  }
+
+  function renderSubscriptionFunnel(funnel) {
+    const viewed = Number(funnel.viewed) || 0;
+    const tapped = Number(funnel.tapped) || 0;
+    const purchased = Number(funnel.purchased) || 0;
+    document.getElementById('sub-viewed').textContent = viewed.toLocaleString();
+    document.getElementById('sub-tapped').textContent = tapped.toLocaleString();
+    document.getElementById('sub-purchased').textContent = purchased.toLocaleString();
+    const tapPct = viewed > 0 ? Math.round((tapped / viewed) * 100) : null;
+    const purchasePct = viewed > 0 ? Math.round((purchased / viewed) * 100) : null;
+    document.getElementById('sub-tapped-pct').textContent =
+      tapPct != null ? tapPct + '% of paywall views' : '';
+    document.getElementById('sub-purchased-pct').textContent =
+      purchasePct != null ? purchasePct + '% of paywall views' : '';
   }
 
   function renderWeekDist(rows) {
