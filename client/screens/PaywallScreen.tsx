@@ -43,7 +43,9 @@ interface ChallengeStats {
   completedOptionalSessions: number;
 }
 
-function chooseAnnualPackage(pkgs: PurchasesPackage[]): PurchasesPackage | null {
+function chooseAnnualPackage(
+  pkgs: PurchasesPackage[],
+): PurchasesPackage | null {
   return (
     pkgs.find(
       (pkg) =>
