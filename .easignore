@@ -1,0 +1,68 @@
+# Keep these rules synchronized with .gitignore because EAS uses this file
+# instead of .gitignore when it exists.
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env*.local
+
+# TypeScript
+*.tsbuildinfo
+
+app-example
+
+# Generated native folders. EAS Prebuild recreates these.
+/ios
+/android
+
+# Files not needed to compile the mobile app
+/attached_assets
+/blog-content
+/docs
+/server
+/server_dist
+/static-build
+/.github
+/.agents
+
+.replit
+replit.md
+design_guidelines.md
+drizzle.config.ts
+ci-validate-blog.sh
+install-hooks.sh
+validate-blog-dates.sh
+
+# Tests and coverage reports
+**/__tests__
+*.test.ts
+*.test.tsx
+coverage
