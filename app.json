@@ -26,7 +26,6 @@
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#0B1840"
       },
-      "edgeToEdgeEnabled": true,
       "softwareKeyboardLayoutMode": "pan",
       "package": "com.pulsekegel.app"
     },
@@ -47,7 +46,16 @@
           }
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
+        }
+      ]
     ],
     "experiments": {
       "reactCompiler": true

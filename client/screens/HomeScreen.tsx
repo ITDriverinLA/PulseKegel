@@ -1397,7 +1397,6 @@ export default function HomeScreen() {
         visible={showCalibrationIntro}
         transparent
         animationType="fade"
-        statusBarTranslucent
       >
         <View style={styles.introOverlay}>
           <View
