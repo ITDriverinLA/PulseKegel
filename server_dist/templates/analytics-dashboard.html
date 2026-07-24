@@ -662,7 +662,7 @@
   <!-- Challenge result breakdown -->
   <div class="challenge-section">
     <div class="section-label">Challenge Result Distribution</div>
-    <div class="section-sub">Unique devices per result state (all-time)</div>
+    <div class="section-sub">Unique devices by furthest recorded Week 1 progress (all-time)</div>
     <div class="challenge-wrap">
       <div class="challenge-rows" id="challenge-rows"></div>
     </div>
@@ -1036,7 +1036,7 @@
     if (total === 0) {
       const empty = document.createElement('div');
       empty.className = 'challenge-empty';
-      empty.textContent = 'No challenge_result_viewed events recorded yet';
+      empty.textContent = 'No Week 1 challenge progress recorded yet';
       container.appendChild(empty);
       return;
     }

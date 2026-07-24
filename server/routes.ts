@@ -619,13 +619,59 @@ ${blogUrls}
 
       const challengeResultBreakdownRaw = await db.execute<{ result: string; count: number }>(
         sql`
+          WITH explicit_results AS (
+            SELECT DISTINCT ON (device_id)
+              device_id,
+              CASE event_data->>'result'
+                WHEN 'not_started' THEN 1
+                WHEN 'first_step' THEN 2
+                WHEN 'partial' THEN 3
+                WHEN 'complete' THEN 4
+                WHEN 'strong_finish' THEN 5
+                ELSE 0
+              END AS result_rank
+            FROM analytics_events
+            WHERE event_type = 'challenge_result_viewed'
+            ORDER BY device_id, created_at DESC
+          ),
+          recorded_sessions AS (
+            SELECT
+              device_id,
+              COUNT(DISTINCT event_data->>'dayNumber') FILTER (
+                WHERE event_data->>'dayNumber' IN ('1', '3', '5', '7')
+              )::int AS completed_core_sessions
+            FROM analytics_events
+            WHERE event_type = 'session_complete'
+              AND event_data->>'weekNumber' = '1'
+            GROUP BY device_id
+          ),
+          furthest_progress AS (
+            SELECT
+              COALESCE(e.device_id, s.device_id) AS device_id,
+              GREATEST(
+                COALESCE(e.result_rank, 0),
+                CASE
+                  WHEN COALESCE(s.completed_core_sessions, 0) >= 4 THEN 4
+                  WHEN COALESCE(s.completed_core_sessions, 0) >= 2 THEN 3
+                  WHEN COALESCE(s.completed_core_sessions, 0) = 1 THEN 2
+                  ELSE 0
+                END
+              ) AS result_rank
+            FROM explicit_results e
+            FULL OUTER JOIN recorded_sessions s USING (device_id)
+          )
           SELECT
-            event_data->>'result' AS result,
+            CASE result_rank
+              WHEN 1 THEN 'not_started'
+              WHEN 2 THEN 'first_step'
+              WHEN 3 THEN 'partial'
+              WHEN 4 THEN 'complete'
+              WHEN 5 THEN 'strong_finish'
+            END AS result,
             COUNT(DISTINCT device_id)::int AS count
-          FROM analytics_events
-          WHERE event_type = 'challenge_result_viewed'
-            AND event_data->>'result' IS NOT NULL
-          GROUP BY event_data->>'result'
+          FROM furthest_progress
+          WHERE result_rank > 0
+          GROUP BY result_rank
           ORDER BY count DESC
         `
       );

@@ -85,6 +85,72 @@ afterAll(() => {
   jest.useRealTimers();
 });
 
+describe("getChallengeStats", () => {
+  it("uses the personalized accelerated schedule when reporting progress", async () => {
+    const startDate = "2026-05-18";
+    const workoutDates = [
+      "2026-05-18",
+      "2026-05-19",
+      "2026-05-20",
+      "2026-05-22",
+      "2026-05-24",
+    ];
+    await AsyncStorage.setItem("pulsekegel_program_start_date", startDate);
+    await AsyncStorage.setItem(
+      "pulsekegel_completed_dates",
+      JSON.stringify(workoutDates),
+    );
+    await AsyncStorage.setItem(
+      "pulsekegel_challenge_optional_dates",
+      JSON.stringify(["2026-05-21"]),
+    );
+    await AsyncStorage.setItem(
+      "pulsekegel_challenge_calibration",
+      JSON.stringify({
+        calibrationLevel: "easy",
+        difficultyPath: "accelerated",
+        calibrationCompleted: true,
+      }),
+    );
+    mockIsRestDayForDate.mockImplementation(
+      (date: Date, _programStartDate: string, difficultyPath) => {
+        const dayIndex = Math.round(
+          (Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) -
+            Date.UTC(2026, 4, 18)) /
+            86400000,
+        );
+        return difficultyPath === "accelerated"
+          ? [3, 5].includes(dayIndex)
+          : [1, 3, 5].includes(dayIndex);
+      },
+    );
+
+    await expect(storage.getChallengeStats()).resolves.toEqual({
+      completedCoreSessions: 5,
+      totalCoreSessions: 5,
+      completedOptionalSessions: 1,
+    });
+  });
+
+  it("does not report progress without a challenge start date", async () => {
+    await expect(storage.getChallengeStats()).resolves.toEqual({
+      completedCoreSessions: 0,
+      totalCoreSessions: 0,
+      completedOptionalSessions: 0,
+    });
+  });
+
+  it("marks the corrected result flow only after the result screen is shown", async () => {
+    await expect(storage.hasShownChallengeResult()).resolves.toBe(false);
+
+    await storage.markChallengeResultShown();
+
+    await expect(storage.hasShownChallengeResult()).resolves.toBe(true);
+    await storage.resetChallengeProgress();
+    await expect(storage.hasShownChallengeResult()).resolves.toBe(false);
+  });
+});
+
 describe("backfillRestDays — rest-day streak regression", () => {
   it("does not auto-complete accelerated Day 2 as a rest day", async () => {
     jest.useFakeTimers({ now: new Date(`${TODAY}T12:00:00.000Z`) });

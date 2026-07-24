@@ -179,6 +179,7 @@ export default function ChallengeCompleteScreen() {
   useEffect(() => {
     if (stats === null) return;
     const result = getChallengeResult(stats);
+    void storage.markChallengeResultShown();
     trackChallengeResult({
       result,
       completedCoreSessions: stats.completedCoreSessions,
@@ -188,7 +189,7 @@ export default function ChallengeCompleteScreen() {
   }, [stats]);
 
   const handleContinue = () => {
-    navigation.goBack();
+    navigation.replace("Paywall", { source: "challenge_complete" });
   };
 
   const handleRestartConfirmed = async () => {

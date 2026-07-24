@@ -1,8 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   isRestDayForDate,
-  getWorkoutCompletionsForWeek,
-  getScheduledDaysForWeek,
   type ChallengeDifficultyPath,
 } from "@/data/workoutProgram";
 import {
@@ -51,6 +49,7 @@ const STORAGE_KEYS = {
   LAST_WEEK_COMPLETE_TRACKED: "pulsekegel_last_week_complete_tracked",
   CHALLENGE_OPTIONAL_DATES: "pulsekegel_challenge_optional_dates",
   CHALLENGE_CALIBRATION: "pulsekegel_challenge_calibration",
+  CHALLENGE_RESULT_SHOWN: "pulsekegel_challenge_result_shown_v2",
   WEEKLY_CALIBRATION: "pulsekegel_weekly_calibration",
   WEEKLY_CALIBRATION_PROMPTED: "pulsekegel_weekly_calibration_prompted",
   CONTROL_SCORE_STATE: "pulsekegel_control_score_state",
@@ -1246,35 +1245,65 @@ export const storage = {
     totalCoreSessions: number;
     completedOptionalSessions: number;
   }> {
-    const [completedDates, programStartDate, optionalDates] = await Promise.all(
-      [
+    const [completedDates, programStartDate, optionalDates, calibrationState] =
+      await Promise.all([
         this.getCompletedDates(),
         this.getProgramStartDate(),
         this.getChallengeOptionalDates(),
-      ],
-    );
-
-    const totalCoreSessions: number = getScheduledDaysForWeek(1);
+        this.getCalibrationState(),
+      ]);
 
     if (!programStartDate) {
       return {
         completedCoreSessions: 0,
-        totalCoreSessions,
+        totalCoreSessions: 0,
         completedOptionalSessions: 0,
       };
     }
 
-    const completedCoreSessions: number = getWorkoutCompletionsForWeek(
-      completedDates,
-      1,
-      programStartDate,
-    );
+    const [startYear, startMonth, startDay] = programStartDate
+      .split("-")
+      .map(Number);
+    const startDate = new Date(startYear, startMonth - 1, startDay);
+    const completedSet = new Set(completedDates);
+    let completedCoreSessions = 0;
+    let totalCoreSessions = 0;
+
+    for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+      const date = new Date(startDate);
+      date.setDate(date.getDate() + dayIndex);
+      if (
+        isRestDayForDate(
+          date,
+          programStartDate,
+          calibrationState.difficultyPath,
+        )
+      ) {
+        continue;
+      }
+
+      totalCoreSessions++;
+      if (completedSet.has(todayDateString(date))) {
+        completedCoreSessions++;
+      }
+    }
 
     return {
       completedCoreSessions,
       totalCoreSessions,
       completedOptionalSessions: optionalDates.length,
     };
+  },
+
+  async hasShownChallengeResult(): Promise<boolean> {
+    return (
+      (await AsyncStorage.getItem(STORAGE_KEYS.CHALLENGE_RESULT_SHOWN)) ===
+      "true"
+    );
+  },
+
+  async markChallengeResultShown(): Promise<void> {
+    await AsyncStorage.setItem(STORAGE_KEYS.CHALLENGE_RESULT_SHOWN, "true");
   },
 
   async resetChallengeProgress(): Promise<void> {
@@ -1284,6 +1313,7 @@ export const storage = {
         STORAGE_KEYS.REST_DATES,
         STORAGE_KEYS.PROGRAM_START_DATE,
         STORAGE_KEYS.CHALLENGE_OPTIONAL_DATES,
+        STORAGE_KEYS.CHALLENGE_RESULT_SHOWN,
         STORAGE_KEYS.LAST_WEEKLY_REVIEW,
         STORAGE_KEYS.LAST_WEEK_COMPLETE_TRACKED,
         STORAGE_KEYS.REVIEW_HISTORY,

@@ -326,9 +326,8 @@ export default function HomeScreen() {
 
   const navigateToTrialExpired = async () => {
     try {
-      const seen = await AsyncStorage.getItem("pulsekegel_challenge_shown");
+      const seen = await storage.hasShownChallengeResult();
       if (!seen) {
-        await AsyncStorage.setItem("pulsekegel_challenge_shown", "true");
         navigation.navigate("Week1Review");
       } else {
         navigation.navigate("Paywall", { source: "workout_gate" });
