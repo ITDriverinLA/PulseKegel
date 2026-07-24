@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
+  AppState,
+  AppStateStatus,
   StyleSheet,
   View,
   Text,
@@ -12,7 +14,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { useNavigation } from "@react-navigation/native";
+import { useIsFocused, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import Animated, { FadeInDown, FadeOut } from "react-native-reanimated";
@@ -71,6 +73,7 @@ import {
   getExerciseTypesIn,
   SEGMENT_TYPE_LABEL,
 } from "@/data/controlModeWorkouts";
+import { didAppBecomeActive } from "@/lib/appState";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -79,12 +82,14 @@ export default function HomeScreen() {
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const navigation = useNavigation<NavigationProp>();
+  const isFocused = useIsFocused();
   const { fontScale, colors, highContrast } = useAccessibility();
   const { hasAccess } = useSubscription();
   const { cp, isDarkMode } = useThemePreference();
 
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const pendingAutoStartRef = useRef(false);
   const [todaysWorkout, setTodaysWorkout] = useState<{
     week: Week;
@@ -282,6 +287,19 @@ export default function HomeScreen() {
     const unsubscribe = navigation.addListener("focus", loadData);
     return unsubscribe;
   }, [navigation, loadData]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      const resumed = didAppBecomeActive(appStateRef.current, nextState);
+      appStateRef.current = nextState;
+
+      if (resumed && isFocused) {
+        void loadData();
+      }
+    });
+
+    return () => subscription.remove();
+  }, [isFocused, loadData]);
 
   useEffect(() => {
     if (
