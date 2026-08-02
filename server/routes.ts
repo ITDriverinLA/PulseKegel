@@ -343,13 +343,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.send(`# PulseKegel
 
-> PulseKegel is an iOS app that guides men through daily pelvic floor (Kegel) workouts using a 12-week progressive program, real-time visual cues, and haptic feedback. Workouts take 5–10 minutes a day with no equipment.
+> PulseKegel is an iOS and Android app that guides men and women through daily pelvic floor (Kegel) workouts using a 12-week progressive program, real-time visual cues, and haptic feedback. Workouts take 5–10 minutes a day with no equipment.
 
 ## App
 
-- Platform: iOS (App Store: https://apps.apple.com/us/app/pulsekegel/id6758308054)
+- Platforms: iOS (https://apps.apple.com/us/app/pulsekegel/id6758308054) and Android (https://play.google.com/store/apps/details?id=com.pulsekegel.app)
 - Free 7-day trial, then subscription
-- Android version planned
 
 ## Program Structure
 
@@ -373,6 +372,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 - Men who want to improve bladder control, core coordination, or recovery after prostate surgery
 - Men who have never been shown how to locate or train the pelvic floor
+- Women who want guided pelvic floor training with female anatomy instruction
+- Partners who want to understand why pelvic floor training matters for men
 - Anyone following a structured, progressive approach to pelvic floor fitness
 
 ## Blog & Resources
@@ -382,6 +383,7 @@ ${blogLines}
 ## Links
 
 - Website: https://pulsekegel.com/
+- Partner guide: https://pulsekegel.com/for-partners
 - Privacy policy: https://pulsekegel.com/privacy
 - Sitemap: https://pulsekegel.com/sitemap.xml
 `);
@@ -425,6 +427,12 @@ Sitemap: https://pulsekegel.com/sitemap.xml
     <lastmod>${today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://pulsekegel.com/for-partners</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>`;
 
     const blogUrls = discoverBlogSlugs()
@@ -475,6 +483,15 @@ ${blogUrls}
     if (existsSync(musicPagePath)) {
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
       return res.sendFile(musicPagePath);
+    }
+    res.status(404).send('Not found');
+  });
+
+  app.get(["/for-partners", "/for-partners/"], (_req, res) => {
+    const partnersPagePath = join(__dirname, 'templates', 'partners-page.html');
+    if (existsSync(partnersPagePath)) {
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      return res.sendFile(partnersPagePath);
     }
     res.status(404).send('Not found');
   });

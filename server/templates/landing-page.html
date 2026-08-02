@@ -988,7 +988,50 @@
   }
   .proof-card .attribution .name { color: var(--gray); font-weight: 600; }
 
-  /* ---------- SECTION 5: PRIVACY ---------- */
+  /* ---------- SECTION 6: PARTNER CTA ---------- */
+  .section-partners {
+    justify-content: center;
+    background:
+      linear-gradient(90deg, rgba(7, 9, 36, 0.98) 0%, rgba(7, 9, 36, 0.91) 43%, rgba(7, 9, 36, 0.35) 72%, rgba(7, 9, 36, 0.2) 100%),
+      url('/partner-couple-hero.webp') center right / cover no-repeat;
+  }
+  .partner-home-grid {
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 620px) 1fr;
+  }
+  .partner-home-copy { grid-column: 1; }
+  .partner-home-copy .eyebrow { margin-bottom: 22px; }
+  .partner-home-copy h2 {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: clamp(46px, 6.2vw, 82px);
+    line-height: 0.97;
+    letter-spacing: -0.03em;
+    margin-bottom: 26px;
+  }
+  .partner-home-copy h2 .accent { color: var(--teal); }
+  .partner-home-copy p {
+    max-width: 590px;
+    color: var(--gray);
+    font-size: 18px;
+    line-height: 1.62;
+    margin-bottom: 32px;
+  }
+  .partner-home-copy p strong { color: var(--white); font-weight: 600; }
+  .partner-home-note {
+    margin-top: 22px;
+    color: var(--gray-dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .partner-home-note span { color: var(--teal); margin-right: 8px; }
+
+  /* ---------- SECTION 7: PRIVACY ---------- */
   .section-privacy {
     text-align: center;
     /* True-center the privacy-content by pulling the section-divider out
@@ -1072,7 +1115,7 @@
     line-height: 1;
   }
 
-  /* ---------- SECTION 6: CLOSE ---------- */
+  /* ---------- SECTION 8: CLOSE ---------- */
   .section-close { text-align: center; }
   .close-content {
     max-width: 720px;
@@ -1464,6 +1507,16 @@
     .proof-card::before { left: 22px; }
     .proof-card blockquote { font-size: 19px; }
 
+    .section-partners {
+      background:
+        linear-gradient(0deg, var(--navy-deep) 0%, rgba(7, 9, 36, 0.9) 56%, rgba(7, 9, 36, 0.22) 100%),
+        url('/partner-couple-hero.webp') 66% center / cover no-repeat;
+      justify-content: flex-end;
+      padding-top: 300px;
+    }
+    .partner-home-grid { grid-template-columns: 1fr; }
+    .partner-home-copy { grid-column: auto; }
+
     .footer-main { grid-template-columns: 1fr 1fr; gap: 40px; }
     .footer-main .brand-col { grid-column: 1 / -1; }
     .page-footer { padding: 60px 32px 28px; }
@@ -1513,6 +1566,10 @@
     .privacy-tags .tag { font-size: 10px; letter-spacing: 0.18em; }
     .privacy-eyebrow::before,
     .privacy-eyebrow::after { width: 22px; }
+
+    .section-partners { padding-top: 280px; }
+    .partner-home-copy p { font-size: 16px; }
+    .partner-home-copy .btn { width: 100%; }
   }
   @media (max-width: 400px) {
     .hero-bar { height: 170px; width: 48px; }
@@ -1702,6 +1759,7 @@
     <div class="menu">
       <a href="#locate">Locate</a>
       <a href="#how-it-works">How It Works</a>
+      <a href="/for-partners">For Partners</a>
       <a href="/blog">Blog</a>
       <a href="/music">Music</a>
       <a href="/privacy">Privacy</a>
@@ -1720,6 +1778,7 @@
     <div class="drawer-panel">
       <a href="#locate" class="drawer-link">Locate</a>
       <a href="#how-it-works" class="drawer-link">How It Works</a>
+      <a href="/for-partners" class="drawer-link">For Partners</a>
       <a href="/blog" class="drawer-link">Blog</a>
       <a href="/music" class="drawer-link">Music</a>
       <a href="/privacy" class="drawer-link">Privacy</a>
@@ -2049,18 +2108,52 @@
 </section>
 
 <!-- ============================================================ -->
-<!-- SECTION 06: PRIVACY                                           -->
+<!-- SECTION 06: PARTNER CTA                                       -->
+<!-- ============================================================ -->
+<section class="section section-partners">
+  <span class="bracket tl"></span>
+  <span class="bracket tr"></span>
+  <span class="bracket bl"></span>
+  <span class="bracket br"></span>
+  <div class="rail-left">06 / PARTNERS &nbsp; ▸ &nbsp; SHARED SIGNAL</div>
+  <div class="rail-right">GUIDE &nbsp; <span class="live">● READY</span> &nbsp; v1.0</div>
+
+  <div class="section-divider reveal-line">
+    <span>06 / For partners</span>
+    <span>The person who knows him best</span>
+  </div>
+
+  <div class="partner-home-grid">
+    <div class="partner-home-copy">
+      <div class="eyebrow reveal-x">For wives, girlfriends, and partners</div>
+      <h2 class="reveal">
+        You know Kegels.<br />
+        <span class="accent">He probably doesn't.</span>
+      </h2>
+      <p class="reveal">
+        Men have a pelvic floor too. See why training it can support <strong>control, confidence, and sexual wellness</strong>—and how you can help him start without making it awkward.
+      </p>
+      <div class="reveal">
+        <a href="/for-partners" class="btn btn-primary">See the partner guide <span class="arrow">→</span></a>
+        <div class="partner-home-note"><span>●</span>PulseKegel includes guidance for women too</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 07: PRIVACY                                           -->
 <!-- ============================================================ -->
 <section class="section section-privacy">
   <span class="bracket tl"></span>
   <span class="bracket tr"></span>
   <span class="bracket bl"></span>
   <span class="bracket br"></span>
-  <div class="rail-left">06 / PRIVACY &nbsp; ▸ &nbsp; VAULT STATUS</div>
+  <div class="rail-left">07 / PRIVACY &nbsp; ▸ &nbsp; VAULT STATUS</div>
   <div class="rail-right">CRYPTO &nbsp; <span class="live">● SEALED</span> &nbsp; v1.0</div>
 
   <div class="section-divider reveal-line">
-    <span>06 / Private by design</span>
+    <span>07 / Private by design</span>
     <span>Your data stays put</span>
   </div>
 
@@ -2084,18 +2177,18 @@
 </section>
 
 <!-- ============================================================ -->
-<!-- SECTION 07: CLOSE / CTA                                       -->
+<!-- SECTION 08: CLOSE / CTA                                       -->
 <!-- ============================================================ -->
 <section class="section section-close">
   <span class="bracket tl"></span>
   <span class="bracket tr"></span>
   <span class="bracket bl"></span>
   <span class="bracket br"></span>
-  <div class="rail-left">07 / NEXT REP &nbsp; ▸ &nbsp; COMMIT READY</div>
+  <div class="rail-left">08 / NEXT REP &nbsp; ▸ &nbsp; COMMIT READY</div>
   <div class="rail-right">SYSTEMS &nbsp; <span class="live">● GO</span> &nbsp; v1.0</div>
 
   <div class="section-divider reveal-line">
-    <span>07 / Next rep</span>
+    <span>08 / Next rep</span>
     <span>Start the program</span>
   </div>
 
@@ -2176,6 +2269,7 @@
       <ul class="footer-links">
         <li><a href="#locate">Locate</a></li>
         <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="/for-partners">For Partners</a></li>
         <li><a href="/blog">Blog</a></li>
         <li><a href="/privacy">Privacy</a></li>
         <li><a href="mailto:info@pulsekegel.com">Contact</a></li>
