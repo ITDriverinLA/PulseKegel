@@ -745,6 +745,12 @@ export const privacyPolicyHtml = `<!doctype html>
     }
   }
 </style>
+  <!-- Privacy-friendly analytics by Plausible -->
+  <script async src="https://plausible.io/js/pa-R6DrrA_T3Ucr4LAudvptX.js"></script>
+  <script>
+    window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+    plausible.init()
+  </script>
 </head>
 
 <body>
