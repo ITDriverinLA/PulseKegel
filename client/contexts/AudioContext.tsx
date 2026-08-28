@@ -25,6 +25,7 @@ interface AudioContextType {
   updateAudioSettings: (updates: Partial<AudioSettings>) => Promise<void>;
   playSfx: (effect: SoundEffect) => void;
   startAmbient: () => void;
+  skipAmbientTrack: () => void;
   stopAmbient: () => void;
   fadeOutAmbient: () => void;
   previewTrack: (track: TrackKey) => void;
@@ -37,6 +38,7 @@ const AudioContext = createContext<AudioContextType>({
   updateAudioSettings: async () => {},
   playSfx: () => {},
   startAmbient: () => {},
+  skipAmbientTrack: () => {},
   stopAmbient: () => {},
   fadeOutAmbient: () => {},
   previewTrack: () => {},
@@ -343,6 +345,16 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     }
   }, [stopAllAmbient, playTrackByKey]);
 
+  const skipAmbientTrack = useCallback(() => {
+    if (!isWorkoutActiveRef.current) return;
+
+    const next = pickNextTrack();
+    if (!next) return;
+
+    stopAllAmbient();
+    playTrackByKey(next, audioSettingsRef.current.selectedTracks.length === 1);
+  }, [pickNextTrack, playTrackByKey, stopAllAmbient]);
+
   const stopAmbient = useCallback(() => {
     // Cancel any in-flight fade and restore volumes immediately.
     if (fadeIntervalRef.current !== null) {
@@ -459,6 +471,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         updateAudioSettings,
         playSfx,
         startAmbient,
+        skipAmbientTrack,
         stopAmbient,
         fadeOutAmbient,
         previewTrack,

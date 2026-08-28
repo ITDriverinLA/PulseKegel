@@ -50,6 +50,7 @@ const STORAGE_KEYS = {
   CHALLENGE_OPTIONAL_DATES: "pulsekegel_challenge_optional_dates",
   CHALLENGE_CALIBRATION: "pulsekegel_challenge_calibration",
   CHALLENGE_RESULT_SHOWN: "pulsekegel_challenge_result_shown_v2",
+  APP_REVIEW_REQUESTED: "pulsekegel_app_review_requested",
   WEEKLY_CALIBRATION: "pulsekegel_weekly_calibration",
   WEEKLY_CALIBRATION_PROMPTED: "pulsekegel_weekly_calibration_prompted",
   CONTROL_SCORE_STATE: "pulsekegel_control_score_state",
@@ -887,6 +888,21 @@ export const storage = {
     } catch {
       return null;
     }
+  },
+
+  async hasRequestedAppReview(): Promise<boolean> {
+    try {
+      return (
+        (await AsyncStorage.getItem(STORAGE_KEYS.APP_REVIEW_REQUESTED)) ===
+        "true"
+      );
+    } catch {
+      return false;
+    }
+  },
+
+  async markAppReviewRequested(): Promise<void> {
+    await AsyncStorage.setItem(STORAGE_KEYS.APP_REVIEW_REQUESTED, "true");
   },
 
   async setLastWeeklyReview(weekNumber: number): Promise<void> {

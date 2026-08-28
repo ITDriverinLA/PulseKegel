@@ -68,7 +68,13 @@ export default function WorkoutPlayerScreen() {
 
   const insets = useSafeAreaInsets();
   const { cp, isDarkMode, theme } = useThemePreference();
-  const { playSfx, startAmbient, stopAmbient, fadeOutAmbient } = useAudio();
+  const {
+    playSfx,
+    startAmbient,
+    skipAmbientTrack,
+    stopAmbient,
+    fadeOutAmbient,
+  } = useAudio();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const { workout, weekNumber, phase, dayNumber } = route.params;
@@ -430,6 +436,11 @@ export default function WorkoutPlayerScreen() {
     await hapticsManager.triggerSelection();
     hapticPulseRef.current.stop();
     engineRef.current.skipSegment();
+  };
+
+  const handleNextTrack = async () => {
+    await hapticsManager.triggerSelection();
+    skipAmbientTrack();
   };
 
   const doGoBack = () => {
@@ -917,6 +928,28 @@ export default function WorkoutPlayerScreen() {
 
           <View style={styles.secondaryControls}>
             <Pressable
+              testID="next-track-button"
+              accessibilityRole="button"
+              accessibilityLabel="Play next music track"
+              onPress={handleNextTrack}
+              style={[
+                styles.secondaryButton,
+                { backgroundColor: cp.cardBorder, borderColor: cp.cardBorder },
+              ]}
+            >
+              <Feather name="music" size={20} color={cp.text} />
+              <ThemedText
+                type="small"
+                style={{ marginLeft: Spacing.xs, color: cp.text }}
+              >
+                Next Track
+              </ThemedText>
+            </Pressable>
+
+            <Pressable
+              testID="skip-exercise-button"
+              accessibilityRole="button"
+              accessibilityLabel="Skip current exercise"
               onPress={handleSkip}
               style={[
                 styles.secondaryButton,
@@ -928,16 +961,16 @@ export default function WorkoutPlayerScreen() {
                 type="small"
                 style={{ marginLeft: Spacing.xs, color: cp.text }}
               >
-                Skip
-              </ThemedText>
-            </Pressable>
-
-            <Pressable onPress={handleEnd}>
-              <ThemedText type="small" style={{ color: cp.textMuted }}>
-                End Workout
+                Skip Exercise
               </ThemedText>
             </Pressable>
           </View>
+
+          <Pressable onPress={handleEnd} style={styles.endWorkoutButton}>
+            <ThemedText type="small" style={{ color: cp.textMuted }}>
+              End Workout
+            </ThemedText>
+          </Pressable>
         </View>
       </View>
 
@@ -1076,15 +1109,23 @@ const styles = StyleSheet.create({
   secondaryControls: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing["2xl"],
+    justifyContent: "center",
+    gap: Spacing.sm,
+    width: "100%",
   },
   secondaryButton: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.sm,
     borderRadius: BorderRadius.full,
     borderWidth: 1,
+  },
+  endWorkoutButton: {
+    marginTop: Spacing.lg,
+    padding: Spacing.sm,
   },
   completeContent: {
     flex: 1,

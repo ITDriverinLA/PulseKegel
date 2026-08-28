@@ -21,6 +21,10 @@ import {
   type ControlScoreState,
 } from "@/lib/storage";
 import { estimateSessionsToNextRank, getNextRank } from "@/lib/controlScore";
+import {
+  isChallengeCompleteForReview,
+  requestAppReviewAfterChallenge,
+} from "@/lib/appReview";
 import { trackChallengeResult, trackChallengeCta } from "@/lib/analytics";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
@@ -186,6 +190,9 @@ export default function ChallengeCompleteScreen() {
       totalCoreSessions: stats.totalCoreSessions,
       completedOptionalSessions: stats.completedOptionalSessions,
     });
+    if (isChallengeCompleteForReview(stats)) {
+      void requestAppReviewAfterChallenge();
+    }
   }, [stats]);
 
   const handleContinue = () => {

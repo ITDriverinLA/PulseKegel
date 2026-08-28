@@ -9,7 +9,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.pulsekegel.app",
+      "bundleIdentifier": "app.replit.pulsekegel",
       "buildNumber": "2",
       "infoPlist": {
         "UISupportedInterfaceOrientations": [
