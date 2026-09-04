@@ -57,6 +57,7 @@ export function trackEvent(type: string, data?: Record<string, unknown>): void {
           events: [
             {
               type,
+              // platform + appVersion required on all activation events (Epic D).
               data: data ?? {},
               platform: Platform.OS,
               appVersion,
@@ -248,4 +249,77 @@ export function trackFirstSessionSkipped(data?: {
   source?: FirstSessionGateSource;
 }): void {
   trackEvent("first_session_skipped", (data ?? {}) as Record<string, unknown>);
+}
+
+export function trackPermissionPromptShown(data: {
+  type: "push" | "att" | "other";
+  surface?: string;
+  status?: string;
+  deferred?: boolean;
+}): void {
+  trackEvent("permission_prompt_shown", data as Record<string, unknown>);
+}
+
+export function trackPermissionResult(data: {
+  type: "push" | "att" | "other";
+  status: string;
+  surface?: string;
+  deferred?: boolean;
+  already_granted?: boolean;
+}): void {
+  trackEvent("permission_result", data as Record<string, unknown>);
+}
+
+export function trackFirstOpenPath(data: {
+  landing_route: string;
+  onboarded_already: boolean;
+  launch_type?: "cold" | "warm";
+  app_state?: string;
+  att_status?: string;
+  build_channel?: string;
+}): void {
+  trackEvent("first_open_path", {
+    ...data,
+    platform: Platform.OS,
+  } as Record<string, unknown>);
+}
+
+export function trackChallengeDayViewed(data: {
+  week: number;
+  day: number;
+  state: "locked" | "available" | "complete" | "rest";
+}): void {
+  trackEvent("challenge_day_viewed", data as Record<string, unknown>);
+}
+
+export function trackChallengeDayStarted(data: {
+  week: number;
+  day: number;
+}): void {
+  trackEvent("challenge_day_started", data as Record<string, unknown>);
+}
+
+export function trackChallengeDayCompleted(data: {
+  week: number;
+  day: number;
+}): void {
+  trackEvent("challenge_day_completed", data as Record<string, unknown>);
+}
+
+export function trackChallengeDay2NudgeScheduled(data: {
+  channel: "push" | "in_app";
+}): void {
+  trackEvent("challenge_day2_nudge_scheduled", data as Record<string, unknown>);
+}
+
+export function trackChallengeDay2NudgeShown(data: {
+  channel: "push" | "in_app";
+}): void {
+  trackEvent("challenge_day2_nudge_shown", data as Record<string, unknown>);
+}
+
+export function trackChallengeDay2NudgeTapped(data: {
+  channel: "push" | "in_app";
+}): void {
+  trackEvent("challenge_day2_nudge_tapped", data as Record<string, unknown>);
 }

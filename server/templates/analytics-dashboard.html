@@ -741,6 +741,10 @@
         </div>
       </div>
     </div>
+    <div class="section-sub" style="margin-top:18px">Platform split (Epic D)</div>
+    <div id="funnel-by-platform" style="margin-top:12px;display:flex;flex-direction:column;gap:10px;color:var(--muted);font-size:13px">
+      <div class="loading">Loading…</div>
+    </div>
   </div>
 
   <!-- Subscription funnel -->
@@ -874,6 +878,7 @@
 
       // Funnel
       renderFunnel(d.funnel || {});
+      renderFunnelByPlatform(d.funnelByPlatform || []);
       renderSubscriptionFunnel(d.subscriptionFunnel || {});
 
       // Program week distribution
@@ -1082,6 +1087,31 @@
         el.classList.remove('loading');
       }
     });
+  }
+
+
+  function renderFunnelByPlatform(rows) {
+    const el = document.getElementById('funnel-by-platform');
+    if (!el) return;
+    if (!rows.length) {
+      el.innerHTML = '<div>No platform funnel data yet</div>';
+      return;
+    }
+    el.innerHTML = rows.map(function (r) {
+      const platform = String(r.platform || 'unknown');
+      const opens = Number(r.opens) || 0;
+      const onboarded = Number(r.onboarded) || 0;
+      const started = Number(r.started) || 0;
+      const sessions = Number(r.sessions) || 0;
+      const pct = function (n) { return opens > 0 ? Math.round((n / opens) * 100) + '%' : '—'; };
+      return '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:baseline">'
+        + '<strong style="color:var(--white);min-width:72px;text-transform:capitalize">' + platform + '</strong>'
+        + '<span>Open ' + opens.toLocaleString() + '</span>'
+        + '<span>→ Onboard ' + onboarded.toLocaleString() + ' (' + pct(onboarded) + ')</span>'
+        + '<span>→ Start ' + started.toLocaleString() + ' (' + pct(started) + ')</span>'
+        + '<span>→ Complete ' + sessions.toLocaleString() + ' (' + pct(sessions) + ')</span>'
+        + '</div>';
+    }).join('');
   }
 
   function renderFunnel(funnel) {

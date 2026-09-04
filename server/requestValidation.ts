@@ -316,9 +316,125 @@ const analyticsEventSchema = z.discriminatedUnion("type", [
       type: z.literal("first_session_skipped"),
       data: z
         .object({
-          source: z
-            .enum(["post_onboarding", "cold_open", "resume"])
+          source: z.enum(["post_onboarding", "cold_open", "resume"]).optional(),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("permission_prompt_shown"),
+      data: z
+        .object({
+          type: z.enum(["push", "att", "other"]),
+          surface: z.string().trim().min(1).max(64).optional(),
+          status: z.string().trim().min(1).max(32).optional(),
+          deferred: z.boolean().optional(),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("permission_result"),
+      data: z
+        .object({
+          type: z.enum(["push", "att", "other"]),
+          status: z.string().trim().min(1).max(32),
+          surface: z.string().trim().min(1).max(64).optional(),
+          deferred: z.boolean().optional(),
+          already_granted: z.boolean().optional(),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("first_open_path"),
+      data: z
+        .object({
+          landing_route: z.string().trim().min(1).max(64),
+          onboarded_already: z.boolean(),
+          launch_type: z.enum(["cold", "warm"]).optional(),
+          app_state: z.string().trim().min(1).max(32).optional(),
+          att_status: z.string().trim().min(1).max(32).optional(),
+          build_channel: z.string().trim().min(1).max(64).optional(),
+          platform: z
+            .enum(["ios", "android", "web", "windows", "macos"])
             .optional(),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("challenge_day_viewed"),
+      data: z
+        .object({
+          week: z.number().int().min(1).max(12),
+          day: z.number().int().min(1).max(7),
+          state: z.enum(["locked", "available", "complete", "rest"]),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("challenge_day_started"),
+      data: z
+        .object({
+          week: z.number().int().min(1).max(12),
+          day: z.number().int().min(1).max(7),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("challenge_day_completed"),
+      data: z
+        .object({
+          week: z.number().int().min(1).max(12),
+          day: z.number().int().min(1).max(7),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("challenge_day2_nudge_scheduled"),
+      data: z
+        .object({
+          channel: z.enum(["push", "in_app"]),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("challenge_day2_nudge_shown"),
+      data: z
+        .object({
+          channel: z.enum(["push", "in_app"]),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("challenge_day2_nudge_tapped"),
+      data: z
+        .object({
+          channel: z.enum(["push", "in_app"]),
         })
         .strict(),
       ...eventMetadata,
