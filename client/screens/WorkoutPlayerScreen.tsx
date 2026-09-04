@@ -58,7 +58,12 @@ import {
   sendBadgeEarnedNotification,
 } from "@/lib/notifications";
 import { getBadgeById } from "@/data/badges";
-import { trackSessionComplete, trackSessionStarted } from "@/lib/analytics";
+import {
+  trackSessionComplete,
+  trackSessionStarted,
+  trackFirstSessionCompleted,
+  trackFirstSessionAbandoned,
+} from "@/lib/analytics";
 
 type RouteProps = RouteProp<RootStackParamList, "WorkoutPlayer">;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -77,7 +82,14 @@ export default function WorkoutPlayerScreen() {
   } = useAudio();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
-  const { workout, weekNumber, phase, dayNumber } = route.params;
+  const {
+    workout,
+    weekNumber,
+    phase,
+    dayNumber,
+    isFirstSession,
+    firstSessionId,
+  } = route.params;
 
   const [workoutState, setWorkoutState] = useState<WorkoutState | null>(null);
   const [currentSegment, setCurrentSegment] = useState<Segment | null>(null);
@@ -268,6 +280,14 @@ export default function WorkoutPlayerScreen() {
             dayNumber,
           });
 
+          if (isFirstSession) {
+            await storage.setFirstSessionInProgress(false);
+            trackFirstSessionCompleted({
+              session_id: firstSessionId ?? `fs-${today}`,
+              duration_sec: seconds,
+            });
+          }
+
           const startDate = await storage.getProgramStartDate();
           if (!startDate) {
             await storage.setProgramStartDate(today);
@@ -367,6 +387,8 @@ export default function WorkoutPlayerScreen() {
     weekNumber,
     dayNumber,
     phase,
+    isFirstSession,
+    firstSessionId,
   ]);
 
   useEffect(() => {
@@ -444,6 +466,11 @@ export default function WorkoutPlayerScreen() {
   };
 
   const doGoBack = () => {
+    // First-session path returns to the activation gate (celebration), not calibration.
+    if (isFirstSession) {
+      navigation.goBack();
+      return;
+    }
     if (isCompleteRef.current && shouldRedirectToCalibrationRef.current) {
       navigation.replace("CalibrationFeedback");
     } else if (
@@ -467,15 +494,32 @@ export default function WorkoutPlayerScreen() {
     });
   };
 
+  const markFirstSessionAbandonedIfNeeded = async () => {
+    if (!isFirstSession || isCompleteRef.current) return;
+    const pct =
+      progress.total > 0
+        ? Math.round((progress.current / progress.total) * 100)
+        : 0;
+    await storage.setFirstSessionInProgress(true, pct);
+    trackFirstSessionAbandoned({
+      session_id: firstSessionId ?? "unknown",
+      progress: pct,
+    });
+  };
+
   const handleEnd = async () => {
     if (!engineRef.current) return;
     await hapticsManager.triggerWarning();
     hapticPulseRef.current.stop();
+    await markFirstSessionAbandonedIfNeeded();
     animateOut(ANIM_DURATION_EXIT);
   };
 
   const handleClose = () => {
     hapticPulseRef.current.stop();
+    if (!isComplete) {
+      void markFirstSessionAbandonedIfNeeded();
+    }
     animateOut(isComplete ? ANIM_DURATION_EXIT_COMPLETE : ANIM_DURATION_EXIT);
   };
 
@@ -626,7 +670,9 @@ export default function WorkoutPlayerScreen() {
                 type="body"
                 style={[styles.completeSubtitle, { color: cp.textSecondary }]}
               >
-                {"You completed today's workout"}
+                {isFirstSession
+                  ? "Day 1 complete — come back tomorrow for Day 2"
+                  : "You completed today's workout"}
               </ThemedText>
             </Animated.View>
 

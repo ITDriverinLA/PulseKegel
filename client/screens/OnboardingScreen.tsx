@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import {
   StyleSheet,
   View,
@@ -8,29 +8,32 @@ import {
   ScrollView,
   Text,
   Animated as RNAnimated,
+  AppState,
+  AppStateStatus,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
   useAnimatedStyle,
-  withRepeat,
-  withSequence,
   withTiming,
   useSharedValue,
 } from "react-native-reanimated";
 import {
-  ANIM_DURATION_HOLD_PULSE,
   ANIM_DURATION_MICRO,
   ANIM_DURATION_RESET_FAST,
-  ANIM_EASING_PULSE,
 } from "@/constants/animation";
 import { Feather } from "@expo/vector-icons";
-import Svg, { Circle, Text as SvgText } from "react-native-svg";
 
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { storage, AnatomyType } from "@/lib/storage";
-import { trackOnboardingComplete } from "@/lib/analytics";
+import { didAppBecomeActive } from "@/lib/appState";
+import {
+  trackOnboardingAbandoned,
+  trackOnboardingAnatomySelected,
+  trackOnboardingComplete,
+  trackOnboardingCtaTapped,
+  trackOnboardingScreenViewed,
+} from "@/lib/analytics";
 
 interface OnboardingScreenProps {
   onComplete: () => void;
@@ -41,10 +44,6 @@ const { width, height } = Dimensions.get("window");
 const HERO_COMBINED = require("../assets/images/onboarding/hero-combined.jpg");
 const MAN_HERO = require("../assets/images/onboarding/male-hero.jpg");
 const WOMAN_HERO = require("../assets/images/onboarding/female-hero.jpg");
-const MALE_STEP1 = require("../assets/images/onboarding/male-anatomy-step1.jpg");
-const MALE_STEP2 = require("../assets/images/onboarding/male-anatomy-step2.jpg");
-const FEMALE_STEP1 = require("../assets/images/onboarding/female-anatomy-step1.jpg");
-const FEMALE_STEP2 = require("../assets/images/onboarding/female-anatomy-step2.jpg");
 
 const BLUE = "#00AAFF";
 const BLUE_DIM = "rgba(0,170,255,0.15)";
@@ -52,8 +51,6 @@ const BLUE_BORDER = "rgba(0,170,255,0.4)";
 const PINK = "#FF2D78";
 const PINK_DIM = "rgba(255,45,120,0.15)";
 const PINK_BORDER = "rgba(255,45,120,0.4)";
-const CARD_BG = "rgba(255,255,255,0.06)";
-const CARD_BORDER = "rgba(255,255,255,0.1)";
 const TEXT = "#F0F2FF";
 const TEXT_SEC = "rgba(240,242,255,0.65)";
 const TEXT_MUTED = "rgba(240,242,255,0.38)";
@@ -64,120 +61,217 @@ const BG_GRADIENT: [string, string, string, string] = [
   "#070818",
 ];
 
-type Step = "gender" | "knowledge" | "tutorial" | "cta";
+/** Epic B: ≤3 onboarding screens before first-session gate. */
+export const ONBOARDING_SCREEN_KEYS = ["welcome", "anatomy", "start"] as const;
+export type OnboardingScreenKey = (typeof ONBOARDING_SCREEN_KEYS)[number];
+const ONBOARDING_TOTAL = ONBOARDING_SCREEN_KEYS.length;
 
 export default function OnboardingScreen({
   onComplete,
 }: OnboardingScreenProps) {
   const insets = useSafeAreaInsets();
-  const [step, setStep] = React.useState<Step>("gender");
+  const [stepIndex, setStepIndex] = React.useState(0);
   const [gender, setGender] = React.useState<AnatomyType>(null);
-
+  const [hydrated, setHydrated] = React.useState(false);
   const screenOpacity = useRef(new RNAnimated.Value(0)).current;
+  const lastScreenKeyRef = useRef<OnboardingScreenKey>("welcome");
+  const lastIndexRef = useRef(0);
+  const completedRef = useRef(false);
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
+  const abandonedTrackedRef = useRef(false);
+
+  const screenKey = ONBOARDING_SCREEN_KEYS[stepIndex];
 
   useEffect(() => {
+    (async () => {
+      try {
+        const [progress, settings] = await Promise.all([
+          storage.getOnboardingProgress(),
+          storage.getSettings(),
+        ]);
+        if (
+          settings.anatomyType === "male" ||
+          settings.anatomyType === "female"
+        ) {
+          setGender(settings.anatomyType);
+        }
+        if (progress) {
+          const idx = ONBOARDING_SCREEN_KEYS.indexOf(
+            progress.screenKey as OnboardingScreenKey,
+          );
+          if (idx >= 0) {
+            setStepIndex(idx);
+          } else if (
+            typeof progress.index === "number" &&
+            progress.index >= 0 &&
+            progress.index < ONBOARDING_TOTAL
+          ) {
+            setStepIndex(progress.index);
+          }
+        }
+      } finally {
+        setHydrated(true);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    lastScreenKeyRef.current = screenKey;
+    lastIndexRef.current = stepIndex;
+    void storage.saveOnboardingProgress(screenKey, stepIndex);
+    trackOnboardingScreenViewed({
+      screen_key: screenKey,
+      index: stepIndex,
+      total: ONBOARDING_TOTAL,
+    });
     RNAnimated.timing(screenOpacity, {
       toValue: 1,
-      duration: 400,
+      duration: 320,
       useNativeDriver: true,
     }).start();
-  }, [screenOpacity]);
+  }, [hydrated, screenKey, stepIndex, screenOpacity]);
 
-  const fadeToStep = (next: Step) => {
-    RNAnimated.sequence([
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (next) => {
+      const prev = appStateRef.current;
+      const leaving = prev === "active" && !!next.match(/inactive|background/);
+      if (leaving && !completedRef.current && !abandonedTrackedRef.current) {
+        abandonedTrackedRef.current = true;
+        trackOnboardingAbandoned({
+          last_screen_key: lastScreenKeyRef.current,
+          index: lastIndexRef.current,
+        });
+      }
+      if (didAppBecomeActive(prev, next)) {
+        abandonedTrackedRef.current = false;
+      }
+      appStateRef.current = next;
+    });
+    return () => sub.remove();
+  }, []);
+
+  const fadeToIndex = useCallback(
+    (nextIndex: number) => {
       RNAnimated.timing(screenOpacity, {
         toValue: 0,
-        duration: 180,
+        duration: 160,
         useNativeDriver: true,
-      }),
-    ]).start(() => {
-      setStep(next);
-      RNAnimated.timing(screenOpacity, {
-        toValue: 1,
-        duration: 280,
-        useNativeDriver: true,
-      }).start();
-    });
-  };
+      }).start(() => {
+        setStepIndex(nextIndex);
+      });
+    },
+    [screenOpacity],
+  );
 
-  const handleGenderSelect = (g: "male" | "female") => {
+  const handleAnatomySelect = (g: "male" | "female") => {
     setGender(g);
-    fadeToStep("knowledge");
+    void storage.saveSettings({ anatomyType: g });
+    trackOnboardingAnatomySelected({ anatomy: g });
   };
 
-  const handleKnowledge = (knows: boolean) => {
-    if (knows) {
-      fadeToStep("cta");
-    } else {
-      fadeToStep("tutorial");
+  const handleContinue = () => {
+    if (stepIndex < ONBOARDING_TOTAL - 1) {
+      fadeToIndex(stepIndex + 1);
+      return;
     }
-  };
-
-  const handleTutorialDone = () => {
-    fadeToStep("cta");
+    void handleStart();
   };
 
   const handleStart = async () => {
+    if (!gender || completedRef.current) return;
+    completedRef.current = true;
+    trackOnboardingCtaTapped({ screen_key: "start" });
     await storage.saveSettings({ anatomyType: gender });
     trackOnboardingComplete({ anatomyType: gender });
     await storage.setOnboardingComplete();
-    await AsyncStorage.setItem("pendingAutoStart", "true");
+    await storage.setFirstSessionGateSource("post_onboarding");
     onComplete();
   };
 
   const accent = gender === "female" ? PINK : BLUE;
-  const accentDim = gender === "female" ? PINK_DIM : BLUE_DIM;
-  const accentBorder = gender === "female" ? PINK_BORDER : BLUE_BORDER;
+  const anatomyReady = gender === "male" || gender === "female";
+
+  if (!hydrated) {
+    return (
+      <View style={styles.root}>
+        <LinearGradient colors={BG_GRADIENT} style={StyleSheet.absoluteFill} />
+      </View>
+    );
+  }
 
   return (
     <RNAnimated.View style={[styles.root, { opacity: screenOpacity }]}>
       <LinearGradient colors={BG_GRADIENT} style={StyleSheet.absoluteFill} />
 
-      {step === "gender" && (
-        <GenderScreen insets={insets} onSelect={handleGenderSelect} />
-      )}
-      {step === "knowledge" && (
-        <KnowledgeScreen
+      {screenKey === "welcome" && (
+        <WelcomeScreen
           insets={insets}
-          accent={accent}
-          onAnswer={handleKnowledge}
+          onContinue={handleContinue}
+          stepIndex={stepIndex}
         />
       )}
-      {step === "tutorial" && (
-        <TutorialScreen
+      {screenKey === "anatomy" && (
+        <AnatomyScreen
+          insets={insets}
+          gender={gender}
+          onSelect={handleAnatomySelect}
+          onContinue={handleContinue}
+          ctaEnabled={anatomyReady}
+          stepIndex={stepIndex}
+        />
+      )}
+      {screenKey === "start" && (
+        <StartScreen
           insets={insets}
           gender={gender}
           accent={accent}
-          accentDim={accentDim}
-          accentBorder={accentBorder}
-          onDone={handleTutorialDone}
-        />
-      )}
-      {step === "cta" && (
-        <CtaScreen
-          insets={insets}
-          gender={gender}
-          accent={accent}
-          accentDim={accentDim}
-          onStart={handleStart}
+          onStart={handleContinue}
+          stepIndex={stepIndex}
         />
       )}
     </RNAnimated.View>
   );
 }
 
-function GenderScreen({
+function StepDots({
+  index,
+  accent = BLUE,
+}: {
+  index: number;
+  accent?: string;
+}) {
+  return (
+    <View style={styles.dotRow}>
+      {ONBOARDING_SCREEN_KEYS.map((_, i) => (
+        <View
+          key={i}
+          style={[
+            styles.dot,
+            i === index
+              ? { backgroundColor: accent, width: 20 }
+              : { backgroundColor: TEXT_MUTED, width: 8 },
+          ]}
+        />
+      ))}
+    </View>
+  );
+}
+
+function WelcomeScreen({
   insets,
-  onSelect,
+  onContinue,
+  stepIndex,
 }: {
   insets: ReturnType<typeof useSafeAreaInsets>;
-  onSelect: (g: "male" | "female") => void;
+  onContinue: () => void;
+  stepIndex: number;
 }) {
   return (
     <View
       style={[
         styles.screen,
-        { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 24 },
+        { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16 },
       ]}
     >
       <View style={styles.genderHeader}>
@@ -185,19 +279,7 @@ function GenderScreen({
           <Text style={{ color: TEXT }}>PULSE</Text>
           <Text style={{ color: BLUE }}>KEGEL</Text>
         </Text>
-        <Text style={styles.logoTagline}>STRONGER. CONFIDENT. IN CONTROL.</Text>
-      </View>
-
-      <View style={styles.genderTextBlock}>
-        <Text style={styles.genderHeadline}>
-          Most people lose strength in their pelvic floor over time.
-        </Text>
-        <Text style={styles.genderSubline}>
-          You can train it — and you should.
-        </Text>
-        <Text style={[styles.genderCta, { color: BLUE }]}>
-          {"Let's get started."}
-        </Text>
+        <Text style={styles.logoTagline}>SHORT SESSIONS. CLEAR GUIDANCE.</Text>
       </View>
 
       <View style={styles.genderHeroRow}>
@@ -208,31 +290,163 @@ function GenderScreen({
         />
       </View>
 
-      <View style={styles.genderButtons}>
-        <GenderButton
-          label="I'm a Man"
-          icon="male"
-          color={BLUE}
-          dimColor={BLUE_DIM}
-          borderColor={BLUE_BORDER}
-          filled
-          onPress={() => onSelect("male")}
-          testID="button-gender-man"
-        />
-        <GenderButton
-          label="I'm a Woman"
-          icon="female"
-          color={PINK}
-          dimColor={PINK_DIM}
-          borderColor={PINK_BORDER}
-          onPress={() => onSelect("female")}
-          testID="button-gender-woman"
-        />
+      <View style={styles.genderTextBlock}>
+        <Text style={styles.genderHeadline}>
+          Train your pelvic floor in a few minutes a day.
+        </Text>
+        <Text style={styles.genderSubline}>
+          We will keep Day 1 short, clear, and coach-guided.
+        </Text>
       </View>
 
-      <View style={styles.footer}>
-        <Feather name="lock" size={11} color={TEXT_MUTED} />
-        <Text style={styles.footerText}>Private. Secure. Just for you.</Text>
+      <StepDots index={stepIndex} />
+
+      <StickyPrimaryButton
+        label="Continue"
+        accent={BLUE}
+        onPress={onContinue}
+        testID="button-onboarding-welcome-continue"
+      />
+    </View>
+  );
+}
+
+function AnatomyScreen({
+  insets,
+  gender,
+  onSelect,
+  onContinue,
+  ctaEnabled,
+  stepIndex,
+}: {
+  insets: ReturnType<typeof useSafeAreaInsets>;
+  gender: AnatomyType;
+  onSelect: (g: "male" | "female") => void;
+  onContinue: () => void;
+  ctaEnabled: boolean;
+  stepIndex: number;
+}) {
+  return (
+    <View
+      style={[
+        styles.screen,
+        { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16 },
+      ]}
+    >
+      <View style={styles.genderHeader}>
+        <Text style={styles.logoText}>
+          <Text style={{ color: TEXT }}>PULSE</Text>
+          <Text style={{ color: BLUE }}>KEGEL</Text>
+        </Text>
+        <Text style={styles.logoTagline}>PICK YOUR GUIDE</Text>
+      </View>
+
+      <View style={{ flex: 1, justifyContent: "center" }}>
+        <Text style={styles.genderHeadline}>Which anatomy guide fits you?</Text>
+        <Text style={[styles.genderSubline, { marginBottom: 24 }]}>
+          This personalizes cues. Nothing is selected yet.
+        </Text>
+
+        <View style={styles.genderButtons}>
+          <GenderButton
+            label="Male"
+            icon="male"
+            color={BLUE}
+            dimColor={BLUE_DIM}
+            borderColor={BLUE_BORDER}
+            selected={gender === "male"}
+            onPress={() => onSelect("male")}
+            testID="button-gender-man"
+          />
+          <GenderButton
+            label="Female"
+            icon="female"
+            color={PINK}
+            dimColor={PINK_DIM}
+            borderColor={PINK_BORDER}
+            selected={gender === "female"}
+            onPress={() => onSelect("female")}
+            testID="button-gender-woman"
+          />
+        </View>
+      </View>
+
+      <StepDots index={stepIndex} accent={gender === "female" ? PINK : BLUE} />
+
+      <StickyPrimaryButton
+        label="Continue"
+        accent={gender === "female" ? PINK : BLUE}
+        onPress={onContinue}
+        disabled={!ctaEnabled}
+        testID="button-onboarding-anatomy-continue"
+      />
+    </View>
+  );
+}
+
+function StartScreen({
+  insets,
+  gender,
+  accent,
+  onStart,
+  stepIndex,
+}: {
+  insets: ReturnType<typeof useSafeAreaInsets>;
+  gender: AnatomyType;
+  accent: string;
+  onStart: () => void;
+  stepIndex: number;
+}) {
+  const isMale = gender !== "female";
+  const HERO_H = Math.min(height * 0.42, 360);
+
+  return (
+    <View style={[styles.screenFlush, { paddingBottom: insets.bottom + 16 }]}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 12 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={[styles.ctaHeroContainer, { height: HERO_H }]}>
+          <Image
+            source={isMale ? MAN_HERO : WOMAN_HERO}
+            style={{ width: "100%", height: "100%" }}
+            resizeMode="contain"
+          />
+          <LinearGradient
+            colors={["transparent", BG_GRADIENT[1]]}
+            style={[StyleSheet.absoluteFill, { top: "55%" }]}
+          />
+          <View style={[styles.ctaLogoOverlay, { top: insets.top + 12 }]}>
+            <Text style={styles.logoText}>
+              <Text style={{ color: TEXT }}>PULSE</Text>
+              <Text style={{ color: accent }}>KEGEL</Text>
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.ctaContent}>
+          <Text style={styles.ctaHeadline}>
+            Day 1 is a short guided session.
+          </Text>
+          <Text style={[styles.ctaSubline, { color: accent }]}>
+            Stay with the cues — we will keep it clear and encouraging.
+          </Text>
+          <Text style={styles.benefitSub}>
+            About {isMale ? "5–8" : "5–8"} minutes. Private on your device.
+          </Text>
+        </View>
+      </ScrollView>
+
+      <View style={{ paddingHorizontal: Spacing.xl }}>
+        <StepDots index={stepIndex} accent={accent} />
+        <StickyPrimaryButton
+          label="Start Day 1"
+          accent={accent}
+          icon="send"
+          onPress={onStart}
+          testID="button-start-day-1"
+        />
       </View>
     </View>
   );
@@ -244,7 +458,7 @@ function GenderButton({
   color,
   dimColor,
   borderColor,
-  filled = false,
+  selected,
   onPress,
   testID,
 }: {
@@ -253,18 +467,18 @@ function GenderButton({
   color: string;
   dimColor: string;
   borderColor: string;
-  filled?: boolean;
+  selected: boolean;
   onPress: () => void;
   testID?: string;
 }) {
-  const labelColor = filled ? "#fff" : color;
+  const labelColor = selected ? "#fff" : color;
   return (
     <Pressable
       testID={testID}
       onPress={onPress}
       style={({ pressed }) => [
         styles.genderBtn,
-        filled
+        selected
           ? {
               backgroundColor: pressed ? color + "CC" : color,
               borderColor: color,
@@ -286,466 +500,33 @@ function GenderButton({
       <Text style={[styles.genderBtnLabel, { color: labelColor }]}>
         {label}
       </Text>
-      <Feather
-        name="chevron-right"
-        size={18}
-        color={labelColor}
-        style={{ marginLeft: "auto" }}
-      />
+      {selected ? (
+        <Feather name="check" size={18} color={labelColor} />
+      ) : (
+        <Feather
+          name="chevron-right"
+          size={18}
+          color={labelColor}
+          style={{ marginLeft: "auto" }}
+        />
+      )}
     </Pressable>
   );
 }
 
-function KnowledgeScreen({
-  insets,
-  accent,
-  onAnswer,
-}: {
-  insets: ReturnType<typeof useSafeAreaInsets>;
-  accent: string;
-  onAnswer: (knows: boolean) => void;
-}) {
-  const scale = useSharedValue(1);
-  const glow = useSharedValue(0.5);
-
-  useEffect(() => {
-    scale.value = withRepeat(
-      withSequence(
-        withTiming(1.08, {
-          duration: ANIM_DURATION_HOLD_PULSE,
-          easing: ANIM_EASING_PULSE,
-        }),
-        withTiming(1.0, {
-          duration: ANIM_DURATION_HOLD_PULSE,
-          easing: ANIM_EASING_PULSE,
-        }),
-      ),
-      -1,
-      false,
-    );
-    glow.value = withRepeat(
-      withSequence(
-        withTiming(1, {
-          duration: ANIM_DURATION_HOLD_PULSE,
-          easing: ANIM_EASING_PULSE,
-        }),
-        withTiming(0.4, {
-          duration: ANIM_DURATION_HOLD_PULSE,
-          easing: ANIM_EASING_PULSE,
-        }),
-      ),
-      -1,
-      false,
-    );
-  }, [scale, glow]);
-
-  const ringStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: glow.value,
-  }));
-
-  const circleStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const CIRCLE_SIZE = Math.min(width * 0.52, 220);
-
-  return (
-    <View
-      style={[
-        styles.screen,
-        styles.centered,
-        { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 32 },
-      ]}
-    >
-      <View style={styles.knowledgeLogo}>
-        <Text style={styles.logoText}>
-          <Text style={{ color: TEXT }}>PULSE</Text>
-          <Text style={{ color: accent }}>KEGEL</Text>
-        </Text>
-      </View>
-
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        {/* Sized container so text renders below, not on top of circle */}
-        <View
-          style={{
-            width: CIRCLE_SIZE + 40,
-            height: CIRCLE_SIZE + 40,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Animated.View
-            style={[
-              styles.qGlow,
-              {
-                width: CIRCLE_SIZE + 40,
-                height: CIRCLE_SIZE + 40,
-                borderRadius: (CIRCLE_SIZE + 40) / 2,
-                shadowColor: accent,
-              },
-              ringStyle,
-            ]}
-          />
-          <Animated.View style={circleStyle}>
-            <Svg width={CIRCLE_SIZE} height={CIRCLE_SIZE}>
-              <Circle
-                cx={CIRCLE_SIZE / 2}
-                cy={CIRCLE_SIZE / 2}
-                r={CIRCLE_SIZE / 2 - 3}
-                stroke={accent}
-                strokeWidth={2.5}
-                fill="rgba(0,0,0,0.35)"
-              />
-              <SvgText
-                x={CIRCLE_SIZE / 2}
-                y={CIRCLE_SIZE / 2 + 28}
-                textAnchor="middle"
-                fontSize={CIRCLE_SIZE * 0.52}
-                fontWeight="300"
-                fill={accent}
-              >
-                ?
-              </SvgText>
-            </Svg>
-          </Animated.View>
-        </View>
-
-        <Text style={styles.knowledgeHeadline}>
-          Do you know how to do Kegels?
-        </Text>
-
-        <View style={styles.knowledgeButtons}>
-          <OptionButton
-            icon="check"
-            label="Yes, I know how"
-            accent={accent}
-            onPress={() => onAnswer(true)}
-            testID="button-knows-yes"
-          />
-          <OptionButton
-            icon="x"
-            label="No, show me how"
-            accent={TEXT_MUTED}
-            onPress={() => onAnswer(false)}
-            testID="button-knows-no"
-          />
-        </View>
-      </View>
-
-      <View style={styles.footer}>
-        <Feather name="shield" size={11} color={TEXT_MUTED} />
-        <Text style={styles.footerText}>Takes less than 1 minute</Text>
-      </View>
-    </View>
-  );
-}
-
-function OptionButton({
-  icon,
-  label,
-  accent,
-  onPress,
-  testID,
-}: {
-  icon: "check" | "x";
-  label: string;
-  accent: string;
-  onPress: () => void;
-  testID?: string;
-}) {
-  return (
-    <Pressable
-      testID={testID}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.optionBtn,
-        {
-          backgroundColor: pressed ? "rgba(255,255,255,0.08)" : CARD_BG,
-          borderColor: pressed ? accent : CARD_BORDER,
-        },
-      ]}
-    >
-      <View
-        style={[
-          styles.optionIcon,
-          { backgroundColor: accent + "22", borderColor: accent + "55" },
-        ]}
-      >
-        <Feather name={icon} size={18} color={accent} />
-      </View>
-      <Text style={[styles.optionLabel, { color: TEXT }]}>{label}</Text>
-      <Feather name="chevron-right" size={18} color={TEXT_MUTED} />
-    </Pressable>
-  );
-}
-
-function TutorialScreen({
-  insets,
-  gender,
-  accent,
-  accentDim,
-  accentBorder,
-  onDone,
-}: {
-  insets: ReturnType<typeof useSafeAreaInsets>;
-  gender: AnatomyType;
-  accent: string;
-  accentDim: string;
-  accentBorder: string;
-  onDone: () => void;
-}) {
-  const isMale = gender !== "female";
-
-  const steps = isMale
-    ? [
-        {
-          image: MALE_STEP1,
-          title: "Find the muscle",
-          body: "Squeeze the same muscle you use to stop your pee mid-flow.",
-        },
-        {
-          image: MALE_STEP2,
-          title: "Activate it",
-          body: "Now lift your balls upward using just that muscle. That's a Kegel. No one can see you doing it.",
-        },
-      ]
-    : [
-        {
-          image: FEMALE_STEP1,
-          title: "Find the muscle",
-          body: "Gently squeeze the same muscles you use to stop the flow of urine.",
-        },
-        {
-          image: FEMALE_STEP2,
-          title: "Activate it",
-          body: "Now slowly draw that area upward and inward — like you're lifting a marble inside you. That's a Kegel.",
-        },
-      ];
-
-  const STEP_IMAGE_H = Math.min(height * 0.2, 160);
-
-  return (
-    <View style={[styles.screen, { paddingTop: insets.top + 16 }]}>
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={[
-          styles.tutorialScroll,
-          { paddingBottom: insets.bottom + 24 },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
-        <Text style={styles.tutorialHeadline}>How to do Kegels</Text>
-
-        <View
-          style={[
-            styles.genderPill,
-            { backgroundColor: accentDim, borderColor: accentBorder },
-          ]}
-        >
-          <Text style={[styles.genderPillText, { color: accent }]}>
-            {isMale ? "For Men" : "For Women"}
-          </Text>
-        </View>
-
-        {steps.map((s, idx) => (
-          <View
-            key={idx}
-            style={[
-              styles.stepCard,
-              { backgroundColor: CARD_BG, borderColor: CARD_BORDER },
-            ]}
-          >
-            <Image
-              source={s.image}
-              style={[styles.stepImage, { height: STEP_IMAGE_H }]}
-              resizeMode="cover"
-            />
-            <View style={styles.stepBody}>
-              <View
-                style={[
-                  styles.stepBadge,
-                  { backgroundColor: accentDim, borderColor: accentBorder },
-                ]}
-              >
-                <Text style={[styles.stepBadgeText, { color: accent }]}>
-                  {idx + 1}
-                </Text>
-              </View>
-              <Text style={styles.stepTitle}>{s.title}</Text>
-              <Text style={styles.stepDesc}>{s.body}</Text>
-            </View>
-          </View>
-        ))}
-
-        <View style={styles.dotRow}>
-          {[0, 1, 2].map((i) => (
-            <View
-              key={i}
-              style={[
-                styles.dot,
-                i === 1
-                  ? { backgroundColor: accent, width: 20 }
-                  : { backgroundColor: TEXT_MUTED, width: 8 },
-              ]}
-            />
-          ))}
-        </View>
-
-        <PrimaryButton
-          label="Got it — Let's begin"
-          accent={accent}
-          onPress={onDone}
-          testID="button-tutorial-done"
-        />
-      </ScrollView>
-    </View>
-  );
-}
-
-function CtaScreen({
-  insets,
-  gender,
-  accent,
-  accentDim,
-  onStart,
-}: {
-  insets: ReturnType<typeof useSafeAreaInsets>;
-  gender: AnatomyType;
-  accent: string;
-  accentDim: string;
-  onStart: () => void;
-}) {
-  const isMale = gender !== "female";
-
-  const headline = isMale
-    ? "Your pelvic floor affects your bladder control, confidence, and performance."
-    : "Your pelvic floor affects bladder control, core strength, and intimacy.";
-
-  const subline = isMale
-    ? "Most men never train it."
-    : "Most women only start training it after they notice a problem.";
-
-  const benefits = isMale
-    ? [
-        {
-          icon: "shield" as const,
-          label: "Control",
-          sub: "Stronger bladder control",
-        },
-        {
-          icon: "user" as const,
-          label: "Confidence",
-          sub: "Feel ready every day",
-        },
-        {
-          icon: "zap" as const,
-          label: "Performance",
-          sub: "Show up at your best",
-        },
-      ]
-    : [
-        {
-          icon: "shield" as const,
-          label: "Control",
-          sub: "Feel confident every day",
-        },
-        {
-          icon: "layers" as const,
-          label: "Core",
-          sub: "Stronger from the inside out",
-        },
-        {
-          icon: "heart" as const,
-          label: "Intimacy",
-          sub: "Stronger connection, more confidence",
-        },
-      ];
-
-  const HERO_H = height * 0.55;
-
-  return (
-    <ScrollView
-      style={{ flex: 1 }}
-      contentContainerStyle={[
-        styles.ctaScroll,
-        { paddingBottom: insets.bottom + 24 },
-      ]}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Edge-to-edge hero image with logo overlaid */}
-      <View style={[styles.ctaHeroContainer, { height: HERO_H }]}>
-        <Image
-          source={isMale ? MAN_HERO : WOMAN_HERO}
-          style={{ width: "100%", height: "100%" }}
-          resizeMode="contain"
-        />
-        {/* Gradient fade at bottom of image into background */}
-        <LinearGradient
-          colors={["transparent", BG_GRADIENT[1]]}
-          style={[StyleSheet.absoluteFill, { top: "60%" }]}
-        />
-        {/* Logo overlaid at top of image */}
-        <View style={[styles.ctaLogoOverlay, { top: insets.top + 12 }]}>
-          <Text style={styles.logoText}>
-            <Text style={{ color: TEXT }}>PULSE</Text>
-            <Text style={{ color: accent }}>KEGEL</Text>
-          </Text>
-        </View>
-      </View>
-
-      {/* Content below image */}
-      <View style={styles.ctaContent}>
-        <View style={styles.ctaTextBlock}>
-          <Text style={styles.ctaHeadline}>{headline}</Text>
-          <Text style={[styles.ctaSubline, { color: accent }]}>{subline}</Text>
-        </View>
-
-        <View style={styles.benefitsRow}>
-          {benefits.map((b) => (
-            <View key={b.label} style={styles.benefitItem}>
-              <View
-                style={[styles.benefitIcon, { backgroundColor: accentDim }]}
-              >
-                <Feather name={b.icon} size={18} color={accent} />
-              </View>
-              <Text style={styles.benefitLabel}>{b.label}</Text>
-              <Text style={styles.benefitSub}>{b.sub}</Text>
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.ctaButtonBlock}>
-          <PrimaryButton
-            label="Start My 7-Day Challenge"
-            accent={accent}
-            icon="send"
-            onPress={onStart}
-            testID="button-start-challenge"
-          />
-          <View style={styles.footer}>
-            <Feather name="lock" size={11} color={TEXT_MUTED} />
-            <Text style={styles.footerText}>
-              Less than 10 mins a day. Your data stays private.
-            </Text>
-          </View>
-        </View>
-      </View>
-    </ScrollView>
-  );
-}
-
-function PrimaryButton({
+function StickyPrimaryButton({
   label,
   accent,
   icon,
   onPress,
+  disabled = false,
   testID,
 }: {
   label: string;
   accent: string;
   icon?: string;
   onPress: () => void;
+  disabled?: boolean;
   testID?: string;
 }) {
   const scale = useSharedValue(1);
@@ -754,11 +535,19 @@ function PrimaryButton({
   }));
 
   return (
-    <Animated.View style={[styles.primaryBtnWrapper, animStyle]}>
+    <Animated.View
+      style={[
+        styles.primaryBtnWrapper,
+        animStyle,
+        disabled ? { opacity: 0.38 } : null,
+      ]}
+    >
       <Pressable
         testID={testID}
+        disabled={disabled}
         onPress={onPress}
         onPressIn={() => {
+          if (disabled) return;
           scale.value = withTiming(0.97, {
             duration: ANIM_DURATION_RESET_FAST,
           });
@@ -799,10 +588,9 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: Spacing.xl,
   },
-  centered: {
-    alignItems: "stretch",
+  screenFlush: {
+    flex: 1,
   },
-
   logoText: {
     fontSize: 22,
     fontWeight: "800",
@@ -817,8 +605,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 2,
   },
-
-  // Gender screen
   genderHeader: {
     alignItems: "center",
     marginBottom: 12,
@@ -835,7 +621,7 @@ const styles = StyleSheet.create({
   },
   genderTextBlock: {
     alignItems: "center",
-    paddingVertical: 20,
+    paddingVertical: 16,
     paddingHorizontal: 8,
   },
   genderHeadline: {
@@ -851,172 +637,63 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 8,
   },
-  genderCta: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginTop: 6,
-  },
   genderButtons: {
     gap: 12,
-    marginBottom: 16,
   },
   genderBtn: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: BorderRadius.lg,
     borderWidth: 1.5,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
     gap: 12,
   },
   genderBtnSymbol: {
     fontSize: 22,
-    fontWeight: "300",
-    width: 26,
-    textAlign: "center",
+    fontWeight: "700",
   },
   genderBtnLabel: {
     fontSize: 17,
-    fontWeight: "600",
+    fontWeight: "700",
     flex: 1,
-  },
-
-  // Knowledge screen
-  knowledgeLogo: {
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  knowledgeHeadline: {
-    fontSize: 26,
-    fontWeight: "700",
-    color: TEXT,
-    textAlign: "center",
-    marginTop: 36,
-    lineHeight: 34,
-    paddingHorizontal: 8,
-  },
-  qGlow: {
-    position: "absolute",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.7,
-    shadowRadius: 32,
-    elevation: 20,
-    backgroundColor: "transparent",
-  },
-  knowledgeButtons: {
-    gap: 12,
-    marginTop: 36,
-    width: "100%",
-  },
-  optionBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 18,
-    paddingHorizontal: 18,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    gap: 14,
-  },
-  optionIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  optionLabel: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-
-  // Tutorial screen
-  tutorialScroll: {
-    paddingBottom: 16,
-    gap: 16,
-  },
-  tutorialHeadline: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: TEXT,
-    textAlign: "center",
-    marginTop: 8,
-    alignSelf: "center",
-  },
-  genderPill: {
-    paddingVertical: 5,
-    paddingHorizontal: 16,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1,
-    alignSelf: "center",
-  },
-  genderPillText: {
-    fontSize: 13,
-    fontWeight: "600",
-    letterSpacing: 0.5,
-  },
-  stepCard: {
-    width: "100%",
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
-  stepImage: {
-    width: "100%",
-  },
-  stepBody: {
-    padding: 16,
-    gap: 6,
-  },
-  stepBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 4,
-  },
-  stepBadgeText: {
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  stepTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: TEXT,
-  },
-  stepDesc: {
-    fontSize: 14,
-    color: TEXT_SEC,
-    lineHeight: 20,
   },
   dotRow: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "center",
-    alignSelf: "center",
+    alignItems: "center",
     gap: 6,
-    marginTop: 4,
+    marginBottom: 14,
+    marginTop: 8,
   },
   dot: {
     height: 8,
     borderRadius: 4,
   },
-  tutorialFooter: {
-    paddingTop: 12,
-    paddingBottom: 4,
+  primaryBtnWrapper: {
+    width: "100%",
   },
-
-  // CTA screen
-  ctaScroll: {
-    gap: 0,
+  primaryBtn: {
+    minHeight: 56,
+    borderRadius: BorderRadius.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 20,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.45,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  primaryBtnText: {
+    color: "#fff",
+    fontSize: 17,
+    fontWeight: "800",
+    letterSpacing: 0.2,
   },
   ctaHeroContainer: {
-    width: "100%",
+    width,
     overflow: "hidden",
-    position: "relative",
   },
   ctaLogoOverlay: {
     position: "absolute",
@@ -1026,11 +703,7 @@ const styles = StyleSheet.create({
   },
   ctaContent: {
     paddingHorizontal: Spacing.xl,
-    paddingTop: 16,
-    gap: 20,
-  },
-  ctaTextBlock: {
-    alignItems: "center",
+    paddingTop: 8,
     gap: 10,
   },
   ctaHeadline: {
@@ -1041,77 +714,14 @@ const styles = StyleSheet.create({
     lineHeight: 32,
   },
   ctaSubline: {
-    fontSize: 15,
-    fontStyle: "italic",
-    textAlign: "center",
-    fontWeight: "500",
-  },
-  benefitsRow: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    gap: 8,
-  },
-  benefitItem: {
-    flex: 1,
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 4,
-  },
-  benefitIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  benefitLabel: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: TEXT,
+    fontSize: 16,
+    fontWeight: "600",
     textAlign: "center",
   },
   benefitSub: {
-    fontSize: 11,
+    fontSize: 13,
     color: TEXT_MUTED,
     textAlign: "center",
-    lineHeight: 15,
-  },
-  ctaButtonBlock: {
-    gap: 16,
-  },
-
-  // Primary button
-  primaryBtnWrapper: {
-    width: "100%",
-  },
-  primaryBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    height: 56,
-    borderRadius: BorderRadius.full,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.55,
-    shadowRadius: 18,
-    elevation: 12,
-  },
-  primaryBtnText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#fff",
-    letterSpacing: 0.3,
-  },
-
-  // Footer
-  footer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-  },
-  footerText: {
-    fontSize: 12,
-    color: TEXT_MUTED,
-    textAlign: "center",
+    marginTop: 4,
   },
 });

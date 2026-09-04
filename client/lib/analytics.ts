@@ -186,3 +186,66 @@ export function trackSessionStarted(data: {
 }): void {
   trackEvent("session_started", data as Record<string, unknown>);
 }
+
+export type FirstSessionGateSource = "post_onboarding" | "cold_open" | "resume";
+
+export function trackOnboardingScreenViewed(data: {
+  screen_key: string;
+  index: number;
+  total: number;
+}): void {
+  trackEvent("onboarding_screen_viewed", data as Record<string, unknown>);
+}
+
+export function trackOnboardingAnatomySelected(data: {
+  anatomy: "male" | "female";
+}): void {
+  trackEvent("onboarding_anatomy_selected", data as Record<string, unknown>);
+}
+
+export function trackOnboardingCtaTapped(data: { screen_key: string }): void {
+  trackEvent("onboarding_cta_tapped", data as Record<string, unknown>);
+}
+
+export function trackOnboardingAbandoned(data: {
+  last_screen_key: string;
+  index: number;
+}): void {
+  trackEvent("onboarding_abandoned", data as Record<string, unknown>);
+}
+
+export function trackFirstSessionGateShown(data: {
+  source: FirstSessionGateSource;
+}): void {
+  trackEvent("first_session_gate_shown", data as Record<string, unknown>);
+}
+
+export function trackFirstSessionCtaTapped(data: {
+  source: FirstSessionGateSource;
+}): void {
+  trackEvent("first_session_cta_tapped", data as Record<string, unknown>);
+}
+
+export function trackFirstSessionStarted(data: { session_id: string }): void {
+  trackEvent("first_session_started", data as Record<string, unknown>);
+}
+
+export function trackFirstSessionCompleted(data: {
+  session_id: string;
+  duration_sec: number;
+}): void {
+  trackEvent("first_session_completed", data as Record<string, unknown>);
+}
+
+export function trackFirstSessionAbandoned(data: {
+  session_id: string;
+  progress: number;
+}): void {
+  trackEvent("first_session_abandoned", data as Record<string, unknown>);
+}
+
+export function trackFirstSessionSkipped(data?: {
+  source?: FirstSessionGateSource;
+}): void {
+  trackEvent("first_session_skipped", (data ?? {}) as Record<string, unknown>);
+}
