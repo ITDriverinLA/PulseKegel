@@ -2,7 +2,7 @@
   "expo": {
     "name": "PulseKegel",
     "slug": "pulsekegel",
-    "version": "2.1.8",
+    "version": "2.1.9",
     "icon": "./assets/images/icon.png",
     "scheme": "pulsekegel",
     "userInterfaceStyle": "automatic",
@@ -10,7 +10,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.replit.pulsekegel",
-      "buildNumber": "4",
+      "buildNumber": "5",
       "infoPlist": {
         "UISupportedInterfaceOrientations": ["UIInterfaceOrientationPortrait"],
         "UISupportedInterfaceOrientations~ipad": [
@@ -26,7 +26,7 @@
       },
       "softwareKeyboardLayoutMode": "pan",
       "package": "com.pulsekegel.app",
-      "versionCode": 218
+      "versionCode": 219
     },
     "web": {
       "output": "single",

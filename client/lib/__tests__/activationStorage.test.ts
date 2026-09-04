@@ -115,4 +115,19 @@ describe("activation storage helpers", () => {
     await storage.setChallengeDay2InAppNudgePending(false);
     expect(await storage.isChallengeDay2InAppNudgePending()).toBe(false);
   });
+
+  it("persists settings tip seen and pending open settings", async () => {
+    expect(await storage.hasSettingsTipSeen()).toBe(false);
+    await storage.markSettingsTipSeen();
+    expect(await storage.hasSettingsTipSeen()).toBe(true);
+
+    expect(await storage.consumePendingOpenSettings()).toBe(false);
+    await storage.setPendingOpenSettings(true);
+    expect(await storage.consumePendingOpenSettings()).toBe(true);
+    expect(await storage.consumePendingOpenSettings()).toBe(false);
+
+    await storage.setPendingOpenSettings(true);
+    await storage.setPendingOpenSettings(false);
+    expect(await storage.consumePendingOpenSettings()).toBe(false);
+  });
 });

@@ -1,13 +1,18 @@
-import React from "react";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import React, { useCallback } from "react";
+import {
+  createBottomTabNavigator,
+  type BottomTabNavigationProp,
+} from "@react-navigation/bottom-tabs";
 import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { Platform, StyleSheet } from "react-native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 
 import HomeStackNavigator from "@/navigation/HomeStackNavigator";
 import ProgressStackNavigator from "@/navigation/ProgressStackNavigator";
 import SettingsStackNavigator from "@/navigation/SettingsStackNavigator";
 import { useTheme } from "@/hooks/useTheme";
+import { storage } from "@/lib/storage";
 
 export type MainTabParamList = {
   TodayTab: undefined;
@@ -19,6 +24,22 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export default function MainTabNavigator() {
   const { theme, isDark } = useTheme();
+  const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
+
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      (async () => {
+        const shouldOpen = await storage.consumePendingOpenSettings();
+        if (!cancelled && shouldOpen) {
+          navigation.navigate("SettingsTab");
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }, [navigation]),
+  );
 
   return (
     <Tab.Navigator
