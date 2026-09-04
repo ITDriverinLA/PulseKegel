@@ -1075,7 +1075,9 @@ export const storage = {
 
   async consumePendingOpenSettings(): Promise<boolean> {
     try {
-      const raw = await AsyncStorage.getItem(STORAGE_KEYS.PENDING_OPEN_SETTINGS);
+      const raw = await AsyncStorage.getItem(
+        STORAGE_KEYS.PENDING_OPEN_SETTINGS,
+      );
       if (raw === "true") {
         await AsyncStorage.removeItem(STORAGE_KEYS.PENDING_OPEN_SETTINGS);
         return true;

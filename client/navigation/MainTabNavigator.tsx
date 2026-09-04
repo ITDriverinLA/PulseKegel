@@ -24,8 +24,7 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export default function MainTabNavigator() {
   const { theme, isDark } = useTheme();
-  const navigation =
-    useNavigation<BottomTabNavigationProp<MainTabParamList>>();
+  const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
 
   useFocusEffect(
     useCallback(() => {
