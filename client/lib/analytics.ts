@@ -323,3 +323,15 @@ export function trackChallengeDay2NudgeTapped(data: {
 }): void {
   trackEvent("challenge_day2_nudge_tapped", data as Record<string, unknown>);
 }
+
+export function trackSettingsTipShown(): void {
+  trackEvent("settings_tip_shown", {});
+}
+
+export function trackSettingsTipDismissed(): void {
+  trackEvent("settings_tip_dismissed", {});
+}
+
+export function trackSettingsTipOpenSettings(): void {
+  trackEvent("settings_tip_open_settings", {});
+}

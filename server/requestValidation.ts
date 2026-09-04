@@ -442,6 +442,27 @@ const analyticsEventSchema = z.discriminatedUnion("type", [
     .strict(),
   z
     .object({
+      type: z.literal("settings_tip_shown"),
+      data: z.object({}).strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("settings_tip_dismissed"),
+      data: z.object({}).strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("settings_tip_open_settings"),
+      data: z.object({}).strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
       type: z.enum([
         "restore_started",
         "restore_completed",

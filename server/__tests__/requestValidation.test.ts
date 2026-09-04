@@ -135,6 +135,9 @@ describe("analyticsBatchSchema", () => {
     },
     { type: "challenge_day2_nudge_shown", data: { channel: "in_app" } },
     { type: "challenge_day2_nudge_tapped", data: { channel: "push" } },
+    { type: "settings_tip_shown", data: {} },
+    { type: "settings_tip_dismissed", data: {} },
+    { type: "settings_tip_open_settings", data: {} },
   ])("accepts the current app payload for $type", (event) => {
     expect(
       analyticsBatchSchema.safeParse({ deviceId, events: [event] }).success,
