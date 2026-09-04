@@ -47,6 +47,8 @@ const STORAGE_KEYS = {
   FIRST_SESSION_CELEBRATED: "pulsekegel_first_session_celebrated",
   FIRST_SESSION_GATE_SOURCE: "pulsekegel_first_session_gate_source",
   FIRST_SESSION_ID: "pulsekegel_first_session_id",
+  SETTINGS_TIP_SEEN: "pulsekegel_settings_tip_seen",
+  PENDING_OPEN_SETTINGS: "pulsekegel_pending_open_settings",
   PROGRAM_START_DATE: "pulsekegel_program_start_date",
   LAST_WEEKLY_REVIEW: "pulsekegel_last_weekly_review",
   REVIEW_HISTORY: "pulsekegel_review_history",
@@ -1038,6 +1040,49 @@ export const storage = {
       await AsyncStorage.removeItem(STORAGE_KEYS.FIRST_SESSION_GATE_SOURCE);
     } catch (error) {
       console.error("Error clearing first-session gate source:", error);
+    }
+  },
+
+  async hasSettingsTipSeen(): Promise<boolean> {
+    try {
+      return (
+        (await AsyncStorage.getItem(STORAGE_KEYS.SETTINGS_TIP_SEEN)) === "true"
+      );
+    } catch {
+      return false;
+    }
+  },
+
+  async markSettingsTipSeen(): Promise<void> {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.SETTINGS_TIP_SEEN, "true");
+    } catch (error) {
+      console.error("Error marking settings tip seen:", error);
+    }
+  },
+
+  async setPendingOpenSettings(pending: boolean): Promise<void> {
+    try {
+      if (pending) {
+        await AsyncStorage.setItem(STORAGE_KEYS.PENDING_OPEN_SETTINGS, "true");
+      } else {
+        await AsyncStorage.removeItem(STORAGE_KEYS.PENDING_OPEN_SETTINGS);
+      }
+    } catch (error) {
+      console.error("Error setting pending open settings:", error);
+    }
+  },
+
+  async consumePendingOpenSettings(): Promise<boolean> {
+    try {
+      const raw = await AsyncStorage.getItem(STORAGE_KEYS.PENDING_OPEN_SETTINGS);
+      if (raw === "true") {
+        await AsyncStorage.removeItem(STORAGE_KEYS.PENDING_OPEN_SETTINGS);
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
     }
   },
 

@@ -24,6 +24,9 @@ import {
   trackFirstSessionCtaTapped,
   trackFirstSessionGateShown,
   trackFirstSessionStarted,
+  trackSettingsTipDismissed,
+  trackSettingsTipOpenSettings,
+  trackSettingsTipShown,
 } from "@/lib/analytics";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
@@ -55,19 +58,29 @@ export default function FirstSessionGateScreen({
   const [source, setSource] = useState<FirstSessionGateSource>("cold_open");
   const [resume, setResume] = useState(false);
   const [celebrating, setCelebrating] = useState(false);
+  const [showSettingsTip, setShowSettingsTip] = useState(false);
   const [ready, setReady] = useState(false);
   const gateShownRef = useRef(false);
+  const tipShownTrackedRef = useRef(false);
+  const tipWasShownRef = useRef(false);
   const sessionIdRef = useRef<string | null>(null);
 
   const hydrate = useCallback(async () => {
-    const [completed, inProgress, celebrated, pendingSource, existingId] =
-      await Promise.all([
-        storage.hasCompletedFirstSession(),
-        storage.isFirstSessionInProgress(),
-        storage.hasCelebratedFirstSession(),
-        storage.peekFirstSessionGateSource(),
-        storage.getFirstSessionId(),
-      ]);
+    const [
+      completed,
+      inProgress,
+      celebrated,
+      pendingSource,
+      existingId,
+      tipSeen,
+    ] = await Promise.all([
+      storage.hasCompletedFirstSession(),
+      storage.isFirstSessionInProgress(),
+      storage.hasCelebratedFirstSession(),
+      storage.peekFirstSessionGateSource(),
+      storage.getFirstSessionId(),
+      storage.hasSettingsTipSeen(),
+    ]);
     if (existingId) {
       sessionIdRef.current = existingId;
     }
@@ -75,6 +88,11 @@ export default function FirstSessionGateScreen({
     if (completed) {
       if (!celebrated) {
         setCelebrating(true);
+        const shouldShowTip = !tipSeen;
+        setShowSettingsTip(shouldShowTip);
+        if (shouldShowTip) {
+          tipWasShownRef.current = true;
+        }
         setReady(true);
         return;
       }
@@ -107,10 +125,40 @@ export default function FirstSessionGateScreen({
     }
   }, [isFocused, hydrate]);
 
+  useEffect(() => {
+    if (celebrating && showSettingsTip && !tipShownTrackedRef.current) {
+      tipShownTrackedRef.current = true;
+      tipWasShownRef.current = true;
+      trackSettingsTipShown();
+    }
+  }, [celebrating, showSettingsTip]);
+
   const finishCelebration = async () => {
     await storage.markFirstSessionCelebrated();
     setCelebrating(false);
     onUnlocked();
+  };
+
+  const handleTipDismiss = async () => {
+    await storage.markSettingsTipSeen();
+    setShowSettingsTip(false);
+    trackSettingsTipDismissed();
+  };
+
+  const handleOpenSettings = async () => {
+    await storage.markSettingsTipSeen();
+    await storage.setPendingOpenSettings(true);
+    setShowSettingsTip(false);
+    trackSettingsTipOpenSettings();
+    await finishCelebration();
+  };
+
+  const handleContinue = async () => {
+    if (tipWasShownRef.current || showSettingsTip) {
+      await storage.markSettingsTipSeen();
+      setShowSettingsTip(false);
+    }
+    await finishCelebration();
   };
 
   const handleStart = async () => {
@@ -178,10 +226,42 @@ export default function FirstSessionGateScreen({
           Your full program is unlocked. Day 2 of 7 unlocks tomorrow — we will
           remind you.
         </Text>
+
+        {showSettingsTip ? (
+          <View style={styles.tipCard} testID="card-settings-tip">
+            <View style={styles.tipIconRow}>
+              <Feather name="settings" size={16} color={BLUE} />
+              <Text style={styles.tipCopy}>
+                Rest, haptics, and music live in Settings.
+              </Text>
+            </View>
+            <View style={styles.tipActions}>
+              <Pressable
+                onPress={() => {
+                  void handleTipDismiss();
+                }}
+                style={styles.tipQuietBtn}
+                testID="button-settings-tip-got-it"
+              >
+                <Text style={styles.tipQuietBtnText}>Got it</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  void handleOpenSettings();
+                }}
+                style={styles.tipPrimaryBtn}
+                testID="button-settings-tip-open-settings"
+              >
+                <Text style={styles.tipPrimaryBtnText}>Open Settings</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
+
         <PrimaryButton
           label="Continue"
           onPress={() => {
-            void finishCelebration();
+            void handleContinue();
           }}
           testID="button-first-session-celebration-continue"
         />
@@ -340,8 +420,58 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 4,
   },
+  tipCard: {
+    width: "100%",
+    marginTop: 20,
+    marginBottom: 8,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: "rgba(0,170,255,0.28)",
+    backgroundColor: "rgba(0,170,255,0.08)",
+    gap: 12,
+  },
+  tipIconRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+  },
+  tipCopy: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 20,
+    color: TEXT_SEC,
+    fontWeight: "600",
+  },
+  tipActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    gap: 10,
+  },
+  tipQuietBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  tipQuietBtnText: {
+    color: TEXT_MUTED,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  tipPrimaryBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: BorderRadius.md,
+    backgroundColor: "rgba(0,170,255,0.22)",
+  },
+  tipPrimaryBtnText: {
+    color: BLUE,
+    fontSize: 14,
+    fontWeight: "700",
+  },
   primaryBtnWrapper: {
     width: "100%",
+    marginTop: 16,
   },
   primaryBtn: {
     minHeight: 56,
