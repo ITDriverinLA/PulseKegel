@@ -24,7 +24,7 @@ import { reloadAppAsync } from "expo";
 import Constants from "expo-constants";
 import * as WebBrowser from "expo-web-browser";
 import {
-  requestNotificationPermission,
+  requestNotificationPermissionInstrumented,
   getNotificationPermissionStatus,
   scheduleDailyReminder,
   cancelAllReminders,
@@ -183,7 +183,9 @@ export default function SettingsScreen() {
 
   const handleReminderToggle = async (enabled: boolean) => {
     if (enabled) {
-      const granted = await requestNotificationPermission();
+      const granted = await requestNotificationPermissionInstrumented(
+        "settings_reminder_toggle",
+      );
       if (!granted) {
         if (Platform.OS !== "web") {
           Alert.alert(

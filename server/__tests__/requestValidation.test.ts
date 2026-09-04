@@ -106,6 +106,35 @@ describe("analyticsBatchSchema", () => {
       data: { session_id: "abc", progress: 40 },
     },
     { type: "first_session_skipped", data: { source: "resume" } },
+    {
+      type: "permission_prompt_shown",
+      data: { type: "push", surface: "settings_reminder_toggle" },
+    },
+    {
+      type: "permission_result",
+      data: { type: "att", status: "unavailable", deferred: true },
+    },
+    {
+      type: "first_open_path",
+      data: {
+        landing_route: "first_session_gate",
+        onboarded_already: true,
+        launch_type: "cold",
+        att_status: "unavailable",
+      },
+    },
+    {
+      type: "challenge_day_viewed",
+      data: { week: 1, day: 2, state: "available" },
+    },
+    { type: "challenge_day_started", data: { week: 1, day: 2 } },
+    { type: "challenge_day_completed", data: { week: 1, day: 1 } },
+    {
+      type: "challenge_day2_nudge_scheduled",
+      data: { channel: "push" },
+    },
+    { type: "challenge_day2_nudge_shown", data: { channel: "in_app" } },
+    { type: "challenge_day2_nudge_tapped", data: { channel: "push" } },
   ])("accepts the current app payload for $type", (event) => {
     expect(
       analyticsBatchSchema.safeParse({ deviceId, events: [event] }).success,

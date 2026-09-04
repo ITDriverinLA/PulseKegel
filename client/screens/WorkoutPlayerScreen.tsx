@@ -63,7 +63,13 @@ import {
   trackSessionStarted,
   trackFirstSessionCompleted,
   trackFirstSessionAbandoned,
+  trackChallengeDayStarted,
+  trackChallengeDayCompleted,
 } from "@/lib/analytics";
+import {
+  cancelChallengeDay2Nudge,
+  scheduleChallengeDay2Nudge,
+} from "@/lib/challengeNudge";
 
 type RouteProps = RouteProp<RootStackParamList, "WorkoutPlayer">;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -130,6 +136,23 @@ export default function WorkoutPlayerScreen() {
       weekNumber,
       dayNumber,
     });
+    if (
+      weekNumber === 1 &&
+      typeof dayNumber === "number" &&
+      dayNumber >= 1 &&
+      dayNumber <= 7
+    ) {
+      void (async () => {
+        const already = await storage.hasChallengeDayStarted(1, dayNumber);
+        if (!already) {
+          await storage.markChallengeDayStarted(1, dayNumber);
+          trackChallengeDayStarted({ week: 1, day: dayNumber });
+        }
+        if (dayNumber === 2) {
+          await cancelChallengeDay2Nudge();
+        }
+      })();
+    }
   }, [workout.dayType, weekNumber, dayNumber]);
 
   const loadSettings = useCallback(async () => {
@@ -286,6 +309,29 @@ export default function WorkoutPlayerScreen() {
               session_id: firstSessionId ?? `fs-${today}`,
               duration_sec: seconds,
             });
+          }
+
+          if (
+            weekNumber === 1 &&
+            typeof dayNumber === "number" &&
+            dayNumber >= 1 &&
+            dayNumber <= 7
+          ) {
+            const alreadyDone = await storage.hasChallengeDayCompleted(
+              1,
+              dayNumber,
+            );
+            if (!alreadyDone) {
+              await storage.markChallengeDayCompleted(1, dayNumber);
+              trackChallengeDayCompleted({ week: 1, day: dayNumber });
+            }
+            if (dayNumber === 1) {
+              // Epic C: schedule Day-2 nudge after first challenge step.
+              await scheduleChallengeDay2Nudge();
+            }
+            if (dayNumber === 2) {
+              await cancelChallengeDay2Nudge();
+            }
           }
 
           const startDate = await storage.getProgramStartDate();

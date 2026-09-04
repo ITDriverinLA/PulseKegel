@@ -39,6 +39,46 @@ export async function requestNotificationPermission(): Promise<boolean> {
   }
 }
 
+/**
+ * Epic D/C: instrumented push prompt. Call only after first session (Settings
+ * is gated) or post–Day-1 for the challenge nudge — never before first-session CTA.
+ */
+export async function requestNotificationPermissionInstrumented(
+  surface: string,
+): Promise<boolean> {
+  // Lazy import to avoid circular deps with analytics at module load.
+  const { trackPermissionPromptShown, trackPermissionResult } = await import(
+    "./analytics"
+  );
+  try {
+    const { status: existingStatus } =
+      await Notifications.getPermissionsAsync();
+    if (existingStatus === "granted") {
+      trackPermissionResult({
+        type: "push",
+        status: "granted",
+        surface,
+        already_granted: true,
+      });
+      return true;
+    }
+
+    trackPermissionPromptShown({ type: "push", surface });
+    const { status } = await Notifications.requestPermissionsAsync();
+    trackPermissionResult({ type: "push", status, surface });
+    if (status === "granted") return true;
+    if (Platform.OS === "web") return true;
+    return false;
+  } catch {
+    trackPermissionResult({
+      type: "push",
+      status: "error",
+      surface,
+    });
+    return Platform.OS === "web";
+  }
+}
+
 export async function getNotificationPermissionStatus(): Promise<string> {
   try {
     const { status } = await Notifications.getPermissionsAsync();

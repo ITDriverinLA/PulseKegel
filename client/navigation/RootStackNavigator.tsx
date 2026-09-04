@@ -28,6 +28,7 @@ import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { ANIM_DURATION_ENTER } from "@/constants/animation";
 import { storage } from "@/lib/storage";
+import { emitFirstOpenPathOnce } from "@/lib/activationDiagnostics";
 import { getApiUrl } from "@/lib/query-client";
 import { DayTemplate } from "@/data/workoutProgram";
 import { BreathworkMode } from "@/constants/breathworkModes";
@@ -142,12 +143,21 @@ export default function RootStackNavigator() {
           minDisplay,
         ]);
 
+      // Epic D: unified iOS/Android first-open path (same A/B gate). No
+      // platform-specific alternate landing — both hit onboarding → gate → main.
+      let landing:
+        | "onboarding"
+        | "first_session_gate"
+        | "main"
+        | "force_update" = "main";
       if (!onboardingComplete) {
         setShowOnboarding(true);
         setNeedsFirstSession(false);
+        landing = "onboarding";
       } else if (!hasFirstSession) {
         setShowOnboarding(false);
         setNeedsFirstSession(true);
+        landing = "first_session_gate";
         if (inProgress) {
           await storage.setFirstSessionGateSource("resume");
         } else {
@@ -159,7 +169,9 @@ export default function RootStackNavigator() {
       } else {
         setShowOnboarding(false);
         setNeedsFirstSession(false);
+        landing = "main";
       }
+      void emitFirstOpenPathOnce(landing);
       setIsLoading(false);
     };
     initialize();

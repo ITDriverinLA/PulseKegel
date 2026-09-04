@@ -175,7 +175,8 @@ export default function FirstSessionGateScreen({
         </View>
         <Text style={styles.headline}>Nice work — Day 1 done.</Text>
         <Text style={styles.subline}>
-          Your full program is unlocked. Come back tomorrow for Day 2.
+          Your full program is unlocked. Day 2 of 7 unlocks tomorrow — we will
+          remind you.
         </Text>
         <PrimaryButton
           label="Continue"

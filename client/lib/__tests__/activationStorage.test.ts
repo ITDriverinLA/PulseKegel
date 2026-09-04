@@ -98,4 +98,21 @@ describe("activation storage helpers", () => {
     await storage.setFirstSessionInProgress(false);
     expect(await storage.getFirstSessionId()).toBeNull();
   });
+
+  it("tracks challenge day started/completed and day2 nudge flags", async () => {
+    expect(await storage.hasChallengeDayStarted(1, 1)).toBe(false);
+    await storage.markChallengeDayStarted(1, 1);
+    expect(await storage.hasChallengeDayStarted(1, 1)).toBe(true);
+    await storage.markChallengeDayCompleted(1, 1);
+    expect(await storage.hasChallengeDayCompleted(1, 1)).toBe(true);
+    await storage.markChallengeDayViewed(1, 2);
+    expect(await storage.hasChallengeDayViewed(1, 2)).toBe(true);
+    expect(await storage.hasScheduledChallengeDay2Nudge()).toBe(false);
+    await storage.markChallengeDay2NudgeScheduled();
+    expect(await storage.hasScheduledChallengeDay2Nudge()).toBe(true);
+    await storage.setChallengeDay2InAppNudgePending(true);
+    expect(await storage.isChallengeDay2InAppNudgePending()).toBe(true);
+    await storage.setChallengeDay2InAppNudgePending(false);
+    expect(await storage.isChallengeDay2InAppNudgePending()).toBe(false);
+  });
 });

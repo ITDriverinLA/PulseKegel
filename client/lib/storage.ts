@@ -65,6 +65,11 @@ const STORAGE_KEYS = {
   PENDING_RANK_UP: "pulsekegel_pending_rank_up",
   PROGRAM_PROGRESS: "pulsekegel_program_progress",
   SEGMENT_TYPE_HISTORY: "pulsekegel_segment_type_history",
+  CHALLENGE_DAY2_NUDGE_SCHEDULED: "pulsekegel_challenge_day2_nudge_scheduled",
+  CHALLENGE_DAY2_IN_APP_NUDGE: "pulsekegel_challenge_day2_in_app_nudge",
+  CHALLENGE_DAYS_STARTED: "pulsekegel_challenge_days_started",
+  CHALLENGE_DAYS_COMPLETED: "pulsekegel_challenge_days_completed",
+  CHALLENGE_DAY_VIEWED: "pulsekegel_challenge_day_viewed",
 };
 
 export interface SegmentTypeHistoryEntry {
@@ -1523,6 +1528,148 @@ export const storage = {
     );
   },
 
+  async hasScheduledChallengeDay2Nudge(): Promise<boolean> {
+    try {
+      return (
+        (await AsyncStorage.getItem(
+          STORAGE_KEYS.CHALLENGE_DAY2_NUDGE_SCHEDULED,
+        )) === "true"
+      );
+    } catch {
+      return false;
+    }
+  },
+
+  async markChallengeDay2NudgeScheduled(): Promise<void> {
+    try {
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.CHALLENGE_DAY2_NUDGE_SCHEDULED,
+        "true",
+      );
+    } catch (error) {
+      console.error("Error marking day2 nudge scheduled:", error);
+    }
+  },
+
+  async isChallengeDay2InAppNudgePending(): Promise<boolean> {
+    try {
+      return (
+        (await AsyncStorage.getItem(
+          STORAGE_KEYS.CHALLENGE_DAY2_IN_APP_NUDGE,
+        )) === "true"
+      );
+    } catch {
+      return false;
+    }
+  },
+
+  async setChallengeDay2InAppNudgePending(pending: boolean): Promise<void> {
+    try {
+      if (pending) {
+        await AsyncStorage.setItem(
+          STORAGE_KEYS.CHALLENGE_DAY2_IN_APP_NUDGE,
+          "true",
+        );
+      } else {
+        await AsyncStorage.removeItem(STORAGE_KEYS.CHALLENGE_DAY2_IN_APP_NUDGE);
+      }
+    } catch (error) {
+      console.error("Error setting day2 in-app nudge:", error);
+    }
+  },
+
+  async hasChallengeDayStarted(week: number, day: number): Promise<boolean> {
+    try {
+      const raw = await AsyncStorage.getItem(
+        STORAGE_KEYS.CHALLENGE_DAYS_STARTED,
+      );
+      if (!raw) return false;
+      const list: string[] = JSON.parse(raw);
+      return list.includes(`${week}-${day}`);
+    } catch {
+      return false;
+    }
+  },
+
+  async markChallengeDayStarted(week: number, day: number): Promise<void> {
+    try {
+      const raw = await AsyncStorage.getItem(
+        STORAGE_KEYS.CHALLENGE_DAYS_STARTED,
+      );
+      const list: string[] = raw ? JSON.parse(raw) : [];
+      const key = `${week}-${day}`;
+      if (!list.includes(key)) {
+        list.push(key);
+        await AsyncStorage.setItem(
+          STORAGE_KEYS.CHALLENGE_DAYS_STARTED,
+          JSON.stringify(list),
+        );
+      }
+    } catch (error) {
+      console.error("Error marking challenge day started:", error);
+    }
+  },
+
+  async hasChallengeDayCompleted(week: number, day: number): Promise<boolean> {
+    try {
+      const raw = await AsyncStorage.getItem(
+        STORAGE_KEYS.CHALLENGE_DAYS_COMPLETED,
+      );
+      if (!raw) return false;
+      const list: string[] = JSON.parse(raw);
+      return list.includes(`${week}-${day}`);
+    } catch {
+      return false;
+    }
+  },
+
+  async markChallengeDayCompleted(week: number, day: number): Promise<void> {
+    try {
+      const raw = await AsyncStorage.getItem(
+        STORAGE_KEYS.CHALLENGE_DAYS_COMPLETED,
+      );
+      const list: string[] = raw ? JSON.parse(raw) : [];
+      const key = `${week}-${day}`;
+      if (!list.includes(key)) {
+        list.push(key);
+        await AsyncStorage.setItem(
+          STORAGE_KEYS.CHALLENGE_DAYS_COMPLETED,
+          JSON.stringify(list),
+        );
+      }
+    } catch (error) {
+      console.error("Error marking challenge day completed:", error);
+    }
+  },
+
+  async hasChallengeDayViewed(week: number, day: number): Promise<boolean> {
+    try {
+      const raw = await AsyncStorage.getItem(STORAGE_KEYS.CHALLENGE_DAY_VIEWED);
+      if (!raw) return false;
+      const list: string[] = JSON.parse(raw);
+      return list.includes(`${week}-${day}`);
+    } catch {
+      return false;
+    }
+  },
+
+  async markChallengeDayViewed(week: number, day: number): Promise<void> {
+    try {
+      const raw = await AsyncStorage.getItem(STORAGE_KEYS.CHALLENGE_DAY_VIEWED);
+      const list: string[] = raw ? JSON.parse(raw) : [];
+      const key = `${week}-${day}`;
+      if (!list.includes(key)) {
+        list.push(key);
+        await AsyncStorage.setItem(
+          STORAGE_KEYS.CHALLENGE_DAY_VIEWED,
+          JSON.stringify(list),
+        );
+      }
+    } catch (error) {
+      console.error("Error marking challenge day viewed:", error);
+    }
+  },
+
   async markChallengeResultShown(): Promise<void> {
     await AsyncStorage.setItem(STORAGE_KEYS.CHALLENGE_RESULT_SHOWN, "true");
   },
@@ -1541,6 +1688,11 @@ export const storage = {
         STORAGE_KEYS.CHALLENGE_CALIBRATION,
         STORAGE_KEYS.WEEKLY_CALIBRATION,
         STORAGE_KEYS.WEEKLY_CALIBRATION_PROMPTED,
+        STORAGE_KEYS.CHALLENGE_DAY2_NUDGE_SCHEDULED,
+        STORAGE_KEYS.CHALLENGE_DAY2_IN_APP_NUDGE,
+        STORAGE_KEYS.CHALLENGE_DAYS_STARTED,
+        STORAGE_KEYS.CHALLENGE_DAYS_COMPLETED,
+        STORAGE_KEYS.CHALLENGE_DAY_VIEWED,
         "pulsekegel_challenge_shown",
       ]);
     } catch (error) {

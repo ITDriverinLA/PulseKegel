@@ -58,7 +58,15 @@ import {
   DayTemplate,
   Week,
 } from "@/data/workoutProgram";
-import { trackWeekComplete } from "@/lib/analytics";
+import {
+  trackWeekComplete,
+  trackChallengeDayViewed,
+  trackChallengeDay2NudgeTapped,
+} from "@/lib/analytics";
+import {
+  cancelChallengeDay2Nudge,
+  consumeInAppDay2Nudge,
+} from "@/lib/challengeNudge";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import {
   type UserProgramProgress,
@@ -115,6 +123,9 @@ export default function HomeScreen() {
   const [programProgress, setProgramProgress] =
     useState<UserProgramProgress | null>(null);
   const [controlModeWeekCount, setControlModeWeekCount] = useState(0);
+  const [challengeDayOf7, setChallengeDayOf7] = useState<number | null>(null);
+  const [showDay2Nudge, setShowDay2Nudge] = useState(false);
+  const challengeDayViewedRef = useRef<string | null>(null);
 
   const loadData = useCallback(async () => {
     const startDate = await storage.getProgramStartDate();
@@ -194,6 +205,7 @@ export default function HomeScreen() {
           todayStr,
         ),
       );
+      setChallengeDayOf7(null);
     } else {
       const workout = getTodaysWorkout(
         userProgress.completedDates,
@@ -226,7 +238,41 @@ export default function HomeScreen() {
       } else {
         setTodaysWorkout(workout);
       }
+
+      // Epic C: persistent Day X of 7 chrome after first challenge step.
+      if (
+        workout &&
+        workout.week.weekNumber === 1 &&
+        (await storage.hasCompletedFirstSession())
+      ) {
+        const dayOf7 = workout.dayIndex + 1;
+        const pathDay = getWeek1WorkoutForDayIndex(
+          workout.dayIndex,
+          calibState.difficultyPath,
+        );
+        setChallengeDayOf7(dayOf7);
+        const viewedKey = `1-${dayOf7}`;
+        if (challengeDayViewedRef.current !== viewedKey) {
+          challengeDayViewedRef.current = viewedKey;
+          const already = await storage.hasChallengeDayViewed(1, dayOf7);
+          if (!already) {
+            await storage.markChallengeDayViewed(1, dayOf7);
+          }
+          const state = pathDay.isRestDay
+            ? "rest"
+            : userProgress.completedDates.includes(todayStr)
+              ? "complete"
+              : "available";
+          trackChallengeDayViewed({ week: 1, day: dayOf7, state });
+        }
+      } else {
+        setChallengeDayOf7(null);
+      }
     }
+
+    // Epic C: in-app Day-2 nudge if push was declined / unavailable.
+    const showNudge = await consumeInAppDay2Nudge();
+    setShowDay2Nudge(showNudge);
 
     const reviewCheck = await storage.shouldShowWeeklyReview(
       userProgress.completedDates,
@@ -317,6 +363,35 @@ export default function HomeScreen() {
 
   const isDay1Calibration =
     todaysWorkout?.week.weekNumber === 1 && todaysWorkout?.dayIndex === 0;
+
+  const challengePhaseLabel =
+    challengeDayOf7 != null
+      ? `Day ${challengeDayOf7} of 7`
+      : todaysWorkout && todaysWorkout.week.weekNumber > 0
+        ? `Week ${todaysWorkout.week.weekNumber} - ${todaysWorkout.week.phase}`
+        : (todaysWorkout?.week.phaseDescription ?? "");
+
+  const handleDay2NudgeStart = async () => {
+    trackChallengeDay2NudgeTapped({ channel: "in_app" });
+    setShowDay2Nudge(false);
+    await cancelChallengeDay2Nudge();
+    const calib = await storage.getCalibrationState();
+    const workout = getWeek1WorkoutForDayIndex(1, calib.difficultyPath);
+    if (workout.isRestDay) {
+      // Day 2 rest — home already shows Day 2 chrome; just dismiss.
+      return;
+    }
+    if (!hasAccess) {
+      await navigateToTrialExpired();
+      return;
+    }
+    navigation.navigate("WorkoutPlayer", {
+      workout,
+      weekNumber: 1,
+      phase: "Control",
+      dayNumber: 2,
+    });
+  };
 
   const pathMeta = (() => {
     if (!difficultyPath) return null;
@@ -712,6 +787,68 @@ export default function HomeScreen() {
           </View>
         </Animated.View>
 
+        {challengeDayOf7 != null ? (
+          <Animated.View
+            entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(
+              ANIM_DELAY_SHORT,
+            )}
+          >
+            <View
+              style={[
+                styles.scoreNudge,
+                {
+                  backgroundColor: `${cp.neonCyan}1A`,
+                  borderColor: `${cp.neonCyan}4D`,
+                },
+              ]}
+              testID="chrome-challenge-day"
+            >
+              <Feather name="flag" size={16} color={cp.neonCyan} />
+              <Text
+                style={[styles.scoreNudgeText, { color: cp.text }]}
+                testID="text-challenge-day-of-7"
+              >
+                Day {challengeDayOf7} of 7
+                {challengeDayOf7 === 1 && !isTodayComplete
+                  ? " · Begin Day 1"
+                  : challengeDayOf7 === 2 && !isTodayComplete
+                    ? " · Day 2 unlocks today"
+                    : ""}
+              </Text>
+            </View>
+          </Animated.View>
+        ) : null}
+
+        {showDay2Nudge ? (
+          <Animated.View
+            entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(
+              ANIM_DELAY_SHORT,
+            )}
+          >
+            <Pressable
+              onPress={() => {
+                void handleDay2NudgeStart();
+              }}
+              style={[
+                styles.scoreNudge,
+                {
+                  backgroundColor: `${cp.neonGreen}1A`,
+                  borderColor: `${cp.neonGreen}4D`,
+                },
+              ]}
+              testID="banner-day2-nudge"
+            >
+              <Feather name="bell" size={16} color={cp.neonGreen} />
+              <Text
+                style={[styles.scoreNudgeText, { color: cp.text, flex: 1 }]}
+              >
+                Day 2 of 7 is ready — tap to continue.
+              </Text>
+              <Feather name="chevron-right" size={16} color={cp.neonGreen} />
+            </Pressable>
+          </Animated.View>
+        ) : null}
+
         {programProgress?.phase === "control_mode" &&
         programProgress.controlModePath ? (
           <Animated.View
@@ -828,9 +965,7 @@ export default function HomeScreen() {
                           },
                         ]}
                       >
-                        {todaysWorkout.week.weekNumber > 0
-                          ? `Week ${todaysWorkout.week.weekNumber} - ${todaysWorkout.week.phase}`
-                          : todaysWorkout.week.phaseDescription}
+                        {challengePhaseLabel}
                       </Text>
                       <Text
                         style={[
@@ -978,9 +1113,7 @@ export default function HomeScreen() {
                           },
                         ]}
                       >
-                        {todaysWorkout.week.weekNumber > 0
-                          ? `Week ${todaysWorkout.week.weekNumber} - ${todaysWorkout.week.phase}`
-                          : todaysWorkout.week.phaseDescription}
+                        {challengePhaseLabel}
                       </Text>
                       <Text
                         style={[
@@ -1129,9 +1262,7 @@ export default function HomeScreen() {
                           },
                         ]}
                       >
-                        {todaysWorkout.week.weekNumber > 0
-                          ? `Week ${todaysWorkout.week.weekNumber} - ${todaysWorkout.week.phase}`
-                          : todaysWorkout.week.phaseDescription}
+                        {challengePhaseLabel}
                       </Text>
                       <Text
                         style={[
