@@ -41,6 +41,12 @@ const STORAGE_KEYS = {
   TOTAL_MINUTES: "pulsekegel_total_minutes",
   SETTINGS: "pulsekegel_settings",
   ONBOARDING_COMPLETE: "pulsekegel_onboarding_complete",
+  ONBOARDING_PROGRESS: "pulsekegel_onboarding_progress",
+  FIRST_SESSION_IN_PROGRESS: "pulsekegel_first_session_in_progress",
+  FIRST_SESSION_PROGRESS: "pulsekegel_first_session_progress",
+  FIRST_SESSION_CELEBRATED: "pulsekegel_first_session_celebrated",
+  FIRST_SESSION_GATE_SOURCE: "pulsekegel_first_session_gate_source",
+  FIRST_SESSION_ID: "pulsekegel_first_session_id",
   PROGRAM_START_DATE: "pulsekegel_program_start_date",
   LAST_WEEKLY_REVIEW: "pulsekegel_last_weekly_review",
   REVIEW_HISTORY: "pulsekegel_review_history",
@@ -826,8 +832,207 @@ export const storage = {
   async setOnboardingComplete(): Promise<void> {
     try {
       await AsyncStorage.setItem(STORAGE_KEYS.ONBOARDING_COMPLETE, "true");
+      await AsyncStorage.multiRemove([STORAGE_KEYS.ONBOARDING_PROGRESS]);
     } catch (error) {
       console.error("Error saving onboarding state:", error);
+    }
+  },
+
+  async getOnboardingProgress(): Promise<{
+    screenKey: string;
+    index: number;
+  } | null> {
+    try {
+      const raw = await AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING_PROGRESS);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as { screenKey?: string; index?: number };
+      if (
+        typeof parsed.screenKey !== "string" ||
+        typeof parsed.index !== "number"
+      ) {
+        return null;
+      }
+      return { screenKey: parsed.screenKey, index: parsed.index };
+    } catch {
+      return null;
+    }
+  },
+
+  async saveOnboardingProgress(
+    screenKey: string,
+    index: number,
+  ): Promise<void> {
+    try {
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.ONBOARDING_PROGRESS,
+        JSON.stringify({ screenKey, index }),
+      );
+    } catch (error) {
+      console.error("Error saving onboarding progress:", error);
+    }
+  },
+
+  async clearOnboardingProgress(): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(STORAGE_KEYS.ONBOARDING_PROGRESS);
+    } catch (error) {
+      console.error("Error clearing onboarding progress:", error);
+    }
+  },
+
+  async hasCompletedFirstSession(): Promise<boolean> {
+    const total = await this.getTotalSessions();
+    return total > 0;
+  },
+
+  async isFirstSessionInProgress(): Promise<boolean> {
+    try {
+      return (
+        (await AsyncStorage.getItem(STORAGE_KEYS.FIRST_SESSION_IN_PROGRESS)) ===
+        "true"
+      );
+    } catch {
+      return false;
+    }
+  },
+
+  async setFirstSessionInProgress(
+    inProgress: boolean,
+    progressPct: number = 0,
+  ): Promise<void> {
+    try {
+      if (inProgress) {
+        await AsyncStorage.setItem(
+          STORAGE_KEYS.FIRST_SESSION_IN_PROGRESS,
+          "true",
+        );
+        await AsyncStorage.setItem(
+          STORAGE_KEYS.FIRST_SESSION_PROGRESS,
+          String(Math.max(0, Math.min(100, Math.round(progressPct)))),
+        );
+      } else {
+        await AsyncStorage.multiRemove([
+          STORAGE_KEYS.FIRST_SESSION_IN_PROGRESS,
+          STORAGE_KEYS.FIRST_SESSION_PROGRESS,
+          STORAGE_KEYS.FIRST_SESSION_ID,
+        ]);
+      }
+    } catch (error) {
+      console.error("Error saving first-session progress:", error);
+    }
+  },
+
+  async getFirstSessionProgressPct(): Promise<number> {
+    try {
+      const raw = await AsyncStorage.getItem(
+        STORAGE_KEYS.FIRST_SESSION_PROGRESS,
+      );
+      if (!raw) return 0;
+      const n = parseInt(raw, 10);
+      return Number.isFinite(n) ? n : 0;
+    } catch {
+      return 0;
+    }
+  },
+
+  async hasCelebratedFirstSession(): Promise<boolean> {
+    try {
+      return (
+        (await AsyncStorage.getItem(STORAGE_KEYS.FIRST_SESSION_CELEBRATED)) ===
+        "true"
+      );
+    } catch {
+      return false;
+    }
+  },
+
+  async markFirstSessionCelebrated(): Promise<void> {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.FIRST_SESSION_CELEBRATED, "true");
+    } catch (error) {
+      console.error("Error marking first-session celebration:", error);
+    }
+  },
+
+  async setFirstSessionGateSource(
+    source: "post_onboarding" | "cold_open" | "resume",
+  ): Promise<void> {
+    try {
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.FIRST_SESSION_GATE_SOURCE,
+        source,
+      );
+    } catch (error) {
+      console.error("Error saving first-session gate source:", error);
+    }
+  },
+
+  async consumeFirstSessionGateSource(): Promise<
+    "post_onboarding" | "cold_open" | "resume" | null
+  > {
+    try {
+      const raw = await AsyncStorage.getItem(
+        STORAGE_KEYS.FIRST_SESSION_GATE_SOURCE,
+      );
+      await AsyncStorage.removeItem(STORAGE_KEYS.FIRST_SESSION_GATE_SOURCE);
+      if (
+        raw === "post_onboarding" ||
+        raw === "cold_open" ||
+        raw === "resume"
+      ) {
+        return raw;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  },
+
+  async getFirstSessionId(): Promise<string | null> {
+    try {
+      return await AsyncStorage.getItem(STORAGE_KEYS.FIRST_SESSION_ID);
+    } catch {
+      return null;
+    }
+  },
+
+  async setFirstSessionId(sessionId: string | null): Promise<void> {
+    try {
+      if (sessionId) {
+        await AsyncStorage.setItem(STORAGE_KEYS.FIRST_SESSION_ID, sessionId);
+      } else {
+        await AsyncStorage.removeItem(STORAGE_KEYS.FIRST_SESSION_ID);
+      }
+    } catch (error) {
+      console.error("Error saving first-session id:", error);
+    }
+  },
+
+  async peekFirstSessionGateSource(): Promise<
+    "post_onboarding" | "cold_open" | "resume" | null
+  > {
+    try {
+      const raw = await AsyncStorage.getItem(
+        STORAGE_KEYS.FIRST_SESSION_GATE_SOURCE,
+      );
+      if (
+        raw === "post_onboarding" ||
+        raw === "cold_open" ||
+        raw === "resume"
+      ) {
+        return raw;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  },
+
+  async clearFirstSessionGateSource(): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(STORAGE_KEYS.FIRST_SESSION_GATE_SOURCE);
+    } catch (error) {
+      console.error("Error clearing first-session gate source:", error);
     }
   },
 

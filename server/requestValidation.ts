@@ -209,6 +209,123 @@ const analyticsEventSchema = z.discriminatedUnion("type", [
     .strict(),
   z
     .object({
+      type: z.literal("onboarding_screen_viewed"),
+      data: z
+        .object({
+          screen_key: z.string().trim().min(1).max(64),
+          index: z.number().int().min(0).max(20),
+          total: z.number().int().min(1).max(20),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("onboarding_anatomy_selected"),
+      data: z
+        .object({
+          anatomy: anatomyTypeSchema,
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("onboarding_cta_tapped"),
+      data: z
+        .object({
+          screen_key: z.string().trim().min(1).max(64),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("onboarding_abandoned"),
+      data: z
+        .object({
+          last_screen_key: z.string().trim().min(1).max(64),
+          index: z.number().int().min(0).max(20),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("first_session_gate_shown"),
+      data: z
+        .object({
+          source: z.enum(["post_onboarding", "cold_open", "resume"]),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("first_session_cta_tapped"),
+      data: z
+        .object({
+          source: z.enum(["post_onboarding", "cold_open", "resume"]),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("first_session_started"),
+      data: z
+        .object({
+          session_id: z.string().trim().min(1).max(128),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("first_session_completed"),
+      data: z
+        .object({
+          session_id: z.string().trim().min(1).max(128),
+          duration_sec: z.number().finite().min(0).max(7200),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("first_session_abandoned"),
+      data: z
+        .object({
+          session_id: z.string().trim().min(1).max(128),
+          progress: z.number().finite().min(0).max(100),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("first_session_skipped"),
+      data: z
+        .object({
+          source: z
+            .enum(["post_onboarding", "cold_open", "resume"])
+            .optional(),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
       type: z.enum([
         "restore_started",
         "restore_completed",

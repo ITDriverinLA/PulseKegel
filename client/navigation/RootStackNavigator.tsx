@@ -11,6 +11,7 @@ import MainTabNavigator from "@/navigation/MainTabNavigator";
 import WorkoutPlayerScreen from "@/screens/WorkoutPlayerScreen";
 import WorkoutPickerScreen from "@/screens/WorkoutPickerScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
+import FirstSessionGateScreen from "@/screens/FirstSessionGateScreen";
 import PaywallScreen from "@/screens/PaywallScreen";
 import ChallengeCompleteScreen from "@/screens/ChallengeCompleteScreen";
 import ProgramCompleteScreen from "@/screens/ProgramCompleteScreen";
@@ -34,11 +35,14 @@ import { PaywallSource } from "@/lib/analytics";
 
 export type RootStackParamList = {
   Main: undefined;
+  FirstSessionGate: undefined;
   WorkoutPlayer: {
     workout: DayTemplate;
     weekNumber: number;
     phase: string;
     dayNumber?: number;
+    isFirstSession?: boolean;
+    firstSessionId?: string;
   };
   WorkoutPicker: undefined;
   Onboarding: undefined;
@@ -82,6 +86,7 @@ export default function RootStackNavigator() {
   const screenOptions = useScreenOptions();
   const [isLoading, setIsLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [needsFirstSession, setNeedsFirstSession] = useState(false);
   const [needsUpdate, setNeedsUpdate] = useState(false);
   const fadeOpacity = useSharedValue(0);
   const [storeUrls, setStoreUrls] = useState<StoreUrls>({
@@ -128,12 +133,33 @@ export default function RootStackNavigator() {
       const minDisplay = new Promise<void>((resolve) =>
         setTimeout(resolve, 3000),
       );
-      const [onboardingComplete] = await Promise.all([
-        storage.isOnboardingComplete(),
-        checkVersion(),
-        minDisplay,
-      ]);
-      setShowOnboarding(!onboardingComplete);
+      const [onboardingComplete, hasFirstSession, inProgress] =
+        await Promise.all([
+          storage.isOnboardingComplete(),
+          storage.hasCompletedFirstSession(),
+          storage.isFirstSessionInProgress(),
+          checkVersion(),
+          minDisplay,
+        ]);
+
+      if (!onboardingComplete) {
+        setShowOnboarding(true);
+        setNeedsFirstSession(false);
+      } else if (!hasFirstSession) {
+        setShowOnboarding(false);
+        setNeedsFirstSession(true);
+        if (inProgress) {
+          await storage.setFirstSessionGateSource("resume");
+        } else {
+          const pending = await storage.peekFirstSessionGateSource();
+          if (!pending) {
+            await storage.setFirstSessionGateSource("cold_open");
+          }
+        }
+      } else {
+        setShowOnboarding(false);
+        setNeedsFirstSession(false);
+      }
       setIsLoading(false);
     };
     initialize();
@@ -152,8 +178,12 @@ export default function RootStackNavigator() {
   }));
 
   const handleOnboardingComplete = async () => {
-    await storage.setOnboardingComplete();
     setShowOnboarding(false);
+    setNeedsFirstSession(true);
+  };
+
+  const handleFirstSessionUnlocked = () => {
+    setNeedsFirstSession(false);
   };
 
   if (isLoading) {
@@ -173,9 +203,41 @@ export default function RootStackNavigator() {
     return <OnboardingScreen onComplete={handleOnboardingComplete} />;
   }
 
+  if (needsFirstSession) {
+    return (
+      <Stack.Navigator
+        key="activation-gate"
+        screenOptions={screenOptions}
+        initialRouteName="FirstSessionGate"
+      >
+        <Stack.Screen
+          name="FirstSessionGate"
+          options={{ headerShown: false, gestureEnabled: false }}
+        >
+          {() => (
+            <FirstSessionGateScreen onUnlocked={handleFirstSessionUnlocked} />
+          )}
+        </Stack.Screen>
+        <Stack.Screen
+          name="WorkoutPlayer"
+          component={WorkoutPlayerScreen}
+          options={{
+            presentation: "fullScreenModal",
+            headerShown: false,
+            gestureEnabled: false,
+          }}
+        />
+      </Stack.Navigator>
+    );
+  }
+
   return (
     <Animated.View style={fadeStyle}>
-      <Stack.Navigator screenOptions={screenOptions}>
+      <Stack.Navigator
+        key="main-app"
+        screenOptions={screenOptions}
+        initialRouteName="Main"
+      >
         <Stack.Screen
           name="Main"
           component={MainTabNavigator}

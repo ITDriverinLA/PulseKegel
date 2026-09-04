@@ -78,6 +78,34 @@ describe("analyticsBatchSchema", () => {
       },
     },
     { type: "restore_not_found", data: { result: "not_found" } },
+    {
+      type: "onboarding_screen_viewed",
+      data: { screen_key: "welcome", index: 0, total: 3 },
+    },
+    { type: "onboarding_anatomy_selected", data: { anatomy: "male" } },
+    { type: "onboarding_cta_tapped", data: { screen_key: "start" } },
+    {
+      type: "onboarding_abandoned",
+      data: { last_screen_key: "anatomy", index: 1 },
+    },
+    {
+      type: "first_session_gate_shown",
+      data: { source: "post_onboarding" },
+    },
+    {
+      type: "first_session_cta_tapped",
+      data: { source: "cold_open" },
+    },
+    { type: "first_session_started", data: { session_id: "abc" } },
+    {
+      type: "first_session_completed",
+      data: { session_id: "abc", duration_sec: 320 },
+    },
+    {
+      type: "first_session_abandoned",
+      data: { session_id: "abc", progress: 40 },
+    },
+    { type: "first_session_skipped", data: { source: "resume" } },
   ])("accepts the current app payload for $type", (event) => {
     expect(
       analyticsBatchSchema.safeParse({ deviceId, events: [event] }).success,
