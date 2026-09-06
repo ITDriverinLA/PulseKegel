@@ -437,7 +437,10 @@ const BRAND_FOOTER = `<footer class="pk-footer">
   </footer>`;
 
 function applyBrandStyling(html) {
-  if (!html.includes('<link rel="icon"')) {
+  if (
+    !html.includes('<link rel="icon"') &&
+    !html.includes('pa-R6DrrA_T3Ucr4LAudvptX')
+  ) {
     html = html.replace("</head>", `${BRAND_HEAD_INJECT}\n</head>`);
   } else {
     html = html.replace("</head>", `  <link rel="preconnect" href="https://fonts.googleapis.com" />\n  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />\n  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />\n</head>`);
