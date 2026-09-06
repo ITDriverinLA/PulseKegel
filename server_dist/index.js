@@ -763,6 +763,12 @@ var privacyPolicyHtml = `<!doctype html>
     }
   }
 </style>
+  <!-- Privacy-friendly analytics by Plausible -->
+  <script async src="https://plausible.io/js/pa-R6DrrA_T3Ucr4LAudvptX.js"></script>
+  <script>
+    window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+    plausible.init()
+  </script>
 </head>
 
 <body>
@@ -1499,6 +1505,161 @@ var analyticsEventSchema = z.discriminatedUnion("type", [
     ...eventMetadata
   }).strict(),
   z.object({
+    type: z.literal("onboarding_screen_viewed"),
+    data: z.object({
+      screen_key: z.string().trim().min(1).max(64),
+      index: z.number().int().min(0).max(20),
+      total: z.number().int().min(1).max(20)
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("onboarding_anatomy_selected"),
+    data: z.object({
+      anatomy: anatomyTypeSchema
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("onboarding_cta_tapped"),
+    data: z.object({
+      screen_key: z.string().trim().min(1).max(64)
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("onboarding_abandoned"),
+    data: z.object({
+      last_screen_key: z.string().trim().min(1).max(64),
+      index: z.number().int().min(0).max(20)
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("first_session_gate_shown"),
+    data: z.object({
+      source: z.enum(["post_onboarding", "cold_open", "resume"])
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("first_session_cta_tapped"),
+    data: z.object({
+      source: z.enum(["post_onboarding", "cold_open", "resume"])
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("first_session_started"),
+    data: z.object({
+      session_id: z.string().trim().min(1).max(128)
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("first_session_completed"),
+    data: z.object({
+      session_id: z.string().trim().min(1).max(128),
+      duration_sec: z.number().finite().min(0).max(7200)
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("first_session_abandoned"),
+    data: z.object({
+      session_id: z.string().trim().min(1).max(128),
+      progress: z.number().finite().min(0).max(100)
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("first_session_skipped"),
+    data: z.object({
+      source: z.enum(["post_onboarding", "cold_open", "resume"]).optional()
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("permission_prompt_shown"),
+    data: z.object({
+      type: z.enum(["push", "att", "other"]),
+      surface: z.string().trim().min(1).max(64).optional(),
+      status: z.string().trim().min(1).max(32).optional(),
+      deferred: z.boolean().optional()
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("permission_result"),
+    data: z.object({
+      type: z.enum(["push", "att", "other"]),
+      status: z.string().trim().min(1).max(32),
+      surface: z.string().trim().min(1).max(64).optional(),
+      deferred: z.boolean().optional(),
+      already_granted: z.boolean().optional()
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("first_open_path"),
+    data: z.object({
+      landing_route: z.string().trim().min(1).max(64),
+      onboarded_already: z.boolean(),
+      launch_type: z.enum(["cold", "warm"]).optional(),
+      app_state: z.string().trim().min(1).max(32).optional(),
+      att_status: z.string().trim().min(1).max(32).optional(),
+      build_channel: z.string().trim().min(1).max(64).optional(),
+      platform: z.enum(["ios", "android", "web", "windows", "macos"]).optional()
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("challenge_day_viewed"),
+    data: z.object({
+      week: z.number().int().min(1).max(12),
+      day: z.number().int().min(1).max(7),
+      state: z.enum(["locked", "available", "complete", "rest"])
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("challenge_day_started"),
+    data: z.object({
+      week: z.number().int().min(1).max(12),
+      day: z.number().int().min(1).max(7)
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("challenge_day_completed"),
+    data: z.object({
+      week: z.number().int().min(1).max(12),
+      day: z.number().int().min(1).max(7)
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("challenge_day2_nudge_scheduled"),
+    data: z.object({
+      channel: z.enum(["push", "in_app"])
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("challenge_day2_nudge_shown"),
+    data: z.object({
+      channel: z.enum(["push", "in_app"])
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("challenge_day2_nudge_tapped"),
+    data: z.object({
+      channel: z.enum(["push", "in_app"])
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
     type: z.enum([
       "restore_started",
       "restore_completed",
@@ -1532,7 +1693,9 @@ var __filename = fileURLToPath(import.meta.url);
 var __dirname = dirname(__filename);
 var APP_VERSION = "0.0.0";
 try {
-  const appJson = JSON.parse(readFileSync(join(process.cwd(), "app.json"), "utf8"));
+  const appJson = JSON.parse(
+    readFileSync(join(process.cwd(), "app.json"), "utf8")
+  );
   APP_VERSION = appJson?.expo?.extra?.minimumVersion ?? appJson?.expo?.version ?? "0.0.0";
 } catch {
 }
@@ -1616,7 +1779,12 @@ function discoverBlogSlugs() {
         continue;
       seen.add(slug);
       const filePath = join(dir, f);
-      slugs.push({ slug, lastmod: readLastmod(filePath), title: readBlogTitle(filePath, slug), description: readBlogDescription(filePath) });
+      slugs.push({
+        slug,
+        lastmod: readLastmod(filePath),
+        title: readBlogTitle(filePath, slug),
+        description: readBlogDescription(filePath)
+      });
     }
   }
   slugs.sort((a, b) => a.slug.localeCompare(b.slug));
@@ -1665,7 +1833,10 @@ function buildFallback(daysWorkedOut, scheduledDays, weekNumber) {
   return `${daysWorkedOut} of ${scheduledDays} scheduled sessions completed this week \u2014 ${missedDays} missed. That is not the week you needed. Next week, start on day one and do not let the first miss become two.`;
 }
 async function registerRoutes(app2) {
-  app2.use("/sounds", express.static(resolve(process.cwd(), "client", "assets", "sounds")));
+  app2.use(
+    "/sounds",
+    express.static(resolve(process.cwd(), "client", "assets", "sounds"))
+  );
   app2.post("/api/invalidate-sitemap-cache", (req, res) => {
     const token = process.env.INVALIDATE_CACHE_TOKEN;
     if (!token) {
@@ -1908,7 +2079,12 @@ ${blogUrls}
     if (slug.endsWith(".html")) {
       return res.redirect(301, `/blog/${slug.replace(".html", "")}`);
     }
-    const staticPath = join(process.cwd(), "static-build", "blog", `${slug}.html`);
+    const staticPath = join(
+      process.cwd(),
+      "static-build",
+      "blog",
+      `${slug}.html`
+    );
     if (existsSync(staticPath)) {
       return res.sendFile(staticPath);
     }
@@ -1978,35 +2154,38 @@ ${blogUrls}
       res.status(500).json({ error: "Failed to record events" });
     }
   });
-  app2.get("/api/analytics/summary", requireAnalyticsAdmin, async (_req, res) => {
-    try {
-      const now = /* @__PURE__ */ new Date();
-      const h24 = new Date(now.getTime() - 24 * 60 * 60 * 1e3);
-      const d7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1e3);
-      const d30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1e3);
-      const [totalDevices] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents);
-      const [dau] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(sql2`${analyticsEvents.createdAt} >= ${h24}`);
-      const [wau] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(sql2`${analyticsEvents.createdAt} >= ${d7}`);
-      const [mau] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(sql2`${analyticsEvents.createdAt} >= ${d30}`);
-      const eventCounts = await db.select({
-        eventType: analyticsEvents.eventType,
-        count: sql2`count(*)::int`
-      }).from(analyticsEvents).groupBy(analyticsEvents.eventType).orderBy(sql2`count(*) desc`);
-      const [newDevicesWeek] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(
-        sql2`${analyticsEvents.deviceId} not in (
+  app2.get(
+    "/api/analytics/summary",
+    requireAnalyticsAdmin,
+    async (_req, res) => {
+      try {
+        const now = /* @__PURE__ */ new Date();
+        const h24 = new Date(now.getTime() - 24 * 60 * 60 * 1e3);
+        const d7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1e3);
+        const d30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1e3);
+        const [totalDevices] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents);
+        const [dau] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(sql2`${analyticsEvents.createdAt} >= ${h24}`);
+        const [wau] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(sql2`${analyticsEvents.createdAt} >= ${d7}`);
+        const [mau] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(sql2`${analyticsEvents.createdAt} >= ${d30}`);
+        const eventCounts = await db.select({
+          eventType: analyticsEvents.eventType,
+          count: sql2`count(*)::int`
+        }).from(analyticsEvents).groupBy(analyticsEvents.eventType).orderBy(sql2`count(*) desc`);
+        const [newDevicesWeek] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(
+          sql2`${analyticsEvents.deviceId} not in (
             select distinct device_id from analytics_events
             where created_at < ${d7}
           )`
-      );
-      const topWeeklyDevicesRaw = await db.select({
-        eventCount: sql2`count(*)::int`
-      }).from(analyticsEvents).where(sql2`${analyticsEvents.createdAt} >= ${d7}`).groupBy(analyticsEvents.deviceId).orderBy(sql2`count(*) desc`).limit(10);
-      const topWeeklyDevices = topWeeklyDevicesRaw.map((row, i) => ({
-        rank: i + 1,
-        eventCount: row.eventCount
-      }));
-      const dailyUniqueUsersRaw = await db.execute(
-        sql2`
+        );
+        const topWeeklyDevicesRaw = await db.select({
+          eventCount: sql2`count(*)::int`
+        }).from(analyticsEvents).where(sql2`${analyticsEvents.createdAt} >= ${d7}`).groupBy(analyticsEvents.deviceId).orderBy(sql2`count(*) desc`).limit(10);
+        const topWeeklyDevices = topWeeklyDevicesRaw.map((row, i) => ({
+          rank: i + 1,
+          eventCount: row.eventCount
+        }));
+        const dailyUniqueUsersRaw = await db.execute(
+          sql2`
           SELECT
             to_char(days.day, 'YYYY-MM-DD') AS date,
             COUNT(DISTINCT ae.device_id)::int AS count
@@ -2020,9 +2199,9 @@ ${blogUrls}
           GROUP BY days.day
           ORDER BY days.day
         `
-      );
-      const devicesByPlatformRaw = await db.execute(
-        sql2`
+        );
+        const devicesByPlatformRaw = await db.execute(
+          sql2`
           SELECT
             COALESCE(platform, 'unknown') AS platform,
             COUNT(DISTINCT device_id)::int AS count
@@ -2030,9 +2209,9 @@ ${blogUrls}
           GROUP BY COALESCE(platform, 'unknown')
           ORDER BY count DESC
         `
-      );
-      const challengeResultBreakdownRaw = await db.execute(
-        sql2`
+        );
+        const challengeResultBreakdownRaw = await db.execute(
+          sql2`
           WITH explicit_results AS (
             SELECT DISTINCT ON (device_id)
               device_id,
@@ -2088,9 +2267,9 @@ ${blogUrls}
           GROUP BY result_rank
           ORDER BY count DESC
         `
-      );
-      const wauByPlatformRaw = await db.execute(
-        sql2`
+        );
+        const wauByPlatformRaw = await db.execute(
+          sql2`
           SELECT
             COALESCE(platform, 'unknown') AS platform,
             COUNT(DISTINCT device_id)::int AS count
@@ -2099,22 +2278,22 @@ ${blogUrls}
           GROUP BY COALESCE(platform, 'unknown')
           ORDER BY count DESC
         `
-      );
-      const [installsNoChallenge] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(
-        sql2`${analyticsEvents.deviceId} NOT IN (
+        );
+        const [installsNoChallenge] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(
+          sql2`${analyticsEvents.deviceId} NOT IN (
             SELECT DISTINCT device_id FROM analytics_events
             WHERE event_type = 'session_complete'
           )`
-      );
-      const [neverOnboarded] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(
-        sql2`${analyticsEvents.eventType} = 'app_open'
+        );
+        const [neverOnboarded] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(
+          sql2`${analyticsEvents.eventType} = 'app_open'
             AND ${analyticsEvents.deviceId} NOT IN (
               SELECT DISTINCT device_id FROM analytics_events
               WHERE event_type = 'onboarding_complete'
             )`
-      );
-      const retentionRaw = await db.execute(
-        sql2`
+        );
+        const retentionRaw = await db.execute(
+          sql2`
           WITH cohort AS (
             SELECT device_id, MIN(created_at) AS first_seen
             FROM analytics_events
@@ -2150,11 +2329,37 @@ ${blogUrls}
             ) THEN 1 END)::int
           FROM cohort WHERE cohort.first_seen <= NOW() - INTERVAL '30 days'
         `
-      );
-      const [funnelOnboarded] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(sql2`${analyticsEvents.eventType} = 'onboarding_complete'`);
-      const [funnelSession] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(sql2`${analyticsEvents.eventType} = 'session_complete'`);
-      const [funnelSessionStarted] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(sql2`${analyticsEvents.eventType} = 'session_started'`);
-      const subscriptionFunnelRaw = await db.execute(sql2`
+        );
+        const [funnelOnboarded] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(sql2`${analyticsEvents.eventType} = 'onboarding_complete'`);
+        const [funnelSession] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(sql2`${analyticsEvents.eventType} = 'session_complete'`);
+        const [funnelSessionStarted] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(sql2`${analyticsEvents.eventType} = 'session_started'`);
+        const funnelByPlatformRaw = await db.execute(sql2`
+        SELECT
+          COALESCE(platform, 'unknown') AS platform,
+          COUNT(DISTINCT device_id)::int AS opens,
+          COUNT(DISTINCT device_id) FILTER (
+            WHERE device_id IN (
+              SELECT DISTINCT device_id FROM analytics_events
+              WHERE event_type = 'onboarding_complete'
+            )
+          )::int AS onboarded,
+          COUNT(DISTINCT device_id) FILTER (
+            WHERE device_id IN (
+              SELECT DISTINCT device_id FROM analytics_events
+              WHERE event_type = 'session_started'
+            )
+          )::int AS started,
+          COUNT(DISTINCT device_id) FILTER (
+            WHERE device_id IN (
+              SELECT DISTINCT device_id FROM analytics_events
+              WHERE event_type = 'session_complete'
+            )
+          )::int AS sessions
+        FROM analytics_events
+        GROUP BY COALESCE(platform, 'unknown')
+        ORDER BY opens DESC
+      `);
+        const subscriptionFunnelRaw = await db.execute(sql2`
         SELECT event_type, COUNT(DISTINCT device_id)::int AS count
         FROM analytics_events
         WHERE event_type IN (
@@ -2164,14 +2369,14 @@ ${blogUrls}
         )
         GROUP BY event_type
       `);
-      const subscriptionFunnel = Object.fromEntries(
-        subscriptionFunnelRaw.rows.map((row) => [
-          row.event_type,
-          Number(row.count) || 0
-        ])
-      );
-      const programWeekDistRaw = await db.execute(
-        sql2`
+        const subscriptionFunnel = Object.fromEntries(
+          subscriptionFunnelRaw.rows.map((row) => [
+            row.event_type,
+            Number(row.count) || 0
+          ])
+        );
+        const programWeekDistRaw = await db.execute(
+          sql2`
           SELECT
             event_data->>'programWeek' AS week,
             COUNT(DISTINCT device_id)::int AS count
@@ -2183,9 +2388,9 @@ ${blogUrls}
           GROUP BY event_data->>'programWeek'
           ORDER BY (event_data->>'programWeek')::int
         `
-      );
-      const workoutTypeRaw = await db.execute(
-        sql2`
+        );
+        const workoutTypeRaw = await db.execute(
+          sql2`
           SELECT
             COALESCE(event_data->>'workoutType', 'unknown') AS "workoutType",
             COUNT(*)::int AS count
@@ -2194,9 +2399,9 @@ ${blogUrls}
           GROUP BY COALESCE(event_data->>'workoutType', 'unknown')
           ORDER BY count DESC
         `
-      );
-      const anatomySplitRaw = await db.execute(
-        sql2`
+        );
+        const anatomySplitRaw = await db.execute(
+          sql2`
           SELECT
             COALESCE(event_data->>'anatomyType', 'unknown') AS "anatomyType",
             COUNT(DISTINCT device_id)::int AS count
@@ -2205,9 +2410,9 @@ ${blogUrls}
           GROUP BY COALESCE(event_data->>'anatomyType', 'unknown')
           ORDER BY count DESC
         `
-      );
-      const appVersionRaw = await db.execute(
-        sql2`
+        );
+        const appVersionRaw = await db.execute(
+          sql2`
           SELECT
             COALESCE(app_version, 'unknown') AS "appVersion",
             COUNT(DISTINCT device_id)::int AS count
@@ -2217,15 +2422,15 @@ ${blogUrls}
           ORDER BY count DESC
           LIMIT 10
         `
-      );
-      const [sessionsInWau] = await db.select({ count: sql2`count(*)::int` }).from(analyticsEvents).where(
-        sql2`${analyticsEvents.eventType} = 'session_complete'
+        );
+        const [sessionsInWau] = await db.select({ count: sql2`count(*)::int` }).from(analyticsEvents).where(
+          sql2`${analyticsEvents.eventType} = 'session_complete'
             AND ${analyticsEvents.createdAt} >= ${d7}`
-      );
-      const wauCount = Number(wau?.count ?? 0);
-      const avgSessionsPerWau = wauCount > 0 ? Math.round(Number(sessionsInWau?.count ?? 0) / wauCount * 10) / 10 : 0;
-      const weekCompletionRaw = await db.execute(
-        sql2`
+        );
+        const wauCount = Number(wau?.count ?? 0);
+        const avgSessionsPerWau = wauCount > 0 ? Math.round(Number(sessionsInWau?.count ?? 0) / wauCount * 10) / 10 : 0;
+        const weekCompletionRaw = await db.execute(
+          sql2`
           SELECT
             ROUND(
               AVG(CASE
@@ -2247,57 +2452,63 @@ ${blogUrls}
             AND event_data->>'scheduledDays' IS NOT NULL
             AND created_at >= NOW() - INTERVAL '30 days'
         `
-      );
-      res.json({
-        totalDevices: totalDevices?.count ?? 0,
-        dau: dau?.count ?? 0,
-        wau: wau?.count ?? 0,
-        mau: mau?.count ?? 0,
-        newDevicesLast7Days: newDevicesWeek?.count ?? 0,
-        installsNoChallenge: installsNoChallenge?.count ?? 0,
-        neverOnboarded: neverOnboarded?.count ?? 0,
-        eventsByType: eventCounts,
-        topWeeklyDevices,
-        dailyUniqueUsers: dailyUniqueUsersRaw.rows,
-        devicesByPlatform: devicesByPlatformRaw.rows,
-        wauByPlatform: wauByPlatformRaw.rows,
-        challengeResultBreakdown: challengeResultBreakdownRaw.rows,
-        retention: retentionRaw.rows,
-        funnel: {
-          opens: totalDevices?.count ?? 0,
-          onboarded: funnelOnboarded?.count ?? 0,
-          started: funnelSessionStarted?.count ?? 0,
-          sessions: funnelSession?.count ?? 0
-        },
-        subscriptionFunnel: {
-          viewed: subscriptionFunnel.paywall_viewed ?? 0,
-          tapped: subscriptionFunnel.subscribe_tapped ?? 0,
-          purchased: subscriptionFunnel.purchase_completed ?? 0
-        },
-        programWeekDist: programWeekDistRaw.rows,
-        workoutTypeBreakdown: workoutTypeRaw.rows,
-        anatomySplit: anatomySplitRaw.rows,
-        appVersionDist: appVersionRaw.rows,
-        avgSessionsPerWau,
-        weekCompletionRate: {
-          avgRate: weekCompletionRaw.rows[0]?.avg_rate ?? null,
-          totalWeeks: Number(weekCompletionRaw.rows[0]?.total_weeks ?? 0)
-        }
-      });
-    } catch (err) {
-      console.error("Analytics summary error:", err);
-      res.status(500).json({ error: "Failed to load analytics summary" });
+        );
+        res.json({
+          totalDevices: totalDevices?.count ?? 0,
+          dau: dau?.count ?? 0,
+          wau: wau?.count ?? 0,
+          mau: mau?.count ?? 0,
+          newDevicesLast7Days: newDevicesWeek?.count ?? 0,
+          installsNoChallenge: installsNoChallenge?.count ?? 0,
+          neverOnboarded: neverOnboarded?.count ?? 0,
+          eventsByType: eventCounts,
+          topWeeklyDevices,
+          dailyUniqueUsers: dailyUniqueUsersRaw.rows,
+          devicesByPlatform: devicesByPlatformRaw.rows,
+          wauByPlatform: wauByPlatformRaw.rows,
+          challengeResultBreakdown: challengeResultBreakdownRaw.rows,
+          retention: retentionRaw.rows,
+          funnel: {
+            opens: totalDevices?.count ?? 0,
+            onboarded: funnelOnboarded?.count ?? 0,
+            started: funnelSessionStarted?.count ?? 0,
+            sessions: funnelSession?.count ?? 0
+          },
+          funnelByPlatform: funnelByPlatformRaw.rows,
+          subscriptionFunnel: {
+            viewed: subscriptionFunnel.paywall_viewed ?? 0,
+            tapped: subscriptionFunnel.subscribe_tapped ?? 0,
+            purchased: subscriptionFunnel.purchase_completed ?? 0
+          },
+          programWeekDist: programWeekDistRaw.rows,
+          workoutTypeBreakdown: workoutTypeRaw.rows,
+          anatomySplit: anatomySplitRaw.rows,
+          appVersionDist: appVersionRaw.rows,
+          avgSessionsPerWau,
+          weekCompletionRate: {
+            avgRate: weekCompletionRaw.rows[0]?.avg_rate ?? null,
+            totalWeeks: Number(weekCompletionRaw.rows[0]?.total_weeks ?? 0)
+          }
+        });
+      } catch (err) {
+        console.error("Analytics summary error:", err);
+        res.status(500).json({ error: "Failed to load analytics summary" });
+      }
     }
-  });
-  app2.delete("/api/analytics/reset", requireAnalyticsAdmin, async (_req, res) => {
-    try {
-      await db.execute(sql2`TRUNCATE TABLE analytics_events RESTART IDENTITY`);
-      res.json({ ok: true, message: "Analytics reset" });
-    } catch (err) {
-      console.error("Analytics reset error:", err);
-      res.status(500).json({ error: "Failed to reset analytics" });
+  );
+  app2.delete(
+    "/api/analytics/reset",
+    requireAnalyticsAdmin,
+    async (_req, res) => {
+      try {
+        await db.execute(sql2`TRUNCATE TABLE analytics_events RESTART IDENTITY`);
+        res.json({ ok: true, message: "Analytics reset" });
+      } catch (err) {
+        console.error("Analytics reset error:", err);
+        res.status(500).json({ error: "Failed to reset analytics" });
+      }
     }
-  });
+  );
   const httpServer = createServer(app2);
   return httpServer;
 }
