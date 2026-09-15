@@ -54,6 +54,7 @@ export class WorkoutEngine {
     workout: DayTemplate,
     callbacks: WorkoutEngineCallbacks,
     settings?: WorkoutSettings,
+    startSegmentIndex: number = 0,
   ) {
     this.workout = workout;
     this.callbacks = callbacks;
@@ -68,11 +69,19 @@ export class WorkoutEngine {
     }
     this.segments = filteredSegments;
 
+    const safeStart = Math.max(
+      0,
+      Math.min(
+        Math.floor(startSegmentIndex) || 0,
+        Math.max(0, this.segments.length - 1),
+      ),
+    );
+
     this.state = {
       isRunning: false,
       isPaused: false,
       isComplete: false,
-      segmentIndex: 0,
+      segmentIndex: safeStart,
       setIndex: 0,
       repIndex: 0,
       phase: "squeeze",
@@ -83,6 +92,23 @@ export class WorkoutEngine {
       totalPausedTime: 0,
       isSetRest: false,
     };
+  }
+
+  /** Seek to a safe segment boundary before start() (F1 mid-abandon resume). */
+  seekToSegment(segmentIndex: number): void {
+    if (this.state.isRunning || this.state.isComplete) return;
+    const safeStart = Math.max(
+      0,
+      Math.min(
+        Math.floor(segmentIndex) || 0,
+        Math.max(0, this.segments.length - 1),
+      ),
+    );
+    this.state.segmentIndex = safeStart;
+    this.state.setIndex = 0;
+    this.state.repIndex = 0;
+    this.state.phase = "squeeze";
+    this.state.isSetRest = false;
   }
 
   getCurrentSegment(): Segment | null {

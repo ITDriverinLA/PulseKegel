@@ -324,6 +324,46 @@ const analyticsEventSchema = z.discriminatedUnion("type", [
     .strict(),
   z
     .object({
+      type: z.literal("first_session_resume_shown"),
+      data: z
+        .object({
+          source: z.enum([
+            "post_onboarding",
+            "cold_open",
+            "resume",
+            "cold",
+            "warm",
+          ]),
+          step_index: z.number().int().min(0).max(100),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("first_session_resume_tapped"),
+      data: z
+        .object({
+          step_index: z.number().int().min(0).max(100).optional(),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("first_session_restart_tapped"),
+      data: z
+        .object({
+          reason: z.string().trim().min(1).max(64),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
       type: z.literal("permission_prompt_shown"),
       data: z
         .object({

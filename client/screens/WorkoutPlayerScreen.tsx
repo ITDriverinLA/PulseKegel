@@ -95,7 +95,14 @@ export default function WorkoutPlayerScreen() {
     dayNumber,
     isFirstSession,
     firstSessionId,
+    resumeStepIndex,
+    variant: _firstSessionVariant,
+    plannedSteps: _plannedSteps,
+    completedSteps: _completedSteps,
   } = route.params;
+  void _firstSessionVariant;
+  void _plannedSteps;
+  void _completedSteps;
 
   const [workoutState, setWorkoutState] = useState<WorkoutState | null>(null);
   const [currentSegment, setCurrentSegment] = useState<Segment | null>(null);
@@ -120,6 +127,7 @@ export default function WorkoutPlayerScreen() {
   const shouldRedirectToWeeklyCalibrationRef = useRef<number | null>(null);
   const isCompleteRef = useRef(false);
   const sessionStartedTrackedRef = useRef(false);
+  const segmentIndexRef = useRef(0);
 
   const phaseScale = useSharedValue(1);
   const phaseOpacity = useSharedValue(1);
@@ -244,9 +252,18 @@ export default function WorkoutPlayerScreen() {
             hapticPulseRef.current.stop();
           }
         },
-        onSegmentChange: (segment) => {
+        onSegmentChange: (segment, segmentIndex) => {
           setCurrentSegment(segment);
+          segmentIndexRef.current = segmentIndex;
           setPhaseDuration(segment.squeezeSeconds);
+          if (isFirstSession) {
+            const prog = engine.getProgress();
+            const pct =
+              prog.total > 0
+                ? Math.round((prog.current / prog.total) * 100)
+                : 0;
+            void storage.setFirstSessionInProgress(true, pct, segmentIndex);
+          }
 
           if (hapticPulseRef.current.isActive()) {
             hapticPulseRef.current.updateSegmentType(
@@ -401,6 +418,7 @@ export default function WorkoutPlayerScreen() {
         onTick: () => {},
       },
       workoutSettings,
+      isFirstSession ? (resumeStepIndex ?? 0) : 0,
     );
 
     engineRef.current = engine;
@@ -462,6 +480,17 @@ export default function WorkoutPlayerScreen() {
           }
         } else if (nextAppState.match(/inactive|background/)) {
           hapticPulseRef.current.stop();
+          if (isFirstSession && !isCompleteRef.current) {
+            const pct =
+              progress.total > 0
+                ? Math.round((progress.current / progress.total) * 100)
+                : 0;
+            void storage.setFirstSessionInProgress(
+              true,
+              pct,
+              segmentIndexRef.current,
+            );
+          }
         }
         appStateRef.current = nextAppState;
       },
@@ -476,6 +505,9 @@ export default function WorkoutPlayerScreen() {
     settings,
     workoutState?.isRunning,
     workoutState?.isPaused,
+    isFirstSession,
+    progress.current,
+    progress.total,
   ]);
 
   const handlePauseResume = async () => {
@@ -546,7 +578,8 @@ export default function WorkoutPlayerScreen() {
       progress.total > 0
         ? Math.round((progress.current / progress.total) * 100)
         : 0;
-    await storage.setFirstSessionInProgress(true, pct);
+    const step = segmentIndexRef.current;
+    await storage.setFirstSessionInProgress(true, pct, step);
     trackFirstSessionAbandoned({
       session_id: firstSessionId ?? "unknown",
       progress: pct,

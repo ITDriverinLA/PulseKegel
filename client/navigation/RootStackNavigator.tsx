@@ -44,6 +44,12 @@ export type RootStackParamList = {
     dayNumber?: number;
     isFirstSession?: boolean;
     firstSessionId?: string;
+    /** F1: resume at last safe segment index. */
+    resumeStepIndex?: number;
+    /** F2: first-session variant (short_day1). */
+    variant?: "short_day1";
+    plannedSteps?: number;
+    completedSteps?: number;
   };
   WorkoutPicker: undefined;
   Onboarding: undefined;

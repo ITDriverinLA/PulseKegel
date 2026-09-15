@@ -18,11 +18,20 @@ import {
   ANIM_DURATION_RESET_FAST,
 } from "@/constants/animation";
 import { storage } from "@/lib/storage";
-import { getWeek1WorkoutForDayIndex } from "@/data/workoutProgram";
+import {
+  FIRST_SESSION_VARIANT_SHORT_DAY1,
+  FirstSessionVariant,
+  getFirstSessionPlannedSteps,
+  getFirstSessionWorkout,
+} from "@/data/workoutProgram";
+import { getLaunchType } from "@/lib/activationDiagnostics";
 import {
   FirstSessionGateSource,
   trackFirstSessionCtaTapped,
   trackFirstSessionGateShown,
+  trackFirstSessionRestartTapped,
+  trackFirstSessionResumeShown,
+  trackFirstSessionResumeTapped,
   trackFirstSessionStarted,
   trackSettingsTipDismissed,
   trackSettingsTipOpenSettings,
@@ -34,6 +43,12 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface FirstSessionGateScreenProps {
   onUnlocked: () => void;
+  /** F2: short first-win path (default). */
+  variant?: FirstSessionVariant;
+  /** Optional override for planned segment count (analytics / UI). */
+  planned_steps?: number;
+  /** Optional completed segment count when resuming. */
+  completed_steps?: number;
 }
 
 const BLUE = "#00AAFF";
@@ -51,19 +66,29 @@ const { width } = Dimensions.get("window");
 
 export default function FirstSessionGateScreen({
   onUnlocked,
+  variant = FIRST_SESSION_VARIANT_SHORT_DAY1,
+  planned_steps,
+  completed_steps,
 }: FirstSessionGateScreenProps) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const isFocused = useIsFocused();
   const [source, setSource] = useState<FirstSessionGateSource>("cold_open");
   const [resume, setResume] = useState(false);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [stateLost, setStateLost] = useState(false);
   const [celebrating, setCelebrating] = useState(false);
   const [showSettingsTip, setShowSettingsTip] = useState(false);
   const [ready, setReady] = useState(false);
   const gateShownRef = useRef(false);
+  const resumeShownRef = useRef(false);
   const tipShownTrackedRef = useRef(false);
   const tipWasShownRef = useRef(false);
   const sessionIdRef = useRef<string | null>(null);
+
+  const workout = getFirstSessionWorkout(variant);
+  const plannedSteps = planned_steps ?? getFirstSessionPlannedSteps(workout);
+  const completedSteps = completed_steps ?? stepIndex;
 
   const hydrate = useCallback(async () => {
     const [
@@ -73,6 +98,7 @@ export default function FirstSessionGateScreen({
       pendingSource,
       existingId,
       tipSeen,
+      savedStep,
     ] = await Promise.all([
       storage.hasCompletedFirstSession(),
       storage.isFirstSessionInProgress(),
@@ -80,6 +106,7 @@ export default function FirstSessionGateScreen({
       storage.peekFirstSessionGateSource(),
       storage.getFirstSessionId(),
       storage.hasSettingsTipSeen(),
+      storage.getFirstSessionStepIndex(),
     ]);
     if (existingId) {
       sessionIdRef.current = existingId;
@@ -101,23 +128,47 @@ export default function FirstSessionGateScreen({
     }
 
     let nextSource: FirstSessionGateSource = "cold_open";
+    let nextResume = false;
+    let nextStep = 0;
+    let lost = false;
+
     if (inProgress) {
       nextSource = "resume";
-      setResume(true);
+      nextResume = true;
+      if (typeof savedStep === "number" && savedStep >= 0) {
+        nextStep = Math.min(savedStep, Math.max(0, plannedSteps - 1));
+      } else {
+        // In progress but step state missing — offer start over.
+        lost = true;
+        nextStep = 0;
+      }
+      if (!existingId) {
+        lost = true;
+      }
     } else if (pendingSource) {
       nextSource = pendingSource;
-      setResume(false);
-    } else {
-      setResume(false);
     }
+
     setSource(nextSource);
+    setResume(nextResume);
+    setStepIndex(nextStep);
+    setStateLost(lost);
     setReady(true);
 
     if (!gateShownRef.current) {
       gateShownRef.current = true;
       trackFirstSessionGateShown({ source: nextSource });
     }
-  }, [onUnlocked]);
+
+    if (nextResume && !resumeShownRef.current) {
+      resumeShownRef.current = true;
+      const launch = getLaunchType();
+      trackFirstSessionResumeShown({
+        source: launch === "warm" ? "warm" : "cold",
+        step_index: nextStep,
+      });
+    }
+  }, [onUnlocked, plannedSteps]);
 
   useEffect(() => {
     if (isFocused) {
@@ -161,8 +212,21 @@ export default function FirstSessionGateScreen({
     await finishCelebration();
   };
 
-  const handleStart = async () => {
-    trackFirstSessionCtaTapped({ source });
+  const launchSession = async (opts: {
+    resumeMode: boolean;
+    startStep: number;
+    restartReason?: string;
+  }) => {
+    const { resumeMode, startStep, restartReason } = opts;
+
+    if (resumeMode) {
+      trackFirstSessionResumeTapped({ step_index: startStep });
+    } else if (restartReason) {
+      trackFirstSessionRestartTapped({ reason: restartReason });
+      trackFirstSessionCtaTapped({ source: "cold_open" });
+    } else {
+      trackFirstSessionCtaTapped({ source });
+    }
 
     const today = new Date();
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
@@ -171,9 +235,8 @@ export default function FirstSessionGateScreen({
       await storage.setProgramStartDate(todayStr);
     }
 
-    const workout = getWeek1WorkoutForDayIndex(0, null);
     let sessionId = sessionIdRef.current ?? (await storage.getFirstSessionId());
-    if (!sessionId) {
+    if (!sessionId || restartReason) {
       sessionId = await Crypto.digestStringAsync(
         Crypto.CryptoDigestAlgorithm.SHA256,
         `${todayStr}-${Date.now()}`,
@@ -181,8 +244,10 @@ export default function FirstSessionGateScreen({
     }
     sessionIdRef.current = sessionId;
 
+    const safeStep = Math.max(0, Math.min(startStep, plannedSteps - 1));
+
     await storage.setFirstSessionId(sessionId);
-    await storage.setFirstSessionInProgress(true, 0);
+    await storage.setFirstSessionInProgress(true, 0, safeStep);
     await storage.clearFirstSessionGateSource();
     trackFirstSessionStarted({ session_id: sessionId });
 
@@ -193,6 +258,29 @@ export default function FirstSessionGateScreen({
       dayNumber: 1,
       isFirstSession: true,
       firstSessionId: sessionId,
+      resumeStepIndex: resumeMode ? safeStep : 0,
+      variant: FIRST_SESSION_VARIANT_SHORT_DAY1,
+      plannedSteps,
+      completedSteps: resumeMode ? safeStep : 0,
+    });
+  };
+
+  const handleStart = async () => {
+    await launchSession({ resumeMode: false, startStep: 0 });
+  };
+
+  const handleResume = async () => {
+    await launchSession({
+      resumeMode: true,
+      startStep: stepIndex,
+    });
+  };
+
+  const handleStartOver = async () => {
+    await launchSession({
+      resumeMode: false,
+      startStep: 0,
+      restartReason: stateLost ? "state_lost" : "user_choice",
     });
   };
 
@@ -269,6 +357,76 @@ export default function FirstSessionGateScreen({
     );
   }
 
+  if (resume) {
+    return (
+      <View
+        style={[
+          styles.root,
+          {
+            paddingTop: insets.top + 24,
+            paddingBottom: insets.bottom + 24,
+            paddingHorizontal: Spacing.xl,
+          },
+        ]}
+      >
+        <LinearGradient colors={BG_GRADIENT} style={StyleSheet.absoluteFill} />
+
+        <View style={styles.header}>
+          <Text style={styles.logoText}>
+            <Text style={{ color: TEXT }}>PULSE</Text>
+            <Text style={{ color: BLUE }}>KEGEL</Text>
+          </Text>
+          <Text style={styles.kicker}>DAY 1 · RESUME</Text>
+        </View>
+
+        <View style={styles.body}>
+          <View style={styles.ring}>
+            <Feather name="play-circle" size={36} color={BLUE} />
+          </View>
+          <Text style={styles.headline}>Continue where you left off</Text>
+          <Text style={styles.subline}>
+            {stateLost
+              ? "We could not restore your exact step. You can start over — still a short first win."
+              : `Pick up at step ${Math.min(completedSteps + 1, plannedSteps)} of ${plannedSteps}. One clear win unlocks the full menu.`}
+          </Text>
+          <Text style={styles.meta}>
+            About {workout.estimatedMinutes} min · Coach cues only — not medical
+            advice
+          </Text>
+        </View>
+
+        {stateLost ? (
+          <PrimaryButton
+            label="Start over"
+            onPress={() => {
+              void handleStartOver();
+            }}
+            testID="button-first-session-start-over"
+          />
+        ) : (
+          <>
+            <PrimaryButton
+              label="Continue where you left off"
+              onPress={() => {
+                void handleResume();
+              }}
+              testID="button-first-session-resume-cta"
+            />
+            <Pressable
+              onPress={() => {
+                void handleStartOver();
+              }}
+              style={styles.secondaryBtn}
+              testID="button-first-session-start-over"
+            >
+              <Text style={styles.secondaryBtnText}>Start over</Text>
+            </Pressable>
+          </>
+        )}
+      </View>
+    );
+  }
+
   return (
     <View
       style={[
@@ -294,18 +452,19 @@ export default function FirstSessionGateScreen({
         <View style={styles.ring}>
           <Feather name="play" size={36} color={BLUE} />
         </View>
-        <Text style={styles.headline}>
-          {resume ? "Resume your first session" : "Start your first session"}
-        </Text>
+        <Text style={styles.headline}>Start your first session</Text>
         <Text style={styles.subline}>
-          We will keep this short and clear. One guided session — then the full
-          menu opens.
+          Intro, one clear win, then you unlock the full menu. Short and clear —
+          coach cues only.
         </Text>
-        <Text style={styles.meta}>About 5–8 minutes · Coach cues only</Text>
+        <Text style={styles.meta}>
+          About {workout.estimatedMinutes} min · {plannedSteps} steps · Not
+          medical advice
+        </Text>
       </View>
 
       <PrimaryButton
-        label={resume ? "Resume Day 1" : "Start your first session"}
+        label="Start your first session"
         onPress={() => {
           void handleStart();
         }}
@@ -491,5 +650,18 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 17,
     fontWeight: "800",
+  },
+  secondaryBtn: {
+    width: "100%",
+    marginTop: 12,
+    minHeight: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+  },
+  secondaryBtnText: {
+    color: TEXT_MUTED,
+    fontSize: 15,
+    fontWeight: "600",
   },
 });

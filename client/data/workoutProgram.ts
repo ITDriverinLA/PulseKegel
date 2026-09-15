@@ -988,6 +988,100 @@ const gentleSpeedDay = (): DayTemplate => {
   };
 };
 
+/** F2 short first-win: gate path only (does not replace Week 1 Day 1 in the program). */
+export const FIRST_SESSION_VARIANT_SHORT_DAY1 = "short_day1" as const;
+export type FirstSessionVariant = typeof FIRST_SESSION_VARIANT_SHORT_DAY1;
+
+/** Legacy calibration Day 1 used by the first-session gate before F2. */
+export const getLegacyFirstSessionWorkout = (): DayTemplate =>
+  calibrationStrengthDay();
+
+/**
+ * F2 — shorter first win for the activation gate.
+ * Flow: Intro (get ready) → one clear win (slow holds) → cool-down.
+ * Claim-safe coach cues only — not medical advice.
+ *
+ * Length (documented for ship notes):
+ * - Before (legacy calibration gate): 7 segments, ~4 minutes (~232s work clock)
+ * - After (short_day1): 3 segments, ~2 minutes (~85s work clock)
+ * - Reduction: ~57% fewer steps, ~50% shorter by minutes
+ */
+export const getFirstSessionWorkout = (
+  variant: FirstSessionVariant = FIRST_SESSION_VARIANT_SHORT_DAY1,
+): DayTemplate => {
+  if (variant !== FIRST_SESSION_VARIANT_SHORT_DAY1) {
+    return calibrationStrengthDay();
+  }
+  const sets = 1;
+  const reps = 6;
+  const hold = 5;
+  const rest = 5;
+  const cooldownSec = 20;
+  const getReadyApproxSec = 5;
+  const totalSeconds =
+    getReadyApproxSec + sets * reps * (hold + rest) + cooldownSec;
+  return {
+    id: "fs-short-day1",
+    name: "Day 1 — First Win",
+    dayType: "strength",
+    estimatedMinutes: Math.max(1, Math.ceil(totalSeconds / 60)),
+    segments: [
+      createGetReady("fs-short-getready"),
+      createSegment(
+        "fs-short-slow",
+        "Slow Holds",
+        "Your first clear win — squeeze, hold, then fully relax. Coach cues only.",
+        sets,
+        reps,
+        hold,
+        rest,
+        "slowHolds",
+      ),
+      createSegment(
+        "fs-short-cooldown",
+        "Cool Down",
+        "Relax and breathe deeply — take it easy, this is coaching not medical advice.",
+        1,
+        1,
+        cooldownSec,
+        0,
+        "breathing",
+      ),
+    ],
+  };
+};
+
+export const getFirstSessionPlannedSteps = (workout: DayTemplate): number =>
+  workout.segments.length;
+
+export const describeFirstSessionLengthChange = (): {
+  beforeSegments: number;
+  afterSegments: number;
+  beforeMinutes: number;
+  afterMinutes: number;
+  segmentReductionPct: number;
+  minuteReductionPct: number;
+} => {
+  const before = getLegacyFirstSessionWorkout();
+  const after = getFirstSessionWorkout(FIRST_SESSION_VARIANT_SHORT_DAY1);
+  const beforeSegments = before.segments.length;
+  const afterSegments = after.segments.length;
+  const beforeMinutes = before.estimatedMinutes;
+  const afterMinutes = after.estimatedMinutes;
+  return {
+    beforeSegments,
+    afterSegments,
+    beforeMinutes,
+    afterMinutes,
+    segmentReductionPct: Math.round(
+      ((beforeSegments - afterSegments) / beforeSegments) * 100,
+    ),
+    minuteReductionPct: Math.round(
+      ((beforeMinutes - afterMinutes) / beforeMinutes) * 100,
+    ),
+  };
+};
+
 export const getWeek1WorkoutForDayIndex = (
   dayIndex: number,
   difficultyPath: ChallengeDifficultyPath,
