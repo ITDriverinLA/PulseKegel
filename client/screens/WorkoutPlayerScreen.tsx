@@ -127,7 +127,11 @@ export default function WorkoutPlayerScreen() {
   const shouldRedirectToWeeklyCalibrationRef = useRef<number | null>(null);
   const isCompleteRef = useRef(false);
   const sessionStartedTrackedRef = useRef(false);
-  const segmentIndexRef = useRef(0);
+  const segmentIndexRef = useRef(
+    isFirstSession ? (resumeStepIndex ?? 0) : 0,
+  );
+  const progressRef = useRef(progress);
+  progressRef.current = progress;
 
   const phaseScale = useSharedValue(1);
   const phaseOpacity = useSharedValue(1);
@@ -424,6 +428,9 @@ export default function WorkoutPlayerScreen() {
     );
 
     engineRef.current = engine;
+    // Keep abandon/AppState persistence aligned with engine start index before
+    // onSegmentChange fires (background/kill race after construct, before start).
+    segmentIndexRef.current = isFirstSession ? (resumeStepIndex ?? 0) : 0;
     setCurrentSegment(engine.getCurrentSegment());
 
     const firstSegment = engine.getCurrentSegment();
@@ -455,6 +462,7 @@ export default function WorkoutPlayerScreen() {
     phase,
     isFirstSession,
     firstSessionId,
+    resumeStepIndex,
   ]);
 
   useEffect(() => {
@@ -483,9 +491,10 @@ export default function WorkoutPlayerScreen() {
         } else if (nextAppState.match(/inactive|background/)) {
           hapticPulseRef.current.stop();
           if (isFirstSession && !isCompleteRef.current) {
+            const prog = progressRef.current;
             const pct =
-              progress.total > 0
-                ? Math.round((progress.current / progress.total) * 100)
+              prog.total > 0
+                ? Math.round((prog.current / prog.total) * 100)
                 : 0;
             void storage.setFirstSessionInProgress(
               true,
@@ -508,8 +517,6 @@ export default function WorkoutPlayerScreen() {
     workoutState?.isRunning,
     workoutState?.isPaused,
     isFirstSession,
-    progress.current,
-    progress.total,
   ]);
 
   const handlePauseResume = async () => {
