@@ -1,4 +1,11 @@
 import { isRestDayForDate } from "@/data/workoutProgram";
+import {
+  describeFirstSessionLengthChange,
+  FIRST_SESSION_VARIANT_SHORT_DAY1,
+  getFirstSessionPlannedSteps,
+  getFirstSessionWorkout,
+  getLegacyFirstSessionWorkout,
+} from "@/data/workoutProgram";
 
 describe("isRestDayForDate — personalized Week 1 schedule", () => {
   const startDate = "2026-07-15";
@@ -13,14 +20,6 @@ describe("isRestDayForDate — personalized Week 1 schedule", () => {
     expect(isRestDayForDate(dayTwo, startDate, "gentle")).toBe(true);
   });
 });
-
-import {
-  describeFirstSessionLengthChange,
-  FIRST_SESSION_VARIANT_SHORT_DAY1,
-  getFirstSessionPlannedSteps,
-  getFirstSessionWorkout,
-  getLegacyFirstSessionWorkout,
-} from "@/data/workoutProgram";
 
 describe("F2 short first-win session", () => {
   it("is ~40–60% shorter than the legacy calibration gate workout", () => {
