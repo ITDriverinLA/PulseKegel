@@ -60,9 +60,12 @@ export class WorkoutEngine {
     this.callbacks = callbacks;
     this.settings = settings || defaultWorkoutSettings;
 
-    // Filter out cooldown segment if disabled (cooldown segments have 'cooldown' in their ID)
+    // Filter out cooldown segment if disabled (cooldown segments have 'cooldown' in their ID).
+    // First-session short win (fs-short-day1) always keeps cool-down so gate plannedSteps
+    // stay aligned with the live engine list used for resume step indices.
     let filteredSegments = workout.segments;
-    if (!this.settings.cooldownEnabled) {
+    const preserveFirstSessionCooldown = workout.id === "fs-short-day1";
+    if (!this.settings.cooldownEnabled && !preserveFirstSessionCooldown) {
       filteredSegments = workout.segments.filter(
         (s) => !s.id.includes("cooldown"),
       );

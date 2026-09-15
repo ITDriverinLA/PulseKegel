@@ -206,7 +206,9 @@ export default function WorkoutPlayerScreen() {
     const workoutSettings = {
       restDuration: settings.restDuration,
       blockRestDuration: settings.blockRestDuration,
-      cooldownEnabled: settings.cooldownEnabled,
+      // First-session short win always keeps cool-down so gate plannedSteps
+      // (3) matches live engine segment count (avoids step 3-of-3 / clamp bugs).
+      cooldownEnabled: isFirstSession ? true : settings.cooldownEnabled,
     };
 
     const engine = new WorkoutEngine(

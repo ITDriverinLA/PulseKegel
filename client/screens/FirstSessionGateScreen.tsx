@@ -246,10 +246,22 @@ export default function FirstSessionGateScreen({
 
     const safeStep = Math.max(0, Math.min(startStep, plannedSteps - 1));
 
+    // Preserve last progress % on Continue; hard-0 only on fresh start / start-over.
+    let progressPct = 0;
+    if (resumeMode) {
+      progressPct = await storage.getFirstSessionProgressPct();
+      if (progressPct <= 0 && safeStep > 0 && plannedSteps > 0) {
+        progressPct = Math.round((safeStep / plannedSteps) * 100);
+      }
+    }
+
     await storage.setFirstSessionId(sessionId);
-    await storage.setFirstSessionInProgress(true, 0, safeStep);
+    await storage.setFirstSessionInProgress(true, progressPct, safeStep);
     await storage.clearFirstSessionGateSource();
-    trackFirstSessionStarted({ session_id: sessionId });
+    // Continue must not re-fire Day-1 start funnel (same sessionId).
+    if (!resumeMode) {
+      trackFirstSessionStarted({ session_id: sessionId });
+    }
 
     navigation.navigate("WorkoutPlayer", {
       workout,
