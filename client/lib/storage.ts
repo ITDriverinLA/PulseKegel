@@ -44,6 +44,7 @@ const STORAGE_KEYS = {
   ONBOARDING_PROGRESS: "pulsekegel_onboarding_progress",
   FIRST_SESSION_IN_PROGRESS: "pulsekegel_first_session_in_progress",
   FIRST_SESSION_PROGRESS: "pulsekegel_first_session_progress",
+  FIRST_SESSION_STEP_INDEX: "pulsekegel_first_session_step_index",
   FIRST_SESSION_CELEBRATED: "pulsekegel_first_session_celebrated",
   FIRST_SESSION_GATE_SOURCE: "pulsekegel_first_session_gate_source",
   FIRST_SESSION_ID: "pulsekegel_first_session_id",
@@ -906,6 +907,7 @@ export const storage = {
   async setFirstSessionInProgress(
     inProgress: boolean,
     progressPct: number = 0,
+    stepIndex?: number,
   ): Promise<void> {
     try {
       if (inProgress) {
@@ -917,10 +919,17 @@ export const storage = {
           STORAGE_KEYS.FIRST_SESSION_PROGRESS,
           String(Math.max(0, Math.min(100, Math.round(progressPct)))),
         );
+        if (typeof stepIndex === "number" && Number.isFinite(stepIndex)) {
+          await AsyncStorage.setItem(
+            STORAGE_KEYS.FIRST_SESSION_STEP_INDEX,
+            String(Math.max(0, Math.floor(stepIndex))),
+          );
+        }
       } else {
         await AsyncStorage.multiRemove([
           STORAGE_KEYS.FIRST_SESSION_IN_PROGRESS,
           STORAGE_KEYS.FIRST_SESSION_PROGRESS,
+          STORAGE_KEYS.FIRST_SESSION_STEP_INDEX,
           STORAGE_KEYS.FIRST_SESSION_ID,
         ]);
       }
@@ -939,6 +948,30 @@ export const storage = {
       return Number.isFinite(n) ? n : 0;
     } catch {
       return 0;
+    }
+  },
+
+  async getFirstSessionStepIndex(): Promise<number | null> {
+    try {
+      const raw = await AsyncStorage.getItem(
+        STORAGE_KEYS.FIRST_SESSION_STEP_INDEX,
+      );
+      if (raw === null || raw === undefined) return null;
+      const n = parseInt(raw, 10);
+      return Number.isFinite(n) && n >= 0 ? n : null;
+    } catch {
+      return null;
+    }
+  },
+
+  async setFirstSessionStepIndex(stepIndex: number): Promise<void> {
+    try {
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.FIRST_SESSION_STEP_INDEX,
+        String(Math.max(0, Math.floor(stepIndex))),
+      );
+    } catch (error) {
+      console.error("Error saving first-session step index:", error);
     }
   },
 

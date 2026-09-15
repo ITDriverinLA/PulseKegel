@@ -107,6 +107,15 @@ describe("analyticsBatchSchema", () => {
     },
     { type: "first_session_skipped", data: { source: "resume" } },
     {
+      type: "first_session_resume_shown",
+      data: { source: "cold", step_index: 1 },
+    },
+    { type: "first_session_resume_tapped", data: { step_index: 1 } },
+    {
+      type: "first_session_restart_tapped",
+      data: { reason: "user_choice" },
+    },
+    {
       type: "permission_prompt_shown",
       data: { type: "push", surface: "settings_reminder_toggle" },
     },

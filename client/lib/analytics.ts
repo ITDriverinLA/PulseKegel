@@ -251,6 +251,28 @@ export function trackFirstSessionSkipped(data?: {
   trackEvent("first_session_skipped", (data ?? {}) as Record<string, unknown>);
 }
 
+export function trackFirstSessionResumeShown(data: {
+  source: FirstSessionGateSource | "cold" | "warm";
+  step_index: number;
+}): void {
+  trackEvent("first_session_resume_shown", data as Record<string, unknown>);
+}
+
+export function trackFirstSessionResumeTapped(data?: {
+  step_index?: number;
+}): void {
+  trackEvent(
+    "first_session_resume_tapped",
+    (data ?? {}) as Record<string, unknown>,
+  );
+}
+
+export function trackFirstSessionRestartTapped(data: {
+  reason: "user_choice" | "state_lost" | string;
+}): void {
+  trackEvent("first_session_restart_tapped", data as Record<string, unknown>);
+}
+
 export function trackPermissionPromptShown(data: {
   type: "push" | "att" | "other";
   surface?: string;

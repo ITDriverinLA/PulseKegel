@@ -73,6 +73,18 @@ describe("activation storage helpers", () => {
     expect(await storage.isFirstSessionInProgress()).toBe(false);
   });
 
+  it("persists first-session step index for mid-abandon resume", async () => {
+    expect(await storage.getFirstSessionStepIndex()).toBeNull();
+    await storage.setFirstSessionInProgress(true, 25, 1);
+    expect(await storage.isFirstSessionInProgress()).toBe(true);
+    expect(await storage.getFirstSessionProgressPct()).toBe(25);
+    expect(await storage.getFirstSessionStepIndex()).toBe(1);
+    await storage.setFirstSessionStepIndex(2);
+    expect(await storage.getFirstSessionStepIndex()).toBe(2);
+    await storage.setFirstSessionInProgress(false);
+    expect(await storage.getFirstSessionStepIndex()).toBeNull();
+  });
+
   it("consumes first-session gate source once", async () => {
     await storage.setFirstSessionGateSource("post_onboarding");
     expect(await storage.consumeFirstSessionGateSource()).toBe(

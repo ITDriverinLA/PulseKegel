@@ -54,25 +54,37 @@ export class WorkoutEngine {
     workout: DayTemplate,
     callbacks: WorkoutEngineCallbacks,
     settings?: WorkoutSettings,
+    startSegmentIndex: number = 0,
   ) {
     this.workout = workout;
     this.callbacks = callbacks;
     this.settings = settings || defaultWorkoutSettings;
 
-    // Filter out cooldown segment if disabled (cooldown segments have 'cooldown' in their ID)
+    // Filter out cooldown segment if disabled (cooldown segments have 'cooldown' in their ID).
+    // First-session short win (fs-short-day1) always keeps cool-down so gate plannedSteps
+    // stay aligned with the live engine list used for resume step indices.
     let filteredSegments = workout.segments;
-    if (!this.settings.cooldownEnabled) {
+    const preserveFirstSessionCooldown = workout.id === "fs-short-day1";
+    if (!this.settings.cooldownEnabled && !preserveFirstSessionCooldown) {
       filteredSegments = workout.segments.filter(
         (s) => !s.id.includes("cooldown"),
       );
     }
     this.segments = filteredSegments;
 
+    const safeStart = Math.max(
+      0,
+      Math.min(
+        Math.floor(startSegmentIndex) || 0,
+        Math.max(0, this.segments.length - 1),
+      ),
+    );
+
     this.state = {
       isRunning: false,
       isPaused: false,
       isComplete: false,
-      segmentIndex: 0,
+      segmentIndex: safeStart,
       setIndex: 0,
       repIndex: 0,
       phase: "squeeze",
@@ -83,6 +95,23 @@ export class WorkoutEngine {
       totalPausedTime: 0,
       isSetRest: false,
     };
+  }
+
+  /** Seek to a safe segment boundary before start() (F1 mid-abandon resume). */
+  seekToSegment(segmentIndex: number): void {
+    if (this.state.isRunning || this.state.isComplete) return;
+    const safeStart = Math.max(
+      0,
+      Math.min(
+        Math.floor(segmentIndex) || 0,
+        Math.max(0, this.segments.length - 1),
+      ),
+    );
+    this.state.segmentIndex = safeStart;
+    this.state.setIndex = 0;
+    this.state.repIndex = 0;
+    this.state.phase = "squeeze";
+    this.state.isSetRest = false;
   }
 
   getCurrentSegment(): Segment | null {
