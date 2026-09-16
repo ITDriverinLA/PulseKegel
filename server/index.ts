@@ -205,6 +205,21 @@ function configureExpoAndLanding(app: express.Application) {
   log("Expo routing: Checking expo-platform header on / and /manifest");
 }
 
+
+function setupApexHostRedirect(app: express.Application) {
+  // Prefer a single host for indexing: 301 www → apex.
+  app.use((req, res, next) => {
+    const raw =
+      req.header("x-forwarded-host") || req.get("host") || "";
+    const host = raw.split(",")[0]?.trim().toLowerCase() || "";
+    if (host === "www.pulsekegel.com" || host.startsWith("www.pulsekegel.com:")) {
+      const targetPath = req.originalUrl || "/";
+      return res.redirect(301, `https://pulsekegel.com${targetPath}`);
+    }
+    next();
+  });
+}
+
 function setupIndexingHeaders(app: express.Application) {
   app.use((req, res, next) => {
     if (!req.path.startsWith("/api")) {
@@ -237,6 +252,7 @@ function setupErrorHandler(app: express.Application) {
 
 (async () => {
   app.set("trust proxy", 1);
+  setupApexHostRedirect(app);
   setupCors(app);
   setupBodyParsing(app);
   setupRequestLogging(app);

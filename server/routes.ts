@@ -437,7 +437,7 @@ Sitemap: https://pulsekegel.com/sitemap.xml
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://pulsekegel.com/blog</loc>
+    <loc>https://pulsekegel.com/blog/</loc>
     <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
