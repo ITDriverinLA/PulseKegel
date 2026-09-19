@@ -7,7 +7,6 @@ import {
   ScrollView,
   TextInput,
   Alert,
-  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
@@ -31,6 +30,13 @@ import {
   pushProgressIfOptedIn,
   type CloudSyncState,
 } from "@/lib/cloudSync";
+import {
+  cloudSignInUnavailableReason,
+  isCloudSignInConfigured,
+  obtainCloudIdentityToken,
+  preferredCloudAuthProvider,
+} from "@/lib/cloudAuth";
+import { MIN_PASSPHRASE_LENGTH } from "@/lib/backupCrypto";
 
 /**
  * G1b — "Moving to a new phone?" checklist + Path A opt-in controls.
@@ -55,10 +61,10 @@ export default function TransferChecklistScreen() {
   }, [refreshSync]);
 
   const ensurePassphrase = (): boolean => {
-    if (passphrase.trim().length < 4) {
+    if (passphrase.trim().length < MIN_PASSPHRASE_LENGTH) {
       Alert.alert(
         "Passphrase needed",
-        "Choose a passphrase of at least 4 characters to encrypt your backup.",
+        `Choose a passphrase of at least ${MIN_PASSPHRASE_LENGTH} characters to encrypt your backup.`,
       );
       return false;
     }
@@ -109,9 +115,7 @@ export default function TransferChecklistScreen() {
                     });
                     Alert.alert(
                       again.ok ? "Imported" : "Import failed",
-                      again.ok
-                        ? "Progress restored from backup."
-                        : again.error,
+                      again.ok ? "Progress restored from backup." : again.error,
                     );
                   })();
                 },
@@ -133,6 +137,15 @@ export default function TransferChecklistScreen() {
   };
 
   const handleEnableCloud = () => {
+    const provider = preferredCloudAuthProvider();
+    if (!isCloudSignInConfigured(provider)) {
+      Alert.alert(
+        "Cloud sync unavailable",
+        cloudSignInUnavailableReason(provider) ??
+          "Sign-In is not configured. Use a local encrypted backup instead.",
+      );
+      return;
+    }
     Alert.alert(
       "Save progress to cloud?",
       "PulseKegel can save your training progress and settings to our servers so you can restore them on a new phone after signing in with Apple or Google.\n\nStored: challenge progress, streaks, session history, settings, tips seen.\nNot stored: workout audio payloads, analytics device keys, OS permissions, passwords.\n\nDefault is local-only. You can turn this off anytime and delete the remote copy.",
@@ -142,21 +155,33 @@ export default function TransferChecklistScreen() {
           text: "Enable cloud sync",
           onPress: () => {
             void (async () => {
-              await enableCloudSyncOptIn({
-                provider: Platform.OS === "ios" ? "apple" : "google",
-              });
-              // Auth requires Ashley-configured client IDs. Dev token path for labs:
-              const provider = Platform.OS === "ios" ? "apple" : "google";
-              const auth = await exchangeIdentityForSyncToken({
-                provider,
-                identityToken: `dev:pending-ashley-config`,
-              });
-              if (!auth.ok) {
-                Alert.alert(
-                  "Cloud sync enabled (local flag)",
-                  "Opt-in saved. Sign-in needs Apple/Google client IDs (Ashley config). No progress was uploaded yet.",
-                );
-              } else {
+              setBusy(true);
+              try {
+                const identity = await obtainCloudIdentityToken(provider);
+                if (!identity.ok) {
+                  Alert.alert(
+                    identity.configured
+                      ? "Sign-in required"
+                      : "Cloud sync unavailable",
+                    identity.error,
+                  );
+                  return;
+                }
+                await enableCloudSyncOptIn({ provider: identity.provider });
+                const auth = await exchangeIdentityForSyncToken({
+                  provider: identity.provider,
+                  identityToken: identity.identityToken,
+                });
+                if (!auth.ok) {
+                  await disableCloudSyncOptIn({ deleteRemote: false });
+                  Alert.alert(
+                    "Sign-in failed",
+                    auth.error +
+                      " Cloud sync was not enabled. No progress was uploaded.",
+                  );
+                  await refreshSync();
+                  return;
+                }
                 const pushed = await pushProgressIfOptedIn();
                 Alert.alert(
                   "Cloud sync on",
@@ -164,8 +189,10 @@ export default function TransferChecklistScreen() {
                     ? "Progress uploaded."
                     : "Signed in. Upload pending — check connection.",
                 );
+                await refreshSync();
+              } finally {
+                setBusy(false);
               }
-              await refreshSync();
             })();
           },
         },
@@ -265,7 +292,9 @@ export default function TransferChecklistScreen() {
           {steps.map((step, i) => (
             <View key={step.id}>
               {i > 0 && (
-                <View style={[styles.divider, { backgroundColor: cp.divider }]} />
+                <View
+                  style={[styles.divider, { backgroundColor: cp.divider }]}
+                />
               )}
               <View style={styles.stepRow}>
                 <Feather name="check-circle" size={18} color={cp.neonGreen} />
@@ -273,7 +302,9 @@ export default function TransferChecklistScreen() {
                   <Text style={[styles.stepTitle, { color: cp.text }]}>
                     {step.title}
                   </Text>
-                  <Text style={[styles.stepDetail, { color: cp.textSecondary }]}>
+                  <Text
+                    style={[styles.stepDetail, { color: cp.textSecondary }]}
+                  >
                     {step.detail}
                   </Text>
                 </View>
@@ -289,7 +320,7 @@ export default function TransferChecklistScreen() {
           value={passphrase}
           onChangeText={setPassphrase}
           secureTextEntry
-          placeholder="Min 4 characters"
+          placeholder="Min 8 characters"
           placeholderTextColor={cp.textMuted}
           style={[
             styles.input,
@@ -317,10 +348,7 @@ export default function TransferChecklistScreen() {
         <Pressable
           onPress={handleImport}
           disabled={busy}
-          style={[
-            styles.secondaryBtn,
-            { borderColor: cp.neonCyan },
-          ]}
+          style={[styles.secondaryBtn, { borderColor: cp.neonCyan }]}
           testID="button-import-backup"
         >
           <Feather name="download" size={18} color={cp.neonCyan} />
@@ -349,16 +377,26 @@ export default function TransferChecklistScreen() {
               : "Off — local-only (default)"}
           </Text>
           {!syncState?.optIn ? (
-            <Pressable
-              onPress={handleEnableCloud}
-              style={styles.linkRow}
-              testID="button-enable-cloud-sync"
-            >
-              <Feather name="cloud" size={18} color={cp.neonGreen} />
-              <Text style={[styles.linkText, { color: cp.neonGreen }]}>
-                Save progress to cloud…
-              </Text>
-            </Pressable>
+            isCloudSignInConfigured() ? (
+              <Pressable
+                onPress={handleEnableCloud}
+                style={styles.linkRow}
+                testID="button-enable-cloud-sync"
+              >
+                <Feather name="cloud" size={18} color={cp.neonGreen} />
+                <Text style={[styles.linkText, { color: cp.neonGreen }]}>
+                  Save progress to cloud…
+                </Text>
+              </Pressable>
+            ) : (
+              <View style={styles.linkRow} testID="cloud-sync-unavailable">
+                <Feather name="cloud-off" size={18} color={cp.textMuted} />
+                <Text style={[styles.linkText, { color: cp.textMuted }]}>
+                  Cloud sync unavailable — Sign-In not configured. Use local
+                  backup above.
+                </Text>
+              </View>
+            )
           ) : (
             <>
               <Pressable onPress={handlePull} style={styles.linkRow}>
@@ -407,7 +445,11 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     marginBottom: Spacing.md,
   },
-  stepRow: { flexDirection: "row", gap: Spacing.sm, paddingVertical: Spacing.sm },
+  stepRow: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+    paddingVertical: Spacing.sm,
+  },
   stepText: { flex: 1 },
   stepTitle: { fontSize: 15, fontWeight: "600", marginBottom: 4 },
   stepDetail: { fontSize: 13, lineHeight: 18 },

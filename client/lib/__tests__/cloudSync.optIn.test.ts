@@ -33,6 +33,24 @@ jest.mock("@react-native-async-storage/async-storage", () => {
   };
 });
 
+jest.mock("expo-secure-store", () => {
+  const store = new Map<string, string>();
+  return {
+    getItemAsync: jest.fn((k: string) =>
+      Promise.resolve(store.has(k) ? (store.get(k) as string) : null),
+    ),
+    setItemAsync: jest.fn((k: string, v: string) => {
+      store.set(k, v);
+      return Promise.resolve();
+    }),
+    deleteItemAsync: jest.fn((k: string) => {
+      store.delete(k);
+      return Promise.resolve();
+    }),
+    __store: store,
+  };
+});
+
 jest.mock("../analytics", () => ({
   trackEvent: jest.fn(),
 }));
@@ -58,8 +76,13 @@ import {
 const store = (AsyncStorage as unknown as { __store: Map<string, string> })
   .__store;
 
+const secureStore = require("expo-secure-store") as {
+  __store: Map<string, string>;
+};
+
 beforeEach(async () => {
   store.clear();
+  secureStore.__store.clear();
   jest.clearAllMocks();
   await _resetCloudSyncPrefsForTests();
   global.fetch = jest.fn();

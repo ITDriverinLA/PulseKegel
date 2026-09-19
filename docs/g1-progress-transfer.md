@@ -8,11 +8,15 @@ explicitly opts in (OP1). Fresh install never uploads until opt-in.
 ### Path B — Local phone-to-phone (no cloud)
 
 1. Settings → **Moving to a new phone?**
-2. Choose a passphrase → **Export & share backup** (AirDrop / Files / share sheet)
+2. Choose a passphrase (min **8** characters) → **Export & share backup**
 3. On the new phone → **Import backup file** with the same passphrase
 4. Works with **network off** and **no account** (OP2)
 
-Format: `PKB1` encrypted envelope (`schema_version: 1`), HMAC-authenticated.
+Format: **`PKB2`** envelope — PBKDF2-SHA256 (210k iterations) + **AES-256-GCM**
+(AEAD). Min passphrase length: 8.
+
+**Migration:** Legacy `PKB1` (custom SHA-256 XOR + weak KDF) is **not** decrypted.
+Decrypt fails closed with a clear message — re-export from a current app build.
 Corrupt / wrong passphrase → safe fail (no partial apply).
 
 Events: `transfer_flow_started`, `transfer_flow_completed`, `transfer_flow_fallback_backup`
@@ -22,9 +26,14 @@ Events: `transfer_flow_started`, `transfer_flow_completed`, `transfer_flow_fallb
 1. Soft prompt after first-session complete, or Settings → Moving to a new phone?
 2. Affirmative copy: **Save progress to cloud…** listing what is stored (OP4)
 3. Dismiss = stay local-only
-4. Auth (Apple iOS / Google Android) only after opt-in; then push/pull
+4. Auth (Apple iOS / Google Android) only after opt-in **and** after a real
+   Sign-In identity token; then push/pull
 5. Opt-out stops uploads; offer delete remote copy (OP3)
-6. **Zero** `/api/sync/push` without opt-in + Bearer token
+6. **Zero** `/api/sync/push` without opt-in + Bearer token (token in **SecureStore**)
+
+If `EXPO_PUBLIC_APPLE_CLIENT_ID` / `EXPO_PUBLIC_GOOGLE_CLIENT_ID` are missing,
+**Enable Cloud is disabled** in the UI (fail closed) — use Path B instead.
+There is no shared `dev:pending-*` identity.
 
 Conflict rules: union of completed days; settings LWW; tips-seen OR; never
 replace non-empty local with empty remote without confirm (default No).
@@ -42,31 +51,28 @@ Excluded: analytics device id, OS permissions, ephemeral UI, secrets, sync token
 
 ## Ashley config (required for Path A production auth)
 
-| Env / secret | Purpose |
-|---|---|
-| `APPLE_CLIENT_ID` | Apple Sign-In audience (iOS) |
-| `GOOGLE_CLIENT_ID` | Google Sign-In audience (Android) |
-| `SYNC_DEV_AUTH_SECRET` | Optional lab-only: accept `identityToken: "dev:<subject>"` when client IDs unset |
-| Database | Run `npm run db:push` after deploy so `sync_accounts` / `sync_snapshots` exist |
+| Env / secret                   | Purpose                                                                                                                                                 |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `APPLE_CLIENT_ID`              | Server: Apple Sign-In audience (JWT `aud`)                                                                                                              |
+| `GOOGLE_CLIENT_ID`             | Server: Google Sign-In audience (JWT `aud`)                                                                                                             |
+| `EXPO_PUBLIC_APPLE_CLIENT_ID`  | Client: enables Apple Sign-In UI                                                                                                                        |
+| `EXPO_PUBLIC_GOOGLE_CLIENT_ID` | Client: enables Google Sign-In UI                                                                                                                       |
+| `SYNC_DEV_AUTH_SECRET`         | Optional lab-only: accept proving tokens `dev:<secret>` or `dev:<secret>:<subject>` when server client IDs unset. **Never** trusts bare `dev:anything`. |
+| Database                       | Run `npm run db:push` after deploy so `sync_accounts` / `sync_snapshots` exist                                                                          |
 
-Client Expo IDs (EAS secrets / app config) must match the server client IDs.
-Until configured, opt-in still stores the local flag; auth returns `503` with a
-clear message — **no silent uploads**.
+Server verifies Apple/Google identity tokens via **JWKS** (signature + `aud` +
+`iss` + `exp`). Unsigned / wrong-audience JWTs are rejected.
+
+Until client IDs are provisioned, Enable Cloud stays unavailable on device;
+`/api/sync/auth` returns `503` for production tokens without client IDs —
+**no silent uploads**.
 
 ## AC coverage
 
-| AC | Coverage |
-|---|---|
+| AC  | Coverage                                                                       |
+| --- | ------------------------------------------------------------------------------ |
 | OP1 | Default opt-in flag off; `pushProgressIfOptedIn` no-ops; tests assert no fetch |
-| OP2 | Path B export/import offline / no account |
-| OP3 | Disable + optional remote delete via `DELETE /api/sync/delete` |
-| OP4 | Affirmative UI copy in modal + Transfer checklist |
-| OP5 | Sync/transfer analytics carry path/reason only — no workout payloads |
-
-## Known limits
-
-- Full Apple/Google JWKS verification lands when client IDs are provisioned;
-  JWT `sub`/`aud` checks are in place as a bridge.
-- iCloud/CloudKit-style storage is treated as off-device and still requires the
-  same explicit opt-in copy.
-- Purchases remain StoreKit / Play source of truth; backup only caches UX flags.
+| OP2 | Path B export/import offline / no account                                      |
+| OP3 | Disable + optional remote delete via `DELETE /api/sync/delete`                 |
+| OP4 | Affirmative UI copy in modal + Transfer checklist                              |
+| OP5 | Sync/transfer analytics carry path/reason only — no workout payloads           |

@@ -164,7 +164,9 @@ describe("pruneInProgressSession", () => {
       {
         step_index: 2,
         session_id: "abc",
-        updated_at: new Date(now - IN_PROGRESS_SESSION_TTL_MS - 1).toISOString(),
+        updated_at: new Date(
+          now - IN_PROGRESS_SESSION_TTL_MS - 1,
+        ).toISOString(),
       },
       now,
     );

@@ -366,15 +366,11 @@ export function trackTransferFlowStarted(data: {
   trackEvent("transfer_flow_started", data as Record<string, unknown>);
 }
 
-export function trackTransferFlowCompleted(data: {
-  path: string;
-}): void {
+export function trackTransferFlowCompleted(data: { path: string }): void {
   trackEvent("transfer_flow_completed", data as Record<string, unknown>);
 }
 
-export function trackTransferFlowFallback(data: {
-  reason: string;
-}): void {
+export function trackTransferFlowFallback(data: { reason: string }): void {
   trackEvent("transfer_flow_fallback_backup", data as Record<string, unknown>);
 }
 

@@ -4,13 +4,14 @@
  */
 
 import type { Express, Request, Response, NextFunction } from "express";
-import { createHash, randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "./db";
 import { syncAccounts, syncSnapshots } from "../shared/schema";
 import { createRateLimiter } from "./security";
 import { PROGRESS_TRANSFER_SCHEMA_VERSION } from "../shared/progressTransfer";
+import { sha256Hex, verifyIdentityToken } from "./syncAuth";
 
 const syncAuthSchema = z
   .object({
@@ -35,11 +36,6 @@ const syncPushSchema = z
       .passthrough(),
   })
   .strict();
-
-function sha256Hex(value: string): string {
-  return createHash("sha256").update(value).digest("hex");
-}
-
 
 type AuthedRequest = Request & {
   syncAccountId?: string;
@@ -76,62 +72,6 @@ async function requireSyncAuth(
     next();
   } catch {
     res.status(503).json({ error: "Sync storage unavailable" });
-  }
-}
-
-/**
- * Verify Apple/Google identity tokens when client IDs are configured.
- * Dev fallback: SYNC_DEV_AUTH_SECRET + identityToken === `dev:<subject>` when
- * EXPO_PUBLIC / server Apple/Google client IDs are unset (Ashley config pending).
- */
-async function verifyIdentityToken(
-  provider: "apple" | "google",
-  identityToken: string,
-): Promise<{ subject: string } | { error: string; status: number }> {
-  const appleClientId = process.env.APPLE_CLIENT_ID;
-  const googleClientId = process.env.GOOGLE_CLIENT_ID;
-  const devSecret = process.env.SYNC_DEV_AUTH_SECRET;
-
-  if (provider === "apple" && !appleClientId) {
-    if (devSecret && identityToken.startsWith("dev:")) {
-      return { subject: identityToken.slice(4) || "dev-apple" };
-    }
-    return {
-      error:
-        "Apple Sign-In not configured (set APPLE_CLIENT_ID — Ashley config)",
-      status: 503,
-    };
-  }
-  if (provider === "google" && !googleClientId) {
-    if (devSecret && identityToken.startsWith("dev:")) {
-      return { subject: identityToken.slice(4) || "dev-google" };
-    }
-    return {
-      error:
-        "Google Sign-In not configured (set GOOGLE_CLIENT_ID — Ashley config)",
-      status: 503,
-    };
-  }
-
-  // Production path: decode JWT payload without full JWKS verification here.
-  // Full Apple/Google JWKS verification lands when client IDs are provisioned.
-  try {
-    const parts = identityToken.split(".");
-    if (parts.length < 2) {
-      return { error: "Invalid identity token", status: 401 };
-    }
-    const payloadJson = Buffer.from(parts[1]!, "base64url").toString("utf8");
-    const payload = JSON.parse(payloadJson) as { sub?: string; aud?: string };
-    if (!payload.sub) {
-      return { error: "Invalid identity token (no sub)", status: 401 };
-    }
-    const expectedAud = provider === "apple" ? appleClientId : googleClientId;
-    if (expectedAud && payload.aud && payload.aud !== expectedAud) {
-      return { error: "Invalid identity token audience", status: 401 };
-    }
-    return { subject: payload.sub };
-  } catch {
-    return { error: "Invalid identity token", status: 401 };
   }
 }
 

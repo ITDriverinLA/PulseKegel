@@ -19,7 +19,12 @@ export function CloudSyncOptInModal({ visible, onEnable, onDismiss }: Props) {
   const { cp, isDarkMode } = useThemePreference();
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onDismiss}
+    >
       <View style={styles.overlay}>
         <View style={[styles.container, { borderColor: `${cp.neonCyan}4D` }]}>
           <LinearGradient
@@ -31,10 +36,7 @@ export function CloudSyncOptInModal({ visible, onEnable, onDismiss }: Props) {
             style={styles.gradient}
           >
             <View
-              style={[
-                styles.iconWrap,
-                { backgroundColor: `${cp.neonCyan}26` },
-              ]}
+              style={[styles.iconWrap, { backgroundColor: `${cp.neonCyan}26` }]}
             >
               <Feather name="cloud" size={40} color={cp.neonCyan} />
             </View>

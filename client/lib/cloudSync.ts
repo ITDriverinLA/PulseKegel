@@ -5,6 +5,7 @@
  */
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 import {
   mergeTransferPayloads,
@@ -12,22 +13,44 @@ import {
 } from "@shared/progressTransfer";
 import { getApiUrl } from "./query-client";
 import { trackEvent } from "./analytics";
-import {
-  applyTransferPayload,
-  buildTransferPayload,
-} from "./progressTransfer";
+import { applyTransferPayload, buildTransferPayload } from "./progressTransfer";
 
 const KEYS = {
   OPT_IN: "pulsekegel_cloud_sync_opt_in",
   PROMPT_DISMISSED: "pulsekegel_cloud_sync_prompt_dismissed",
   ACCOUNT_ID: "pulsekegel_cloud_sync_account_id",
-  /** Session token after auth — never include in backup/analytics. */
+  /** Session Bearer token after auth — stored in SecureStore, never in backups. */
   TOKEN: "pulsekegel_cloud_sync_token",
   PROVIDER: "pulsekegel_cloud_sync_provider",
   LAST_PULL_AT: "pulsekegel_cloud_sync_last_pull",
   LAST_PUSH_AT: "pulsekegel_cloud_sync_last_push",
   REMOTE_DELETED: "pulsekegel_cloud_sync_remote_deleted",
 } as const;
+
+async function getSecureToken(): Promise<string | null> {
+  try {
+    return await SecureStore.getItemAsync(KEYS.TOKEN);
+  } catch {
+    return null;
+  }
+}
+
+async function setSecureToken(token: string): Promise<void> {
+  await SecureStore.setItemAsync(KEYS.TOKEN, token);
+}
+
+async function deleteSecureToken(): Promise<void> {
+  try {
+    await SecureStore.deleteItemAsync(KEYS.TOKEN);
+  } catch {
+    // ignore
+  }
+  try {
+    await AsyncStorage.removeItem(KEYS.TOKEN);
+  } catch {
+    // migrate away from legacy AsyncStorage token if present
+  }
+}
 
 export type CloudSyncProvider = "apple" | "google" | "none";
 
@@ -58,8 +81,7 @@ export async function getCloudSyncState(): Promise<CloudSyncState> {
       AsyncStorage.getItem(KEYS.LAST_PULL_AT),
       AsyncStorage.getItem(KEYS.LAST_PUSH_AT),
     ]);
-  const p =
-    provider === "apple" || provider === "google" ? provider : "none";
+  const p = provider === "apple" || provider === "google" ? provider : "none";
   return {
     optIn,
     promptDismissed,
@@ -103,8 +125,8 @@ export async function disableCloudSyncOptIn(opts?: {
   if (opts?.deleteRemote) {
     remoteDeleted = await deleteRemoteCopy();
   }
+  await deleteSecureToken();
   await AsyncStorage.multiRemove([
-    KEYS.TOKEN,
     KEYS.ACCOUNT_ID,
     KEYS.LAST_PULL_AT,
     KEYS.LAST_PUSH_AT,
@@ -136,14 +158,14 @@ export async function setCloudAuthSession(params: {
     throw new Error("Cloud auth refused: opt-in required (OP1)");
   }
   await AsyncStorage.setItem(KEYS.ACCOUNT_ID, params.accountId);
-  await AsyncStorage.setItem(KEYS.TOKEN, params.token);
+  await setSecureToken(params.token);
   await AsyncStorage.setItem(KEYS.PROVIDER, params.provider);
 }
 
 async function getAuthHeaders(): Promise<HeadersInit | null> {
   const optedIn = await isCloudSyncOptedIn();
   if (!optedIn) return null;
-  const token = await AsyncStorage.getItem(KEYS.TOKEN);
+  const token = await getSecureToken();
   if (!token) return null;
   return {
     "Content-Type": "application/json",
@@ -156,7 +178,7 @@ async function getAuthHeaders(): Promise<HeadersInit | null> {
  */
 export async function canUploadProgress(): Promise<boolean> {
   if (!(await isCloudSyncOptedIn())) return false;
-  const token = await AsyncStorage.getItem(KEYS.TOKEN);
+  const token = await getSecureToken();
   return Boolean(token);
 }
 
@@ -265,7 +287,7 @@ export async function pullAndMergeIfOptedIn(opts?: {
 async function deleteRemoteCopy(): Promise<boolean> {
   const headers = await getAuthHeaders();
   // If already opted out token may still be present briefly — read raw token.
-  const token = await AsyncStorage.getItem(KEYS.TOKEN);
+  const token = await getSecureToken();
   if (!token && !headers) return false;
   try {
     const baseUrl = getApiUrl();
@@ -332,5 +354,8 @@ export async function exchangeIdentityForSyncToken(params: {
 
 /** Test helper — clears sync prefs without touching progress. */
 export async function _resetCloudSyncPrefsForTests(): Promise<void> {
-  await AsyncStorage.multiRemove(Object.values(KEYS));
+  await deleteSecureToken();
+  await AsyncStorage.multiRemove(
+    Object.values(KEYS).filter((k) => k !== KEYS.TOKEN),
+  );
 }

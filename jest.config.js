@@ -15,14 +15,19 @@ module.exports = {
     enableSymlinks: false,
     forceNodeFilesystemAPI: true,
   },
+  // jose / @noble ship ESM-only; let ts-jest compile them to CJS for tests.
+  transformIgnorePatterns: [
+    "/node_modules/(?!(jose|@noble/ciphers|@noble/hashes)/)",
+  ],
   transform: {
-    "^.+\\.tsx?$": [
+    "^.+\\.[tj]sx?$": [
       "ts-jest",
       {
         tsconfig: {
           module: "commonjs",
           target: "es2020",
           esModuleInterop: true,
+          allowJs: true,
           jsx: "react",
           isolatedModules: true,
           skipLibCheck: true,

@@ -1,21 +1,32 @@
 /**
  * Path B — passphrase-based encrypt/decrypt for local progress backups.
- * Uses SHA-256 keystream + HMAC-SHA256 (encrypt-then-MAC) via expo-crypto
- * digests so no native AES module is required. Safe-fail on corrupt/tampered.
+ *
+ * Format PKB2: PBKDF2-SHA256 (210k iters) + AES-256-GCM (AEAD).
+ * PKB1 (custom SHA-256 XOR + weak KDF) is rejected with a clear safe-fail —
+ * re-export from a current build. Min passphrase length: 8.
  */
 
-import * as Crypto from "expo-crypto";
+import * as ExpoCrypto from "expo-crypto";
+import { gcm } from "@noble/ciphers/aes.js";
+import { pbkdf2 } from "@noble/hashes/pbkdf2.js";
+import { sha256 } from "@noble/hashes/sha2.js";
 
-const MAGIC = "PKB1";
-const PBKDF_ROUNDS = 256;
+const MAGIC = "PKB2";
+const LEGACY_MAGIC = "PKB1";
+const PBKDF2_ITERATIONS = 210_000;
+const KEY_BYTES = 32;
 const SALT_BYTES = 16;
+const IV_BYTES = 12;
+export const MIN_PASSPHRASE_LENGTH = 8;
 
 export type EncryptedBackupEnvelope = {
   magic: typeof MAGIC;
   schema_version: number;
+  kdf: "pbkdf2-sha256";
+  iterations: number;
   salt_b64: string;
+  iv_b64: string;
   ciphertext_b64: string;
-  mac_b64: string;
 };
 
 function bytesToB64(bytes: Uint8Array): string {
@@ -23,7 +34,6 @@ function bytesToB64(bytes: Uint8Array): string {
   for (let i = 0; i < bytes.length; i++) {
     binary += String.fromCharCode(bytes[i]!);
   }
-  // btoa available in RN / Jest jsdom; Buffer fallback for Node.
   if (typeof btoa === "function") {
     return btoa(binary);
   }
@@ -56,54 +66,19 @@ function bytesToUtf8(bytes: Uint8Array): string {
   return Buffer.from(bytes).toString("utf8");
 }
 
-function hexToBytes(hex: string): Uint8Array {
-  const clean = hex.length % 2 === 0 ? hex : `0${hex}`;
-  const out = new Uint8Array(clean.length / 2);
-  for (let i = 0; i < out.length; i++) {
-    out[i] = parseInt(clean.slice(i * 2, i * 2 + 2), 16);
-  }
-  return out;
+async function randomBytes(size: number): Promise<Uint8Array> {
+  return ExpoCrypto.getRandomBytesAsync(size);
 }
 
-async function sha256Hex(input: string): Promise<string> {
-  return Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, input);
-}
-
-async function deriveKeyHex(passphrase: string, saltB64: string): Promise<string> {
-  let acc = `${passphrase}:${saltB64}`;
-  for (let i = 0; i < PBKDF_ROUNDS; i++) {
-    acc = await sha256Hex(`${acc}:${i}`);
-  }
-  return acc;
-}
-
-async function keyedMacHex(keyHex: string, messageB64: string): Promise<string> {
-  return sha256Hex(`${keyHex}:mac:${messageB64}`);
-}
-
-async function keystreamBytes(
-  keyHex: string,
-  length: number,
-): Promise<Uint8Array> {
-  const out = new Uint8Array(length);
-  let offset = 0;
-  let counter = 0;
-  while (offset < length) {
-    const block = hexToBytes(await sha256Hex(`${keyHex}:ks:${counter}`));
-    const n = Math.min(block.length, length - offset);
-    out.set(block.subarray(0, n), offset);
-    offset += n;
-    counter += 1;
-  }
-  return out;
-}
-
-function xorBytes(a: Uint8Array, b: Uint8Array): Uint8Array {
-  const out = new Uint8Array(a.length);
-  for (let i = 0; i < a.length; i++) {
-    out[i] = a[i]! ^ b[i]!;
-  }
-  return out;
+function deriveKey(
+  passphrase: string,
+  salt: Uint8Array,
+  iterations: number,
+): Uint8Array {
+  return pbkdf2(sha256, passphrase, salt, {
+    c: iterations,
+    dkLen: KEY_BYTES,
+  });
 }
 
 export async function encryptBackupPayload(
@@ -111,23 +86,24 @@ export async function encryptBackupPayload(
   passphrase: string,
   schemaVersion: number = 1,
 ): Promise<string> {
-  if (!passphrase || passphrase.length < 4) {
-    throw new Error("Passphrase must be at least 4 characters");
+  if (!passphrase || passphrase.length < MIN_PASSPHRASE_LENGTH) {
+    throw new Error(
+      `Passphrase must be at least ${MIN_PASSPHRASE_LENGTH} characters`,
+    );
   }
-  const salt = await Crypto.getRandomBytesAsync(SALT_BYTES);
-  const saltB64 = bytesToB64(salt);
-  const keyHex = await deriveKeyHex(passphrase, saltB64);
-  const plainBytes = utf8ToBytes(plaintextJson);
-  const ks = await keystreamBytes(keyHex, plainBytes.length);
-  const cipherBytes = xorBytes(plainBytes, ks);
-  const ciphertextB64 = bytesToB64(cipherBytes);
-  const macHex = await keyedMacHex(keyHex, ciphertextB64);
+  const salt = await randomBytes(SALT_BYTES);
+  const iv = await randomBytes(IV_BYTES);
+  const key = deriveKey(passphrase, salt, PBKDF2_ITERATIONS);
+  const aes = gcm(key, iv);
+  const cipherBytes = aes.encrypt(utf8ToBytes(plaintextJson));
   const envelope: EncryptedBackupEnvelope = {
     magic: MAGIC,
     schema_version: schemaVersion,
-    salt_b64: saltB64,
-    ciphertext_b64: ciphertextB64,
-    mac_b64: bytesToB64(hexToBytes(macHex)),
+    kdf: "pbkdf2-sha256",
+    iterations: PBKDF2_ITERATIONS,
+    salt_b64: bytesToB64(salt),
+    iv_b64: bytesToB64(iv),
+    ciphertext_b64: bytesToB64(cipherBytes),
   };
   return JSON.stringify(envelope);
 }
@@ -136,39 +112,61 @@ export async function decryptBackupPayload(
   envelopeText: string,
   passphrase: string,
 ): Promise<string> {
-  let envelope: EncryptedBackupEnvelope;
+  let envelope: Record<string, unknown>;
   try {
-    envelope = JSON.parse(envelopeText) as EncryptedBackupEnvelope;
+    envelope = JSON.parse(envelopeText) as Record<string, unknown>;
   } catch {
     throw new Error("Corrupt backup: not valid JSON");
+  }
+
+  if (envelope.magic === LEGACY_MAGIC) {
+    throw new Error(
+      "Corrupt backup: unsupported format (PKB1). Re-export with a current app build (PKB2).",
+    );
   }
   if (envelope.magic !== MAGIC) {
     throw new Error("Corrupt backup: unknown format");
   }
+
+  const saltB64 = envelope.salt_b64;
+  const ivB64 = envelope.iv_b64;
+  const ciphertextB64 = envelope.ciphertext_b64;
+  const iterations = envelope.iterations;
   if (
-    typeof envelope.salt_b64 !== "string" ||
-    typeof envelope.ciphertext_b64 !== "string" ||
-    typeof envelope.mac_b64 !== "string"
+    typeof saltB64 !== "string" ||
+    typeof ivB64 !== "string" ||
+    typeof ciphertextB64 !== "string" ||
+    typeof iterations !== "number" ||
+    !Number.isFinite(iterations) ||
+    iterations < 100_000
   ) {
     throw new Error("Corrupt backup: missing fields");
   }
-  const keyHex = await deriveKeyHex(passphrase, envelope.salt_b64);
-  const expectedMacHex = await keyedMacHex(keyHex, envelope.ciphertext_b64);
-  const expectedMacB64 = bytesToB64(hexToBytes(expectedMacHex));
-  if (expectedMacB64 !== envelope.mac_b64) {
-    throw new Error("Corrupt backup: authentication failed (wrong passphrase or tampered file)");
+
+  const salt = b64ToBytes(saltB64);
+  const iv = b64ToBytes(ivB64);
+  const cipherBytes = b64ToBytes(ciphertextB64);
+  if (iv.length !== IV_BYTES) {
+    throw new Error("Corrupt backup: invalid IV");
   }
-  const cipherBytes = b64ToBytes(envelope.ciphertext_b64);
-  const ks = await keystreamBytes(keyHex, cipherBytes.length);
-  const plainBytes = xorBytes(cipherBytes, ks);
-  return bytesToUtf8(plainBytes);
+
+  const key = deriveKey(passphrase, salt, iterations);
+  try {
+    const aes = gcm(key, iv);
+    const plainBytes = aes.decrypt(cipherBytes);
+    return bytesToUtf8(plainBytes);
+  } catch {
+    throw new Error(
+      "Corrupt backup: authentication failed (wrong passphrase or tampered file)",
+    );
+  }
 }
 
-/** True when text looks like a PKB1 envelope (not plaintext JSON payload). */
+/** True when text looks like a PKB2 (or legacy PKB1) envelope. */
 export function looksLikeEncryptedBackup(text: string): boolean {
   try {
     const parsed = JSON.parse(text) as { magic?: string };
-    return parsed?.magic === MAGIC;
+    return parsed?.magic === MAGIC || parsed?.magic === LEGACY_MAGIC;
   } catch {
     return false;
   }
