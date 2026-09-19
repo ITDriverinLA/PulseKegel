@@ -21,6 +21,12 @@ Corrupt / wrong passphrase → safe fail (no partial apply).
 
 Events: `transfer_flow_started`, `transfer_flow_completed`, `transfer_flow_fallback_backup`
 
+**Export compliance:** Path B PKB2 uses AES-GCM under a user passphrase for
+local transfer only. Ashley confirmed this is covered by an export exemption;
+`ITSAppUsesNonExemptEncryption` remains `false` in `app.json` (see
+`docs/security-operations.md`). Do not describe the app as "HTTPS/OS encryption
+only."
+
 ### Path A — Cloud sync (opt-in only)
 
 1. Soft prompt after first-session complete, or Settings → Moving to a new phone?
