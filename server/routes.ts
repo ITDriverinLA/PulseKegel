@@ -11,6 +11,7 @@ import { analyticsEvents } from "../shared/schema";
 import { sql, countDistinct } from "drizzle-orm";
 import { createRateLimiter, requireAnalyticsAdmin } from "./security";
 import { analyticsBatchSchema, weeklyReviewSchema } from "./requestValidation";
+import { registerSyncRoutes } from "./syncRoutes";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -200,6 +201,9 @@ function buildFallback(
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Epic G1 Path A — opt-in cloud sync (auth required; no anonymous progress writes)
+  registerSyncRoutes(app);
+
   // Serve ambient music tracks for the /music web page
   app.use(
     "/sounds",

@@ -57,9 +57,14 @@ import {
 } from "@/contexts/ThemePreferenceContext";
 import { useAudio } from "@/contexts/AudioContext";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { CompositeNavigationProp } from "@react-navigation/native";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { SettingsStackParamList } from "@/navigation/SettingsStackNavigator";
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type NavigationProp = CompositeNavigationProp<
+  NativeStackNavigationProp<SettingsStackParamList, "Settings">,
+  NativeStackNavigationProp<RootStackParamList>
+>;
 
 const THEME_OPTIONS: {
   value: string;
@@ -1105,6 +1110,55 @@ export default function SettingsScreen() {
                 {isRestoring ? "Restoring..." : "Restore Purchases"}
               </Text>
             </Pressable>
+          </View>
+        </Animated.View>
+
+        <Animated.View
+          entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(
+            ANIM_DELAY_3XL,
+          )}
+        >
+          <Text
+            style={[
+              styles.sectionTitle,
+              {
+                color: cp.neonCyan,
+                textShadowColor: isDarkMode ? cp.neonCyan : "transparent",
+              },
+            ]}
+          >
+            PROGRESS TRANSFER
+          </Text>
+          <View
+            style={[
+              styles.card,
+              { backgroundColor: cp.cardBg, borderColor: cp.cardBorder },
+            ]}
+          >
+            <Pressable
+              style={styles.settingsRow}
+              onPress={() => navigation.navigate("TransferChecklist")}
+              testID="button-moving-to-new-phone"
+            >
+              <Feather name="smartphone" size={20} color={cp.neonCyan} />
+              <Text style={[styles.settingsRowText, { color: cp.text }]}>
+                Moving to a new phone?
+              </Text>
+              <Feather name="chevron-right" size={18} color={cp.textMuted} />
+            </Pressable>
+            <View style={[styles.divider, { backgroundColor: cp.divider }]} />
+            <Text
+              style={{
+                color: cp.textSecondary,
+                fontSize: 12,
+                lineHeight: 17,
+                paddingHorizontal: Spacing.md,
+                paddingBottom: Spacing.md,
+              }}
+            >
+              Default is local-only. Export an encrypted backup (works offline,
+              no account) or optionally enable cloud sync after explicit opt-in.
+            </Text>
           </View>
         </Animated.View>
 

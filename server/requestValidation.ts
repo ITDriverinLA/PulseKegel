@@ -503,6 +503,81 @@ const analyticsEventSchema = z.discriminatedUnion("type", [
     .strict(),
   z
     .object({
+      type: z.literal("transfer_flow_started"),
+      data: z
+        .object({
+          path: z.string().trim().min(1).max(64),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("transfer_flow_completed"),
+      data: z
+        .object({
+          path: z.string().trim().min(1).max(64),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("transfer_flow_fallback_backup"),
+      data: z
+        .object({
+          reason: z.string().trim().min(1).max(64),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("sync_enabled"),
+      data: z
+        .object({
+          provider: z.string().trim().min(1).max(32).optional(),
+          platform: z
+            .enum(["ios", "android", "web", "windows", "macos"])
+            .optional(),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("sync_pull_ok"),
+      data: z.object({}).strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("sync_push_ok"),
+      data: z.object({}).strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("sync_conflict"),
+      data: z.record(z.unknown()),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("sync_error"),
+      data: z.record(z.unknown()),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
       type: z.enum([
         "restore_started",
         "restore_completed",
