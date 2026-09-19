@@ -50,3 +50,16 @@ Apple/Google identity tokens are verified with JWKS (signature, aud, iss, exp).
 If client IDs are missing, `/api/sync/auth` returns `503` unless a proving
 `SYNC_DEV_AUTH_SECRET` lab token is presented. Sync push/pull/delete always
 require a valid session token — there is no anonymous progress upload path.
+
+## App Store export compliance (`ITSAppUsesNonExemptEncryption`)
+
+`app.json` sets `expo.ios.infoPlist.ITSAppUsesNonExemptEncryption` to `false` so
+App Store Connect does not prompt Missing Compliance on every iOS upload.
+
+Ashley confirmed (2026-09-19) that Path B **PKB2** local backup encryption
+(PBKDF2-SHA256 + AES-256-GCM, user passphrase, on-device / AirDrop / Files only)
+is covered by an applicable US export exemption for this product. The flag is
+**not** a claim that the app uses only HTTPS/OS crypto — Path B uses AEAD for
+optional local transfer backups. Revisit this Info.plist value if encryption
+scope changes (e.g. new algorithms, server-side encryption of user content).
+
