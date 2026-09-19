@@ -357,3 +357,42 @@ export function trackSettingsTipDismissed(): void {
 export function trackSettingsTipOpenSettings(): void {
   trackEvent("settings_tip_open_settings", {});
 }
+
+// --- Epic G1 transfer / sync (no workout payload content — OP5) ---
+
+export function trackTransferFlowStarted(data: {
+  path: "local_export" | "local_import" | string;
+}): void {
+  trackEvent("transfer_flow_started", data as Record<string, unknown>);
+}
+
+export function trackTransferFlowCompleted(data: { path: string }): void {
+  trackEvent("transfer_flow_completed", data as Record<string, unknown>);
+}
+
+export function trackTransferFlowFallback(data: { reason: string }): void {
+  trackEvent("transfer_flow_fallback_backup", data as Record<string, unknown>);
+}
+
+export function trackSyncEnabled(data: {
+  provider?: string;
+  platform?: string;
+}): void {
+  trackEvent("sync_enabled", data as Record<string, unknown>);
+}
+
+export function trackSyncPullOk(): void {
+  trackEvent("sync_pull_ok", {});
+}
+
+export function trackSyncPushOk(): void {
+  trackEvent("sync_push_ok", {});
+}
+
+export function trackSyncConflict(data: Record<string, unknown> = {}): void {
+  trackEvent("sync_conflict", data);
+}
+
+export function trackSyncError(data: Record<string, unknown> = {}): void {
+  trackEvent("sync_error", data);
+}

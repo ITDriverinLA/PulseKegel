@@ -1,5 +1,16 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, serial, jsonb, timestamp, index } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  varchar,
+  serial,
+  jsonb,
+  timestamp,
+  index,
+  boolean,
+  integer,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -39,3 +50,52 @@ export const analyticsEvents = pgTable(
 
 export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
 export type InsertAnalyticsEvent = typeof analyticsEvents.$inferInsert;
+
+/**
+ * Epic G1 Path A — cloud sync accounts (created only after client opt-in + auth).
+ * Progress payloads are never written without a valid sync session token.
+ */
+export const syncAccounts = pgTable(
+  "sync_accounts",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    provider: varchar("provider", { length: 16 }).notNull(),
+    providerSubject: varchar("provider_subject", { length: 255 }).notNull(),
+    accessTokenHash: varchar("access_token_hash", { length: 64 }).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    revoked: boolean("revoked").default(false).notNull(),
+  },
+  (table) => [
+    uniqueIndex("sync_accounts_provider_subject_uidx").on(
+      table.provider,
+      table.providerSubject,
+    ),
+    index("sync_accounts_token_hash_idx").on(table.accessTokenHash),
+  ],
+);
+
+export type SyncAccount = typeof syncAccounts.$inferSelect;
+
+/** Versioned progress snapshot — only upserted when Authorization is valid. */
+export const syncSnapshots = pgTable(
+  "sync_snapshots",
+  {
+    id: serial("id").primaryKey(),
+    accountId: varchar("account_id", { length: 64 })
+      .notNull()
+      .references(() => syncAccounts.id, { onDelete: "cascade" }),
+    schemaVersion: integer("schema_version").notNull(),
+    payload: jsonb("payload").notNull(),
+    exportedAt: timestamp("exported_at").notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("sync_snapshots_account_uidx").on(table.accountId),
+    index("sync_snapshots_updated_at_idx").on(table.updatedAt),
+  ],
+);
+
+export type SyncSnapshot = typeof syncSnapshots.$inferSelect;

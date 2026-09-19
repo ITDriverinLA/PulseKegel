@@ -34,3 +34,19 @@ and credentials before running it.
   with a maximum of 20 events per request and 60 requests per IP per minute.
 - Weekly AI reviews accept bounded, validated workout data. They are limited to
   10 requests per IP per hour and 250 requests globally per hour.
+
+## Cloud sync (Epic G1 Path A)
+
+Progress sync routes (`/api/sync/*`) require a Bearer token issued only after
+the client has opted in and exchanged an Apple/Google identity token.
+
+Configure (do not commit):
+
+- `APPLE_CLIENT_ID` — Apple Sign-In client / Services ID
+- `GOOGLE_CLIENT_ID` — Google OAuth web/Android client ID
+- `SYNC_DEV_AUTH_SECRET` — optional lab-only; accepts proving tokens `dev:<secret>` or `dev:<secret>:<subject>` when client IDs are unset (never bare `dev:anything`)
+
+Apple/Google identity tokens are verified with JWKS (signature, aud, iss, exp).
+If client IDs are missing, `/api/sync/auth` returns `503` unless a proving
+`SYNC_DEV_AUTH_SECRET` lab token is presented. Sync push/pull/delete always
+require a valid session token — there is no anonymous progress upload path.

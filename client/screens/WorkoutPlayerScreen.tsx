@@ -127,9 +127,7 @@ export default function WorkoutPlayerScreen() {
   const shouldRedirectToWeeklyCalibrationRef = useRef<number | null>(null);
   const isCompleteRef = useRef(false);
   const sessionStartedTrackedRef = useRef(false);
-  const segmentIndexRef = useRef(
-    isFirstSession ? (resumeStepIndex ?? 0) : 0,
-  );
+  const segmentIndexRef = useRef(isFirstSession ? (resumeStepIndex ?? 0) : 0);
   const progressRef = useRef(progress);
   progressRef.current = progress;
 

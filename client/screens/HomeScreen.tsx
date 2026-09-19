@@ -81,6 +81,12 @@ import {
   SEGMENT_TYPE_LABEL,
 } from "@/data/controlModeWorkouts";
 import { didAppBecomeActive } from "@/lib/appState";
+import { CloudSyncOptInModal } from "@/components/CloudSyncOptInModal";
+import {
+  dismissCloudSyncPrompt,
+  enableCloudSyncOptIn,
+  shouldShowCloudSyncPrompt,
+} from "@/lib/cloudSync";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -95,8 +101,22 @@ export default function HomeScreen() {
   const { cp, isDarkMode } = useThemePreference();
 
   const [progress, setProgress] = useState<UserProgress | null>(null);
+  const [showCloudOptIn, setShowCloudOptIn] = useState(false);
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
+
+  useEffect(() => {
+    if (!isFocused) return;
+    let cancelled = false;
+    (async () => {
+      const show = await shouldShowCloudSyncPrompt();
+      if (!cancelled && show) setShowCloudOptIn(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isFocused]);
+
   const [todaysWorkout, setTodaysWorkout] = useState<{
     week: Week;
     dayIndex: number;
@@ -1517,6 +1537,22 @@ export default function HomeScreen() {
         userName={settings.userName}
         currentStreak={progress?.currentStreak ?? 0}
         onMessageReady={setPendingReviewMessage}
+      />
+      <CloudSyncOptInModal
+        visible={showCloudOptIn}
+        onDismiss={() => {
+          setShowCloudOptIn(false);
+          void dismissCloudSyncPrompt();
+        }}
+        onEnable={() => {
+          setShowCloudOptIn(false);
+          void (async () => {
+            await enableCloudSyncOptIn();
+            await dismissCloudSyncPrompt();
+            await storage.setPendingOpenSettings(true);
+            navigation.getParent()?.navigate("SettingsTab" as never);
+          })();
+        }}
       />
 
       <Modal visible={showCalibrationIntro} transparent animationType="fade">

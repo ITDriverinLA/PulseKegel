@@ -85,7 +85,9 @@ describe("F1 WorkoutEngine resume seek", () => {
     // Cool-down dropped → only 2 segments → resume index 2 clamps to 1.
     expect(withoutCooldown.getState().segmentIndex).toBe(1);
     withoutCooldown.start();
-    expect(withoutCooldown.getCurrentSegment()?.id).not.toBe("fs-short-cooldown");
+    expect(withoutCooldown.getCurrentSegment()?.id).not.toBe(
+      "fs-short-cooldown",
+    );
     withoutCooldown.end();
   });
 });
