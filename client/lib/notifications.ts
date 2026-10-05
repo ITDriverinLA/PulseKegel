@@ -51,6 +51,7 @@ export async function requestNotificationPermissionInstrumented(
     "./analytics"
   );
   try {
+    const afterFirstSession = await storage.hasCompletedFirstSession();
     const { status: existingStatus } =
       await Notifications.getPermissionsAsync();
     if (existingStatus === "granted") {
@@ -59,13 +60,36 @@ export async function requestNotificationPermissionInstrumented(
         status: "granted",
         surface,
         already_granted: true,
+        after_first_session: afterFirstSession,
       });
       return true;
     }
 
-    trackPermissionPromptShown({ type: "push", surface });
+    // P2c: hard guard — never show the OS prompt (Android 13+
+    // POST_NOTIFICATIONS / iOS alert) before the first session is complete.
+    if (!afterFirstSession) {
+      trackPermissionResult({
+        type: "push",
+        status: "deferred_pre_first_session",
+        surface,
+        deferred: true,
+        after_first_session: false,
+      });
+      return false;
+    }
+
+    trackPermissionPromptShown({
+      type: "push",
+      surface,
+      after_first_session: afterFirstSession,
+    });
     const { status } = await Notifications.requestPermissionsAsync();
-    trackPermissionResult({ type: "push", status, surface });
+    trackPermissionResult({
+      type: "push",
+      status,
+      surface,
+      after_first_session: afterFirstSession,
+    });
     if (status === "granted") return true;
     if (Platform.OS === "web") return true;
     return false;

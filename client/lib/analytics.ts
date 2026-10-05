@@ -16,7 +16,26 @@ const ONCE_PER_SESSION_EVENTS = new Set(["app_open"]);
 // returns a 429 with a Retry-After header.
 let retryAfterMs = 0;
 
-async function getOrCreateDeviceId(): Promise<string> {
+// P2: memoize so concurrent first-launch events share one device id (the
+// read-then-write race otherwise mints several ids and splits the funnel).
+let deviceIdPromise: Promise<string> | null = null;
+
+function getOrCreateDeviceId(): Promise<string> {
+  if (!deviceIdPromise) {
+    deviceIdPromise = loadOrCreateDeviceId().then((id) => {
+      if (id === "unknown") deviceIdPromise = null;
+      return id;
+    });
+  }
+  return deviceIdPromise;
+}
+
+/** Test-only: reset the memoized device id. */
+export function __resetDeviceIdForTests(): void {
+  deviceIdPromise = null;
+}
+
+async function loadOrCreateDeviceId(): Promise<string> {
   try {
     let deviceId = await AsyncStorage.getItem(DEVICE_ID_KEY);
     if (!deviceId) {
@@ -227,7 +246,13 @@ export function trackFirstSessionCtaTapped(data: {
   trackEvent("first_session_cta_tapped", data as Record<string, unknown>);
 }
 
-export function trackFirstSessionStarted(data: { session_id: string }): void {
+export function trackFirstSessionStarted(data: {
+  session_id: string;
+  /** P2: which gate path launched Day 1. */
+  source?: FirstSessionGateSource | "restart";
+  /** P2b: launched directly from onboarding's final CTA (no gate tap). */
+  auto_start?: boolean;
+}): void {
   trackEvent("first_session_started", data as Record<string, unknown>);
 }
 
@@ -278,6 +303,8 @@ export function trackPermissionPromptShown(data: {
   surface?: string;
   status?: string;
   deferred?: boolean;
+  /** P2: timing check — must be true for any OS prompt. */
+  after_first_session?: boolean;
 }): void {
   trackEvent("permission_prompt_shown", data as Record<string, unknown>);
 }
@@ -288,8 +315,36 @@ export function trackPermissionResult(data: {
   surface?: string;
   deferred?: boolean;
   already_granted?: boolean;
+  after_first_session?: boolean;
 }): void {
   trackEvent("permission_result", data as Record<string, unknown>);
+}
+
+/** P2b: onboarding re-opened at a saved step (> 0) after leaving the app. */
+export function trackOnboardingResumed(data: {
+  screen_key: string;
+  index: number;
+  total: number;
+}): void {
+  trackEvent("onboarding_resumed", data as Record<string, unknown>);
+}
+
+export type BackInterceptSurface = "onboarding" | "gate" | "first_session";
+export type BackInterceptAction =
+  | "previous_step"
+  | "blocked"
+  | "exit"
+  | "confirm_shown"
+  | "stay"
+  | "leave";
+
+/** P2c: Android hardware/gesture back intercepted on a first-run surface. */
+export function trackGateBackBlocked(data: {
+  surface: BackInterceptSurface;
+  action: BackInterceptAction;
+  index?: number;
+}): void {
+  trackEvent("gate_back_blocked", data as Record<string, unknown>);
 }
 
 export function trackFirstOpenPath(data: {

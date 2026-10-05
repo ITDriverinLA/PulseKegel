@@ -1,5 +1,14 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { StyleSheet, View, Text, Pressable, Dimensions } from "react-native";
+import {
+  StyleSheet,
+  View,
+  Text,
+  Pressable,
+  Dimensions,
+  BackHandler,
+  Platform,
+  ToastAndroid,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
@@ -26,6 +35,10 @@ import {
 } from "@/data/workoutProgram";
 import { getLaunchType } from "@/lib/activationDiagnostics";
 import {
+  gateBackAction,
+  shouldAutoStartFirstSession,
+} from "@/lib/firstRunRouting";
+import {
   FirstSessionGateSource,
   trackFirstSessionCtaTapped,
   trackFirstSessionGateShown,
@@ -33,6 +46,7 @@ import {
   trackFirstSessionResumeShown,
   trackFirstSessionResumeTapped,
   trackFirstSessionStarted,
+  trackGateBackBlocked,
   trackSettingsTipDismissed,
   trackSettingsTipOpenSettings,
   trackSettingsTipShown,
@@ -80,6 +94,9 @@ export default function FirstSessionGateScreen({
   const [celebrating, setCelebrating] = useState(false);
   const [showSettingsTip, setShowSettingsTip] = useState(false);
   const [ready, setReady] = useState(false);
+  const [autoStartPending, setAutoStartPending] = useState(false);
+  const autoStartedRef = useRef(false);
+  const lastBackBlockedAtRef = useRef<number | null>(null);
   const gateShownRef = useRef(false);
   const resumeShownRef = useRef(false);
   const tipShownTrackedRef = useRef(false);
@@ -149,6 +166,19 @@ export default function FirstSessionGateScreen({
       nextSource = pendingSource;
     }
 
+    // P2b: onboarding's "Start Day 1" goes straight into the session. The
+    // gate stays underneath only as the landing spot if the player is left.
+    const autoStart = shouldAutoStartFirstSession({
+      pendingSource,
+      inProgress,
+      completed,
+      alreadyAutoStarted: autoStartedRef.current,
+    });
+    if (autoStart) {
+      autoStartedRef.current = true;
+      setAutoStartPending(true);
+    }
+
     setSource(nextSource);
     setResume(nextResume);
     setStepIndex(nextStep);
@@ -216,8 +246,11 @@ export default function FirstSessionGateScreen({
     resumeMode: boolean;
     startStep: number;
     restartReason?: string;
+    sourceOverride?: FirstSessionGateSource;
+    autoStart?: boolean;
   }) => {
-    const { resumeMode, startStep, restartReason } = opts;
+    const { resumeMode, startStep, restartReason, autoStart } = opts;
+    const launchSource = opts.sourceOverride ?? source;
 
     if (resumeMode) {
       trackFirstSessionResumeTapped({ step_index: startStep });
@@ -225,7 +258,7 @@ export default function FirstSessionGateScreen({
       trackFirstSessionRestartTapped({ reason: restartReason });
       trackFirstSessionCtaTapped({ source: "cold_open" });
     } else {
-      trackFirstSessionCtaTapped({ source });
+      trackFirstSessionCtaTapped({ source: launchSource });
     }
 
     const today = new Date();
@@ -260,7 +293,11 @@ export default function FirstSessionGateScreen({
     await storage.clearFirstSessionGateSource();
     // Continue must not re-fire Day-1 start funnel (same sessionId).
     if (!resumeMode) {
-      trackFirstSessionStarted({ session_id: sessionId });
+      trackFirstSessionStarted({
+        session_id: sessionId,
+        source: restartReason ? "restart" : launchSource,
+        ...(autoStart ? { auto_start: true } : {}),
+      });
     }
 
     navigation.navigate("WorkoutPlayer", {
@@ -281,6 +318,46 @@ export default function FirstSessionGateScreen({
     await launchSession({ resumeMode: false, startStep: 0 });
   };
 
+  useEffect(() => {
+    if (!ready || !autoStartPending || !isFocused) return;
+    setAutoStartPending(false);
+    void launchSession({
+      resumeMode: false,
+      startStep: 0,
+      sourceOverride: "post_onboarding",
+      autoStart: true,
+    });
+    // launchSession is recreated each render; run once per pending flag.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, autoStartPending, isFocused]);
+
+  // P2c: Android back on the gate can never reach home (gate is the stack
+  // root). First press is blocked with a hint; a second press within 2s lets
+  // Android background the app as usual.
+  useEffect(() => {
+    if (Platform.OS !== "android" || !isFocused) return;
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      const now = Date.now();
+      const action = gateBackAction(lastBackBlockedAtRef.current, now);
+      trackGateBackBlocked({ surface: "gate", action });
+      if (action === "blocked") {
+        lastBackBlockedAtRef.current = now;
+        ToastAndroid.show(
+          "Day 1 takes about 5 minutes. Press back again to exit.",
+          ToastAndroid.SHORT,
+        );
+        return true;
+      }
+      lastBackBlockedAtRef.current = null;
+      return false;
+    });
+    return () => sub.remove();
+  }, [isFocused]);
+
+  const handleOpenRestore = () => {
+    navigation.navigate("TransferChecklist");
+  };
+
   const handleResume = async () => {
     await launchSession({
       resumeMode: true,
@@ -296,7 +373,7 @@ export default function FirstSessionGateScreen({
     });
   };
 
-  if (!ready) {
+  if (!ready || autoStartPending) {
     return (
       <View style={styles.root}>
         <LinearGradient colors={BG_GRADIENT} style={StyleSheet.absoluteFill} />
@@ -482,6 +559,15 @@ export default function FirstSessionGateScreen({
         }}
         testID="button-first-session-cta"
       />
+      <Pressable
+        onPress={handleOpenRestore}
+        style={styles.secondaryBtn}
+        testID="button-first-session-restore"
+      >
+        <Text style={styles.secondaryBtnText}>
+          Moving from another phone? Restore progress
+        </Text>
+      </Pressable>
     </View>
   );
 }
