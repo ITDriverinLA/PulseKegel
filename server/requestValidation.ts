@@ -282,6 +282,10 @@ const analyticsEventSchema = z.discriminatedUnion("type", [
       data: z
         .object({
           session_id: z.string().trim().min(1).max(128),
+          source: z
+            .enum(["post_onboarding", "cold_open", "resume", "restart"])
+            .optional(),
+          auto_start: z.boolean().optional(),
         })
         .strict(),
       ...eventMetadata,
@@ -371,6 +375,7 @@ const analyticsEventSchema = z.discriminatedUnion("type", [
           surface: z.string().trim().min(1).max(64).optional(),
           status: z.string().trim().min(1).max(32).optional(),
           deferred: z.boolean().optional(),
+          after_first_session: z.boolean().optional(),
         })
         .strict(),
       ...eventMetadata,
@@ -386,6 +391,40 @@ const analyticsEventSchema = z.discriminatedUnion("type", [
           surface: z.string().trim().min(1).max(64).optional(),
           deferred: z.boolean().optional(),
           already_granted: z.boolean().optional(),
+          after_first_session: z.boolean().optional(),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("onboarding_resumed"),
+      data: z
+        .object({
+          screen_key: z.string().trim().min(1).max(64),
+          index: z.number().int().min(0).max(20),
+          total: z.number().int().min(1).max(20),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("gate_back_blocked"),
+      data: z
+        .object({
+          surface: z.enum(["onboarding", "gate", "first_session"]),
+          action: z.enum([
+            "previous_step",
+            "blocked",
+            "exit",
+            "confirm_shown",
+            "stay",
+            "leave",
+          ]),
+          index: z.number().int().min(0).max(20).optional(),
         })
         .strict(),
       ...eventMetadata,

@@ -215,7 +215,12 @@ export async function applyTransferPayload(
   if (p.onboarding_complete) {
     await storage.setOnboardingComplete();
   }
-  if (p.first_session_celebrated) {
+  // P2.4: restored session history (total_sessions > 0) means Day 1 is
+  // already done on the old phone — unlock straight to home, never replay the
+  // "Day 1 done" celebration or a stale first-session resume. No history →
+  // RootStack keeps the user on the first-session gate.
+  const restoredHasSessionHistory = (p.total_sessions ?? 0) > 0;
+  if (p.first_session_celebrated || restoredHasSessionHistory) {
     await storage.markFirstSessionCelebrated();
   }
   if (p.program_progress) {
@@ -292,7 +297,9 @@ export async function applyTransferPayload(
     await storage.markSettingsTipSeen();
   }
 
-  if (toApply.in_progress_session) {
+  if (restoredHasSessionHistory) {
+    await storage.setFirstSessionInProgress(false);
+  } else if (toApply.in_progress_session) {
     await storage.setFirstSessionId(toApply.in_progress_session.session_id);
     await storage.setFirstSessionInProgress(
       true,

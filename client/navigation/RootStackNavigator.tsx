@@ -24,11 +24,13 @@ import TechniqueGuideScreen from "@/screens/TechniqueGuideScreen";
 import KegelsGuideScreen from "@/screens/KegelsGuideScreen";
 import CalibrationFeedbackScreen from "@/screens/CalibrationFeedbackScreen";
 import ForceUpdateScreen from "@/screens/ForceUpdateScreen";
+import TransferChecklistScreen from "@/screens/TransferChecklistScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { ANIM_DURATION_ENTER } from "@/constants/animation";
 import { storage } from "@/lib/storage";
 import { emitFirstOpenPathOnce } from "@/lib/activationDiagnostics";
+import { decideLandingRoute } from "@/lib/firstRunRouting";
 import { getApiUrl } from "@/lib/query-client";
 import { DayTemplate } from "@/data/workoutProgram";
 import { BreathworkMode } from "@/constants/breathworkModes";
@@ -64,6 +66,8 @@ export type RootStackParamList = {
   TechniqueGuide: undefined;
   KegelsGuide: undefined;
   CalibrationFeedback: { weekNumber?: number } | undefined;
+  /** P2.4: G1 restore reachable from the first-session gate (new phone). */
+  TransferChecklist: undefined;
 };
 
 interface StoreUrls {
@@ -103,13 +107,16 @@ export default function RootStackNavigator() {
   });
 
   useEffect(() => {
-    const checkVersion = async () => {
+    // P2c: cap the version check at the branded loading window (3s) so slow
+    // networks (common on Android first run) never extend the cold-open wait.
+    const checkVersion = async (): Promise<boolean> => {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      let outdated = false;
       try {
         const url = new URL("/api/version-check", getApiUrl()).toString();
         const res = await fetch(url, { signal: controller.signal });
-        if (!res.ok) return;
+        if (!res.ok) return false;
         const data = await res.json();
         const currentVersion = Constants.expoConfig?.version ?? "0.0.0";
         const minimumVersion =
@@ -118,6 +125,7 @@ export default function RootStackNavigator() {
             : "0.0.0";
         if (isVersionOutdated(currentVersion, minimumVersion)) {
           setNeedsUpdate(true);
+          outdated = true;
           if (data.iosStoreUrl || data.androidStoreUrl) {
             setStoreUrls({
               iosStoreUrl:
@@ -134,13 +142,17 @@ export default function RootStackNavigator() {
       } finally {
         clearTimeout(timeoutId);
       }
+      return outdated;
     };
 
     const initialize = async () => {
       const minDisplay = new Promise<void>((resolve) =>
         setTimeout(resolve, 3000),
       );
-      const [onboardingComplete, hasFirstSession, inProgress] =
+      // P2a/P2c: the route is decided only after every storage flag resolves;
+      // nothing (not even the main navigator) renders before that, so there
+      // is no splash → home race on slow Android AsyncStorage.
+      const [onboardingComplete, hasFirstSession, inProgress, outdated] =
         await Promise.all([
           storage.isOnboardingComplete(),
           storage.hasCompletedFirstSession(),
@@ -149,35 +161,40 @@ export default function RootStackNavigator() {
           minDisplay,
         ]);
 
-      // Epic D: unified iOS/Android first-open path (same A/B gate). No
+      // Epic D / P2.2: unified iOS/Android first-open path. No
       // platform-specific alternate landing — both hit onboarding → gate → main.
-      let landing:
-        | "onboarding"
-        | "first_session_gate"
-        | "main"
-        | "force_update" = "main";
-      if (!onboardingComplete) {
+      const route = decideLandingRoute({
+        onboardingComplete,
+        hasFirstSession,
+      });
+      if (route === "onboarding") {
         setShowOnboarding(true);
         setNeedsFirstSession(false);
-        landing = "onboarding";
-      } else if (!hasFirstSession) {
+      } else if (route === "first_session_gate") {
         setShowOnboarding(false);
         setNeedsFirstSession(true);
-        landing = "first_session_gate";
         if (inProgress) {
           await storage.setFirstSessionGateSource("resume");
         } else {
-          const pending = await storage.peekFirstSessionGateSource();
-          if (!pending) {
-            await storage.setFirstSessionGateSource("cold_open");
-          }
+          // P2b: a cold open never auto-starts Day 1. A leftover
+          // "post_onboarding" source (killed after onboarding, before the
+          // session) becomes "cold_open" so the user sees the gate.
+          await storage.setFirstSessionGateSource("cold_open");
         }
       } else {
         setShowOnboarding(false);
         setNeedsFirstSession(false);
-        landing = "main";
+        if (inProgress) {
+          // Killed between session save and in-progress clear: drop the stale
+          // Day-1 resume flags so they can't resurface after a restore/reset.
+          await storage.setFirstSessionInProgress(false);
+        }
       }
-      void emitFirstOpenPathOnce(landing);
+      // first_open_path is once-per-install; don't burn it on the force-update
+      // wall — emit the real route on the first usable open instead.
+      if (!outdated) {
+        void emitFirstOpenPathOnce(route);
+      }
       setIsLoading(false);
     };
     initialize();
@@ -244,6 +261,11 @@ export default function RootStackNavigator() {
             headerShown: false,
             gestureEnabled: false,
           }}
+        />
+        <Stack.Screen
+          name="TransferChecklist"
+          component={TransferChecklistScreen}
+          options={{ title: "Moving to a new phone?" }}
         />
       </Stack.Navigator>
     );

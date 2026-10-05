@@ -6,6 +6,9 @@ import {
   AppState,
   AppStateStatus,
   Text,
+  Alert,
+  BackHandler,
+  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -63,6 +66,7 @@ import {
   trackSessionStarted,
   trackFirstSessionCompleted,
   trackFirstSessionAbandoned,
+  trackGateBackBlocked,
   trackChallengeDayStarted,
   trackChallengeDayCompleted,
 } from "@/lib/analytics";
@@ -608,6 +612,62 @@ export default function WorkoutPlayerScreen() {
     }
     animateOut(isComplete ? ANIM_DURATION_EXIT_COMPLETE : ANIM_DURATION_EXIT);
   };
+
+  // P2c: Android hardware/gesture back during Day 1 used to pop the player
+  // silently (no abandon event, easy to trigger by accident with edge-swipe
+  // navigation). Confirm first; "Leave" goes through the normal close path so
+  // resume state + first_session_abandoned are recorded.
+  const handleFirstSessionBack = (): boolean => {
+    if (isCompleteRef.current) {
+      handleClose();
+      return true;
+    }
+    const engine = engineRef.current;
+    const wasRunning = !!workoutState?.isRunning && !workoutState?.isPaused;
+    if (engine && wasRunning) {
+      engine.pause();
+      hapticPulseRef.current.stop();
+    }
+    trackGateBackBlocked({ surface: "first_session", action: "confirm_shown" });
+    Alert.alert(
+      "Leave Day 1?",
+      "You can pick up where you left off next time.",
+      [
+        {
+          text: "Keep going",
+          style: "cancel",
+          onPress: () => {
+            trackGateBackBlocked({ surface: "first_session", action: "stay" });
+            if (engine && wasRunning) engine.resume();
+          },
+        },
+        {
+          text: "Leave",
+          style: "destructive",
+          onPress: () => {
+            trackGateBackBlocked({ surface: "first_session", action: "leave" });
+            handleClose();
+          },
+        },
+      ],
+      {
+        cancelable: true,
+        onDismiss: () => {
+          if (engine && wasRunning) engine.resume();
+        },
+      },
+    );
+    return true;
+  };
+
+  useEffect(() => {
+    if (Platform.OS !== "android" || !isFirstSession) return;
+    const sub = BackHandler.addEventListener(
+      "hardwareBackPress",
+      handleFirstSessionBack,
+    );
+    return () => sub.remove();
+  });
 
   const screenAnimatedStyle = useAnimatedStyle(() => ({
     opacity: screenOpacity.value,

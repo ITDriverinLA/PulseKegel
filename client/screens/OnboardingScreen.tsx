@@ -10,6 +10,8 @@ import {
   Animated as RNAnimated,
   AppState,
   AppStateStatus,
+  BackHandler,
+  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -28,10 +30,16 @@ import { Spacing, BorderRadius } from "@/constants/theme";
 import { storage, AnatomyType } from "@/lib/storage";
 import { didAppBecomeActive } from "@/lib/appState";
 import {
+  onboardingBackAction,
+  resolveOnboardingResume,
+} from "@/lib/firstRunRouting";
+import {
+  trackGateBackBlocked,
   trackOnboardingAbandoned,
   trackOnboardingAnatomySelected,
   trackOnboardingComplete,
   trackOnboardingCtaTapped,
+  trackOnboardingResumed,
   trackOnboardingScreenViewed,
 } from "@/lib/analytics";
 
@@ -95,19 +103,20 @@ export default function OnboardingScreen({
         ) {
           setGender(settings.anatomyType);
         }
-        if (progress) {
-          const idx = ONBOARDING_SCREEN_KEYS.indexOf(
-            progress.screenKey as OnboardingScreenKey,
-          );
-          if (idx >= 0) {
-            setStepIndex(idx);
-          } else if (
-            typeof progress.index === "number" &&
-            progress.index >= 0 &&
-            progress.index < ONBOARDING_TOTAL
-          ) {
-            setStepIndex(progress.index);
-          }
+        // P2b: resume at the saved step; never past anatomy without a choice
+        // (the final CTA would otherwise be a silent no-op).
+        const { index, resumed } = resolveOnboardingResume({
+          saved: progress,
+          anatomy: settings.anatomyType,
+          keys: ONBOARDING_SCREEN_KEYS,
+        });
+        setStepIndex(index);
+        if (resumed) {
+          trackOnboardingResumed({
+            screen_key: ONBOARDING_SCREEN_KEYS[index],
+            index,
+            total: ONBOARDING_TOTAL,
+          });
         }
       } finally {
         setHydrated(true);
@@ -164,6 +173,27 @@ export default function OnboardingScreen({
     [screenOpacity],
   );
 
+  // P2c: Android back steps to the previous onboarding screen instead of
+  // leaving the app; on the first screen Android's default (background) runs.
+  useEffect(() => {
+    if (Platform.OS !== "android" || !hydrated) return;
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (completedRef.current) return true;
+      const action = onboardingBackAction(lastIndexRef.current);
+      trackGateBackBlocked({
+        surface: "onboarding",
+        action,
+        index: lastIndexRef.current,
+      });
+      if (action === "previous_step") {
+        fadeToIndex(lastIndexRef.current - 1);
+        return true;
+      }
+      return false;
+    });
+    return () => sub.remove();
+  }, [hydrated, fadeToIndex]);
+
   const handleAnatomySelect = (g: "male" | "female") => {
     setGender(g);
     void storage.saveSettings({ anatomyType: g });
@@ -179,7 +209,12 @@ export default function OnboardingScreen({
   };
 
   const handleStart = async () => {
-    if (!gender || completedRef.current) return;
+    if (completedRef.current) return;
+    if (!gender) {
+      // P2b: never dead-end on the final CTA — send back to the anatomy pick.
+      fadeToIndex(ONBOARDING_SCREEN_KEYS.indexOf("anatomy"));
+      return;
+    }
     completedRef.current = true;
     trackOnboardingCtaTapped({ screen_key: "start" });
     await storage.saveSettings({ anatomyType: gender });

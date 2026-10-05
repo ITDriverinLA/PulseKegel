@@ -147,10 +147,83 @@ describe("analyticsBatchSchema", () => {
     { type: "settings_tip_shown", data: {} },
     { type: "settings_tip_dismissed", data: {} },
     { type: "settings_tip_open_settings", data: {} },
+    // Epic P2 funnel events / fields.
+    {
+      type: "first_session_started",
+      data: { session_id: "abc", source: "post_onboarding", auto_start: true },
+    },
+    {
+      type: "first_session_started",
+      data: { session_id: "abc", source: "restart" },
+    },
+    {
+      type: "onboarding_resumed",
+      data: { screen_key: "anatomy", index: 1, total: 3 },
+    },
+    {
+      type: "gate_back_blocked",
+      data: { surface: "gate", action: "blocked" },
+    },
+    {
+      type: "gate_back_blocked",
+      data: { surface: "onboarding", action: "previous_step", index: 2 },
+    },
+    {
+      type: "gate_back_blocked",
+      data: { surface: "first_session", action: "confirm_shown" },
+    },
+    {
+      type: "permission_prompt_shown",
+      data: {
+        type: "push",
+        surface: "post_day1_challenge_nudge",
+        after_first_session: true,
+      },
+    },
+    {
+      type: "permission_result",
+      data: {
+        type: "push",
+        status: "deferred_pre_first_session",
+        surface: "settings_reminder_toggle",
+        deferred: true,
+        after_first_session: false,
+      },
+    },
+    {
+      type: "first_open_path",
+      data: {
+        landing_route: "onboarding",
+        onboarded_already: false,
+        platform: "android",
+      },
+    },
   ])("accepts the current app payload for $type", (event) => {
     expect(
       analyticsBatchSchema.safeParse({ deviceId, events: [event] }).success,
     ).toBe(true);
+  });
+
+  it("rejects malformed P2 funnel payloads", () => {
+    expect(
+      analyticsBatchSchema.safeParse({
+        deviceId,
+        events: [
+          { type: "gate_back_blocked", data: { surface: "home", action: "x" } },
+        ],
+      }).success,
+    ).toBe(false);
+    expect(
+      analyticsBatchSchema.safeParse({
+        deviceId,
+        events: [
+          {
+            type: "first_session_started",
+            data: { session_id: "abc", source: "home" },
+          },
+        ],
+      }).success,
+    ).toBe(false);
   });
 
   it("rejects unknown events and unexpected data fields", () => {

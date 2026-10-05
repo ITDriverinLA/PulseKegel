@@ -879,6 +879,7 @@
       // Funnel
       renderFunnel(d.funnel || {});
       renderFunnelByPlatform(d.funnelByPlatform || []);
+      renderFirstRunFunnelByPlatform(d.firstRunFunnelByPlatform || []);
       renderSubscriptionFunnel(d.subscriptionFunnel || {});
 
       // Program week distribution
@@ -1112,6 +1113,39 @@
         + '<span>→ Complete ' + sessions.toLocaleString() + ' (' + pct(sessions) + ')</span>'
         + '</div>';
     }).join('');
+  }
+
+  // Epic P2: new-install cohort (first_open_path onboarded_already=false).
+  function renderFirstRunFunnelByPlatform(rows) {
+    const host = document.getElementById('funnel-by-platform');
+    if (!host) return;
+    let el = document.getElementById('first-run-funnel-by-platform');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'first-run-funnel-by-platform';
+      el.style.marginTop = '12px';
+      host.parentNode.insertBefore(el, host.nextSibling);
+    }
+    if (!rows.length) {
+      el.innerHTML = '<div>No first-run cohort data yet</div>';
+      return;
+    }
+    el.innerHTML = '<div style="margin-bottom:6px;opacity:0.7">New installs → Day 1 (first-run cohort)</div>'
+      + rows.map(function (r) {
+        const platform = String(r.platform || 'unknown');
+        const base = Number(r.new_installs) || 0;
+        const n = function (k) { return Number(r[k]) || 0; };
+        const pct = function (v) { return base > 0 ? Math.round((v / base) * 100) + '%' : '—'; };
+        return '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:baseline">'
+          + '<strong style="color:var(--white);min-width:72px;text-transform:capitalize">' + platform + '</strong>'
+          + '<span>New ' + base.toLocaleString() + '</span>'
+          + '<span>→ Onboard ' + n('onboarded').toLocaleString() + ' (' + pct(n('onboarded')) + ')</span>'
+          + '<span>→ Gate ' + n('gate_shown').toLocaleString() + ' (' + pct(n('gate_shown')) + ')</span>'
+          + '<span>→ Day-1 start ' + n('first_started').toLocaleString() + ' (' + pct(n('first_started')) + ')</span>'
+          + '<span>→ Day-1 done ' + n('first_completed').toLocaleString() + ' (' + pct(n('first_completed')) + ')</span>'
+          + '<span>Back intercepts ' + n('back_intercepts').toLocaleString() + '</span>'
+          + '</div>';
+      }).join('');
   }
 
   function renderFunnel(funnel) {

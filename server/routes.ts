@@ -871,6 +871,54 @@ ${blogUrls}
         ORDER BY opens DESC
       `);
 
+        // Epic P2: first-run cohort funnel per platform. Denominator is new
+        // installs only (first_open_path with onboarded_already=false), so
+        // legacy devices don't dilute the onboarding → Day-1 completion rate.
+        const firstRunFunnelByPlatformRaw = await db.execute<{
+          platform: string;
+          new_installs: number;
+          onboarded: number;
+          gate_shown: number;
+          first_started: number;
+          first_completed: number;
+          back_intercepts: number;
+        }>(sql`
+        WITH cohort AS (
+          SELECT DISTINCT ON (device_id)
+            device_id,
+            COALESCE(platform, 'unknown') AS platform
+          FROM analytics_events
+          WHERE event_type = 'first_open_path'
+            AND (event_data->>'onboarded_already') = 'false'
+          ORDER BY device_id, created_at ASC
+        ),
+        stages AS (
+          SELECT device_id, event_type
+          FROM analytics_events
+          WHERE device_id IN (SELECT device_id FROM cohort)
+            AND event_type IN (
+              'onboarding_complete',
+              'first_session_gate_shown',
+              'first_session_started',
+              'first_session_completed',
+              'gate_back_blocked'
+            )
+          GROUP BY device_id, event_type
+        )
+        SELECT
+          c.platform,
+          COUNT(DISTINCT c.device_id)::int AS new_installs,
+          COUNT(DISTINCT s.device_id) FILTER (WHERE s.event_type = 'onboarding_complete')::int AS onboarded,
+          COUNT(DISTINCT s.device_id) FILTER (WHERE s.event_type = 'first_session_gate_shown')::int AS gate_shown,
+          COUNT(DISTINCT s.device_id) FILTER (WHERE s.event_type = 'first_session_started')::int AS first_started,
+          COUNT(DISTINCT s.device_id) FILTER (WHERE s.event_type = 'first_session_completed')::int AS first_completed,
+          COUNT(DISTINCT s.device_id) FILTER (WHERE s.event_type = 'gate_back_blocked')::int AS back_intercepts
+        FROM cohort c
+        LEFT JOIN stages s ON s.device_id = c.device_id
+        GROUP BY c.platform
+        ORDER BY new_installs DESC
+      `);
+
         const subscriptionFunnelRaw = await db.execute<{
           event_type: string;
           count: number;
@@ -1025,6 +1073,7 @@ ${blogUrls}
             sessions: funnelSession?.count ?? 0,
           },
           funnelByPlatform: funnelByPlatformRaw.rows,
+          firstRunFunnelByPlatform: firstRunFunnelByPlatformRaw.rows,
           subscriptionFunnel: {
             viewed: subscriptionFunnel.paywall_viewed ?? 0,
             tapped: subscriptionFunnel.subscribe_tapped ?? 0,
