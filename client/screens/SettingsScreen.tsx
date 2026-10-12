@@ -1157,7 +1157,7 @@ export default function SettingsScreen() {
               }}
             >
               Default is local-only. Export an encrypted backup (works offline,
-              no account) or optionally enable cloud sync after explicit opt-in.
+              no account).
             </Text>
           </View>
         </Animated.View>
