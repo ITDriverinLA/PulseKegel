@@ -33,6 +33,7 @@ import {
 import {
   cloudSignInUnavailableReason,
   isCloudSignInConfigured,
+  shouldShowCloudSyncSection,
   obtainCloudIdentityToken,
   preferredCloudAuthProvider,
 } from "@/lib/cloudAuth";
@@ -358,26 +359,29 @@ export default function TransferChecklistScreen() {
         </Pressable>
       </Animated.View>
 
-      <Animated.View
-        entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(120)}
-      >
-        <Text style={[styles.sectionTitle, { color: cp.neonCyan }]}>
-          CLOUD SYNC (OPT-IN)
-        </Text>
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: cp.cardBg, borderColor: cp.cardBorder },
-          ]}
+      {shouldShowCloudSyncSection({
+        signInConfigured: isCloudSignInConfigured(),
+        optedIn: Boolean(syncState?.optIn),
+      }) ? (
+        <Animated.View
+          entering={FadeInDown.duration(ANIM_DURATION_CONTENT).delay(120)}
         >
-          <Text style={[styles.stepDetail, { color: cp.textSecondary }]}>
-            Status:{" "}
-            {syncState?.optIn
-              ? `On (${syncState.provider})`
-              : "Off — local-only (default)"}
+          <Text style={[styles.sectionTitle, { color: cp.neonCyan }]}>
+            CLOUD SYNC (OPT-IN)
           </Text>
-          {!syncState?.optIn ? (
-            isCloudSignInConfigured() ? (
+          <View
+            style={[
+              styles.card,
+              { backgroundColor: cp.cardBg, borderColor: cp.cardBorder },
+            ]}
+          >
+            <Text style={[styles.stepDetail, { color: cp.textSecondary }]}>
+              Status:{" "}
+              {syncState?.optIn
+                ? `On (${syncState.provider})`
+                : "Off — local-only (default)"}
+            </Text>
+            {!syncState?.optIn ? (
               <Pressable
                 onPress={handleEnableCloud}
                 style={styles.linkRow}
@@ -389,42 +393,36 @@ export default function TransferChecklistScreen() {
                 </Text>
               </Pressable>
             ) : (
-              <View style={styles.linkRow} testID="cloud-sync-unavailable">
-                <Feather name="cloud-off" size={18} color={cp.textMuted} />
-                <Text style={[styles.linkText, { color: cp.textMuted }]}>
-                  Cloud sync unavailable — Sign-In not configured. Use local
-                  backup above.
-                </Text>
-              </View>
-            )
-          ) : (
-            <>
-              <Pressable onPress={handlePull} style={styles.linkRow}>
-                <Feather name="refresh-cw" size={18} color={cp.neonCyan} />
-                <Text style={[styles.linkText, { color: cp.neonCyan }]}>
-                  Pull & merge from cloud
-                </Text>
-              </Pressable>
-              <View style={[styles.divider, { backgroundColor: cp.divider }]} />
-              <Pressable
-                onPress={handleDisableCloud}
-                style={styles.linkRow}
-                testID="button-disable-cloud-sync"
-              >
-                <Feather name="cloud-off" size={18} color={cp.neonPink} />
-                <Text style={[styles.linkText, { color: cp.neonPink }]}>
-                  Turn off cloud sync…
-                </Text>
-              </Pressable>
-            </>
-          )}
-        </View>
-        <Text style={[styles.disclaimer, { color: cp.textMuted }]}>
-          Not medical advice. Cloud sync stores training progress only — never
-          diagnoses or health records. Apple/Google Sign-In client IDs are
-          configured by the app owner.
-        </Text>
-      </Animated.View>
+              <>
+                <Pressable onPress={handlePull} style={styles.linkRow}>
+                  <Feather name="refresh-cw" size={18} color={cp.neonCyan} />
+                  <Text style={[styles.linkText, { color: cp.neonCyan }]}>
+                    Pull & merge from cloud
+                  </Text>
+                </Pressable>
+                <View
+                  style={[styles.divider, { backgroundColor: cp.divider }]}
+                />
+                <Pressable
+                  onPress={handleDisableCloud}
+                  style={styles.linkRow}
+                  testID="button-disable-cloud-sync"
+                >
+                  <Feather name="cloud-off" size={18} color={cp.neonPink} />
+                  <Text style={[styles.linkText, { color: cp.neonPink }]}>
+                    Turn off cloud sync…
+                  </Text>
+                </Pressable>
+              </>
+            )}
+          </View>
+          <Text style={[styles.disclaimer, { color: cp.textMuted }]}>
+            Not medical advice. Cloud sync stores training progress only — never
+            diagnoses or health records. Apple/Google Sign-In client IDs are
+            configured by the app owner.
+          </Text>
+        </Animated.View>
+      ) : null}
     </ScrollView>
   );
 }

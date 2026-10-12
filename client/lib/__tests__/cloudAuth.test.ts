@@ -11,6 +11,7 @@ import {
   cloudSignInUnavailableReason,
   isCloudSignInConfigured,
   obtainCloudIdentityToken,
+  shouldShowCloudSyncSection,
 } from "../cloudAuth";
 
 describe("cloudAuth fail-closed", () => {
@@ -46,5 +47,54 @@ describe("cloudAuth fail-closed", () => {
     process.env.EXPO_PUBLIC_APPLE_CLIENT_ID = "com.example.apple";
     expect(isCloudSignInConfigured("apple")).toBe(true);
     expect(cloudSignInUnavailableReason("apple")).toBeNull();
+  });
+});
+
+describe("G1-fix shouldShowCloudSyncSection", () => {
+  const prevApple = process.env.EXPO_PUBLIC_APPLE_CLIENT_ID;
+  afterEach(() => {
+    if (prevApple === undefined) delete process.env.EXPO_PUBLIC_APPLE_CLIENT_ID;
+    else process.env.EXPO_PUBLIC_APPLE_CLIENT_ID = prevApple;
+  });
+
+  it("hides the section when Sign-In is not configured", () => {
+    expect(
+      shouldShowCloudSyncSection({ signInConfigured: false, optedIn: false }),
+    ).toBe(false);
+  });
+
+  it("shows the section when Sign-In is configured", () => {
+    expect(
+      shouldShowCloudSyncSection({ signInConfigured: true, optedIn: false }),
+    ).toBe(true);
+    expect(
+      shouldShowCloudSyncSection({ signInConfigured: true, optedIn: true }),
+    ).toBe(true);
+  });
+
+  it("keeps the off switch for an already opted-in device", () => {
+    expect(
+      shouldShowCloudSyncSection({ signInConfigured: false, optedIn: true }),
+    ).toBe(true);
+  });
+
+  it("is hidden for a store build with no client ID", () => {
+    delete process.env.EXPO_PUBLIC_APPLE_CLIENT_ID;
+    expect(
+      shouldShowCloudSyncSection({
+        signInConfigured: isCloudSignInConfigured("apple"),
+        optedIn: false,
+      }),
+    ).toBe(false);
+  });
+
+  it("is shown once the client ID is configured", () => {
+    process.env.EXPO_PUBLIC_APPLE_CLIENT_ID = "com.pulsekegel.signin";
+    expect(
+      shouldShowCloudSyncSection({
+        signInConfigured: isCloudSignInConfigured("apple"),
+        optedIn: false,
+      }),
+    ).toBe(true);
   });
 });
