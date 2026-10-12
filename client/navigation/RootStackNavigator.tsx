@@ -1,3 +1,5 @@
+import type { NavigatorScreenParams } from "@react-navigation/native";
+import type { MainTabParamList } from "@/navigation/MainTabNavigator";
 import React, { useState, useEffect } from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import Constants from "expo-constants";
@@ -37,7 +39,7 @@ import { BreathworkMode } from "@/constants/breathworkModes";
 import { PaywallSource } from "@/lib/analytics";
 
 export type RootStackParamList = {
-  Main: undefined;
+  Main: NavigatorScreenParams<MainTabParamList> | undefined;
   FirstSessionGate: undefined;
   WorkoutPlayer: {
     workout: DayTemplate;

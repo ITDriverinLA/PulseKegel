@@ -1,8 +1,5 @@
 import React, { useCallback } from "react";
-import {
-  createBottomTabNavigator,
-  type BottomTabNavigationProp,
-} from "@react-navigation/bottom-tabs";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { Platform, StyleSheet } from "react-native";
@@ -13,6 +10,7 @@ import ProgressStackNavigator from "@/navigation/ProgressStackNavigator";
 import SettingsStackNavigator from "@/navigation/SettingsStackNavigator";
 import { useTheme } from "@/hooks/useTheme";
 import { storage } from "@/lib/storage";
+import { openSettingsTab } from "@/lib/rootNavigation";
 import { trackDay1SoftPaywallDeferred } from "@/lib/analytics";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -33,7 +31,6 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export default function MainTabNavigator() {
   const { theme, isDark } = useTheme();
-  const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
   const rootNavigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { isSubscribed, isLoading: subscriptionLoading } = useSubscription();
@@ -57,7 +54,8 @@ export default function MainTabNavigator() {
             trackDay1SoftPaywallDeferred();
           }
           deferDay1SoftPaywallThisLaunch();
-          navigation.navigate("SettingsTab");
+          // Root-stack nav: go through "Main" to reach the nested tab.
+          openSettingsTab(rootNavigation);
           return;
         }
         await runDay1SoftPaywallTrigger({
@@ -74,7 +72,7 @@ export default function MainTabNavigator() {
       return () => {
         cancelled = true;
       };
-    }, [navigation, rootNavigation, isSubscribed, subscriptionLoading]),
+    }, [rootNavigation, isSubscribed, subscriptionLoading]),
   );
 
   return (
