@@ -774,6 +774,41 @@
     </div>
   </div>
 
+  <!-- P4b: paywall views by source + Day 1 finisher reach -->
+  <div class="two-col">
+    <div>
+      <div class="section-label">Paywall Views by Source</div>
+      <div class="section-sub">Unique devices per paywall_viewed source</div>
+      <div class="hbar-wrap">
+        <div class="hbar-rows" id="paywall-source-rows"></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-label">Day 1 Finishers → Paywall</div>
+      <div class="section-sub">Week 1 Day 1 finishers that later saw the paywall — all-time vs since P4 went live (first day1_soft view)</div>
+      <div class="hbar-wrap">
+        <div class="hbar-rows" id="day1-reach-rows"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <div class="section-label">Paywall Dismissed by Source</div>
+      <div class="section-sub">Unique devices that closed the paywall (Not now or X)</div>
+      <div class="hbar-wrap">
+        <div class="hbar-rows" id="paywall-dismissed-rows"></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-label">Day 1 Soft Paywall Deferred</div>
+      <div class="section-sub">Devices deferred to next cold open (tip opened Settings)</div>
+      <div class="hbar-wrap">
+        <div class="funnel-num" id="day1-soft-deferred">—</div>
+      </div>
+    </div>
+  </div>
+
   <!-- Program week distribution -->
   <div class="chart-section">
     <div class="section-label">Program Week Distribution</div>
@@ -881,6 +916,11 @@
       renderFunnelByPlatform(d.funnelByPlatform || []);
       renderFirstRunFunnelByPlatform(d.firstRunFunnelByPlatform || []);
       renderSubscriptionFunnel(d.subscriptionFunnel || {});
+      renderHBars('paywall-source-rows', d.paywallViewsBySource || [], 'source');
+      renderDay1Reach(d.day1PaywallReach || {});
+      renderHBars('paywall-dismissed-rows', d.paywallDismissedBySource || [], 'source');
+      document.getElementById('day1-soft-deferred').textContent =
+        (Number(d.day1SoftPaywallDeferred) || 0).toLocaleString();
 
       // Program week distribution
       renderWeekDist(d.programWeekDist || []);
@@ -1181,6 +1221,37 @@
       tapPct != null ? tapPct + '% of paywall views' : '';
     document.getElementById('sub-purchased-pct').textContent =
       purchasePct != null ? purchasePct + '% of paywall views' : '';
+  }
+
+  function renderDay1Reach(r) {
+    const container = document.getElementById('day1-reach-rows');
+    if (!container) return;
+    const finishers = Number(r.finishers) || 0;
+    const since = r.sinceP4 || {};
+    const sinceF = Number(since.finishers) || 0;
+    const cutoffLabel = r.p4Cutoff ? String(r.p4Cutoff).slice(0, 10) : 'not live yet';
+    // L2: all-time rows include pre-P4 finishers; "since P4" rows start at the
+    // first day1_soft paywall view.
+    const rows = [
+      ['All-time: Day 1 finishers', finishers, finishers],
+      ['All-time: reached paywall (any)', Number(r.reachedAny) || 0, finishers],
+      ['All-time: via day1_soft', Number(r.reachedDay1Soft) || 0, finishers],
+      ['Since P4 (' + cutoffLabel + '): Day 1 finishers', sinceF, sinceF],
+      ['Since P4: reached paywall (any)', Number(since.reachedAny) || 0, sinceF],
+      ['Since P4: via day1_soft', Number(since.reachedDay1Soft) || 0, sinceF],
+    ];
+    container.innerHTML = rows.map(function(row) {
+      const count = row[1];
+      const base = row[2];
+      const pct = base > 0 ? (count / base * 100).toFixed(1) : '0.0';
+      const barW = base > 0 ? (count / base * 100).toFixed(1) : '0';
+      return '<div class="hbar-row">' +
+        '<div class="hbar-label" title="' + esc(row[0]) + '">' + esc(row[0]) + '</div>' +
+        '<div class="hbar-bg"><div class="hbar-fill" style="width:' + barW + '%"></div></div>' +
+        '<div class="hbar-count">' + count.toLocaleString() + '</div>' +
+        '<div class="hbar-pct">' + pct + '%</div>' +
+        '</div>';
+    }).join('');
   }
 
   function renderWeekDist(rows) {

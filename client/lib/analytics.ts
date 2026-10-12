@@ -164,6 +164,7 @@ export type PaywallSource =
   | "challenge_complete"
   | "workout_gate"
   | "settings"
+  | "day1_soft"
   | "unknown";
 
 export function trackPaywallViewed(data: {
@@ -173,6 +174,18 @@ export function trackPaywallViewed(data: {
   totalCoreSessions?: number;
 }): void {
   trackEvent("paywall_viewed", data as Record<string, unknown>);
+}
+
+export function trackPaywallDismissed(data: {
+  source: PaywallSource;
+  method: "not_now" | "close";
+}): void {
+  trackEvent("paywall_dismissed", data as Record<string, unknown>);
+}
+
+/** P4a: soft paywall deferred to next cold open (tip opened Settings). */
+export function trackDay1SoftPaywallDeferred(): void {
+  trackEvent("day1_soft_paywall_deferred", { reason: "open_settings" });
 }
 
 export function trackSubscribeTapped(data: {
@@ -189,6 +202,7 @@ export function trackPurchaseResult(data: {
   packageIdentifier?: string;
   productIdentifier?: string;
   errorCode?: string;
+  source?: PaywallSource;
 }): void {
   trackEvent(`purchase_${data.result}`, data as Record<string, unknown>);
 }

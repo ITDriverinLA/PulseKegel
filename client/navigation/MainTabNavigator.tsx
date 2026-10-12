@@ -1,8 +1,5 @@
 import React, { useCallback } from "react";
-import {
-  createBottomTabNavigator,
-  type BottomTabNavigationProp,
-} from "@react-navigation/bottom-tabs";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { Platform, StyleSheet } from "react-native";
@@ -13,6 +10,16 @@ import ProgressStackNavigator from "@/navigation/ProgressStackNavigator";
 import SettingsStackNavigator from "@/navigation/SettingsStackNavigator";
 import { useTheme } from "@/hooks/useTheme";
 import { storage } from "@/lib/storage";
+import { openSettingsTab } from "@/lib/rootNavigation";
+import { trackDay1SoftPaywallDeferred } from "@/lib/analytics";
+import { useSubscription } from "@/contexts/SubscriptionContext";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import {
+  deferDay1SoftPaywallThisLaunch,
+  isDay1SoftPaywallDeferredThisLaunch,
+  runDay1SoftPaywallTrigger,
+} from "@/lib/day1SoftPaywall";
+import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 export type MainTabParamList = {
   TodayTab: undefined;
@@ -24,21 +31,48 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export default function MainTabNavigator() {
   const { theme, isDark } = useTheme();
-  const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
+  const rootNavigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { isSubscribed, isLoading: subscriptionLoading } = useSubscription();
 
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
       (async () => {
         const shouldOpen = await storage.consumePendingOpenSettings();
-        if (!cancelled && shouldOpen) {
-          navigation.navigate("SettingsTab");
+        if (cancelled) return;
+        if (shouldOpen) {
+          // P4a: the Settings tip won this launch; the Day 1 soft paywall
+          // waits for the next cold open so they never stack.
+          const { pending, shown } = await storage.getDay1SoftPaywallState();
+          if (
+            pending &&
+            !shown &&
+            !isSubscribed &&
+            !isDay1SoftPaywallDeferredThisLaunch()
+          ) {
+            trackDay1SoftPaywallDeferred();
+          }
+          deferDay1SoftPaywallThisLaunch();
+          // Root-stack nav: go through "Main" to reach the nested tab.
+          openSettingsTab(rootNavigation);
+          return;
         }
+        await runDay1SoftPaywallTrigger({
+          storage,
+          // H1: this component is the root stack's "Main" screen, so
+          // useNavigation() is the root stack — navigate directly.
+          navigateToPaywall: () =>
+            rootNavigation.navigate("Paywall", { source: "day1_soft" }),
+          isSubscribed,
+          subscriptionLoading,
+          isCancelled: () => cancelled,
+        });
       })();
       return () => {
         cancelled = true;
       };
-    }, [navigation]),
+    }, [rootNavigation, isSubscribed, subscriptionLoading]),
   );
 
   return (

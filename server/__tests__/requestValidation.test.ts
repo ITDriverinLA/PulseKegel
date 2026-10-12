@@ -309,3 +309,83 @@ describe("weeklyReviewSchema", () => {
     ).toBe(false);
   });
 });
+
+describe("P4b day1_soft paywall source", () => {
+  it.each(["paywall_viewed", "subscribe_tapped"])(
+    "accepts source day1_soft on %s",
+    (type) => {
+      const data =
+        type === "paywall_viewed"
+          ? { source: "day1_soft", trialDaysRemaining: 6 }
+          : { source: "day1_soft" };
+      const result = analyticsBatchSchema.safeParse({
+        deviceId,
+        events: [{ type, data }],
+      });
+      expect(result.success).toBe(true);
+    },
+  );
+
+  it("still rejects unknown paywall sources", () => {
+    const result = analyticsBatchSchema.safeParse({
+      deviceId,
+      events: [
+        {
+          type: "paywall_viewed",
+          data: { source: "day2_hard", trialDaysRemaining: 6 },
+        },
+      ],
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("P4 follow-up paywall events", () => {
+  const parse = (type: string, data: Record<string, unknown>) =>
+    analyticsBatchSchema.safeParse({ deviceId, events: [{ type, data }] })
+      .success;
+
+  it.each(["day1_soft", "settings", "workout_gate", "challenge_complete"])(
+    "accepts paywall_dismissed from %s",
+    (source) => {
+      expect(parse("paywall_dismissed", { source, method: "not_now" })).toBe(
+        true,
+      );
+      expect(parse("paywall_dismissed", { source, method: "close" })).toBe(
+        true,
+      );
+    },
+  );
+
+  it("rejects paywall_dismissed without a valid source/method", () => {
+    expect(parse("paywall_dismissed", { method: "close" })).toBe(false);
+    expect(parse("paywall_dismissed", { source: "x", method: "close" })).toBe(
+      false,
+    );
+    expect(
+      parse("paywall_dismissed", { source: "settings", method: "swipe" }),
+    ).toBe(false);
+  });
+
+  it("accepts day1_soft_paywall_deferred", () => {
+    expect(
+      parse("day1_soft_paywall_deferred", { reason: "open_settings" }),
+    ).toBe(true);
+    expect(parse("day1_soft_paywall_deferred", { reason: "other" })).toBe(
+      false,
+    );
+  });
+
+  it.each(["started", "completed", "cancelled", "failed", "unavailable"])(
+    "accepts source on purchase_%s",
+    (result) => {
+      expect(parse(`purchase_${result}`, { result, source: "day1_soft" })).toBe(
+        true,
+      );
+      expect(parse(`purchase_${result}`, { result })).toBe(true);
+      expect(parse(`purchase_${result}`, { result, source: "bogus" })).toBe(
+        false,
+      );
+    },
+  );
+});

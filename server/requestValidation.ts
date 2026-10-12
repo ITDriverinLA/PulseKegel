@@ -12,6 +12,7 @@ const paywallSourceSchema = z.enum([
   "challenge_complete",
   "workout_gate",
   "settings",
+  "day1_soft",
   "unknown",
 ]);
 const purchaseResultSchema = z.enum([
@@ -27,6 +28,7 @@ const purchaseDataSchema = z
     packageIdentifier: z.string().trim().min(1).max(100).optional(),
     productIdentifier: z.string().trim().min(1).max(150).optional(),
     errorCode: z.string().trim().min(1).max(100).optional(),
+    source: paywallSourceSchema.optional(),
   })
   .strict();
 const eventMetadata = {
@@ -155,6 +157,25 @@ const analyticsEventSchema = z.discriminatedUnion("type", [
           totalCoreSessions: z.number().int().min(0).max(100).optional(),
         })
         .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("paywall_dismissed"),
+      data: z
+        .object({
+          source: paywallSourceSchema,
+          method: z.enum(["not_now", "close"]),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("day1_soft_paywall_deferred"),
+      data: z.object({ reason: z.literal("open_settings") }).strict(),
       ...eventMetadata,
     })
     .strict(),

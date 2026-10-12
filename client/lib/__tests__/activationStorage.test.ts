@@ -142,4 +142,23 @@ describe("activation storage helpers", () => {
     await storage.setPendingOpenSettings(false);
     expect(await storage.consumePendingOpenSettings()).toBe(false);
   });
+
+  it("P4a: Day 1 soft paywall queues once and persists shown", async () => {
+    expect(await storage.getDay1SoftPaywallState()).toEqual({
+      pending: false,
+      shown: false,
+    });
+    await storage.queueDay1SoftPaywall();
+    expect(await storage.getDay1SoftPaywallState()).toEqual({
+      pending: true,
+      shown: false,
+    });
+    await storage.markDay1SoftPaywallShown();
+    expect(await storage.getDay1SoftPaywallState()).toEqual({
+      pending: false,
+      shown: true,
+    });
+    await storage.queueDay1SoftPaywall();
+    expect((await storage.getDay1SoftPaywallState()).pending).toBe(false);
+  });
 });
