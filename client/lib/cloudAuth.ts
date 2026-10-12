@@ -62,6 +62,10 @@ export function isCloudSignInConfigured(
  * is every current store build. Kept visible for an already opted-in device
  * so it can still turn cloud sync off.
  */
+/** Manager claims must-have; wording unchanged. Always shown on Transfer. */
+export const TRANSFER_DISCLAIMER =
+  "Not medical advice. Cloud sync stores training progress only — never diagnoses or health records. Apple/Google Sign-In client IDs are configured by the app owner.";
+
 export function shouldShowCloudSyncSection(input: {
   signInConfigured: boolean;
   optedIn: boolean;

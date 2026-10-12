@@ -13,6 +13,7 @@ import {
 } from "@shared/progressTransfer";
 import { getApiUrl } from "./query-client";
 import { trackEvent } from "./analytics";
+import { isCloudSignInConfigured } from "./cloudAuth";
 import { applyTransferPayload, buildTransferPayload } from "./progressTransfer";
 
 const KEYS = {
@@ -101,9 +102,19 @@ export async function isCloudSyncOptedIn(): Promise<boolean> {
  * Affirmative opt-in (OP4). Auth + uploads only after this returns true path.
  * Does not itself upload — caller must then authenticate and push.
  */
+/**
+ * Sets cloud opt-in. G1fix2: refuses (returns false, writes nothing) when
+ * Sign-In isn't configured for the provider, so no path can opt in without
+ * sign-in being available.
+ */
 export async function enableCloudSyncOptIn(meta?: {
   provider?: CloudSyncProvider;
-}): Promise<void> {
+}): Promise<boolean> {
+  const provider =
+    meta?.provider && meta.provider !== "none" ? meta.provider : undefined;
+  if (!isCloudSignInConfigured(provider)) {
+    return false;
+  }
   await AsyncStorage.setItem(KEYS.OPT_IN, "true");
   if (meta?.provider && meta.provider !== "none") {
     await AsyncStorage.setItem(KEYS.PROVIDER, meta.provider);
@@ -112,6 +123,7 @@ export async function enableCloudSyncOptIn(meta?: {
     provider: meta?.provider ?? "none",
     platform: Platform.OS,
   });
+  return true;
 }
 
 /**
@@ -145,6 +157,8 @@ export async function shouldShowCloudSyncPrompt(): Promise<boolean> {
     AsyncStorage.getItem("pulsekegel_first_session_celebrated"),
   ]);
   if (optIn || dismissed) return false;
+  // G1fix2: never prompt when cloud Sign-In isn't configured.
+  if (!isCloudSignInConfigured()) return false;
   return celebrated === "true";
 }
 
