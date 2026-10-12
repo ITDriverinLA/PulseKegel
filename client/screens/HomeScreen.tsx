@@ -1547,8 +1547,9 @@ export default function HomeScreen() {
         onEnable={() => {
           setShowCloudOptIn(false);
           void (async () => {
-            await enableCloudSyncOptIn();
+            const enabled = await enableCloudSyncOptIn();
             await dismissCloudSyncPrompt();
+            if (!enabled) return;
             await storage.setPendingOpenSettings(true);
             navigation.getParent()?.navigate("SettingsTab" as never);
           })();

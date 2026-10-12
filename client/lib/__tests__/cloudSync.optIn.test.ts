@@ -51,6 +51,15 @@ jest.mock("expo-secure-store", () => {
   };
 });
 
+jest.mock("expo-constants", () => ({
+  __esModule: true,
+  default: { expoConfig: { extra: {} } },
+}));
+
+// G1fix2: opt-in now requires Sign-In to be configured; existing tests run
+// with an Apple client ID present (tests below cover the unconfigured case).
+process.env.EXPO_PUBLIC_APPLE_CLIENT_ID = "com.pulsekegel.signin.test";
+
 jest.mock("../analytics", () => ({
   trackEvent: jest.fn(),
 }));
@@ -70,6 +79,7 @@ import {
   isCloudSyncOptedIn,
   pushProgressIfOptedIn,
   setCloudAuthSession,
+  shouldShowCloudSyncPrompt,
   _resetCloudSyncPrefsForTests,
 } from "../cloudSync";
 
@@ -151,5 +161,40 @@ describe("cloud sync opt-in gate (OP1)", () => {
     const [url, init] = (global.fetch as jest.Mock).mock.calls[0];
     expect(String(url)).toContain("/api/sync/push");
     expect(init.headers.Authorization).toBe("Bearer secret-token");
+  });
+});
+
+describe("G1fix2: no cloud opt-in without Sign-In", () => {
+  const prev = process.env.EXPO_PUBLIC_APPLE_CLIENT_ID;
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+  });
+  afterEach(() => {
+    process.env.EXPO_PUBLIC_APPLE_CLIENT_ID = prev;
+  });
+
+  it("refuses to opt in and writes nothing when Sign-In isn't configured", async () => {
+    delete process.env.EXPO_PUBLIC_APPLE_CLIENT_ID;
+    expect(await enableCloudSyncOptIn()).toBe(false);
+    expect(await enableCloudSyncOptIn({ provider: "apple" })).toBe(false);
+    expect(await isCloudSyncOptedIn()).toBe(false);
+  });
+
+  it("opts in when Sign-In is configured", async () => {
+    process.env.EXPO_PUBLIC_APPLE_CLIENT_ID = "com.pulsekegel.signin.test";
+    expect(await enableCloudSyncOptIn({ provider: "apple" })).toBe(true);
+    expect(await isCloudSyncOptedIn()).toBe(true);
+  });
+
+  it("hides the Home opt-in modal when Sign-In isn't configured", async () => {
+    await AsyncStorage.setItem("pulsekegel_first_session_celebrated", "true");
+    delete process.env.EXPO_PUBLIC_APPLE_CLIENT_ID;
+    expect(await shouldShowCloudSyncPrompt()).toBe(false);
+  });
+
+  it("shows the Home opt-in modal after Day 1 when Sign-In is configured", async () => {
+    await AsyncStorage.setItem("pulsekegel_first_session_celebrated", "true");
+    process.env.EXPO_PUBLIC_APPLE_CLIENT_ID = "com.pulsekegel.signin.test";
+    expect(await shouldShowCloudSyncPrompt()).toBe(true);
   });
 });

@@ -34,6 +34,7 @@ import {
   cloudSignInUnavailableReason,
   isCloudSignInConfigured,
   shouldShowCloudSyncSection,
+  TRANSFER_DISCLAIMER,
   obtainCloudIdentityToken,
   preferredCloudAuthProvider,
 } from "@/lib/cloudAuth";
@@ -415,13 +416,16 @@ export default function TransferChecklistScreen() {
               </>
             )}
           </View>
-          <Text style={[styles.disclaimer, { color: cp.textMuted }]}>
-            Not medical advice. Cloud sync stores training progress only — never
-            diagnoses or health records. Apple/Google Sign-In client IDs are
-            configured by the app owner.
-          </Text>
         </Animated.View>
       ) : null}
+
+      {/* G1fix2: always visible, outside the (possibly hidden) cloud section. */}
+      <Text
+        style={[styles.disclaimer, { color: cp.textMuted }]}
+        testID="text-transfer-disclaimer"
+      >
+        {TRANSFER_DISCLAIMER}
+      </Text>
     </ScrollView>
   );
 }
