@@ -271,8 +271,7 @@ export default function TransferChecklistScreen() {
       <Animated.View entering={FadeInDown.duration(ANIM_DURATION_CONTENT)}>
         <Text style={[styles.lead, { color: cp.textSecondary }]}>
           Progress stays on this phone by default. Use a local encrypted backup
-          to move phones without an account or network. Cloud sync is optional
-          and off until you explicitly enable it.
+          to move phones without an account or network.
         </Text>
       </Animated.View>
 
