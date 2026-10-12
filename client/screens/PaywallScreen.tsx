@@ -33,6 +33,7 @@ import {
   DAY1_SOFT_DISMISS,
   DAY1_SOFT_HEADLINE,
   buildDay1SoftBody,
+  recordPaywallView,
 } from "@/lib/day1SoftPaywall";
 import {
   trackPaywallViewed,
@@ -108,12 +109,18 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
       setChallengeStats(stats);
       if (!paywallTrackedRef.current) {
         paywallTrackedRef.current = true;
-        trackPaywallViewed({
-          source,
-          trialDaysRemaining,
-          completedCoreSessions: stats?.completedCoreSessions,
-          totalCoreSessions: stats?.totalCoreSessions,
-        });
+        await recordPaywallView(
+          {
+            source,
+            trialDaysRemaining,
+            completedCoreSessions: stats?.completedCoreSessions,
+            totalCoreSessions: stats?.totalCoreSessions,
+          },
+          {
+            trackPaywallViewed,
+            markDay1SoftPaywallShown: () => storage.markDay1SoftPaywallShown(),
+          },
+        );
       }
     })();
     return () => {

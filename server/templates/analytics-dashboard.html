@@ -785,7 +785,7 @@
     </div>
     <div>
       <div class="section-label">Day 1 Finishers → Paywall</div>
-      <div class="section-sub">Devices with Week 1 Day 1 session_complete that later saw the paywall</div>
+      <div class="section-sub">Week 1 Day 1 finishers that later saw the paywall — all-time vs since P4 went live (first day1_soft view)</div>
       <div class="hbar-wrap">
         <div class="hbar-rows" id="day1-reach-rows"></div>
       </div>
@@ -1227,15 +1227,24 @@
     const container = document.getElementById('day1-reach-rows');
     if (!container) return;
     const finishers = Number(r.finishers) || 0;
+    const since = r.sinceP4 || {};
+    const sinceF = Number(since.finishers) || 0;
+    const cutoffLabel = r.p4Cutoff ? String(r.p4Cutoff).slice(0, 10) : 'not live yet';
+    // L2: all-time rows include pre-P4 finishers; "since P4" rows start at the
+    // first day1_soft paywall view.
     const rows = [
-      ['Day 1 finishers', finishers],
-      ['Reached paywall (any)', Number(r.reachedAny) || 0],
-      ['Reached via day1_soft', Number(r.reachedDay1Soft) || 0],
+      ['All-time: Day 1 finishers', finishers, finishers],
+      ['All-time: reached paywall (any)', Number(r.reachedAny) || 0, finishers],
+      ['All-time: via day1_soft', Number(r.reachedDay1Soft) || 0, finishers],
+      ['Since P4 (' + cutoffLabel + '): Day 1 finishers', sinceF, sinceF],
+      ['Since P4: reached paywall (any)', Number(since.reachedAny) || 0, sinceF],
+      ['Since P4: via day1_soft', Number(since.reachedDay1Soft) || 0, sinceF],
     ];
     container.innerHTML = rows.map(function(row) {
       const count = row[1];
-      const pct = finishers > 0 ? (count / finishers * 100).toFixed(1) : '0.0';
-      const barW = finishers > 0 ? (count / finishers * 100).toFixed(1) : '0';
+      const base = row[2];
+      const pct = base > 0 ? (count / base * 100).toFixed(1) : '0.0';
+      const barW = base > 0 ? (count / base * 100).toFixed(1) : '0';
       return '<div class="hbar-row">' +
         '<div class="hbar-label" title="' + esc(row[0]) + '">' + esc(row[0]) + '</div>' +
         '<div class="hbar-bg"><div class="hbar-fill" style="width:' + barW + '%"></div></div>' +

@@ -952,31 +952,57 @@ ${blogUrls}
           finishers: number;
           reached_any: number;
           reached_day1_soft: number;
+          p4_cutoff: string | null;
+          finishers_since_p4: number;
+          reached_any_since_p4: number;
+          reached_day1_soft_since_p4: number;
         }>(sql`
-        WITH finishers AS (
+        WITH cutoff AS (
+          -- L2: P4 went live when the first day1_soft paywall was seen.
+          SELECT MIN(created_at) AS at
+          FROM analytics_events
+          WHERE event_type = 'paywall_viewed'
+            AND event_data->>'source' = 'day1_soft'
+        ),
+        finishers AS (
           SELECT device_id, MIN(created_at) AS finished_at
           FROM analytics_events
           WHERE event_type = 'session_complete'
             AND event_data->>'weekNumber' = '1'
             AND event_data->>'dayNumber' = '1'
           GROUP BY device_id
+        ),
+        reach AS (
+          SELECT f.finished_at,
+            EXISTS (
+              SELECT 1 FROM analytics_events p
+              WHERE p.device_id = f.device_id
+                AND p.event_type = 'paywall_viewed'
+                AND p.created_at >= f.finished_at
+            ) AS any_pw,
+            EXISTS (
+              SELECT 1 FROM analytics_events p
+              WHERE p.device_id = f.device_id
+                AND p.event_type = 'paywall_viewed'
+                AND p.event_data->>'source' = 'day1_soft'
+                AND p.created_at >= f.finished_at
+            ) AS soft_pw
+          FROM finishers f
         )
         SELECT
           COUNT(*)::int AS finishers,
-          COUNT(*) FILTER (WHERE EXISTS (
-            SELECT 1 FROM analytics_events p
-            WHERE p.device_id = f.device_id
-              AND p.event_type = 'paywall_viewed'
-              AND p.created_at >= f.finished_at
-          ))::int AS reached_any,
-          COUNT(*) FILTER (WHERE EXISTS (
-            SELECT 1 FROM analytics_events p
-            WHERE p.device_id = f.device_id
-              AND p.event_type = 'paywall_viewed'
-              AND p.event_data->>'source' = 'day1_soft'
-              AND p.created_at >= f.finished_at
-          ))::int AS reached_day1_soft
-        FROM finishers f
+          COUNT(*) FILTER (WHERE any_pw)::int AS reached_any,
+          COUNT(*) FILTER (WHERE soft_pw)::int AS reached_day1_soft,
+          (SELECT at FROM cutoff)::text AS p4_cutoff,
+          COUNT(*) FILTER (WHERE finished_at >= (SELECT at FROM cutoff))::int
+            AS finishers_since_p4,
+          COUNT(*) FILTER (WHERE any_pw
+            AND finished_at >= (SELECT at FROM cutoff))::int
+            AS reached_any_since_p4,
+          COUNT(*) FILTER (WHERE soft_pw
+            AND finished_at >= (SELECT at FROM cutoff))::int
+            AS reached_day1_soft_since_p4
+        FROM reach
       `);
         const day1Reach = day1PaywallReachRaw.rows[0];
 
@@ -1153,6 +1179,15 @@ ${blogUrls}
             finishers: Number(day1Reach?.finishers ?? 0),
             reachedAny: Number(day1Reach?.reached_any ?? 0),
             reachedDay1Soft: Number(day1Reach?.reached_day1_soft ?? 0),
+            // L2: cutoff = first day1_soft paywall_viewed (null until P4 is live)
+            p4Cutoff: day1Reach?.p4_cutoff ?? null,
+            sinceP4: {
+              finishers: Number(day1Reach?.finishers_since_p4 ?? 0),
+              reachedAny: Number(day1Reach?.reached_any_since_p4 ?? 0),
+              reachedDay1Soft: Number(
+                day1Reach?.reached_day1_soft_since_p4 ?? 0,
+              ),
+            },
           },
           paywallDismissedBySource: paywallDismissedBySourceRaw.rows.map(
             (row) => ({ source: row.source, count: Number(row.count) || 0 }),

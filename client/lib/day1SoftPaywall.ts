@@ -59,3 +59,74 @@ export function isDay1SoftPaywallDeferredThisLaunch(): boolean {
 export function __resetDay1SoftPaywallLaunchState(): void {
   deferredThisLaunch = false;
 }
+
+// Guard: once the soft paywall has been presented this launch, never again
+// (protects against overlapping focus runs before the flag is persisted).
+let presentedThisLaunch = false;
+export function __resetDay1SoftPaywallPresented(): void {
+  presentedThisLaunch = false;
+}
+
+export interface Day1SoftPaywallTriggerDeps {
+  storage: {
+    getDay1SoftPaywallState(): Promise<{ pending: boolean; shown: boolean }>;
+    clearDay1SoftPaywallPending(): Promise<void>;
+  };
+  /** Root-stack navigate; must reach the root "Paywall" route. */
+  navigateToPaywall: () => void;
+  isSubscribed: boolean;
+  subscriptionLoading: boolean;
+  isCancelled: () => boolean;
+}
+
+/**
+ * P4a trigger (run on main-tab focus). Only navigates; never persists the
+ * shown-once flag (see recordPaywallView), so a cancelled or failed run
+ * can't burn the one-shot.
+ */
+export async function runDay1SoftPaywallTrigger(
+  deps: Day1SoftPaywallTriggerDeps,
+): Promise<Day1SoftPaywallDecision> {
+  if (presentedThisLaunch) return "none";
+  const state = await deps.storage.getDay1SoftPaywallState();
+  if (deps.isCancelled()) return "none";
+  const decision = decideDay1SoftPaywall({
+    ...state,
+    isSubscribed: deps.isSubscribed,
+    subscriptionLoading: deps.subscriptionLoading,
+    deferredThisLaunch: isDay1SoftPaywallDeferredThisLaunch(),
+  });
+  if (decision === "drop") {
+    await deps.storage.clearDay1SoftPaywallPending();
+  } else if (decision === "show") {
+    if (presentedThisLaunch) return "none";
+    presentedThisLaunch = true;
+    // The shown-once flag is persisted by PaywallScreen when it actually
+    // renders (recordPaywallView), so a failed navigation stays eligible
+    // for the next cold open. The in-memory guard prevents double nav.
+    deps.navigateToPaywall();
+  }
+  return decision;
+}
+
+/**
+ * P4a/L1: the single place a paywall view is recorded. For day1_soft the
+ * shown-once flag and the paywall_viewed event always land together.
+ */
+export async function recordPaywallView(
+  data: {
+    source: import("./analytics").PaywallSource;
+    trialDaysRemaining: number;
+    completedCoreSessions?: number;
+    totalCoreSessions?: number;
+  },
+  deps: {
+    trackPaywallViewed: (d: typeof data) => void;
+    markDay1SoftPaywallShown: () => Promise<void>;
+  },
+): Promise<void> {
+  if (data.source === "day1_soft") {
+    await deps.markDay1SoftPaywallShown();
+  }
+  deps.trackPaywallViewed(data);
+}

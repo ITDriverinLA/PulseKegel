@@ -15,11 +15,13 @@ import { useTheme } from "@/hooks/useTheme";
 import { storage } from "@/lib/storage";
 import { trackDay1SoftPaywallDeferred } from "@/lib/analytics";
 import { useSubscription } from "@/contexts/SubscriptionContext";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
-  decideDay1SoftPaywall,
   deferDay1SoftPaywallThisLaunch,
   isDay1SoftPaywallDeferredThisLaunch,
+  runDay1SoftPaywallTrigger,
 } from "@/lib/day1SoftPaywall";
+import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 export type MainTabParamList = {
   TodayTab: undefined;
@@ -32,6 +34,8 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 export default function MainTabNavigator() {
   const { theme, isDark } = useTheme();
   const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
+  const rootNavigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { isSubscribed, isLoading: subscriptionLoading } = useSubscription();
 
   useFocusEffect(
@@ -56,26 +60,21 @@ export default function MainTabNavigator() {
           navigation.navigate("SettingsTab");
           return;
         }
-        const state = await storage.getDay1SoftPaywallState();
-        if (cancelled) return;
-        const decision = decideDay1SoftPaywall({
-          ...state,
+        await runDay1SoftPaywallTrigger({
+          storage,
+          // H1: this component is the root stack's "Main" screen, so
+          // useNavigation() is the root stack — navigate directly.
+          navigateToPaywall: () =>
+            rootNavigation.navigate("Paywall", { source: "day1_soft" }),
           isSubscribed,
           subscriptionLoading,
-          deferredThisLaunch: isDay1SoftPaywallDeferredThisLaunch(),
+          isCancelled: () => cancelled,
         });
-        if (decision === "drop") {
-          await storage.clearDay1SoftPaywallPending();
-        } else if (decision === "show") {
-          await storage.markDay1SoftPaywallShown();
-          if (cancelled) return;
-          navigation.getParent()?.navigate("Paywall", { source: "day1_soft" });
-        }
       })();
       return () => {
         cancelled = true;
       };
-    }, [navigation, isSubscribed, subscriptionLoading]),
+    }, [navigation, rootNavigation, isSubscribed, subscriptionLoading]),
   );
 
   return (
