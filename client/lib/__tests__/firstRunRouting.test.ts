@@ -5,6 +5,8 @@ import {
   onboardingBackAction,
   resolveOnboardingResume,
   shouldAutoStartFirstSession,
+  shouldHoldGateLoader,
+  shouldTrackGateShown,
 } from "../firstRunRouting";
 
 const KEYS = ["welcome", "anatomy", "start"] as const;
@@ -147,6 +149,69 @@ describe("P2c Android back decisions", () => {
     );
     expect(gateBackAction(1000, 1000 + GATE_BACK_EXIT_WINDOW_MS + 1)).toBe(
       "blocked",
+    );
+  });
+});
+
+describe("P2.1 shouldTrackGateShown", () => {
+  const shown = {
+    ready: true,
+    isFocused: true,
+    autoStartPending: false,
+    autoStartLaunching: false,
+    celebrating: false,
+    alreadyTracked: false,
+  };
+
+  it("fires when the gate is actually on screen", () => {
+    expect(shouldTrackGateShown(shown)).toBe(true);
+  });
+
+  it("never fires during the Day-1 auto-start pass-through", () => {
+    expect(shouldTrackGateShown({ ...shown, autoStartPending: true })).toBe(
+      false,
+    );
+    expect(shouldTrackGateShown({ ...shown, autoStartLaunching: true })).toBe(
+      false,
+    );
+  });
+
+  it("does not fire before hydration, when unfocused, celebrating, or twice", () => {
+    expect(shouldTrackGateShown({ ...shown, ready: false })).toBe(false);
+    expect(shouldTrackGateShown({ ...shown, isFocused: false })).toBe(false);
+    expect(shouldTrackGateShown({ ...shown, celebrating: true })).toBe(false);
+    expect(shouldTrackGateShown({ ...shown, alreadyTracked: true })).toBe(
+      false,
+    );
+  });
+
+  it("auto-start then leave: fires only once the gate is shown on return", () => {
+    // onboarding Start Day 1 → hydrate → pending → launching → blurred
+    const seq = [
+      { ...shown, autoStartPending: true },
+      { ...shown, autoStartLaunching: true },
+      { ...shown, autoStartLaunching: true, isFocused: false },
+    ];
+    expect(seq.some((s) => shouldTrackGateShown(s))).toBe(false);
+    // user leaves the player and lands on the gate
+    expect(shouldTrackGateShown(shown)).toBe(true);
+  });
+});
+
+describe("P2.1 shouldHoldGateLoader", () => {
+  it("holds the loader until hydrated and the auto-start launch completes", () => {
+    const base = {
+      ready: true,
+      autoStartPending: false,
+      autoStartLaunching: false,
+    };
+    expect(shouldHoldGateLoader(base)).toBe(false);
+    expect(shouldHoldGateLoader({ ...base, ready: false })).toBe(true);
+    expect(shouldHoldGateLoader({ ...base, autoStartPending: true })).toBe(
+      true,
+    );
+    expect(shouldHoldGateLoader({ ...base, autoStartLaunching: true })).toBe(
+      true,
     );
   });
 });

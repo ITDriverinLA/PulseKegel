@@ -37,6 +37,8 @@ import { getLaunchType } from "@/lib/activationDiagnostics";
 import {
   gateBackAction,
   shouldAutoStartFirstSession,
+  shouldHoldGateLoader,
+  shouldTrackGateShown,
 } from "@/lib/firstRunRouting";
 import {
   FirstSessionGateSource,
@@ -95,6 +97,7 @@ export default function FirstSessionGateScreen({
   const [showSettingsTip, setShowSettingsTip] = useState(false);
   const [ready, setReady] = useState(false);
   const [autoStartPending, setAutoStartPending] = useState(false);
+  const [autoStartLaunching, setAutoStartLaunching] = useState(false);
   const autoStartedRef = useRef(false);
   const lastBackBlockedAtRef = useRef<number | null>(null);
   const gateShownRef = useRef(false);
@@ -177,6 +180,8 @@ export default function FirstSessionGateScreen({
     if (autoStart) {
       autoStartedRef.current = true;
       setAutoStartPending(true);
+    } else {
+      setAutoStartLaunching(false);
     }
 
     setSource(nextSource);
@@ -184,11 +189,6 @@ export default function FirstSessionGateScreen({
     setStepIndex(nextStep);
     setStateLost(lost);
     setReady(true);
-
-    if (!gateShownRef.current) {
-      gateShownRef.current = true;
-      trackFirstSessionGateShown({ source: nextSource });
-    }
 
     if (nextResume && !resumeShownRef.current) {
       resumeShownRef.current = true;
@@ -320,16 +320,47 @@ export default function FirstSessionGateScreen({
 
   useEffect(() => {
     if (!ready || !autoStartPending || !isFocused) return;
+    // P2.1: hold the loader until the launch (storage writes + navigate)
+    // finishes so the gate UI never paints during the auto-start.
+    setAutoStartLaunching(true);
     setAutoStartPending(false);
     void launchSession({
       resumeMode: false,
       startStep: 0,
       sourceOverride: "post_onboarding",
       autoStart: true,
-    });
+    }).catch(() => setAutoStartLaunching(false));
+    // On success the flag stays up until the gate regains focus (hydrate
+    // clears it), so there is no frame between navigate() and blur.
     // launchSession is recreated each render; run once per pending flag.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, autoStartPending, isFocused]);
+
+  // P2.1: gate_shown fires only once the gate UI is actually on screen for a
+  // focused user — not during the Day-1 auto-start pass-through.
+  useEffect(() => {
+    if (
+      !shouldTrackGateShown({
+        ready,
+        isFocused,
+        autoStartPending,
+        autoStartLaunching,
+        celebrating,
+        alreadyTracked: gateShownRef.current,
+      })
+    ) {
+      return;
+    }
+    gateShownRef.current = true;
+    trackFirstSessionGateShown({ source });
+  }, [
+    ready,
+    isFocused,
+    autoStartPending,
+    autoStartLaunching,
+    celebrating,
+    source,
+  ]);
 
   // P2c: Android back on the gate can never reach home (gate is the stack
   // root). First press is blocked with a hint; a second press within 2s lets
@@ -373,7 +404,7 @@ export default function FirstSessionGateScreen({
     });
   };
 
-  if (!ready || autoStartPending) {
+  if (shouldHoldGateLoader({ ready, autoStartPending, autoStartLaunching })) {
     return (
       <View style={styles.root}>
         <LinearGradient colors={BG_GRADIENT} style={StyleSheet.absoluteFill} />

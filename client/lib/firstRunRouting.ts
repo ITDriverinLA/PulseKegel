@@ -89,6 +89,41 @@ export function shouldAutoStartFirstSession(input: {
   );
 }
 
+/**
+ * P2.1: the gate UI is "shown" only when it actually paints for a focused
+ * user — never while hydrating, never during the Day-1 auto-start
+ * pass-through (pending or launching), and never on the celebration view.
+ */
+export function shouldTrackGateShown(input: {
+  ready: boolean;
+  isFocused: boolean;
+  autoStartPending: boolean;
+  autoStartLaunching: boolean;
+  celebrating: boolean;
+  alreadyTracked: boolean;
+}): boolean {
+  return (
+    input.ready &&
+    input.isFocused &&
+    !input.autoStartPending &&
+    !input.autoStartLaunching &&
+    !input.celebrating &&
+    !input.alreadyTracked
+  );
+}
+
+/**
+ * P2.1: the gate renders only the loading backdrop until hydration finishes
+ * and any Day-1 auto-start launch has completed, so the gate never flashes.
+ */
+export function shouldHoldGateLoader(input: {
+  ready: boolean;
+  autoStartPending: boolean;
+  autoStartLaunching: boolean;
+}): boolean {
+  return !input.ready || input.autoStartPending || input.autoStartLaunching;
+}
+
 /** P2c: Android back on onboarding steps back instead of leaving the app. */
 export function onboardingBackAction(
   stepIndex: number,
