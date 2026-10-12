@@ -126,7 +126,12 @@ export async function recordPaywallView(
   },
 ): Promise<void> {
   if (data.source === "day1_soft") {
-    await deps.markDay1SoftPaywallShown();
+    try {
+      await deps.markDay1SoftPaywallShown();
+    } catch (error) {
+      // A storage failure must never drop paywall_viewed.
+      console.warn("[PulseKegel] Failed to persist day1_soft shown:", error);
+    }
   }
   deps.trackPaywallViewed(data);
 }

@@ -236,3 +236,26 @@ describe("P4a recordPaywallView (L1)", () => {
     ).toHaveLength(1);
   });
 });
+
+describe("P4a recordPaywallView storage failure", () => {
+  it("still fires paywall_viewed when persisting the flag throws", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+    const viewed = jest.fn();
+    await expect(
+      recordPaywallView(
+        { source: "day1_soft", trialDaysRemaining: 6 },
+        {
+          trackPaywallViewed: viewed,
+          markDay1SoftPaywallShown: async () => {
+            throw new Error("disk full");
+          },
+        },
+      ),
+    ).resolves.toBeUndefined();
+    expect(viewed).toHaveBeenCalledWith({
+      source: "day1_soft",
+      trialDaysRemaining: 6,
+    });
+    warn.mockRestore();
+  });
+});
