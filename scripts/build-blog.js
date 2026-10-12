@@ -438,7 +438,10 @@ const BRAND_FOOTER = `<footer class="pk-footer">
 
 function applyBrandStyling(html) {
   if (!html.includes('<link rel="icon"')) {
-    html = html.replace("</head>", `${BRAND_HEAD_INJECT}\n</head>`);
+    const inject = html.includes("plausible.io/js")
+      ? BRAND_HEAD_INJECT.replace(/\s*<!-- Privacy-friendly analytics by Plausible -->[\s\S]*?<\/script>\s*<script>[\s\S]*?<\/script>/, "")
+      : BRAND_HEAD_INJECT;
+    html = html.replace("</head>", `${inject}\n</head>`);
   } else {
     html = html.replace("</head>", `  <link rel="preconnect" href="https://fonts.googleapis.com" />\n  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />\n  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />\n</head>`);
   }
