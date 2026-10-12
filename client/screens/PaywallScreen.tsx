@@ -36,6 +36,7 @@ import {
 } from "@/lib/day1SoftPaywall";
 import {
   trackPaywallViewed,
+  trackPaywallDismissed,
   trackPurchaseResult,
   trackSubscribeTapped,
 } from "@/lib/analytics";
@@ -168,7 +169,7 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
     }
 
     if (pkgs.length === 0) {
-      trackPurchaseResult({ result: "unavailable" });
+      trackPurchaseResult({ result: "unavailable", source });
       Alert.alert(
         "Not Available",
         "Subscriptions are not available right now. Please check your internet connection and try again.",
@@ -188,7 +189,7 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
     });
     setIsPurchasing(true);
     try {
-      const result = await purchasePackage(pkg);
+      const result = await purchasePackage(pkg, source);
       if (result === "success") {
         onClose?.();
         navigation.goBack();
@@ -226,7 +227,8 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
     }
   };
 
-  const handleClose = () => {
+  const handleClose = (method: "not_now" | "close" = "close") => {
+    trackPaywallDismissed({ source, method });
     if (onClose) {
       onClose();
     } else {
@@ -273,7 +275,7 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
             styles.closeButton,
             { top: insets.top + Spacing.sm, backgroundColor: cp.cardBorder },
           ]}
-          onPress={handleClose}
+          onPress={() => handleClose("close")}
           testID="button-close-paywall"
         >
           <Feather name="x" size={24} color={cp.textSecondary} />
@@ -428,7 +430,7 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
           {isDay1Soft ? (
             <Pressable
               style={styles.restoreButton}
-              onPress={handleClose}
+              onPress={() => handleClose("not_now")}
               testID="button-day1-soft-not-now"
             >
               <Text

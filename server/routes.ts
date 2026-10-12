@@ -980,6 +980,24 @@ ${blogUrls}
       `);
         const day1Reach = day1PaywallReachRaw.rows[0];
 
+        // P4 follow-up: dismissals by source + soft-paywall deferrals.
+        const paywallDismissedBySourceRaw = await db.execute<{
+          source: string;
+          count: number;
+        }>(sql`
+        SELECT COALESCE(event_data->>'source', 'unknown') AS source,
+          COUNT(DISTINCT device_id)::int AS count
+        FROM analytics_events
+        WHERE event_type = 'paywall_dismissed'
+        GROUP BY COALESCE(event_data->>'source', 'unknown')
+        ORDER BY count DESC
+      `);
+        const day1DeferredRaw = await db.execute<{ count: number }>(sql`
+        SELECT COUNT(DISTINCT device_id)::int AS count
+        FROM analytics_events
+        WHERE event_type = 'day1_soft_paywall_deferred'
+      `);
+
         const subscriptionFunnel = Object.fromEntries(
           subscriptionFunnelRaw.rows.map((row) => [
             row.event_type,
@@ -1136,6 +1154,10 @@ ${blogUrls}
             reachedAny: Number(day1Reach?.reached_any ?? 0),
             reachedDay1Soft: Number(day1Reach?.reached_day1_soft ?? 0),
           },
+          paywallDismissedBySource: paywallDismissedBySourceRaw.rows.map(
+            (row) => ({ source: row.source, count: Number(row.count) || 0 }),
+          ),
+          day1SoftPaywallDeferred: Number(day1DeferredRaw.rows[0]?.count ?? 0),
           programWeekDist: programWeekDistRaw.rows,
           workoutTypeBreakdown: workoutTypeRaw.rows,
           anatomySplit: anatomySplitRaw.rows,

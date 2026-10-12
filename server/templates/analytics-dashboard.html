@@ -792,6 +792,23 @@
     </div>
   </div>
 
+  <div class="two-col">
+    <div>
+      <div class="section-label">Paywall Dismissed by Source</div>
+      <div class="section-sub">Unique devices that closed the paywall (Not now or X)</div>
+      <div class="hbar-wrap">
+        <div class="hbar-rows" id="paywall-dismissed-rows"></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-label">Day 1 Soft Paywall Deferred</div>
+      <div class="section-sub">Devices deferred to next cold open (tip opened Settings)</div>
+      <div class="hbar-wrap">
+        <div class="funnel-num" id="day1-soft-deferred">—</div>
+      </div>
+    </div>
+  </div>
+
   <!-- Program week distribution -->
   <div class="chart-section">
     <div class="section-label">Program Week Distribution</div>
@@ -901,6 +918,9 @@
       renderSubscriptionFunnel(d.subscriptionFunnel || {});
       renderHBars('paywall-source-rows', d.paywallViewsBySource || [], 'source');
       renderDay1Reach(d.day1PaywallReach || {});
+      renderHBars('paywall-dismissed-rows', d.paywallDismissedBySource || [], 'source');
+      document.getElementById('day1-soft-deferred').textContent =
+        (Number(d.day1SoftPaywallDeferred) || 0).toLocaleString();
 
       // Program week distribution
       renderWeekDist(d.programWeekDist || []);

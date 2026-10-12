@@ -15,7 +15,11 @@ import Purchases, {
 } from "react-native-purchases";
 
 import { GENERATED_ENV } from "@/lib/env-config.generated";
-import { trackPurchaseResult, trackRestoreResult } from "@/lib/analytics";
+import {
+  PaywallSource,
+  trackPurchaseResult,
+  trackRestoreResult,
+} from "@/lib/analytics";
 
 const STORAGE_KEYS = {
   INSTALL_DATE: "pulsekegel_install_date",
@@ -35,7 +39,10 @@ interface SubscriptionContextType {
   daysSinceInstall: number;
   isLoading: boolean;
   packages: PurchasesPackage[];
-  purchasePackage: (pkg: PurchasesPackage) => Promise<PurchaseResult>;
+  purchasePackage: (
+    pkg: PurchasesPackage,
+    source?: PaywallSource,
+  ) => Promise<PurchaseResult>;
   restorePurchases: () => Promise<boolean>;
   checkSubscription: () => Promise<void>;
   hasAccess: boolean;
@@ -113,7 +120,10 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const purchasePackage = useCallback(
-    async (pkg: PurchasesPackage): Promise<PurchaseResult> => {
+    async (
+      pkg: PurchasesPackage,
+      source?: PaywallSource,
+    ): Promise<PurchaseResult> => {
       if (!configuredRef.current) {
         console.log(
           "[PulseKegel] Purchase attempted but RevenueCat not configured",
@@ -122,6 +132,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           result: "unavailable",
           packageIdentifier: pkg.identifier,
           productIdentifier: pkg.product.identifier,
+          source,
         });
         return "unavailable";
       }
@@ -131,6 +142,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           result: "started",
           packageIdentifier: pkg.identifier,
           productIdentifier: pkg.product.identifier,
+          source,
         });
         console.log(
           "[PulseKegel] Attempting purchase for package:",
@@ -149,6 +161,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
             result: "completed",
             packageIdentifier: pkg.identifier,
             productIdentifier: pkg.product.identifier,
+            source,
           });
           return "success";
         }
@@ -156,6 +169,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           result: "failed",
           packageIdentifier: pkg.identifier,
           productIdentifier: pkg.product.identifier,
+          source,
         });
         return "failed";
       } catch (error: any) {
@@ -168,6 +182,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
             result: "failed",
             packageIdentifier: pkg.identifier,
             productIdentifier: pkg.product.identifier,
+            source,
             errorCode: typeof error.code === "string" ? error.code : undefined,
           });
         } else {
@@ -176,6 +191,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
             result: "cancelled",
             packageIdentifier: pkg.identifier,
             productIdentifier: pkg.product.identifier,
+            source,
           });
         }
         return error.userCancelled ? "cancelled" : "failed";

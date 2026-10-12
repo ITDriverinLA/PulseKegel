@@ -13,6 +13,7 @@ import ProgressStackNavigator from "@/navigation/ProgressStackNavigator";
 import SettingsStackNavigator from "@/navigation/SettingsStackNavigator";
 import { useTheme } from "@/hooks/useTheme";
 import { storage } from "@/lib/storage";
+import { trackDay1SoftPaywallDeferred } from "@/lib/analytics";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import {
   decideDay1SoftPaywall,
@@ -42,6 +43,15 @@ export default function MainTabNavigator() {
         if (shouldOpen) {
           // P4a: the Settings tip won this launch; the Day 1 soft paywall
           // waits for the next cold open so they never stack.
+          const { pending, shown } = await storage.getDay1SoftPaywallState();
+          if (
+            pending &&
+            !shown &&
+            !isSubscribed &&
+            !isDay1SoftPaywallDeferredThisLaunch()
+          ) {
+            trackDay1SoftPaywallDeferred();
+          }
           deferDay1SoftPaywallThisLaunch();
           navigation.navigate("SettingsTab");
           return;
