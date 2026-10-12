@@ -14,6 +14,7 @@ import WorkoutPlayerScreen from "@/screens/WorkoutPlayerScreen";
 import WorkoutPickerScreen from "@/screens/WorkoutPickerScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
 import FirstSessionGateScreen from "@/screens/FirstSessionGateScreen";
+import { resetStaleCloudOptInIfUnconfigured } from "@/lib/cloudSync";
 import PaywallScreen from "@/screens/PaywallScreen";
 import ChallengeCompleteScreen from "@/screens/ChallengeCompleteScreen";
 import ProgramCompleteScreen from "@/screens/ProgramCompleteScreen";
@@ -148,6 +149,8 @@ export default function RootStackNavigator() {
     };
 
     const initialize = async () => {
+      // G1fix3: local-only, one-time reset of a stale cloud opt-in.
+      void resetStaleCloudOptInIfUnconfigured();
       const minDisplay = new Promise<void>((resolve) =>
         setTimeout(resolve, 3000),
       );

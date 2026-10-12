@@ -610,6 +610,20 @@ const analyticsEventSchema = z.discriminatedUnion("type", [
     .strict(),
   z
     .object({
+      type: z.literal("sync_optin_reset"),
+      data: z
+        .object({
+          provider: z.enum(["apple", "google", "none"]),
+          platform: z
+            .enum(["ios", "android", "web", "windows", "macos"])
+            .optional(),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
       type: z.literal("sync_pull_ok"),
       data: z.object({}).strict(),
       ...eventMetadata,
