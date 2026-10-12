@@ -663,7 +663,9 @@ export default function WorkoutPlayerScreen() {
   // P2.1: subscribe once; the ref always points at the latest handler (which
   // reads current workoutState), so the listener never re-subscribes.
   const firstSessionBackRef = useRef(handleFirstSessionBack);
-  firstSessionBackRef.current = handleFirstSessionBack;
+  useEffect(() => {
+    firstSessionBackRef.current = handleFirstSessionBack;
+  });
   const onHardwareBack = useCallback(() => firstSessionBackRef.current(), []);
 
   useEffect(() => {

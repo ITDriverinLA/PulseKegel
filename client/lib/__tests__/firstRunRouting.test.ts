@@ -3,6 +3,7 @@ import {
   gateBackAction,
   GATE_BACK_EXIT_WINDOW_MS,
   onboardingBackAction,
+  resolveGateHydrate,
   resolveOnboardingResume,
   shouldAutoStartFirstSession,
   shouldHoldGateLoader,
@@ -213,5 +214,150 @@ describe("P2.1 shouldHoldGateLoader", () => {
     expect(shouldHoldGateLoader({ ...base, autoStartLaunching: true })).toBe(
       true,
     );
+  });
+});
+
+/**
+ * P2.1 H1: drives the gate's state through the same helpers/order the screen
+ * uses (hydrate on focus → launch effect → blur → refocus) to prove the loader
+ * never sticks and the celebration / unlock is reached.
+ */
+describe("P2.1 gate lifecycle (H1)", () => {
+  type Store = {
+    completed: boolean;
+    celebrated: boolean;
+    inProgress: boolean;
+    pendingSource: "post_onboarding" | "cold_open" | "resume" | null;
+  };
+  function makeGate(store: Store) {
+    const st = {
+      ready: false,
+      autoStartPending: false,
+      autoStartLaunching: false,
+      celebrating: false,
+      autoStarted: false,
+      unlocked: 0,
+      launches: 0,
+    };
+    const hydrate = () => {
+      const o = resolveGateHydrate({
+        ...store,
+        alreadyAutoStarted: st.autoStarted,
+      });
+      if (o.autoStartLaunching === false) {
+        st.autoStartLaunching = false;
+        st.autoStartPending = false;
+      }
+      if (o.kind === "celebrate") {
+        st.celebrating = true;
+        st.ready = true;
+        return;
+      }
+      if (o.kind === "unlock") {
+        st.unlocked += 1;
+        return;
+      }
+      if (o.autoStart) {
+        st.autoStarted = true;
+        st.autoStartPending = true;
+      }
+      st.ready = true;
+    };
+    const runLaunchEffect = (fail = false) => {
+      if (!st.ready || !st.autoStartPending) return;
+      st.autoStartLaunching = true;
+      st.autoStartPending = false;
+      st.launches += 1;
+      if (fail) {
+        st.autoStartLaunching = false; // .catch()
+        return;
+      }
+      store.inProgress = true;
+      store.pendingSource = null;
+    };
+    const loader = () => shouldHoldGateLoader(st);
+    const finishCelebration = () => {
+      store.celebrated = true;
+      st.celebrating = false;
+      st.unlocked += 1;
+    };
+    return { st, hydrate, runLaunchEffect, loader, finishCelebration };
+  }
+  const fresh = (): Store => ({
+    completed: false,
+    celebrated: false,
+    inProgress: false,
+    pendingSource: "post_onboarding",
+  });
+
+  it("auto-start → complete → refocus shows celebration, then onUnlocked", () => {
+    const store = fresh();
+    const g = makeGate(store);
+    g.hydrate();
+    g.runLaunchEffect();
+    expect(g.loader()).toBe(true); // no gate flash while launching
+    // Player finishes Day 1, then pops back to the gate.
+    store.completed = true;
+    store.inProgress = false;
+    g.hydrate();
+    expect(g.loader()).toBe(false);
+    expect(g.st.celebrating).toBe(true);
+    g.finishCelebration();
+    expect(g.st.unlocked).toBe(1);
+  });
+
+  it("auto-start → complete (already celebrated) → refocus unlocks", () => {
+    const store = fresh();
+    const g = makeGate(store);
+    g.hydrate();
+    g.runLaunchEffect();
+    store.completed = true;
+    store.celebrated = true;
+    g.hydrate();
+    expect(g.st.autoStartLaunching).toBe(false);
+    expect(g.st.unlocked).toBe(1);
+  });
+
+  it("auto-start → leave/abandon → refocus shows resume gate, no re-launch", () => {
+    const store = fresh();
+    const g = makeGate(store);
+    g.hydrate();
+    g.runLaunchEffect();
+    g.hydrate(); // inProgress, left the player
+    g.runLaunchEffect();
+    expect(g.loader()).toBe(false);
+    expect(g.st.launches).toBe(1);
+    expect(
+      shouldTrackGateShown({
+        ...g.st,
+        isFocused: true,
+        alreadyTracked: false,
+      }),
+    ).toBe(true);
+  });
+
+  it("launch failure drops the loader and shows the gate", () => {
+    const g = makeGate(fresh());
+    g.hydrate();
+    g.runLaunchEffect(true);
+    expect(g.loader()).toBe(false);
+  });
+
+  it("app killed mid-launch: fresh mount never sticks on the loader", () => {
+    // Killed before storage writes: pending source still set → auto-starts.
+    const before = makeGate(fresh());
+    before.hydrate();
+    before.runLaunchEffect();
+    expect(before.st.launches).toBe(1);
+    // Killed after writes: in-progress → resume gate, loader down.
+    const after = makeGate({
+      ...fresh(),
+      inProgress: true,
+      pendingSource: null,
+    });
+    after.hydrate();
+    after.runLaunchEffect();
+    expect(after.loader()).toBe(false);
+    expect(after.st.launches).toBe(0);
   });
 });

@@ -148,3 +148,35 @@ export function gateBackAction(
   }
   return "blocked";
 }
+
+export type GateHydrateOutcome =
+  | { kind: "celebrate"; autoStart: false; autoStartLaunching: false }
+  | { kind: "unlock"; autoStart: false; autoStartLaunching: false }
+  | { kind: "gate"; autoStart: boolean; autoStartLaunching: false | null };
+
+/**
+ * P2.1 (H1): what a gate hydrate (mount or refocus) resolves to. Every path
+ * that is not a fresh Day-1 auto-start clears `autoStartLaunching` — in
+ * particular the `completed` paths, which return before the gate UI — so the
+ * loader can never stay up after the player returns to the gate. `null`
+ * means "leave as is" (auto-start: the launch effect owns the flag).
+ */
+export function resolveGateHydrate(input: {
+  completed: boolean;
+  celebrated: boolean;
+  inProgress: boolean;
+  pendingSource: GateSource | null;
+  alreadyAutoStarted: boolean;
+}): GateHydrateOutcome {
+  if (input.completed) {
+    return input.celebrated
+      ? { kind: "unlock", autoStart: false, autoStartLaunching: false }
+      : { kind: "celebrate", autoStart: false, autoStartLaunching: false };
+  }
+  const autoStart = shouldAutoStartFirstSession(input);
+  return {
+    kind: "gate",
+    autoStart,
+    autoStartLaunching: autoStart ? null : false,
+  };
+}

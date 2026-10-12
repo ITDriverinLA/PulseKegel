@@ -36,9 +36,9 @@ import {
 import { getLaunchType } from "@/lib/activationDiagnostics";
 import {
   gateBackAction,
-  shouldAutoStartFirstSession,
   shouldHoldGateLoader,
   shouldTrackGateShown,
+  resolveGateHydrate,
 } from "@/lib/firstRunRouting";
 import {
   FirstSessionGateSource,
@@ -132,8 +132,23 @@ export default function FirstSessionGateScreen({
       sessionIdRef.current = existingId;
     }
 
-    if (completed) {
-      if (!celebrated) {
+    const outcome = resolveGateHydrate({
+      completed,
+      celebrated,
+      inProgress,
+      pendingSource,
+      alreadyAutoStarted: autoStartedRef.current,
+    });
+    // P2.1 (H1): clear the auto-start launch hold on every non-auto-start
+    // path (incl. completed, before its early returns) so the loader can't
+    // stick after the player returns to the gate.
+    if (outcome.autoStartLaunching === false) {
+      setAutoStartLaunching(false);
+      setAutoStartPending(false);
+    }
+
+    if (outcome.kind !== "gate") {
+      if (outcome.kind === "celebrate") {
         setCelebrating(true);
         const shouldShowTip = !tipSeen;
         setShowSettingsTip(shouldShowTip);
@@ -171,17 +186,9 @@ export default function FirstSessionGateScreen({
 
     // P2b: onboarding's "Start Day 1" goes straight into the session. The
     // gate stays underneath only as the landing spot if the player is left.
-    const autoStart = shouldAutoStartFirstSession({
-      pendingSource,
-      inProgress,
-      completed,
-      alreadyAutoStarted: autoStartedRef.current,
-    });
-    if (autoStart) {
+    if (outcome.autoStart) {
       autoStartedRef.current = true;
       setAutoStartPending(true);
-    } else {
-      setAutoStartLaunching(false);
     }
 
     setSource(nextSource);
