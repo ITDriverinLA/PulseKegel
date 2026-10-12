@@ -660,14 +660,22 @@ export default function WorkoutPlayerScreen() {
     return true;
   };
 
+  // P2.1: subscribe once; the ref always points at the latest handler (which
+  // reads current workoutState), so the listener never re-subscribes.
+  const firstSessionBackRef = useRef(handleFirstSessionBack);
+  useEffect(() => {
+    firstSessionBackRef.current = handleFirstSessionBack;
+  });
+  const onHardwareBack = useCallback(() => firstSessionBackRef.current(), []);
+
   useEffect(() => {
     if (Platform.OS !== "android" || !isFirstSession) return;
     const sub = BackHandler.addEventListener(
       "hardwareBackPress",
-      handleFirstSessionBack,
+      onHardwareBack,
     );
     return () => sub.remove();
-  });
+  }, [isFirstSession, onHardwareBack]);
 
   const screenAnimatedStyle = useAnimatedStyle(() => ({
     opacity: screenOpacity.value,

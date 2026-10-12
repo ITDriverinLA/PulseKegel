@@ -89,6 +89,41 @@ export function shouldAutoStartFirstSession(input: {
   );
 }
 
+/**
+ * P2.1: the gate UI is "shown" only when it actually paints for a focused
+ * user — never while hydrating, never during the Day-1 auto-start
+ * pass-through (pending or launching), and never on the celebration view.
+ */
+export function shouldTrackGateShown(input: {
+  ready: boolean;
+  isFocused: boolean;
+  autoStartPending: boolean;
+  autoStartLaunching: boolean;
+  celebrating: boolean;
+  alreadyTracked: boolean;
+}): boolean {
+  return (
+    input.ready &&
+    input.isFocused &&
+    !input.autoStartPending &&
+    !input.autoStartLaunching &&
+    !input.celebrating &&
+    !input.alreadyTracked
+  );
+}
+
+/**
+ * P2.1: the gate renders only the loading backdrop until hydration finishes
+ * and any Day-1 auto-start launch has completed, so the gate never flashes.
+ */
+export function shouldHoldGateLoader(input: {
+  ready: boolean;
+  autoStartPending: boolean;
+  autoStartLaunching: boolean;
+}): boolean {
+  return !input.ready || input.autoStartPending || input.autoStartLaunching;
+}
+
 /** P2c: Android back on onboarding steps back instead of leaving the app. */
 export function onboardingBackAction(
   stepIndex: number,
@@ -112,4 +147,36 @@ export function gateBackAction(
     return "exit";
   }
   return "blocked";
+}
+
+export type GateHydrateOutcome =
+  | { kind: "celebrate"; autoStart: false; autoStartLaunching: false }
+  | { kind: "unlock"; autoStart: false; autoStartLaunching: false }
+  | { kind: "gate"; autoStart: boolean; autoStartLaunching: false | null };
+
+/**
+ * P2.1 (H1): what a gate hydrate (mount or refocus) resolves to. Every path
+ * that is not a fresh Day-1 auto-start clears `autoStartLaunching` — in
+ * particular the `completed` paths, which return before the gate UI — so the
+ * loader can never stay up after the player returns to the gate. `null`
+ * means "leave as is" (auto-start: the launch effect owns the flag).
+ */
+export function resolveGateHydrate(input: {
+  completed: boolean;
+  celebrated: boolean;
+  inProgress: boolean;
+  pendingSource: GateSource | null;
+  alreadyAutoStarted: boolean;
+}): GateHydrateOutcome {
+  if (input.completed) {
+    return input.celebrated
+      ? { kind: "unlock", autoStart: false, autoStartLaunching: false }
+      : { kind: "celebrate", autoStart: false, autoStartLaunching: false };
+  }
+  const autoStart = shouldAutoStartFirstSession(input);
+  return {
+    kind: "gate",
+    autoStart,
+    autoStartLaunching: autoStart ? null : false,
+  };
 }
