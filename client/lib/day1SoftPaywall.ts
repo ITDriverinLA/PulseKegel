@@ -6,7 +6,7 @@
 
 export const DAY1_SOFT_HEADLINE = "Day 1, done. Here's the plan from here.";
 export const DAY1_SOFT_BODY_REST =
-  "PulseKegel can guide you past it with short daily sessions, haptic cues to help you keep your timing, and a plan that builds week to week. It stays on your phone, with no account needed.";
+  "PulseKegel can guide you past it with short daily sessions, haptic cues to help you keep your timing, and a plan that builds week to week. It stays on your phone by default, with no account needed.";
 export const DAY1_SOFT_CTA = "Keep my plan going";
 export const DAY1_SOFT_DISMISS = "Not now";
 

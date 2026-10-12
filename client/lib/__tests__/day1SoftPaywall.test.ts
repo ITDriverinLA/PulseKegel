@@ -19,7 +19,7 @@ describe("P4a Day 1 soft paywall copy", () => {
     expect(DAY1_SOFT_CTA).toBe("Keep my plan going");
     expect(DAY1_SOFT_DISMISS).toBe("Not now");
     expect(buildDay1SoftBody(6, true)).toBe(
-      "You've got 6 days left in your free week. PulseKegel can guide you past it with short daily sessions, haptic cues to help you keep your timing, and a plan that builds week to week. It stays on your phone, with no account needed.",
+      "You've got 6 days left in your free week. PulseKegel can guide you past it with short daily sessions, haptic cues to help you keep your timing, and a plan that builds week to week. It stays on your phone by default, with no account needed.",
     );
   });
 
