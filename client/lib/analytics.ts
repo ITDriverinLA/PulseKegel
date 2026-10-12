@@ -164,6 +164,7 @@ export type PaywallSource =
   | "challenge_complete"
   | "workout_gate"
   | "settings"
+  | "day1_soft"
   | "unknown";
 
 export function trackPaywallViewed(data: {

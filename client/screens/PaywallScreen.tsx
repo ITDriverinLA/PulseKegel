@@ -29,6 +29,12 @@ import { useThemePreference } from "@/contexts/ThemePreferenceContext";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { storage } from "@/lib/storage";
 import {
+  DAY1_SOFT_CTA,
+  DAY1_SOFT_DISMISS,
+  DAY1_SOFT_HEADLINE,
+  buildDay1SoftBody,
+} from "@/lib/day1SoftPaywall";
+import {
   trackPaywallViewed,
   trackPurchaseResult,
   trackSubscribeTapped,
@@ -74,6 +80,7 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
     restorePurchases,
     isLoading,
     trialDaysRemaining,
+    isTrialActive,
   } = useSubscription();
   const { cp, isDarkMode } = useThemePreference();
 
@@ -116,6 +123,7 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
   const selectedPackage = chooseAnnualPackage(localPackages);
   const displayedPrice = selectedPackage?.product.priceString ?? "$4.99";
   const isChallengeConversion = source === "challenge_complete";
+  const isDay1Soft = source === "day1_soft";
 
   const challengeTitle = (() => {
     if (!challengeStats) return "Keep Your Momentum Going";
@@ -293,9 +301,23 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
           <Text
             style={[styles.title, { fontSize: 28 * fontScale, color: cp.text }]}
           >
-            {isChallengeConversion ? challengeTitle : "Unlock Full Access"}
+            {isDay1Soft
+              ? DAY1_SOFT_HEADLINE
+              : isChallengeConversion
+                ? challengeTitle
+                : "Unlock Full Access"}
           </Text>
-          {isChallengeConversion ? (
+          {isDay1Soft ? (
+            <Text
+              style={[
+                styles.subtitle,
+                { fontSize: 16 * fontScale, color: cp.textSecondary },
+              ]}
+              testID="text-day1-soft-body"
+            >
+              {buildDay1SoftBody(trialDaysRemaining, isTrialActive)}
+            </Text>
+          ) : isChallengeConversion ? (
             <Text
               style={[
                 styles.subtitle,
@@ -393,13 +415,32 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
               <>
                 <Feather name="unlock" size={20} color={cp.bg} />
                 <Text style={[styles.subscribeButtonText, { color: cp.bg }]}>
-                  {isChallengeConversion
-                    ? `Continue My Training — ${displayedPrice}/year`
-                    : `Subscribe — ${displayedPrice}/year`}
+                  {isDay1Soft
+                    ? DAY1_SOFT_CTA
+                    : isChallengeConversion
+                      ? `Continue My Training — ${displayedPrice}/year`
+                      : `Subscribe — ${displayedPrice}/year`}
                 </Text>
               </>
             )}
           </Pressable>
+
+          {isDay1Soft ? (
+            <Pressable
+              style={styles.restoreButton}
+              onPress={handleClose}
+              testID="button-day1-soft-not-now"
+            >
+              <Text
+                style={[
+                  styles.restoreButtonText,
+                  { fontSize: 15 * fontScale, color: cp.textSecondary },
+                ]}
+              >
+                {DAY1_SOFT_DISMISS}
+              </Text>
+            </Pressable>
+          ) : null}
 
           <Pressable
             style={styles.restoreButton}

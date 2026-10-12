@@ -309,3 +309,33 @@ describe("weeklyReviewSchema", () => {
     ).toBe(false);
   });
 });
+
+describe("P4b day1_soft paywall source", () => {
+  it.each(["paywall_viewed", "subscribe_tapped"])(
+    "accepts source day1_soft on %s",
+    (type) => {
+      const data =
+        type === "paywall_viewed"
+          ? { source: "day1_soft", trialDaysRemaining: 6 }
+          : { source: "day1_soft" };
+      const result = analyticsBatchSchema.safeParse({
+        deviceId,
+        events: [{ type, data }],
+      });
+      expect(result.success).toBe(true);
+    },
+  );
+
+  it("still rejects unknown paywall sources", () => {
+    const result = analyticsBatchSchema.safeParse({
+      deviceId,
+      events: [
+        {
+          type: "paywall_viewed",
+          data: { source: "day2_hard", trialDaysRemaining: 6 },
+        },
+      ],
+    });
+    expect(result.success).toBe(false);
+  });
+});

@@ -223,6 +223,8 @@ export default function FirstSessionGateScreen({
 
   const finishCelebration = async () => {
     await storage.markFirstSessionCelebrated();
+    // P4a: queue the one-time soft paywall for after the celebration.
+    await storage.queueDay1SoftPaywall();
     setCelebrating(false);
     onUnlocked();
   };

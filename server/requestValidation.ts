@@ -12,6 +12,7 @@ const paywallSourceSchema = z.enum([
   "challenge_complete",
   "workout_gate",
   "settings",
+  "day1_soft",
   "unknown",
 ]);
 const purchaseResultSchema = z.enum([

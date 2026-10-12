@@ -932,6 +932,54 @@ ${blogUrls}
         )
         GROUP BY event_type
       `);
+        // P4b: paywall_viewed split by source (unique devices per source).
+        const paywallBySourceRaw = await db.execute<{
+          source: string;
+          count: number;
+        }>(sql`
+        SELECT COALESCE(event_data->>'source', 'unknown') AS source,
+          COUNT(DISTINCT device_id)::int AS count
+        FROM analytics_events
+        WHERE event_type = 'paywall_viewed'
+        GROUP BY COALESCE(event_data->>'source', 'unknown')
+        ORDER BY count DESC
+      `);
+
+        // P4b: Day 1 finishers (session_complete week 1 / day 1) and how
+        // many of them reached the paywall afterwards (any source, and via
+        // the day1_soft placement).
+        const day1PaywallReachRaw = await db.execute<{
+          finishers: number;
+          reached_any: number;
+          reached_day1_soft: number;
+        }>(sql`
+        WITH finishers AS (
+          SELECT device_id, MIN(created_at) AS finished_at
+          FROM analytics_events
+          WHERE event_type = 'session_complete'
+            AND event_data->>'weekNumber' = '1'
+            AND event_data->>'dayNumber' = '1'
+          GROUP BY device_id
+        )
+        SELECT
+          COUNT(*)::int AS finishers,
+          COUNT(*) FILTER (WHERE EXISTS (
+            SELECT 1 FROM analytics_events p
+            WHERE p.device_id = f.device_id
+              AND p.event_type = 'paywall_viewed'
+              AND p.created_at >= f.finished_at
+          ))::int AS reached_any,
+          COUNT(*) FILTER (WHERE EXISTS (
+            SELECT 1 FROM analytics_events p
+            WHERE p.device_id = f.device_id
+              AND p.event_type = 'paywall_viewed'
+              AND p.event_data->>'source' = 'day1_soft'
+              AND p.created_at >= f.finished_at
+          ))::int AS reached_day1_soft
+        FROM finishers f
+      `);
+        const day1Reach = day1PaywallReachRaw.rows[0];
+
         const subscriptionFunnel = Object.fromEntries(
           subscriptionFunnelRaw.rows.map((row) => [
             row.event_type,
@@ -1078,6 +1126,15 @@ ${blogUrls}
             viewed: subscriptionFunnel.paywall_viewed ?? 0,
             tapped: subscriptionFunnel.subscribe_tapped ?? 0,
             purchased: subscriptionFunnel.purchase_completed ?? 0,
+          },
+          paywallViewsBySource: paywallBySourceRaw.rows.map((row) => ({
+            source: row.source,
+            count: Number(row.count) || 0,
+          })),
+          day1PaywallReach: {
+            finishers: Number(day1Reach?.finishers ?? 0),
+            reachedAny: Number(day1Reach?.reached_any ?? 0),
+            reachedDay1Soft: Number(day1Reach?.reached_day1_soft ?? 0),
           },
           programWeekDist: programWeekDistRaw.rows,
           workoutTypeBreakdown: workoutTypeRaw.rows,

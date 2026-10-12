@@ -774,6 +774,24 @@
     </div>
   </div>
 
+  <!-- P4b: paywall views by source + Day 1 finisher reach -->
+  <div class="two-col">
+    <div>
+      <div class="section-label">Paywall Views by Source</div>
+      <div class="section-sub">Unique devices per paywall_viewed source</div>
+      <div class="hbar-wrap">
+        <div class="hbar-rows" id="paywall-source-rows"></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-label">Day 1 Finishers → Paywall</div>
+      <div class="section-sub">Devices with Week 1 Day 1 session_complete that later saw the paywall</div>
+      <div class="hbar-wrap">
+        <div class="hbar-rows" id="day1-reach-rows"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- Program week distribution -->
   <div class="chart-section">
     <div class="section-label">Program Week Distribution</div>
@@ -881,6 +899,8 @@
       renderFunnelByPlatform(d.funnelByPlatform || []);
       renderFirstRunFunnelByPlatform(d.firstRunFunnelByPlatform || []);
       renderSubscriptionFunnel(d.subscriptionFunnel || {});
+      renderHBars('paywall-source-rows', d.paywallViewsBySource || [], 'source');
+      renderDay1Reach(d.day1PaywallReach || {});
 
       // Program week distribution
       renderWeekDist(d.programWeekDist || []);
@@ -1181,6 +1201,28 @@
       tapPct != null ? tapPct + '% of paywall views' : '';
     document.getElementById('sub-purchased-pct').textContent =
       purchasePct != null ? purchasePct + '% of paywall views' : '';
+  }
+
+  function renderDay1Reach(r) {
+    const container = document.getElementById('day1-reach-rows');
+    if (!container) return;
+    const finishers = Number(r.finishers) || 0;
+    const rows = [
+      ['Day 1 finishers', finishers],
+      ['Reached paywall (any)', Number(r.reachedAny) || 0],
+      ['Reached via day1_soft', Number(r.reachedDay1Soft) || 0],
+    ];
+    container.innerHTML = rows.map(function(row) {
+      const count = row[1];
+      const pct = finishers > 0 ? (count / finishers * 100).toFixed(1) : '0.0';
+      const barW = finishers > 0 ? (count / finishers * 100).toFixed(1) : '0';
+      return '<div class="hbar-row">' +
+        '<div class="hbar-label" title="' + esc(row[0]) + '">' + esc(row[0]) + '</div>' +
+        '<div class="hbar-bg"><div class="hbar-fill" style="width:' + barW + '%"></div></div>' +
+        '<div class="hbar-count">' + count.toLocaleString() + '</div>' +
+        '<div class="hbar-pct">' + pct + '%</div>' +
+        '</div>';
+    }).join('');
   }
 
   function renderWeekDist(rows) {

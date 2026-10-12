@@ -50,6 +50,8 @@ const STORAGE_KEYS = {
   FIRST_SESSION_ID: "pulsekegel_first_session_id",
   SETTINGS_TIP_SEEN: "pulsekegel_settings_tip_seen",
   PENDING_OPEN_SETTINGS: "pulsekegel_pending_open_settings",
+  DAY1_SOFT_PAYWALL_PENDING: "pulsekegel_day1_soft_paywall_pending",
+  DAY1_SOFT_PAYWALL_SHOWN: "pulsekegel_day1_soft_paywall_shown",
   PROGRAM_START_DATE: "pulsekegel_program_start_date",
   LAST_WEEKLY_REVIEW: "pulsekegel_last_weekly_review",
   REVIEW_HISTORY: "pulsekegel_review_history",
@@ -1091,6 +1093,56 @@ export const storage = {
       await AsyncStorage.setItem(STORAGE_KEYS.SETTINGS_TIP_SEEN, "true");
     } catch (error) {
       console.error("Error marking settings tip seen:", error);
+    }
+  },
+
+  /** P4a: queued when the Day 1 celebration finishes (first time only). */
+  async queueDay1SoftPaywall(): Promise<void> {
+    try {
+      const shown = await AsyncStorage.getItem(
+        STORAGE_KEYS.DAY1_SOFT_PAYWALL_SHOWN,
+      );
+      if (shown === "true") return;
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.DAY1_SOFT_PAYWALL_PENDING,
+        "true",
+      );
+    } catch (error) {
+      console.error("Error queueing Day 1 soft paywall:", error);
+    }
+  },
+
+  async getDay1SoftPaywallState(): Promise<{
+    pending: boolean;
+    shown: boolean;
+  }> {
+    try {
+      const [pending, shown] = await Promise.all([
+        AsyncStorage.getItem(STORAGE_KEYS.DAY1_SOFT_PAYWALL_PENDING),
+        AsyncStorage.getItem(STORAGE_KEYS.DAY1_SOFT_PAYWALL_SHOWN),
+      ]);
+      return { pending: pending === "true", shown: shown === "true" };
+    } catch {
+      return { pending: false, shown: false };
+    }
+  },
+
+  /** P4a: persist shown-once; the soft paywall never shows again. */
+  async markDay1SoftPaywallShown(): Promise<void> {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.DAY1_SOFT_PAYWALL_SHOWN, "true");
+      await AsyncStorage.removeItem(STORAGE_KEYS.DAY1_SOFT_PAYWALL_PENDING);
+    } catch (error) {
+      console.error("Error marking Day 1 soft paywall shown:", error);
+    }
+  },
+
+  /** P4a: drop the queued paywall without showing it (e.g. subscribed). */
+  async clearDay1SoftPaywallPending(): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(STORAGE_KEYS.DAY1_SOFT_PAYWALL_PENDING);
+    } catch (error) {
+      console.error("Error clearing Day 1 soft paywall:", error);
     }
   },
 
