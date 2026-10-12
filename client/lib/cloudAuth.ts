@@ -56,6 +56,19 @@ export function isCloudSignInConfigured(
   return provider === "apple" ? Boolean(ids.apple) : Boolean(ids.google);
 }
 
+/**
+ * G1-fix: whether the Backup/Transfer screen shows the cloud sync section.
+ * Hidden entirely (no replacement text) when Sign-In isn't configured, which
+ * is every current store build. Kept visible for an already opted-in device
+ * so it can still turn cloud sync off.
+ */
+export function shouldShowCloudSyncSection(input: {
+  signInConfigured: boolean;
+  optedIn: boolean;
+}): boolean {
+  return input.signInConfigured || input.optedIn;
+}
+
 export function cloudSignInUnavailableReason(
   provider: CloudAuthProvider = preferredCloudAuthProvider(),
 ): string | null {
