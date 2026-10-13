@@ -257,7 +257,7 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
     {
       icon: "shield",
       title: "Train Completely Privately",
-      desc: "No account and your data stays on your device",
+      desc: "No account, and your data stays on your device by default.",
     },
   ];
 
