@@ -66,6 +66,13 @@ export function isCloudSignInConfigured(
 export const TRANSFER_DISCLAIMER =
   "Not medical advice. Cloud sync stores training progress only — never diagnoses or health records. Apple/Google Sign-In client IDs are configured by the app owner.";
 
+/** G1fix4: short footer when Sign-In isn't configured (no cloud/sign-in copy). */
+export const TRANSFER_DISCLAIMER_SHORT = "Not medical advice.";
+
+export function transferDisclaimerText(signInConfigured: boolean): string {
+  return signInConfigured ? TRANSFER_DISCLAIMER : TRANSFER_DISCLAIMER_SHORT;
+}
+
 export function shouldShowCloudSyncSection(input: {
   signInConfigured: boolean;
   optedIn: boolean;

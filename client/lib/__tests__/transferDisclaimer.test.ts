@@ -9,6 +9,7 @@ jest.mock("expo-constants", () => ({
 
 import {
   TRANSFER_DISCLAIMER,
+  transferDisclaimerText,
   isCloudSignInConfigured,
   shouldShowCloudSyncSection,
 } from "../cloudAuth";
@@ -36,14 +37,33 @@ describe("G1fix2 Transfer disclaimer", () => {
 
     const sectionStart = screenSrc.indexOf("shouldShowCloudSyncSection({");
     const sectionEnd = screenSrc.indexOf(") : null}", sectionStart);
-    const disclaimerAt = screenSrc.indexOf("{TRANSFER_DISCLAIMER}");
+    const disclaimerAt = screenSrc.indexOf(
+      "{transferDisclaimerText(isCloudSignInConfigured())}",
+    );
     expect(sectionStart).toBeGreaterThan(-1);
     expect(sectionEnd).toBeGreaterThan(sectionStart);
     expect(disclaimerAt).toBeGreaterThan(sectionEnd);
     // Rendered exactly once, and not inside the conditional block.
-    expect(screenSrc.split("{TRANSFER_DISCLAIMER}")).toHaveLength(2);
+    expect(
+      screenSrc.split("{transferDisclaimerText(isCloudSignInConfigured())}"),
+    ).toHaveLength(2);
     expect(
       screenSrc.slice(sectionStart, sectionEnd).includes("Not medical advice"),
     ).toBe(false);
+  });
+
+  it("G1fix4: footer is only 'Not medical advice.' without Sign-In", () => {
+    delete process.env.EXPO_PUBLIC_APPLE_CLIENT_ID;
+    const text = transferDisclaimerText(isCloudSignInConfigured());
+    expect(text).toBe("Not medical advice.");
+    expect(text).not.toMatch(/cloud|sign-in|client id/i);
+  });
+
+  it("G1fix4: full footer is kept when Sign-In is configured", () => {
+    process.env.EXPO_PUBLIC_APPLE_CLIENT_ID = "com.pulsekegel.signin.test";
+    expect(transferDisclaimerText(isCloudSignInConfigured())).toBe(
+      TRANSFER_DISCLAIMER,
+    );
+    delete process.env.EXPO_PUBLIC_APPLE_CLIENT_ID;
   });
 });

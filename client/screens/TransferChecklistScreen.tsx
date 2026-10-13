@@ -34,7 +34,7 @@ import {
   cloudSignInUnavailableReason,
   isCloudSignInConfigured,
   shouldShowCloudSyncSection,
-  TRANSFER_DISCLAIMER,
+  transferDisclaimerText,
   obtainCloudIdentityToken,
   preferredCloudAuthProvider,
 } from "@/lib/cloudAuth";
@@ -424,7 +424,7 @@ export default function TransferChecklistScreen() {
         style={[styles.disclaimer, { color: cp.textMuted }]}
         testID="text-transfer-disclaimer"
       >
-        {TRANSFER_DISCLAIMER}
+        {transferDisclaimerText(isCloudSignInConfigured())}
       </Text>
     </ScrollView>
   );
