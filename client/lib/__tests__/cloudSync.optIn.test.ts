@@ -81,7 +81,13 @@ import {
   setCloudAuthSession,
   shouldShowCloudSyncPrompt,
   _resetCloudSyncPrefsForTests,
+  resetStaleCloudOptInIfUnconfigured,
 } from "../cloudSync";
+import { trackEvent } from "../analytics";
+import {
+  isCloudSignInConfigured,
+  shouldShowCloudSyncSection,
+} from "../cloudAuth";
 
 const store = (AsyncStorage as unknown as { __store: Map<string, string> })
   .__store;
@@ -196,5 +202,77 @@ describe("G1fix2: no cloud opt-in without Sign-In", () => {
     await AsyncStorage.setItem("pulsekegel_first_session_celebrated", "true");
     process.env.EXPO_PUBLIC_APPLE_CLIENT_ID = "com.pulsekegel.signin.test";
     expect(await shouldShowCloudSyncPrompt()).toBe(true);
+  });
+});
+
+describe("G1fix3: reset stale cloud opt-in", () => {
+  const prev = process.env.EXPO_PUBLIC_APPLE_CLIENT_ID;
+  const OPT_IN = "pulsekegel_cloud_sync_opt_in";
+  const fetchMock = jest.fn();
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+    jest.clearAllMocks();
+    (global as unknown as { fetch: unknown }).fetch = fetchMock;
+  });
+  afterEach(() => {
+    process.env.EXPO_PUBLIC_APPLE_CLIENT_ID = prev;
+  });
+
+  async function seedStaleOptIn() {
+    await AsyncStorage.setItem(OPT_IN, "true");
+    await AsyncStorage.setItem("pulsekegel_progress", '{"totalSessions":4}');
+    await AsyncStorage.setItem("pulsekegel_first_session_celebrated", "true");
+  }
+
+  it("resets a stale opt-in when Sign-In isn't configured, and the section hides", async () => {
+    await seedStaleOptIn();
+    delete process.env.EXPO_PUBLIC_APPLE_CLIENT_ID;
+    expect(await resetStaleCloudOptInIfUnconfigured()).toBe(true);
+    expect(await isCloudSyncOptedIn()).toBe(false);
+    expect(
+      shouldShowCloudSyncSection({
+        signInConfigured: isCloudSignInConfigured(),
+        optedIn: await isCloudSyncOptedIn(),
+      }),
+    ).toBe(false);
+    expect(trackEvent).toHaveBeenCalledWith("sync_optin_reset", {
+      provider: "none",
+      platform: "ios",
+    });
+    // Local data untouched, no network.
+    expect(await AsyncStorage.getItem("pulsekegel_progress")).toBe(
+      '{"totalSessions":4}',
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("leaves a configured device's opt-in alone", async () => {
+    await seedStaleOptIn();
+    process.env.EXPO_PUBLIC_APPLE_CLIENT_ID = "com.pulsekegel.signin.test";
+    expect(await resetStaleCloudOptInIfUnconfigured()).toBe(false);
+    expect(await isCloudSyncOptedIn()).toBe(true);
+    expect(trackEvent).not.toHaveBeenCalledWith(
+      "sync_optin_reset",
+      expect.anything(),
+    );
+  });
+
+  it("does nothing when not opted in", async () => {
+    delete process.env.EXPO_PUBLIC_APPLE_CLIENT_ID;
+    expect(await resetStaleCloudOptInIfUnconfigured()).toBe(false);
+    expect(trackEvent).not.toHaveBeenCalled();
+  });
+
+  it("runs once: a second start does not reset or fire again", async () => {
+    await seedStaleOptIn();
+    delete process.env.EXPO_PUBLIC_APPLE_CLIENT_ID;
+    expect(await resetStaleCloudOptInIfUnconfigured()).toBe(true);
+    await AsyncStorage.setItem(OPT_IN, "true"); // simulate stray re-set
+    expect(await resetStaleCloudOptInIfUnconfigured()).toBe(false);
+    expect(
+      (trackEvent as jest.Mock).mock.calls.filter(
+        ([t]) => t === "sync_optin_reset",
+      ),
+    ).toHaveLength(1);
   });
 });

@@ -26,6 +26,8 @@ const KEYS = {
   LAST_PULL_AT: "pulsekegel_cloud_sync_last_pull",
   LAST_PUSH_AT: "pulsekegel_cloud_sync_last_push",
   REMOTE_DELETED: "pulsekegel_cloud_sync_remote_deleted",
+  /** G1fix3: set once a stale (pre-G1fix2) opt-in has been reset. */
+  STALE_OPTIN_RESET: "pulsekegel_cloud_sync_stale_optin_reset",
 } as const;
 
 async function getSecureToken(): Promise<string | null> {
@@ -91,6 +93,35 @@ export async function getCloudSyncState(): Promise<CloudSyncState> {
     lastPullAt,
     lastPushAt,
   };
+}
+
+/**
+ * G1fix3: devices that opted in through the old Home popup (before G1fix2)
+ * have opt-in on with no Sign-In configured. On app start, turn that off
+ * once — local flag only: no network call, no change to progress, backups,
+ * provider/account keys or transfer. Devices with Sign-In configured are
+ * untouched. Returns true when a reset happened.
+ */
+export async function resetStaleCloudOptInIfUnconfigured(): Promise<boolean> {
+  try {
+    const [optIn, alreadyReset] = await Promise.all([
+      getFlag(KEYS.OPT_IN),
+      getFlag(KEYS.STALE_OPTIN_RESET),
+    ]);
+    if (!optIn || alreadyReset) return false;
+    if (isCloudSignInConfigured()) return false;
+    const provider = await AsyncStorage.getItem(KEYS.PROVIDER);
+    await AsyncStorage.setItem(KEYS.OPT_IN, "false");
+    await AsyncStorage.setItem(KEYS.STALE_OPTIN_RESET, "true");
+    trackEvent("sync_optin_reset", {
+      provider:
+        provider === "apple" || provider === "google" ? provider : "none",
+      platform: Platform.OS,
+    });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** OP1: default false — never treat missing key as opted in. */

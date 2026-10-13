@@ -389,3 +389,19 @@ describe("P4 follow-up paywall events", () => {
     },
   );
 });
+
+describe("G1fix3 sync_optin_reset", () => {
+  const parse = (data: Record<string, unknown>) =>
+    analyticsBatchSchema.safeParse({
+      deviceId,
+      events: [{ type: "sync_optin_reset", data }],
+    }).success;
+  it("accepts the client payload", () => {
+    expect(parse({ provider: "none", platform: "ios" })).toBe(true);
+    expect(parse({ provider: "apple" })).toBe(true);
+  });
+  it("rejects unknown fields/providers", () => {
+    expect(parse({ provider: "facebook" })).toBe(false);
+    expect(parse({ provider: "none", extra: 1 })).toBe(false);
+  });
+});
