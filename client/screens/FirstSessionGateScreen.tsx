@@ -383,10 +383,7 @@ export default function FirstSessionGateScreen({
       trackGateBackBlocked({ surface: "gate", action });
       if (action === "blocked") {
         lastBackBlockedAtRef.current = now;
-        ToastAndroid.show(
-          DAY1_BACK_TOAST,
-          ToastAndroid.SHORT,
-        );
+        ToastAndroid.show(DAY1_BACK_TOAST, ToastAndroid.SHORT);
         return true;
       }
       lastBackBlockedAtRef.current = null;
