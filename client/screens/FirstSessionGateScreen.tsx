@@ -22,6 +22,7 @@ import Animated, {
 import * as Crypto from "expo-crypto";
 
 import { Spacing, BorderRadius } from "@/constants/theme";
+import { DAY1_BACK_TOAST } from "@/constants/day1Copy";
 import {
   ANIM_DURATION_MICRO,
   ANIM_DURATION_RESET_FAST,
@@ -382,10 +383,7 @@ export default function FirstSessionGateScreen({
       trackGateBackBlocked({ surface: "gate", action });
       if (action === "blocked") {
         lastBackBlockedAtRef.current = now;
-        ToastAndroid.show(
-          "Day 1 takes about 5 minutes. Press back again to exit.",
-          ToastAndroid.SHORT,
-        );
+        ToastAndroid.show(DAY1_BACK_TOAST, ToastAndroid.SHORT);
         return true;
       }
       lastBackBlockedAtRef.current = null;

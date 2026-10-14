@@ -29,6 +29,7 @@ import { Feather } from "@expo/vector-icons";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { storage, AnatomyType } from "@/lib/storage";
 import { didAppBecomeActive } from "@/lib/appState";
+import { DAY1_ONBOARDING_DURATION_LINE } from "@/constants/day1Copy";
 import {
   onboardingBackAction,
   resolveOnboardingResume,
@@ -467,9 +468,7 @@ function StartScreen({
           <Text style={[styles.ctaSubline, { color: accent }]}>
             Stay with the cues — we will keep it clear and encouraging.
           </Text>
-          <Text style={styles.benefitSub}>
-            About {isMale ? "5–8" : "5–8"} minutes. Private on your device.
-          </Text>
+          <Text style={styles.benefitSub}>{DAY1_ONBOARDING_DURATION_LINE}</Text>
         </View>
       </ScrollView>
 
