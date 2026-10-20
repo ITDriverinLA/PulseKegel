@@ -695,3 +695,14 @@ describe("H3 Day 1 elapsed banking", () => {
     expect(await storage.getFirstSessionElapsedSec()).toBe(0);
   });
 });
+
+describe("H3 step-0 resume", () => {
+  it("loads banked Day 1 seconds even when resuming at step 0", async () => {
+    await storage.setFirstSessionInProgress(true, 10, 0);
+    await storage.setFirstSessionElapsedSec(4);
+    expect(await storage.getFirstSessionStepIndex()).toBe(0);
+    expect(await storage.loadDay1BankedElapsed(true)).toBe(4);
+    expect(await storage.loadDay1BankedElapsed(false)).toBe(0);
+    await storage.setFirstSessionInProgress(false);
+  });
+});

@@ -969,6 +969,15 @@ export const storage = {
     }
   },
 
+  /**
+   * H3: banked Day 1 seconds for a player mount. Always loaded for
+   * first-session mounts (including a step-0 resume); the gate zeroes it on
+   * fresh start / start-over, so non-resume launches read 0.
+   */
+  async loadDay1BankedElapsed(isFirstSession: boolean): Promise<number> {
+    return isFirstSession ? this.getFirstSessionElapsedSec() : 0;
+  },
+
   async setFirstSessionElapsedSec(seconds: number): Promise<void> {
     try {
       const n = Number.isFinite(seconds)

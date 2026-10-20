@@ -156,11 +156,6 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
           "[PulseKegel] Paywall: No packages cached, retrying offerings fetch...",
         );
         const offerings = await Purchases.getOfferings();
-        unavailableCode = offerings.current
-          ? "current_offering_empty"
-          : Object.keys(offerings.all).length > 0
-            ? "no_current_offering"
-            : "no_offerings";
         if (offerings.current?.availablePackages?.length) {
           pkgs = offerings.current.availablePackages;
           setLocalPackages(pkgs);
@@ -175,6 +170,13 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
             pkgs = firstOffering.availablePackages;
             setLocalPackages(pkgs);
           }
+        }
+        if (pkgs.length === 0) {
+          unavailableCode = offerings.current
+            ? "current_offering_empty"
+            : Object.keys(offerings.all).length > 0
+              ? "no_current_offering"
+              : "no_offerings";
         }
       } catch (error) {
         console.error("[PulseKegel] Paywall: Retry failed:", error);
