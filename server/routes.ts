@@ -9,7 +9,11 @@ import { privacyPolicyHtml } from "./staticContent";
 import { db } from "./db";
 import { analyticsEvents } from "../shared/schema";
 import { sql, countDistinct } from "drizzle-orm";
-import { createRateLimiter, requireAnalyticsAdmin } from "./security";
+import {
+  createRateLimiter,
+  requireAnalyticsAdmin,
+  requireAnalyticsReadAccess,
+} from "./security";
 import { analyticsBatchSchema, weeklyReviewSchema } from "./requestValidation";
 import { registerSyncRoutes } from "./syncRoutes";
 
@@ -578,7 +582,7 @@ ${blogUrls}
 
   app.get(
     "/api/analytics/summary",
-    requireAnalyticsAdmin,
+    requireAnalyticsReadAccess,
     async (_req, res) => {
       try {
         const now = new Date();
