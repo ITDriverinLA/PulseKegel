@@ -338,6 +338,19 @@ const analyticsEventSchema = z.discriminatedUnion("type", [
     .strict(),
   z
     .object({
+      type: z.literal("day1_skip"),
+      data: z
+        .object({
+          session_id: z.string().trim().min(1).max(128),
+          step_index: z.number().int().min(0).max(100),
+          progress: z.number().finite().min(0).max(100),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
       type: z.literal("first_session_skipped"),
       data: z
         .object({
@@ -661,6 +674,7 @@ const analyticsEventSchema = z.discriminatedUnion("type", [
       data: z
         .object({
           result: z.enum(["started", "completed", "not_found", "failed"]),
+          errorCode: z.string().trim().min(1).max(100).optional(),
         })
         .strict(),
       ...eventMetadata,

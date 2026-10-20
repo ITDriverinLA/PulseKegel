@@ -107,6 +107,18 @@ describe("analyticsBatchSchema", () => {
     },
     { type: "first_session_skipped", data: { source: "resume" } },
     {
+      type: "day1_skip",
+      data: { session_id: "abc", step_index: 1, progress: 33 },
+    },
+    {
+      type: "restore_failed",
+      data: { result: "failed", errorCode: "10" },
+    },
+    {
+      type: "purchase_unavailable",
+      data: { result: "unavailable", errorCode: "no_offerings" },
+    },
+    {
       type: "first_session_resume_shown",
       data: { source: "cold", step_index: 1 },
     },
