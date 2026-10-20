@@ -63,6 +63,59 @@ export const requireAnalyticsAdmin: RequestHandler = (
   next();
 };
 
+export function extractReadOnlyKey(
+  authorizationHeader: string | undefined,
+  analyticsKeyHeader: string | string[] | undefined,
+): string | undefined {
+  if (authorizationHeader?.startsWith("Bearer ")) {
+    const token = authorizationHeader.slice("Bearer ".length).trim();
+    if (token) return token;
+  }
+  if (typeof analyticsKeyHeader === "string" && analyticsKeyHeader.trim()) {
+    return analyticsKeyHeader.trim();
+  }
+  return undefined;
+}
+
+/**
+ * Read-only key check. Disabled (always false) when the expected key is
+ * unset/empty. Only GET and HEAD are ever eligible.
+ */
+export function verifyReadOnlyKey(
+  method: string,
+  providedKey: string | undefined,
+  expectedKey: string | undefined,
+): boolean {
+  if (!expectedKey) return false;
+  if (method !== "GET" && method !== "HEAD") return false;
+  if (!providedKey) return false;
+  return safeEqual(providedKey, expectedKey);
+}
+
+/**
+ * For read-only analytics routes only (GET /api/analytics/summary).
+ * Accepts ANALYTICS_READONLY_KEY via `Authorization: Bearer` or
+ * `X-Analytics-Key`; otherwise falls back to the unchanged admin Basic auth.
+ * Never mount this on write routes such as DELETE /api/analytics/reset.
+ */
+export const requireAnalyticsReadAccess: RequestHandler = (req, res, next) => {
+  const provided = extractReadOnlyKey(
+    req.headers.authorization,
+    req.headers["x-analytics-key"],
+  );
+  if (
+    verifyReadOnlyKey(req.method, provided, process.env.ANALYTICS_READONLY_KEY)
+  ) {
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("Referrer-Policy", "no-referrer");
+    next();
+    return;
+  }
+  requireAnalyticsAdmin(req, res, next);
+};
+
 type RateLimiterOptions = {
   maxRequests: number;
   windowMs: number;
