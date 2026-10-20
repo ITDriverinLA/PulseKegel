@@ -575,7 +575,10 @@ ${blogUrls}
       await db.insert(analyticsEvents).values(rows);
       res.json({ ok: true });
     } catch (err) {
-      console.error("Analytics ingest error:", err);
+      console.error("Analytics ingest error:", {
+        message: err instanceof Error ? err.message.split("\n")[0] : "unknown",
+        code: (err as { code?: string } | null)?.code,
+      });
       res.status(500).json({ error: "Failed to record events" });
     }
   });

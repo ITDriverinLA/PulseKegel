@@ -24,7 +24,7 @@
     "@noble/ciphers": "^2.4.0",
     "@noble/hashes": "^2.4.0",
     "@react-native-async-storage/async-storage": "^2.2.0",
-    "@react-native-community/datetimepicker": "^8.4.4",
+    "@react-native-community/datetimepicker": "8.4.4",
     "@react-native-community/slider": "^5.0.1",
     "@react-navigation/bottom-tabs": "^7.4.0",
     "@react-navigation/elements": "^2.6.3",
@@ -88,6 +88,7 @@
   "devDependencies": {
     "@types/express": "^5.0.0",
     "@types/node": "24.10.0",
+    "@types/pg": "^8.23.1",
     "@types/react": "~19.1.0",
     "babel-plugin-module-resolver": "^5.0.2",
     "drizzle-kit": "^0.31.4",
@@ -99,5 +100,9 @@
     "prettier": "3.6.2",
     "typescript": "~5.9.2"
   },
-  "private": true
+  "private": true,
+  "overrides": {
+    "@react-navigation/core": "7.13.5",
+    "@react-navigation/routers": "7.5.2"
+  }
 }
