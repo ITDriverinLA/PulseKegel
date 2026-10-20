@@ -225,7 +225,14 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       return hasActiveEntitlement;
     } catch (error) {
       console.error("[PulseKegel] Restore failed:", error);
-      trackRestoreResult({ result: "failed" });
+      const code = (error as { code?: unknown } | null)?.code;
+      trackRestoreResult({
+        result: "failed",
+        errorCode:
+          typeof code === "string" || typeof code === "number"
+            ? String(code).slice(0, 100)
+            : "unknown",
+      });
       return false;
     }
   }, []);

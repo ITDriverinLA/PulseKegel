@@ -684,3 +684,25 @@ describe("markRestDay — breathwork streak deduplication", () => {
     expect(totalSessions).toBe(1);
   });
 });
+
+describe("H3 Day 1 elapsed banking", () => {
+  it("stores, clamps, and clears first-session elapsed seconds", async () => {
+    await storage.setFirstSessionElapsedSec(42.9);
+    expect(await storage.getFirstSessionElapsedSec()).toBe(42);
+    await storage.setFirstSessionElapsedSec(99999);
+    expect(await storage.getFirstSessionElapsedSec()).toBe(7200);
+    await storage.setFirstSessionInProgress(false);
+    expect(await storage.getFirstSessionElapsedSec()).toBe(0);
+  });
+});
+
+describe("H3 step-0 resume", () => {
+  it("loads banked Day 1 seconds even when resuming at step 0", async () => {
+    await storage.setFirstSessionInProgress(true, 10, 0);
+    await storage.setFirstSessionElapsedSec(4);
+    expect(await storage.getFirstSessionStepIndex()).toBe(0);
+    expect(await storage.loadDay1BankedElapsed(true)).toBe(4);
+    expect(await storage.loadDay1BankedElapsed(false)).toBe(0);
+    await storage.setFirstSessionInProgress(false);
+  });
+});

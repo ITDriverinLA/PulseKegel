@@ -45,6 +45,7 @@ const STORAGE_KEYS = {
   FIRST_SESSION_IN_PROGRESS: "pulsekegel_first_session_in_progress",
   FIRST_SESSION_PROGRESS: "pulsekegel_first_session_progress",
   FIRST_SESSION_STEP_INDEX: "pulsekegel_first_session_step_index",
+  FIRST_SESSION_ELAPSED_SEC: "pulsekegel_first_session_elapsed_sec",
   FIRST_SESSION_CELEBRATED: "pulsekegel_first_session_celebrated",
   FIRST_SESSION_GATE_SOURCE: "pulsekegel_first_session_gate_source",
   FIRST_SESSION_ID: "pulsekegel_first_session_id",
@@ -933,6 +934,7 @@ export const storage = {
           STORAGE_KEYS.FIRST_SESSION_PROGRESS,
           STORAGE_KEYS.FIRST_SESSION_STEP_INDEX,
           STORAGE_KEYS.FIRST_SESSION_ID,
+          STORAGE_KEYS.FIRST_SESSION_ELAPSED_SEC,
         ]);
       }
     } catch (error) {
@@ -950,6 +952,43 @@ export const storage = {
       return Number.isFinite(n) ? n : 0;
     } catch {
       return 0;
+    }
+  },
+
+  /** H3: active Day 1 seconds banked before the current player mount. */
+  async getFirstSessionElapsedSec(): Promise<number> {
+    try {
+      const raw = await AsyncStorage.getItem(
+        STORAGE_KEYS.FIRST_SESSION_ELAPSED_SEC,
+      );
+      if (!raw) return 0;
+      const n = parseInt(raw, 10);
+      return Number.isFinite(n) && n > 0 ? Math.min(n, 7200) : 0;
+    } catch {
+      return 0;
+    }
+  },
+
+  /**
+   * H3: banked Day 1 seconds for a player mount. Always loaded for
+   * first-session mounts (including a step-0 resume); the gate zeroes it on
+   * fresh start / start-over, so non-resume launches read 0.
+   */
+  async loadDay1BankedElapsed(isFirstSession: boolean): Promise<number> {
+    return isFirstSession ? this.getFirstSessionElapsedSec() : 0;
+  },
+
+  async setFirstSessionElapsedSec(seconds: number): Promise<void> {
+    try {
+      const n = Number.isFinite(seconds)
+        ? Math.max(0, Math.min(7200, Math.floor(seconds)))
+        : 0;
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.FIRST_SESSION_ELAPSED_SEC,
+        String(n),
+      );
+    } catch (error) {
+      console.error("Error saving first-session elapsed:", error);
     }
   },
 

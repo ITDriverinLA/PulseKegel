@@ -146,6 +146,8 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
 
   const handlePurchase = async () => {
     let pkgs = localPackages;
+    // H3: why there were no packages (RevenueCat error code or empty offering).
+    let unavailableCode = "no_packages_cached";
 
     if (pkgs.length === 0) {
       setIsPurchasing(true);
@@ -169,14 +171,30 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
             setLocalPackages(pkgs);
           }
         }
+        if (pkgs.length === 0) {
+          unavailableCode = offerings.current
+            ? "current_offering_empty"
+            : Object.keys(offerings.all).length > 0
+              ? "no_current_offering"
+              : "no_offerings";
+        }
       } catch (error) {
         console.error("[PulseKegel] Paywall: Retry failed:", error);
+        const code = (error as { code?: unknown } | null)?.code;
+        unavailableCode =
+          typeof code === "string" || typeof code === "number"
+            ? `rc_${String(code)}`.slice(0, 100)
+            : "offerings_fetch_error";
       }
       setIsPurchasing(false);
     }
 
     if (pkgs.length === 0) {
-      trackPurchaseResult({ result: "unavailable", source });
+      trackPurchaseResult({
+        result: "unavailable",
+        source,
+        errorCode: unavailableCode,
+      });
       Alert.alert(
         "Not Available",
         "Subscriptions are not available right now. Please check your internet connection and try again.",

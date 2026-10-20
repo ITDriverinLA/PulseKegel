@@ -209,6 +209,7 @@ export function trackPurchaseResult(data: {
 
 export function trackRestoreResult(data: {
   result: "started" | "completed" | "not_found" | "failed";
+  errorCode?: string;
 }): void {
   trackEvent(`restore_${data.result}`, data as Record<string, unknown>);
 }
@@ -282,6 +283,15 @@ export function trackFirstSessionAbandoned(data: {
   progress: number;
 }): void {
   trackEvent("first_session_abandoned", data as Record<string, unknown>);
+}
+
+/** H3: Skip tap inside the Day 1 player (not the gate's "skip Day 1"). */
+export function trackDay1Skip(data: {
+  session_id: string;
+  step_index: number;
+  progress: number;
+}): void {
+  trackEvent("day1_skip", data as Record<string, unknown>);
 }
 
 export function trackFirstSessionSkipped(data?: {

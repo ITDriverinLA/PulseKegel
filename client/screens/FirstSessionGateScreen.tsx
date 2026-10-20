@@ -300,6 +300,10 @@ export default function FirstSessionGateScreen({
 
     await storage.setFirstSessionId(sessionId);
     await storage.setFirstSessionInProgress(true, progressPct, safeStep);
+    if (!resumeMode) {
+      // H3: fresh start / start-over begins Day 1 duration at zero.
+      await storage.setFirstSessionElapsedSec(0);
+    }
     await storage.clearFirstSessionGateSource();
     // Continue must not re-fire Day-1 start funnel (same sessionId).
     if (!resumeMode) {

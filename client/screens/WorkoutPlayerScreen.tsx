@@ -66,6 +66,7 @@ import {
   trackSessionStarted,
   trackFirstSessionCompleted,
   trackFirstSessionAbandoned,
+  trackDay1Skip,
   trackGateBackBlocked,
   trackChallengeDayStarted,
   trackChallengeDayCompleted,
@@ -133,6 +134,19 @@ export default function WorkoutPlayerScreen() {
   const sessionStartedTrackedRef = useRef(false);
   const segmentIndexRef = useRef(isFirstSession ? (resumeStepIndex ?? 0) : 0);
   const progressRef = useRef(progress);
+  // H3: Day 1 active seconds banked from earlier mounts (resume), so
+  // duration_sec counts across resumes instead of resetting with the engine.
+  const bankedElapsedRef = useRef(0);
+  // Saves wait on this so an early background/abandon can't overwrite the
+  // banked value before it has been loaded.
+  const bankedLoadRef = useRef<Promise<void>>(Promise.resolve());
+  const saveDay1Elapsed = async () => {
+    await bankedLoadRef.current;
+    await storage.setFirstSessionElapsedSec(getDay1ElapsedSec());
+  };
+  const getDay1ElapsedSec = () =>
+    bankedElapsedRef.current +
+    (engineRef.current?.getState().totalElapsedSeconds ?? 0);
   progressRef.current = progress;
 
   const phaseScale = useSharedValue(1);
@@ -208,6 +222,12 @@ export default function WorkoutPlayerScreen() {
 
   useEffect(() => {
     startTimeRef.current = new Date();
+    bankedElapsedRef.current = 0;
+    bankedLoadRef.current = storage
+      .loadDay1BankedElapsed(Boolean(isFirstSession))
+      .then((sec) => {
+        bankedElapsedRef.current = sec;
+      });
 
     const workoutSettings = {
       restDuration: settings.restDuration,
@@ -329,10 +349,11 @@ export default function WorkoutPlayerScreen() {
           });
 
           if (isFirstSession) {
+            await bankedLoadRef.current;
             await storage.setFirstSessionInProgress(false);
             trackFirstSessionCompleted({
               session_id: firstSessionId ?? `fs-${today}`,
-              duration_sec: seconds,
+              duration_sec: Math.min(7200, bankedElapsedRef.current + seconds),
             });
           }
 
@@ -503,6 +524,14 @@ export default function WorkoutPlayerScreen() {
               pct,
               segmentIndexRef.current,
             );
+            // Wait for the banked load so an early background can't
+            // overwrite saved seconds before they are read.
+            void bankedLoadRef.current.then(() =>
+              storage.setFirstSessionElapsedSec(
+                bankedElapsedRef.current +
+                  (engineRef.current?.getState().totalElapsedSeconds ?? 0),
+              ),
+            );
           }
         }
         appStateRef.current = nextAppState;
@@ -546,6 +575,15 @@ export default function WorkoutPlayerScreen() {
     if (!engineRef.current) return;
     await hapticsManager.triggerSelection();
     hapticPulseRef.current.stop();
+    if (isFirstSession && !isCompleteRef.current) {
+      const prog = progressRef.current;
+      trackDay1Skip({
+        session_id: firstSessionId ?? "unknown",
+        step_index: segmentIndexRef.current,
+        progress:
+          prog.total > 0 ? Math.round((prog.current / prog.total) * 100) : 0,
+      });
+    }
     engineRef.current.skipSegment();
   };
 
@@ -591,6 +629,7 @@ export default function WorkoutPlayerScreen() {
         : 0;
     const step = segmentIndexRef.current;
     await storage.setFirstSessionInProgress(true, pct, step);
+    await saveDay1Elapsed();
     trackFirstSessionAbandoned({
       session_id: firstSessionId ?? "unknown",
       progress: pct,
