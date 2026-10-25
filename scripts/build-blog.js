@@ -433,7 +433,7 @@ const BRAND_FOOTER = `<footer class="pk-footer">
       <a href="/blog">Back to Blog</a>
       <a href="https://apps.apple.com/app/pulsekegel/id6741057595" target="_blank" rel="noopener">Download on the App Store</a>
     </div>
-    <p class="pk-footer-copy">&copy; 2026 PulseKegel. All rights reserved.</p>
+    <p class="pk-footer-copy">&copy; 2026 PulseKegel. All rights reserved. · Founded by <a href="https://ashley-mason.com/">Ashley Mason</a></p>
   </footer>`;
 
 function applyBrandStyling(html) {
