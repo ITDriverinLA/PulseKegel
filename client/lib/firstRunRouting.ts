@@ -131,22 +131,27 @@ export function onboardingBackAction(
   return stepIndex > 0 ? "previous_step" : "exit";
 }
 
-export const GATE_BACK_EXIT_WINDOW_MS = 2000;
+/**
+ * P2.2b: Android back on the first-session gate is always consumed.
+ * Supersedes the Oct 12 double-press-to-exit lock (a second press within 2s
+ * used to background the app). Back cannot route to home — the gate is the
+ * root of its stack — and cannot background the app before
+ * first_session_completed.
+ */
+export function gateBackAction(): "blocked" {
+  return "blocked";
+}
 
 /**
- * P2c: Android back on the first-session gate. First press is blocked (with a
- * hint); a second press inside the window lets Android background the app.
- * Back can never route to home — the gate is the root of its stack.
+ * P2.2c: while Day 1 is in progress, header X and hardware back share one
+ * Stay/Leave confirm. Completed sessions and every other workout close
+ * without that dialog.
  */
-export function gateBackAction(
-  lastBlockedAtMs: number | null,
-  nowMs: number,
-  windowMs: number = GATE_BACK_EXIT_WINDOW_MS,
-): "blocked" | "exit" {
-  if (lastBlockedAtMs !== null && nowMs - lastBlockedAtMs <= windowMs) {
-    return "exit";
-  }
-  return "blocked";
+export function shouldConfirmDay1Close(input: {
+  isFirstSession: boolean;
+  sessionComplete: boolean;
+}): boolean {
+  return input.isFirstSession && !input.sessionComplete;
 }
 
 export type GateHydrateOutcome =

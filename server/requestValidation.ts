@@ -459,6 +459,8 @@ const analyticsEventSchema = z.discriminatedUnion("type", [
             "leave",
           ]),
           index: z.number().int().min(0).max(20).optional(),
+          // P2.2c: optional so pre-P2.2 clients (no source) still ingest.
+          source: z.enum(["hardware_back", "ui_x"]).optional(),
         })
         .strict(),
       ...eventMetadata,

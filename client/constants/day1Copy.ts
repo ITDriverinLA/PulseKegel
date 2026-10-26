@@ -4,5 +4,4 @@
  */
 export const DAY1_ONBOARDING_DURATION_LINE =
   "About 2 minutes. Private on your device.";
-export const DAY1_BACK_TOAST =
-  "Day 1 takes about 2 minutes. Press back again to exit.";
+export const DAY1_BACK_TOAST = "Day 1 takes about 2 minutes.";

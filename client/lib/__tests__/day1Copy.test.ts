@@ -14,10 +14,9 @@ describe("H2 Day 1 duration copy", () => {
       "About 2 minutes. Private on your device.",
     );
   });
-  it("Android back toast says about 2 minutes", () => {
-    expect(DAY1_BACK_TOAST).toBe(
-      "Day 1 takes about 2 minutes. Press back again to exit.",
-    );
+  it("Android back toast says about 2 minutes and does not teach an exit", () => {
+    expect(DAY1_BACK_TOAST).toBe("Day 1 takes about 2 minutes.");
+    expect(DAY1_BACK_TOAST.toLowerCase()).not.toContain("press back again");
   });
   it("screens use the shared copy and no stale durations remain", () => {
     const onboarding = read("screens/OnboardingScreen.tsx");

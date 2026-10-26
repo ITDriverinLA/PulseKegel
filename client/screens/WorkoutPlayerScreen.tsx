@@ -70,7 +70,9 @@ import {
   trackGateBackBlocked,
   trackChallengeDayStarted,
   trackChallengeDayCompleted,
+  type BackInterceptSource,
 } from "@/lib/analytics";
+import { shouldConfirmDay1Close } from "@/lib/firstRunRouting";
 import {
   cancelChallengeDay2Nudge,
   scheduleChallengeDay2Nudge,
@@ -652,14 +654,19 @@ export default function WorkoutPlayerScreen() {
     animateOut(isComplete ? ANIM_DURATION_EXIT_COMPLETE : ANIM_DURATION_EXIT);
   };
 
-  // P2c: Android hardware/gesture back during Day 1 used to pop the player
-  // silently (no abandon event, easy to trigger by accident with edge-swipe
-  // navigation). Confirm first; "Leave" goes through the normal close path so
-  // resume state + first_session_abandoned are recorded.
-  const handleFirstSessionBack = (): boolean => {
-    if (isCompleteRef.current) {
+  // P2.2c: Day 1 header X and Android hardware/gesture back share this
+  // Stay/Leave confirm. "Leave" goes through the normal close path so resume
+  // state + first_session_abandoned are recorded. Other workouts, and a
+  // finished Day 1, still close directly.
+  const confirmLeaveDay1 = (source: BackInterceptSource) => {
+    if (
+      !shouldConfirmDay1Close({
+        isFirstSession: Boolean(isFirstSession),
+        sessionComplete: isCompleteRef.current,
+      })
+    ) {
       handleClose();
-      return true;
+      return;
     }
     const engine = engineRef.current;
     const wasRunning = !!workoutState?.isRunning && !workoutState?.isPaused;
@@ -667,7 +674,11 @@ export default function WorkoutPlayerScreen() {
       engine.pause();
       hapticPulseRef.current.stop();
     }
-    trackGateBackBlocked({ surface: "first_session", action: "confirm_shown" });
+    trackGateBackBlocked({
+      surface: "first_session",
+      action: "confirm_shown",
+      source,
+    });
     Alert.alert(
       "Leave Day 1?",
       "You can pick up where you left off next time.",
@@ -676,7 +687,11 @@ export default function WorkoutPlayerScreen() {
           text: "Keep going",
           style: "cancel",
           onPress: () => {
-            trackGateBackBlocked({ surface: "first_session", action: "stay" });
+            trackGateBackBlocked({
+              surface: "first_session",
+              action: "stay",
+              source,
+            });
             if (engine && wasRunning) engine.resume();
           },
         },
@@ -684,7 +699,11 @@ export default function WorkoutPlayerScreen() {
           text: "Leave",
           style: "destructive",
           onPress: () => {
-            trackGateBackBlocked({ surface: "first_session", action: "leave" });
+            trackGateBackBlocked({
+              surface: "first_session",
+              action: "leave",
+              source,
+            });
             handleClose();
           },
         },
@@ -696,6 +715,10 @@ export default function WorkoutPlayerScreen() {
         },
       },
     );
+  };
+
+  const handleFirstSessionBack = (): boolean => {
+    confirmLeaveDay1("hardware_back");
     return true;
   };
 
@@ -969,7 +992,12 @@ export default function WorkoutPlayerScreen() {
         ]}
       >
         <View style={styles.header}>
-          <Pressable onPress={handleClose} style={styles.headerButton}>
+          <Pressable
+            onPress={
+              isFirstSession ? () => confirmLeaveDay1("ui_x") : handleClose
+            }
+            style={styles.headerButton}
+          >
             <Feather name="x" size={24} color={cp.text} />
           </Pressable>
           <ThemedText type="small" style={{ color: cp.textMuted }}>

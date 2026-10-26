@@ -185,6 +185,26 @@ describe("analyticsBatchSchema", () => {
       data: { surface: "first_session", action: "confirm_shown" },
     },
     {
+      type: "gate_back_blocked",
+      data: {
+        surface: "first_session",
+        action: "confirm_shown",
+        source: "ui_x",
+      },
+      platform: "android",
+      appVersion: "2.2.4",
+    },
+    {
+      type: "gate_back_blocked",
+      data: {
+        surface: "first_session",
+        action: "stay",
+        source: "hardware_back",
+      },
+      platform: "ios",
+      appVersion: "2.2.4",
+    },
+    {
       type: "permission_prompt_shown",
       data: {
         type: "push",
@@ -222,6 +242,21 @@ describe("analyticsBatchSchema", () => {
         deviceId,
         events: [
           { type: "gate_back_blocked", data: { surface: "home", action: "x" } },
+        ],
+      }).success,
+    ).toBe(false);
+    expect(
+      analyticsBatchSchema.safeParse({
+        deviceId,
+        events: [
+          {
+            type: "gate_back_blocked",
+            data: {
+              surface: "first_session",
+              action: "leave",
+              source: "close_button",
+            },
+          },
         ],
       }).success,
     ).toBe(false);
