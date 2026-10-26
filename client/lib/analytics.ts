@@ -362,11 +362,16 @@ export type BackInterceptAction =
   | "stay"
   | "leave";
 
+/** P2.2c: which control opened the Day 1 Stay/Leave confirm. */
+export type BackInterceptSource = "hardware_back" | "ui_x";
+
 /** P2c: Android hardware/gesture back intercepted on a first-run surface. */
 export function trackGateBackBlocked(data: {
   surface: BackInterceptSurface;
   action: BackInterceptAction;
   index?: number;
+  /** P2.2c: header X vs hardware back. Omitted on surfaces that have no X. */
+  source?: BackInterceptSource;
 }): void {
   trackEvent("gate_back_blocked", data as Record<string, unknown>);
 }

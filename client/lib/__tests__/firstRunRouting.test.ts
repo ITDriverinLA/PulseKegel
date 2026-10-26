@@ -1,11 +1,13 @@
+import * as fs from "fs";
+import * as path from "path";
 import {
   decideLandingRoute,
   gateBackAction,
-  GATE_BACK_EXIT_WINDOW_MS,
   onboardingBackAction,
   resolveGateHydrate,
   resolveOnboardingResume,
   shouldAutoStartFirstSession,
+  shouldConfirmDay1Close,
   shouldHoldGateLoader,
   shouldTrackGateShown,
 } from "../firstRunRouting";
@@ -143,14 +145,49 @@ describe("P2c Android back decisions", () => {
     expect(onboardingBackAction(0)).toBe("exit");
   });
 
-  it("gate back blocks first, exits on a second press inside the window", () => {
-    expect(gateBackAction(null, 1000)).toBe("blocked");
-    expect(gateBackAction(1000, 1000 + GATE_BACK_EXIT_WINDOW_MS - 1)).toBe(
-      "exit",
-    );
-    expect(gateBackAction(1000, 1000 + GATE_BACK_EXIT_WINDOW_MS + 1)).toBe(
+  it("P2.2b gate back is always consumed, including a second press", () => {
+    expect([gateBackAction(), gateBackAction()]).toEqual([
       "blocked",
+      "blocked",
+    ]);
+  });
+});
+
+describe("P2.2c Day 1 close confirm", () => {
+  it("confirms only while the first session is still in progress", () => {
+    expect(
+      shouldConfirmDay1Close({
+        isFirstSession: true,
+        sessionComplete: false,
+      }),
+    ).toBe(true);
+    expect(
+      shouldConfirmDay1Close({
+        isFirstSession: true,
+        sessionComplete: true,
+      }),
+    ).toBe(false);
+    expect(
+      shouldConfirmDay1Close({
+        isFirstSession: false,
+        sessionComplete: false,
+      }),
+    ).toBe(false);
+  });
+
+  it("wires header X and hardware back through the same confirm", () => {
+    const player = fs.readFileSync(
+      path.join(__dirname, "../../screens/WorkoutPlayerScreen.tsx"),
+      "utf8",
     );
+    expect(player).toContain('confirmLeaveDay1("hardware_back")');
+    expect(player).toContain('confirmLeaveDay1("ui_x")');
+    const gate = fs.readFileSync(
+      path.join(__dirname, "../../screens/FirstSessionGateScreen.tsx"),
+      "utf8",
+    );
+    expect(gate).not.toContain("return false");
+    expect(gate).toContain("return true");
   });
 });
 

@@ -100,7 +100,6 @@ export default function FirstSessionGateScreen({
   const [autoStartPending, setAutoStartPending] = useState(false);
   const [autoStartLaunching, setAutoStartLaunching] = useState(false);
   const autoStartedRef = useRef(false);
-  const lastBackBlockedAtRef = useRef<number | null>(null);
   const gateShownRef = useRef(false);
   const resumeShownRef = useRef(false);
   const tipShownTrackedRef = useRef(false);
@@ -376,22 +375,17 @@ export default function FirstSessionGateScreen({
     source,
   ]);
 
-  // P2c: Android back on the gate can never reach home (gate is the stack
-  // root). First press is blocked with a hint; a second press within 2s lets
-  // Android background the app as usual.
+  // P2.2b: Android back on this screen is always consumed. It never
+  // backgrounds the app — the Oct 12 double-press exit is superseded for
+  // the gate, including a second press before first_session_completed.
+  // The gate is the stack root, so back also cannot reach home.
+  // Deps stay [isFocused] — same subscribe shape as P2.1.
   useEffect(() => {
     if (Platform.OS !== "android" || !isFocused) return;
     const sub = BackHandler.addEventListener("hardwareBackPress", () => {
-      const now = Date.now();
-      const action = gateBackAction(lastBackBlockedAtRef.current, now);
-      trackGateBackBlocked({ surface: "gate", action });
-      if (action === "blocked") {
-        lastBackBlockedAtRef.current = now;
-        ToastAndroid.show(DAY1_BACK_TOAST, ToastAndroid.SHORT);
-        return true;
-      }
-      lastBackBlockedAtRef.current = null;
-      return false;
+      trackGateBackBlocked({ surface: "gate", action: gateBackAction() });
+      ToastAndroid.show(DAY1_BACK_TOAST, ToastAndroid.SHORT);
+      return true;
     });
     return () => sub.remove();
   }, [isFocused]);
