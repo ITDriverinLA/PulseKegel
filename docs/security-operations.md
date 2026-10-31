@@ -40,8 +40,9 @@ and credentials before running it.
 The Replit deployment build (`.replit`) runs `npm run expo:static:build` and
 `node scripts/server-build.js`. It does not run `npm run db:push`.
 
-On boot the server runs this idempotent migration for the PulseKegel 2.2.5
-analytics columns (all nullable):
+After the process starts listening, it runs this idempotent migration in the
+background on its own connection (`statement_timeout` 5s, `lock_timeout` 2s)
+so a locked `ALTER` cannot hold startup. The columns are nullable:
 
 ```sql
 ALTER TABLE analytics_events ADD COLUMN IF NOT EXISTS device_model varchar(64);

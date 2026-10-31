@@ -1,7 +1,7 @@
 import express from "express";
 import type { Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
-import { db } from "./db";
+import { pool } from "./db";
 import { ensureAnalyticsP6Columns } from "./analyticsIngest";
 import * as fs from "fs";
 import * as path from "path";
@@ -264,7 +264,6 @@ function setupErrorHandler(app: express.Application) {
   configureExpoAndLanding(app);
 
   const server = await registerRoutes(app);
-  await ensureAnalyticsP6Columns(db);
 
   setupErrorHandler(app);
 
@@ -277,6 +276,9 @@ function setupErrorHandler(app: express.Application) {
     },
     () => {
       log(`express server serving on port ${port}`);
+      // Do not block listen on DDL. A lock wait is capped inside
+      // ensureAnalyticsP6Columns (statement_timeout / lock_timeout).
+      void ensureAnalyticsP6Columns(pool);
     },
   );
 })();

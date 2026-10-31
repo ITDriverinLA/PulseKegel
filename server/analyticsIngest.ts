@@ -1,4 +1,3 @@
-import { sql, type SQL } from "drizzle-orm";
 import {
   jsonb,
   pgTable,
@@ -9,13 +8,12 @@ import {
 import { analyticsEvents } from "../shared/schema";
 
 /**
- * Same physical table as `analyticsEvents`, without the P6 columns.
- *
- * Drizzle 0.45 names every column on the primary table and sends `default`
- * for the ones the row omitted. On a database that has not been migrated,
- * that INSERT is `42703` for old clients too, and retrying through the same
- * table definition fails the same way. This definition is not part of
- * `shared/schema.ts`, so `db:push` still treats the primary table as canonical.
+ * INSERT-only copy of `analyticsEvents` in `shared/schema.ts`.
+ * Keep every column here identical to that table except `deviceModel`,
+ * `displayClass`, and `windowWidthBucket`. Drizzle 0.45 names every column
+ * on the primary table and sends `default` for the ones a row omits, which
+ * is 42703 until those columns exist. This object stays out of
+ * `shared/schema.ts` so `db:push` still treats the primary definition as canonical.
  */
 export const analyticsEventsLegacy = pgTable("analytics_events", {
   id: serial("id").primaryKey(),
@@ -27,7 +25,7 @@ export const analyticsEventsLegacy = pgTable("analytics_events", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-/** Idempotent. Nullable, matching the primary schema. No NOT NULL. */
+/** Idempotent. Nullable, matching `analyticsEvents` in `shared/schema.ts`. No NOT NULL. */
 export const ANALYTICS_P6_STARTUP_STATEMENTS = [
   "ALTER TABLE analytics_events ADD COLUMN IF NOT EXISTS device_model varchar(64)",
   "ALTER TABLE analytics_events ADD COLUMN IF NOT EXISTS display_class varchar(16)",
@@ -150,27 +148,53 @@ export async function insertAnalyticsEvents(
   }
 }
 
-type SqlExecutor = {
-  execute: (query: SQL) => Promise<unknown>;
+/** Caps a locked ALTER so the background migration cannot hold a pool connection. */
+export const ANALYTICS_P6_STATEMENT_TIMEOUT = "5s";
+export const ANALYTICS_P6_LOCK_TIMEOUT = "2s";
+
+type MigrationClient = {
+  query: (text: string) => Promise<unknown>;
+  release: () => void;
 };
 
+type MigrationPool = {
+  connect: () => Promise<MigrationClient>;
+};
+
+function migrationFailure(err: unknown): string {
+  return err instanceof Error ? err.message.split("\n")[0] : "unknown";
+}
+
 /**
- * Heal production on boot. The Replit deploy build does not run `db:push`.
- * Each statement is idempotent. A failure is logged and does not stop the server;
- * inserts then use the legacy table until the columns exist.
+ * Heal production after listen. The Replit deploy build does not run `db:push`.
+ * Runs on its own connection with statement and lock timeouts. A failure is
+ * logged and does not stop the server; inserts then use `analyticsEventsLegacy`
+ * until the columns from `shared/schema.ts` exist.
  */
 export async function ensureAnalyticsP6Columns(
-  database: SqlExecutor,
+  pool: MigrationPool,
 ): Promise<void> {
-  for (const statement of ANALYTICS_P6_STARTUP_STATEMENTS) {
-    try {
-      await database.execute(sql.raw(statement));
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message.split("\n")[0] : "unknown";
-      console.warn(
-        `Analytics P6 startup migration failed (${message}). Inserts omit the new columns until they exist. Run npm run db:push against production as well.`,
-      );
+  let client: MigrationClient | undefined;
+  try {
+    client = await pool.connect();
+    await client.query(
+      `SET statement_timeout = '${ANALYTICS_P6_STATEMENT_TIMEOUT}'`,
+    );
+    await client.query(`SET lock_timeout = '${ANALYTICS_P6_LOCK_TIMEOUT}'`);
+    for (const statement of ANALYTICS_P6_STARTUP_STATEMENTS) {
+      try {
+        await client.query(statement);
+      } catch (err) {
+        console.warn(
+          `Analytics P6 startup migration failed (${migrationFailure(err)}). Inserts omit the new columns until they exist. Run npm run db:push against production as well.`,
+        );
+      }
     }
+  } catch (err) {
+    console.warn(
+      `Analytics P6 startup migration failed to start (${migrationFailure(err)}). Inserts omit the new columns until they exist. Run npm run db:push against production as well.`,
+    );
+  } finally {
+    client?.release();
   }
 }

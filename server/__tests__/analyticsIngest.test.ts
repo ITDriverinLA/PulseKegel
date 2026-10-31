@@ -2,7 +2,9 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import { analyticsEvents } from "../../shared/schema";
 import {
+  ANALYTICS_P6_LOCK_TIMEOUT,
   ANALYTICS_P6_STARTUP_STATEMENTS,
+  ANALYTICS_P6_STATEMENT_TIMEOUT,
   MISSING_P6_COLUMNS_WARNING,
   analyticsEventsLegacy,
   ensureAnalyticsP6Columns,
@@ -171,18 +173,44 @@ describe("analytics P6 startup migration", () => {
     }
   });
 
-  it("keeps going when a statement fails so boot is not blocked", async () => {
-    let calls = 0;
+  it("sets timeouts, continues after one ALTER fails, and releases the connection", async () => {
+    const queries: string[] = [];
+    let released = false;
     const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
     await expect(
       ensureAnalyticsP6Columns({
-        execute: async () => {
-          calls += 1;
-          if (calls === 2) throw new Error("permission denied");
+        connect: async () => ({
+          query: async (text: string) => {
+            queries.push(text);
+            if (text.includes("display_class")) {
+              throw new Error("permission denied");
+            }
+          },
+          release: () => {
+            released = true;
+          },
+        }),
+      }),
+    ).resolves.toBeUndefined();
+    expect(queries).toEqual([
+      `SET statement_timeout = '${ANALYTICS_P6_STATEMENT_TIMEOUT}'`,
+      `SET lock_timeout = '${ANALYTICS_P6_LOCK_TIMEOUT}'`,
+      ...ANALYTICS_P6_STARTUP_STATEMENTS,
+    ]);
+    expect(released).toBe(true);
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+  });
+
+  it("logs and returns when the pool cannot connect", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+    await expect(
+      ensureAnalyticsP6Columns({
+        connect: async () => {
+          throw new Error("connection refused");
         },
       }),
     ).resolves.toBeUndefined();
-    expect(calls).toBe(ANALYTICS_P6_STARTUP_STATEMENTS.length);
     expect(warn).toHaveBeenCalledTimes(1);
     warn.mockRestore();
   });
