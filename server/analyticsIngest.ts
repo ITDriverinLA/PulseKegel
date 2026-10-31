@@ -177,14 +177,25 @@ export async function ensureAnalyticsP6Columns(
   let client: MigrationClient | undefined;
   try {
     client = await pool.connect();
-    await client.query(
-      `SET statement_timeout = '${ANALYTICS_P6_STATEMENT_TIMEOUT}'`,
-    );
-    await client.query(`SET lock_timeout = '${ANALYTICS_P6_LOCK_TIMEOUT}'`);
     for (const statement of ANALYTICS_P6_STARTUP_STATEMENTS) {
       try {
+        // SET LOCAL lasts only until COMMIT/ROLLBACK, so release() can
+        // return this client to the pool without a session timeout.
+        await client.query("BEGIN");
+        await client.query(
+          `SET LOCAL statement_timeout = '${ANALYTICS_P6_STATEMENT_TIMEOUT}'`,
+        );
+        await client.query(
+          `SET LOCAL lock_timeout = '${ANALYTICS_P6_LOCK_TIMEOUT}'`,
+        );
         await client.query(statement);
+        await client.query("COMMIT");
       } catch (err) {
+        try {
+          await client.query("ROLLBACK");
+        } catch {
+          // The connection may already be unusable. The outer catch logs connect failures.
+        }
         console.warn(
           `Analytics P6 startup migration failed (${migrationFailure(err)}). Inserts omit the new columns until they exist. Run npm run db:push against production as well.`,
         );

@@ -41,7 +41,7 @@ The Replit deployment build (`.replit`) runs `npm run expo:static:build` and
 `node scripts/server-build.js`. It does not run `npm run db:push`.
 
 After the process starts listening, it runs this idempotent migration in the
-background on its own connection (`statement_timeout` 5s, `lock_timeout` 2s)
+background on its own connection (`SET LOCAL statement_timeout` 5s and `lock_timeout` 2s inside a transaction, so the limits do not stick to the pooled client)
 so a locked `ALTER` cannot hold startup. The columns are nullable:
 
 ```sql

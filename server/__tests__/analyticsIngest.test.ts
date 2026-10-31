@@ -192,11 +192,27 @@ describe("analytics P6 startup migration", () => {
         }),
       }),
     ).resolves.toBeUndefined();
+    const timed = (statement: string) => [
+      "BEGIN",
+      `SET LOCAL statement_timeout = '${ANALYTICS_P6_STATEMENT_TIMEOUT}'`,
+      `SET LOCAL lock_timeout = '${ANALYTICS_P6_LOCK_TIMEOUT}'`,
+      statement,
+      "COMMIT",
+    ];
     expect(queries).toEqual([
-      `SET statement_timeout = '${ANALYTICS_P6_STATEMENT_TIMEOUT}'`,
-      `SET lock_timeout = '${ANALYTICS_P6_LOCK_TIMEOUT}'`,
-      ...ANALYTICS_P6_STARTUP_STATEMENTS,
+      ...timed(ANALYTICS_P6_STARTUP_STATEMENTS[0]),
+      "BEGIN",
+      `SET LOCAL statement_timeout = '${ANALYTICS_P6_STATEMENT_TIMEOUT}'`,
+      `SET LOCAL lock_timeout = '${ANALYTICS_P6_LOCK_TIMEOUT}'`,
+      ANALYTICS_P6_STARTUP_STATEMENTS[1],
+      "ROLLBACK",
+      ...timed(ANALYTICS_P6_STARTUP_STATEMENTS[2]),
     ]);
+    expect(
+      queries.some(
+        (query) => query.startsWith("SET ") && !query.startsWith("SET LOCAL "),
+      ),
+    ).toBe(false);
     expect(released).toBe(true);
     expect(warn).toHaveBeenCalledTimes(1);
     warn.mockRestore();
