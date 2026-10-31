@@ -1,6 +1,8 @@
 import express from "express";
 import type { Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
+import { db } from "./db";
+import { ensureAnalyticsP6Columns } from "./analyticsIngest";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -262,6 +264,7 @@ function setupErrorHandler(app: express.Application) {
   configureExpoAndLanding(app);
 
   const server = await registerRoutes(app);
+  await ensureAnalyticsP6Columns(db);
 
   setupErrorHandler(app);
 

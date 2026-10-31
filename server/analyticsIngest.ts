@@ -1,18 +1,41 @@
+import { sql, type SQL } from "drizzle-orm";
+import {
+  jsonb,
+  pgTable,
+  serial,
+  timestamp,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { analyticsEvents } from "../shared/schema";
 
 /**
- * P6 columns. The Replit deploy build does not run `db:push`, so production
- * can be on this server code before the columns exist. Naming them in INSERT
- * then fails every analytics write, including old clients.
+ * Same physical table as `analyticsEvents`, without the P6 columns.
+ *
+ * Drizzle 0.45 names every column on the primary table and sends `default`
+ * for the ones the row omitted. On a database that has not been migrated,
+ * that INSERT is `42703` for old clients too, and retrying through the same
+ * table definition fails the same way. This definition is not part of
+ * `shared/schema.ts`, so `db:push` still treats the primary table as canonical.
  */
-const P6_ROW_KEYS = [
-  "deviceModel",
-  "displayClass",
-  "windowWidthBucket",
+export const analyticsEventsLegacy = pgTable("analytics_events", {
+  id: serial("id").primaryKey(),
+  deviceId: varchar("device_id", { length: 64 }).notNull(),
+  eventType: varchar("event_type", { length: 50 }).notNull(),
+  eventData: jsonb("event_data"),
+  platform: varchar("platform", { length: 10 }),
+  appVersion: varchar("app_version", { length: 20 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+/** Idempotent. Nullable, matching the primary schema. No NOT NULL. */
+export const ANALYTICS_P6_STARTUP_STATEMENTS = [
+  "ALTER TABLE analytics_events ADD COLUMN IF NOT EXISTS device_model varchar(64)",
+  "ALTER TABLE analytics_events ADD COLUMN IF NOT EXISTS display_class varchar(16)",
+  "ALTER TABLE analytics_events ADD COLUMN IF NOT EXISTS window_width_bucket varchar(16)",
 ] as const;
 
 export const MISSING_P6_COLUMNS_WARNING =
-  "Analytics insert retried without device_model, display_class, and window_width_bucket because those columns are not in the database yet. Run db:push to store them.";
+  "Analytics insert retried without device_model, display_class, and window_width_bucket because those columns are not in the database yet. The startup migration and npm run db:push add them.";
 
 export type AnalyticsEventInput = {
   type: string;
@@ -36,13 +59,24 @@ export type AnalyticsInsertRow = {
   windowWidthBucket?: string;
 };
 
+type LegacyInsertRow = {
+  deviceId: string;
+  eventType: string;
+  eventData: unknown;
+  platform: string | null;
+  appVersion: string | null;
+  createdAt: Date;
+};
+
 type AnalyticsInserter = {
-  insert: (table: typeof analyticsEvents) => {
-    values: (rows: AnalyticsInsertRow[]) => Promise<unknown>;
+  insert: (table: typeof analyticsEvents | typeof analyticsEventsLegacy) => {
+    values: (
+      rows: AnalyticsInsertRow[] | LegacyInsertRow[],
+    ) => Promise<unknown>;
   };
 };
 
-/** Include a P6 field only when this client actually sent it. */
+/** Include a P6 value only when this client sent it. The primary INSERT still names the columns. */
 export function toAnalyticsRows(
   deviceId: string,
   events: AnalyticsEventInput[],
@@ -64,6 +98,17 @@ export function toAnalyticsRows(
     }
     return row;
   });
+}
+
+function toLegacyRow(row: AnalyticsInsertRow): LegacyInsertRow {
+  return {
+    deviceId: row.deviceId,
+    eventType: row.eventType,
+    eventData: row.eventData,
+    platform: row.platform,
+    appVersion: row.appVersion,
+    createdAt: row.createdAt,
+  };
 }
 
 export function isMissingColumnError(err: unknown): boolean {
@@ -88,40 +133,44 @@ export function isMissingColumnError(err: unknown): boolean {
   return false;
 }
 
-function rowHasP6Field(row: AnalyticsInsertRow): boolean {
-  return P6_ROW_KEYS.some((key) => row[key] !== undefined);
-}
-
-function withoutP6Columns(row: AnalyticsInsertRow): AnalyticsInsertRow {
-  const next: AnalyticsInsertRow = {
-    deviceId: row.deviceId,
-    eventType: row.eventType,
-    eventData: row.eventData,
-    platform: row.platform,
-    appVersion: row.appVersion,
-    createdAt: row.createdAt,
-  };
-  return next;
-}
-
 /**
- * Insert analytics rows. If Postgres rejects the statement because a column
- * does not exist and the batch named the P6 columns, retry once without them.
+ * Insert through the primary table. On undefined-column, retry the whole
+ * batch through the legacy table definition, which does not name the P6 columns.
  */
 export async function insertAnalyticsEvents(
   database: AnalyticsInserter,
   rows: AnalyticsInsertRow[],
 ): Promise<void> {
-  const insert = (batch: AnalyticsInsertRow[]) =>
-    database.insert(analyticsEvents).values(batch);
-
   try {
-    await insert(rows);
+    await database.insert(analyticsEvents).values(rows);
   } catch (err) {
-    if (!isMissingColumnError(err) || !rows.some(rowHasP6Field)) {
-      throw err;
-    }
+    if (!isMissingColumnError(err)) throw err;
     console.warn(MISSING_P6_COLUMNS_WARNING);
-    await insert(rows.map(withoutP6Columns));
+    await database.insert(analyticsEventsLegacy).values(rows.map(toLegacyRow));
+  }
+}
+
+type SqlExecutor = {
+  execute: (query: SQL) => Promise<unknown>;
+};
+
+/**
+ * Heal production on boot. The Replit deploy build does not run `db:push`.
+ * Each statement is idempotent. A failure is logged and does not stop the server;
+ * inserts then use the legacy table until the columns exist.
+ */
+export async function ensureAnalyticsP6Columns(
+  database: SqlExecutor,
+): Promise<void> {
+  for (const statement of ANALYTICS_P6_STARTUP_STATEMENTS) {
+    try {
+      await database.execute(sql.raw(statement));
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message.split("\n")[0] : "unknown";
+      console.warn(
+        `Analytics P6 startup migration failed (${message}). Inserts omit the new columns until they exist. Run npm run db:push against production as well.`,
+      );
+    }
   }
 }

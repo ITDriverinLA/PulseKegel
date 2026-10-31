@@ -1,7 +1,12 @@
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
+import { analyticsEvents } from "../../shared/schema";
 import {
+  ANALYTICS_P6_STARTUP_STATEMENTS,
   MISSING_P6_COLUMNS_WARNING,
+  analyticsEventsLegacy,
+  ensureAnalyticsP6Columns,
   insertAnalyticsEvents,
-  isMissingColumnError,
   toAnalyticsRows,
   type AnalyticsInsertRow,
 } from "../analyticsIngest";
@@ -9,107 +14,176 @@ import {
 const deviceId = "a".repeat(64);
 const now = new Date("2026-10-31T18:00:00.000Z");
 
-function inserter(values: jest.Mock) {
-  return {
-    insert: () => ({ values }),
-  };
-}
+const oldClientRow: AnalyticsInsertRow = toAnalyticsRows(
+  deviceId,
+  [
+    {
+      type: "paywall_viewed",
+      data: { source: "settings", trialDaysRemaining: 2 },
+      platform: "ios",
+      appVersion: "2.2.4",
+    },
+  ],
+  now,
+)[0];
 
-describe("analytics ingest before db:push", () => {
-  it("writes an old client batch without naming the new columns", async () => {
-    const values = jest.fn().mockResolvedValue(undefined);
-    const rows = toAnalyticsRows(
-      deviceId,
-      [
-        {
-          type: "paywall_viewed",
-          data: { source: "settings", trialDaysRemaining: 2 },
-          platform: "ios",
-          appVersion: "2.2.4",
-        },
-      ],
-      now,
-    );
+const newClientRow: AnalyticsInsertRow = toAnalyticsRows(
+  deviceId,
+  [
+    {
+      type: "purchase_completed",
+      data: { result: "completed", source: "day1_soft" },
+      platform: "ios",
+      appVersion: "2.2.5",
+      device_model: "iPhone18,1",
+      displayClass: "regular",
+      windowWidthBucket: "500-800",
+    },
+  ],
+  now,
+)[0];
 
-    await insertAnalyticsEvents(inserter(values), rows);
+describe("analytics INSERT SQL", () => {
+  let pool: Pool;
 
-    expect(values).toHaveBeenCalledTimes(1);
-    const row = values.mock.calls[0][0][0] as AnalyticsInsertRow;
-    expect(row.eventType).toBe("paywall_viewed");
-    expect(row.platform).toBe("ios");
-    expect(row.appVersion).toBe("2.2.4");
-    expect(row).not.toHaveProperty("deviceModel");
-    expect(row).not.toHaveProperty("displayClass");
-    expect(row).not.toHaveProperty("windowWidthBucket");
+  beforeAll(() => {
+    pool = new Pool({
+      connectionString: "postgres://127.0.0.1/pulsekegel_sql_only",
+    });
   });
 
-  it("retries a new client batch when the P6 columns are missing", async () => {
-    const missing = Object.assign(
-      new Error(
-        'column "device_model" of relation "analytics_events" does not exist',
-      ),
-      { code: "42703" },
+  afterAll(async () => {
+    await pool.end();
+  });
+
+  function compiled(
+    table: typeof analyticsEvents | typeof analyticsEventsLegacy,
+    row: AnalyticsInsertRow,
+  ) {
+    const db = drizzle(pool);
+    if (table === analyticsEventsLegacy) {
+      const { deviceModel, displayClass, windowWidthBucket, ...legacy } = row;
+      void deviceModel;
+      void displayClass;
+      void windowWidthBucket;
+      return db.insert(table).values(legacy).toSQL().sql;
+    }
+    return db.insert(table).values(row).toSQL().sql;
+  }
+
+  it("names the three P6 columns on the primary table even for a 2.2.4 client", () => {
+    const statement = compiled(analyticsEvents, oldClientRow);
+    expect(statement).toContain('"device_model"');
+    expect(statement).toContain('"display_class"');
+    expect(statement).toContain('"window_width_bucket"');
+    expect(statement).toMatch(
+      /device_model", "display_class", "window_width_bucket"/,
     );
-    const values = jest
-      .fn()
-      .mockRejectedValueOnce(missing)
-      .mockResolvedValueOnce(undefined);
+  });
+
+  it("names the three P6 columns when the new client sent them", () => {
+    const statement = compiled(analyticsEvents, newClientRow);
+    expect(statement).toContain('"device_model"');
+    expect(statement).toContain('"display_class"');
+    expect(statement).toContain('"window_width_bucket"');
+    expect(statement).not.toMatch(
+      /"device_model", "display_class", "window_width_bucket"\) values \(default, .+ default, default, default/,
+    );
+  });
+
+  it("does not name the three columns on the legacy fallback table", () => {
+    for (const row of [oldClientRow, newClientRow]) {
+      const statement = compiled(analyticsEventsLegacy, row);
+      expect(statement).toContain('insert into "analytics_events"');
+      expect(statement).not.toContain("device_model");
+      expect(statement).not.toContain("display_class");
+      expect(statement).not.toContain("window_width_bucket");
+      expect(statement).toContain('"app_version"');
+    }
+  });
+});
+
+describe("analytics insert fallback", () => {
+  function databaseThatRejectsPrimary() {
+    const calls: ("primary" | "legacy")[] = [];
+    return {
+      calls,
+      insert(table: typeof analyticsEvents | typeof analyticsEventsLegacy) {
+        return {
+          values: async () => {
+            if (table === analyticsEventsLegacy) {
+              calls.push("legacy");
+              return;
+            }
+            calls.push("primary");
+            throw Object.assign(
+              new Error(
+                'column "device_model" of relation "analytics_events" does not exist',
+              ),
+              { code: "42703" },
+            );
+          },
+        };
+      },
+    };
+  }
+
+  it("retries an old client and a new client through the legacy table", async () => {
     const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
-    const rows = toAnalyticsRows(
-      deviceId,
-      [
-        {
-          type: "purchase_completed",
-          data: { result: "completed", source: "day1_soft" },
-          platform: "ios",
-          appVersion: "2.2.5",
-          device_model: "iPhone18,1",
-          displayClass: "regular",
-          windowWidthBucket: "500-800",
-        },
-      ],
-      now,
-    );
-
-    await insertAnalyticsEvents(inserter(values), rows);
-
-    expect(values).toHaveBeenCalledTimes(2);
-    const first = values.mock.calls[0][0][0] as AnalyticsInsertRow;
-    expect(first.deviceModel).toBe("iPhone18,1");
-    expect(first.displayClass).toBe("regular");
-    expect(first.windowWidthBucket).toBe("500-800");
-    const retry = values.mock.calls[1][0][0] as AnalyticsInsertRow;
-    expect(retry.eventType).toBe("purchase_completed");
-    expect(retry.appVersion).toBe("2.2.5");
-    expect(retry).not.toHaveProperty("deviceModel");
-    expect(retry).not.toHaveProperty("displayClass");
-    expect(retry).not.toHaveProperty("windowWidthBucket");
+    for (const row of [oldClientRow, newClientRow]) {
+      const database = databaseThatRejectsPrimary();
+      await insertAnalyticsEvents(database, [row]);
+      expect(database.calls).toEqual(["primary", "legacy"]);
+    }
     expect(warn).toHaveBeenCalledWith(MISSING_P6_COLUMNS_WARNING);
-    expect(isMissingColumnError(missing)).toBe(true);
     warn.mockRestore();
   });
 
-  it("does not retry an insert that failed for another reason", async () => {
-    const values = jest
-      .fn()
-      .mockRejectedValue(Object.assign(new Error("down"), { code: "57P01" }));
-    const rows = toAnalyticsRows(
-      deviceId,
-      [
-        {
-          type: "app_open",
-          data: {},
-          device_model: "iPhone18,1",
-          displayClass: "compact",
-          windowWidthBucket: "<500",
-        },
-      ],
-      now,
-    );
+  it("does not use the legacy table when the error is not a missing column", async () => {
+    const calls: string[] = [];
+    const database = {
+      insert() {
+        return {
+          values: async () => {
+            calls.push("primary");
+            throw Object.assign(new Error("down"), { code: "57P01" });
+          },
+        };
+      },
+    };
+    await expect(
+      insertAnalyticsEvents(database, [oldClientRow]),
+    ).rejects.toThrow("down");
+    expect(calls).toEqual(["primary"]);
+  });
+});
 
-    await expect(insertAnalyticsEvents(inserter(values), rows)).rejects.toThrow(
-      "down",
-    );
-    expect(values).toHaveBeenCalledTimes(1);
+describe("analytics P6 startup migration", () => {
+  it("adds each nullable column only if it is missing", () => {
+    expect(ANALYTICS_P6_STARTUP_STATEMENTS).toEqual([
+      "ALTER TABLE analytics_events ADD COLUMN IF NOT EXISTS device_model varchar(64)",
+      "ALTER TABLE analytics_events ADD COLUMN IF NOT EXISTS display_class varchar(16)",
+      "ALTER TABLE analytics_events ADD COLUMN IF NOT EXISTS window_width_bucket varchar(16)",
+    ]);
+    for (const statement of ANALYTICS_P6_STARTUP_STATEMENTS) {
+      expect(statement).toContain("ADD COLUMN IF NOT EXISTS");
+      expect(statement.toLowerCase()).not.toContain("not null");
+    }
+  });
+
+  it("keeps going when a statement fails so boot is not blocked", async () => {
+    let calls = 0;
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+    await expect(
+      ensureAnalyticsP6Columns({
+        execute: async () => {
+          calls += 1;
+          if (calls === 2) throw new Error("permission denied");
+        },
+      }),
+    ).resolves.toBeUndefined();
+    expect(calls).toBe(ANALYTICS_P6_STARTUP_STATEMENTS.length);
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
   });
 });
