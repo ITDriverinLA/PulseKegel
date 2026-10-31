@@ -1,4 +1,19 @@
-jest.mock("react-native", () => ({ Platform: { OS: "ios" } }));
+import {
+  trackDay1SoftPaywallDeferred,
+  trackPaywallDismissed,
+  trackPurchaseResult,
+  trackSubscribeTapped,
+} from "../analytics";
+import { analyticsBatchSchema } from "../../../server/requestValidation";
+
+jest.mock("react-native", () => ({
+  Platform: { OS: "ios" },
+  Dimensions: { get: () => ({ width: 626, height: 890 }) },
+}));
+jest.mock("expo-device", () => ({
+  modelId: "iPhone18,1",
+  modelName: "iPhone Duo",
+}));
 jest.mock("@react-native-async-storage/async-storage", () => ({
   __esModule: true,
   default: {
@@ -15,14 +30,6 @@ jest.mock("expo-application", () => ({ nativeApplicationVersion: "2.2.3" }));
 jest.mock("../query-client", () => ({
   getApiUrl: () => "https://example.test",
 }));
-
-import {
-  trackDay1SoftPaywallDeferred,
-  trackPaywallDismissed,
-  trackPurchaseResult,
-  trackSubscribeTapped,
-} from "../analytics";
-import { analyticsBatchSchema } from "../../../server/requestValidation";
 
 describe("P4 paywall analytics trackers", () => {
   let bodies: { deviceId: string; events: { type: string; data: any }[] }[];
@@ -68,6 +75,14 @@ describe("P4 paywall analytics trackers", () => {
     ).toEqual(["day1_soft", "settings"]);
     for (const body of bodies) {
       expect(analyticsBatchSchema.safeParse(body).success).toBe(true);
+      const event = body.events[0] as {
+        device_model?: string;
+        displayClass?: string;
+        windowWidthBucket?: string;
+      };
+      expect(event.device_model).toBe("iPhone18,1");
+      expect(event.displayClass).toBe("regular");
+      expect(event.windowWidthBucket).toBe("500-800");
     }
   });
 });

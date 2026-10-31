@@ -1,3 +1,10 @@
+import {
+  cloudSignInUnavailableReason,
+  isCloudSignInConfigured,
+  obtainCloudIdentityToken,
+  shouldShowCloudSyncSection,
+} from "../cloudAuth";
+
 jest.mock("react-native", () => ({
   Platform: { OS: "ios" },
 }));
@@ -6,13 +13,6 @@ jest.mock("expo-constants", () => ({
   __esModule: true,
   default: { expoConfig: { extra: {} } },
 }));
-
-import {
-  cloudSignInUnavailableReason,
-  isCloudSignInConfigured,
-  obtainCloudIdentityToken,
-  shouldShowCloudSyncSection,
-} from "../cloudAuth";
 
 describe("cloudAuth fail-closed", () => {
   const prevApple = process.env.EXPO_PUBLIC_APPLE_CLIENT_ID;

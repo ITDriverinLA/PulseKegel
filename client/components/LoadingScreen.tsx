@@ -1,5 +1,11 @@
 import React, { useEffect } from "react";
-import { View, Text, Image, StyleSheet, Dimensions } from "react-native";
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  useWindowDimensions,
+} from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedProps,
@@ -21,9 +27,6 @@ import { useThemePreference } from "@/contexts/ThemePreferenceContext";
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
-const SCREEN_WIDTH = Dimensions.get("window").width;
-const LINE_WIDTH = Math.min(SCREEN_WIDTH - 64, 300);
-
 // ECG/heartbeat path on a 300×60 canvas.
 // Flat baseline → small pre-dip → sharp spike up → spike down → recovery → flat out.
 const ECG_PATH =
@@ -34,6 +37,8 @@ const PATH_LENGTH = 430;
 
 export function LoadingScreen() {
   const { cp } = useThemePreference();
+  const { width } = useWindowDimensions();
+  const lineWidth = Math.min(width - 64, 300);
   const dashOffset = useSharedValue(PATH_LENGTH);
 
   useEffect(() => {
@@ -76,7 +81,7 @@ export function LoadingScreen() {
         <Text style={[styles.title, { color: cp.text }]}>PulseKegel</Text>
 
         <View style={styles.lineWrapper}>
-          <Svg width={LINE_WIDTH} height={60} viewBox="0 0 300 60">
+          <Svg width={lineWidth} height={60} viewBox="0 0 300 60">
             {/* Wide faint glow */}
             <AnimatedPath
               d={ECG_PATH}

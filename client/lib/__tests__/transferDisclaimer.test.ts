@@ -1,18 +1,18 @@
 import * as fs from "fs";
 import * as path from "path";
 
-jest.mock("react-native", () => ({ Platform: { OS: "ios" } }));
-jest.mock("expo-constants", () => ({
-  __esModule: true,
-  default: { expoConfig: { extra: {} } },
-}));
-
 import {
   TRANSFER_DISCLAIMER,
   transferDisclaimerText,
   isCloudSignInConfigured,
   shouldShowCloudSyncSection,
 } from "../cloudAuth";
+
+jest.mock("react-native", () => ({ Platform: { OS: "ios" } }));
+jest.mock("expo-constants", () => ({
+  __esModule: true,
+  default: { expoConfig: { extra: {} } },
+}));
 
 const screenSrc = fs.readFileSync(
   path.join(__dirname, "../../screens/TransferChecklistScreen.tsx"),

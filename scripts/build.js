@@ -124,14 +124,16 @@ function generateEnvConfig() {
       if (!hasKey) {
         exitWithError(
           "ERROR: env-config.generated.ts exists but has empty RevenueCat keys, and no EXPO_PUBLIC_REVENUECAT env vars are set. " +
-          "The build cannot proceed without valid keys. Set EXPO_PUBLIC_REVENUECAT_IOS_KEY and EXPO_PUBLIC_REVENUECAT_ANDROID_KEY.",
+            "The build cannot proceed without valid keys. Set EXPO_PUBLIC_REVENUECAT_IOS_KEY and EXPO_PUBLIC_REVENUECAT_ANDROID_KEY.",
         );
       }
-      console.log(`Existing config has keys (${existing.length} bytes). Using pre-generated values.`);
+      console.log(
+        `Existing config has keys (${existing.length} bytes). Using pre-generated values.`,
+      );
     } else {
       exitWithError(
         "ERROR: No env-config.generated.ts file and no EXPO_PUBLIC_REVENUECAT env vars. " +
-        "Set EXPO_PUBLIC_REVENUECAT_IOS_KEY and EXPO_PUBLIC_REVENUECAT_ANDROID_KEY.",
+          "Set EXPO_PUBLIC_REVENUECAT_IOS_KEY and EXPO_PUBLIC_REVENUECAT_ANDROID_KEY.",
       );
     }
     return;

@@ -1,8 +1,14 @@
 import * as Crypto from "expo-crypto";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Application from "expo-application";
-import { Platform } from "react-native";
+import * as Device from "expo-device";
+import { Dimensions, Platform } from "react-native";
 import { getApiUrl } from "./query-client";
+import {
+  displayClassForWindow,
+  formatDeviceModel,
+  windowWidthBucket,
+} from "./windowLayout";
 
 const DEVICE_ID_KEY = "pulsekegel_analytics_device_id";
 
@@ -52,6 +58,27 @@ async function loadOrCreateDeviceId(): Promise<string> {
   }
 }
 
+function currentAnalyticsContext(): {
+  device_model: string;
+  displayClass: "compact" | "regular";
+  windowWidthBucket: "<500" | "500-800" | ">800";
+} {
+  let width = 0;
+  let height = 0;
+  try {
+    const window = Dimensions.get("window");
+    if (typeof window.width === "number") width = window.width;
+    if (typeof window.height === "number") height = window.height;
+  } catch {
+    // Analytics must still send if the runtime has no window.
+  }
+  return {
+    device_model: formatDeviceModel(Device.modelId, Device.modelName),
+    displayClass: displayClassForWindow(width, height),
+    windowWidthBucket: windowWidthBucket(width),
+  };
+}
+
 export function trackEvent(type: string, data?: Record<string, unknown>): void {
   if (ONCE_PER_SESSION_EVENTS.has(type)) {
     if (SESSION_SENT.has(type)) return;
@@ -63,6 +90,7 @@ export function trackEvent(type: string, data?: Record<string, unknown>): void {
       const baseUrl = getApiUrl();
       const url = new URL("/api/analytics", baseUrl);
       const appVersion = Application.nativeApplicationVersion ?? "1.0.0";
+      const context = currentAnalyticsContext();
 
       if (Date.now() < retryAfterMs) {
         return;
@@ -77,9 +105,13 @@ export function trackEvent(type: string, data?: Record<string, unknown>): void {
             {
               type,
               // platform + appVersion required on all activation events (Epic D).
+              // device_model, displayClass, and windowWidthBucket on every event (P6).
               data: data ?? {},
               platform: Platform.OS,
               appVersion,
+              device_model: context.device_model,
+              displayClass: context.displayClass,
+              windowWidthBucket: context.windowWidthBucket,
               occurredAt: new Date().toISOString(),
             },
           ],

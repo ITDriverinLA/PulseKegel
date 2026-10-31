@@ -79,6 +79,10 @@ export default function MainTabNavigator() {
     <Tab.Navigator
       initialRouteName="TodayTab"
       screenOptions={{
+        // P6 / Ashley D3: keep this custom bottom bar. It follows the live
+        // window and safe-area insets (including the Duo hinge). It does not
+        // become iOS 27's native vertical side strip.
+        tabBarPosition: "bottom",
         tabBarActiveTintColor: theme.tabIconSelected,
         tabBarInactiveTintColor: theme.tabIconDefault,
         tabBarStyle: {

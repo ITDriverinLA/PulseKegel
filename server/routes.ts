@@ -569,6 +569,9 @@ ${blogUrls}
         eventData: event.data,
         platform: event.platform ?? null,
         appVersion: event.appVersion ?? null,
+        deviceModel: event.device_model ?? null,
+        displayClass: event.displayClass ?? null,
+        windowWidthBucket: event.windowWidthBucket ?? null,
         // Server time is authoritative so clients cannot backdate analytics.
         createdAt: new Date(),
       }));

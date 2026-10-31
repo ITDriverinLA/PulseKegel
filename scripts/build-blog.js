@@ -90,7 +90,10 @@ function getHeadValue(html, tag) {
 function updateHead(html, metaTitle, description, canonicalHref) {
   if (metaTitle) {
     if (/<title>[^<]*<\/title>/i.test(html)) {
-      html = html.replace(/<title>[^<]*<\/title>/i, `<title>${metaTitle}</title>`);
+      html = html.replace(
+        /<title>[^<]*<\/title>/i,
+        `<title>${metaTitle}</title>`,
+      );
     } else {
       html = html.replace("</head>", `  <title>${metaTitle}</title>\n</head>`);
     }
@@ -100,10 +103,13 @@ function updateHead(html, metaTitle, description, canonicalHref) {
     if (/<meta\s+name="description"\s+content="[^"]*"/i.test(html)) {
       html = html.replace(
         /<meta\s+name="description"\s+content="[^"]*"/i,
-        `<meta name="description" content="${description}"`
+        `<meta name="description" content="${description}"`,
       );
     } else {
-      html = html.replace("</head>", `  <meta name="description" content="${description}" />\n</head>`);
+      html = html.replace(
+        "</head>",
+        `  <meta name="description" content="${description}" />\n</head>`,
+      );
     }
   }
 
@@ -115,10 +121,13 @@ function updateHead(html, metaTitle, description, canonicalHref) {
     if (/<link\s+rel="canonical"/i.test(html)) {
       html = html.replace(
         /<link\s+rel="canonical"\s+href="[^"]*"/i,
-        `<link rel="canonical" href="${fullCanonical}"`
+        `<link rel="canonical" href="${fullCanonical}"`,
       );
     } else {
-      html = html.replace("</head>", `  <link rel="canonical" href="${fullCanonical}" />\n</head>`);
+      html = html.replace(
+        "</head>",
+        `  <link rel="canonical" href="${fullCanonical}" />\n</head>`,
+      );
     }
   }
 
@@ -161,7 +170,10 @@ function ensureBreadcrumbSchema(html, postTitle, slug) {
 }
 
 function ensureArticleSchema(html, headline, description, slug, datePublished) {
-  if (html.includes('"@type": "Article"') || html.includes('"@type":"Article"')) {
+  if (
+    html.includes('"@type": "Article"') ||
+    html.includes('"@type":"Article"')
+  ) {
     return html;
   }
 
@@ -439,11 +451,17 @@ const BRAND_FOOTER = `<footer class="pk-footer">
 function applyBrandStyling(html) {
   if (!html.includes('<link rel="icon"')) {
     const inject = html.includes("plausible.io/js")
-      ? BRAND_HEAD_INJECT.replace(/\s*<!-- Privacy-friendly analytics by Plausible -->[\s\S]*?<\/script>\s*<script>[\s\S]*?<\/script>/, "")
+      ? BRAND_HEAD_INJECT.replace(
+          /\s*<!-- Privacy-friendly analytics by Plausible -->[\s\S]*?<\/script>\s*<script>[\s\S]*?<\/script>/,
+          "",
+        )
       : BRAND_HEAD_INJECT;
     html = html.replace("</head>", `${inject}\n</head>`);
   } else {
-    html = html.replace("</head>", `  <link rel="preconnect" href="https://fonts.googleapis.com" />\n  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />\n  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />\n</head>`);
+    html = html.replace(
+      "</head>",
+      `  <link rel="preconnect" href="https://fonts.googleapis.com" />\n  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />\n  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />\n</head>`,
+    );
   }
 
   html = html.replace(/<style>[\s\S]*?<\/style>/i, BRAND_STYLE);
@@ -457,7 +475,7 @@ function applyBrandStyling(html) {
     /(<body[^>]*>[\s\S]*?<\/header>\s*<div class="pk-header-rule"><\/div>)([\s\S]*?)(<\/body>)/i,
     (match, headerPart, content, closing) => {
       return `${headerPart}${articleBodyOpen}${content}${articleBodyClose}\n  ${BRAND_FOOTER}\n${closing}`;
-    }
+    },
   );
 
   return html;
@@ -486,10 +504,13 @@ function processFile(filename, strictErrors) {
   html = cleaned;
 
   const metaTitle = extracted.metaTitle || getHeadValue(html, "title");
-  const description = extracted.description || getHeadValue(html, "description");
+  const description =
+    extracted.description || getHeadValue(html, "description");
   const rawSlug = extracted.slug || getHeadValue(html, "canonical");
   const slug = rawSlug
-    ? rawSlug.replace(/^https?:\/\/(www\.)?pulsekegel\.com\/blog\//, "").replace(/^blog\//, "")
+    ? rawSlug
+        .replace(/^https?:\/\/(www\.)?pulsekegel\.com\/blog\//, "")
+        .replace(/^blog\//, "")
     : filename.replace(".html", "");
   const headline = getH1(html) || metaTitle || slug;
   let datePublished = "2025-01-01";
@@ -511,7 +532,13 @@ function processFile(filename, strictErrors) {
   const fullUrl = `https://pulsekegel.com/blog/${slug}`;
 
   html = updateHead(html, metaTitle, description, `blog/${slug}`);
-  html = ensureArticleSchema(html, headline, description || "", slug, datePublished);
+  html = ensureArticleSchema(
+    html,
+    headline,
+    description || "",
+    slug,
+    datePublished,
+  );
   html = ensureOgTags(html, metaTitle || headline, description || "", fullUrl);
   html = ensureBreadcrumbSchema(html, headline, slug);
   html = applyBrandStyling(html);
@@ -534,10 +561,14 @@ function checkBlog() {
   }
 
   if (missing.length === 0) {
-    console.log(`check: all ${files.length - 1} blog post(s) have git history.`);
+    console.log(
+      `check: all ${files.length - 1} blog post(s) have git history.`,
+    );
     process.exit(0);
   } else {
-    console.error(`check: ${missing.length} blog post(s) are missing git history:`);
+    console.error(
+      `check: ${missing.length} blog post(s) are missing git history:`,
+    );
     for (const file of missing) {
       console.error(`  - ${file}`);
     }
@@ -563,31 +594,50 @@ function invalidateSitemapCache() {
     try {
       const url = new URL(endpoint);
       const transport = url.protocol === "https:" ? https : http;
-      const headers = { "Content-Type": "application/json", "Content-Length": "0" };
+      const headers = {
+        "Content-Type": "application/json",
+        "Content-Length": "0",
+      };
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
       const req = transport.request(
-        { hostname: url.hostname, port: url.port || (url.protocol === "https:" ? 443 : 80), path: url.pathname, method: "POST", headers },
+        {
+          hostname: url.hostname,
+          port: url.port || (url.protocol === "https:" ? 443 : 80),
+          path: url.pathname,
+          method: "POST",
+          headers,
+        },
         (res) => {
           let body = "";
-          res.on("data", (chunk) => { body += chunk; });
+          res.on("data", (chunk) => {
+            body += chunk;
+          });
           res.on("end", () => {
             if (res.statusCode === 200) {
-              console.log("  sitemap cache invalidated — new posts will appear immediately.");
+              console.log(
+                "  sitemap cache invalidated — new posts will appear immediately.",
+              );
             } else {
-              console.warn(`  sitemap cache invalidation returned HTTP ${res.statusCode}: ${body.trim()}`);
+              console.warn(
+                `  sitemap cache invalidation returned HTTP ${res.statusCode}: ${body.trim()}`,
+              );
             }
             resolve();
           });
-        }
+        },
       );
       req.on("error", (err) => {
-        console.warn(`  sitemap cache invalidation skipped (server not reachable): ${err.message}`);
+        console.warn(
+          `  sitemap cache invalidation skipped (server not reachable): ${err.message}`,
+        );
         resolve();
       });
       req.setTimeout(3000, () => {
         req.destroy();
-        console.warn("  sitemap cache invalidation skipped (request timed out).");
+        console.warn(
+          "  sitemap cache invalidation skipped (request timed out).",
+        );
         resolve();
       });
       req.end();
@@ -622,7 +672,7 @@ async function buildBlog() {
       `\nERROR: ${strictErrors.length} file(s) are missing git history (strict mode).\n` +
         `Fix by committing the files first:\n` +
         strictErrors.map((f) => `  - ${f}`).join("\n") +
-        `\n\nTo skip this check during local experimentation, run:\n  BLOG_STRICT=0 node scripts/build-blog.js`
+        `\n\nTo skip this check during local experimentation, run:\n  BLOG_STRICT=0 node scripts/build-blog.js`,
     );
     process.exit(1);
   }
@@ -647,10 +697,14 @@ function checkDates() {
   }
 
   if (mismatches.length === 0) {
-    console.log(`check-dates: all blog posts with git history have matching datePublished.`);
+    console.log(
+      `check-dates: all blog posts with git history have matching datePublished.`,
+    );
     process.exit(0);
   } else {
-    console.error(`check-dates: ${mismatches.length} blog post(s) have a datePublished mismatch:`);
+    console.error(
+      `check-dates: ${mismatches.length} blog post(s) have a datePublished mismatch:`,
+    );
     for (const { file, storedDate, gitDate } of mismatches) {
       console.error(`  - ${file}: stored=${storedDate}, git=${gitDate}`);
     }
@@ -677,14 +731,16 @@ function fixDates() {
 
     const updated = html.replace(
       /"datePublished"\s*:\s*"\d{4}-\d{2}-\d{2}"/g,
-      `"datePublished": "${gitDate}"`
+      `"datePublished": "${gitDate}"`,
     );
     fs.writeFileSync(sourcePath, updated, "utf-8");
     fixed.push({ file, storedDate, gitDate });
   }
 
   if (fixed.length === 0 && skipped.length === 0) {
-    console.log("fix-dates: all datePublished values already match git history. Nothing to do.");
+    console.log(
+      "fix-dates: all datePublished values already match git history. Nothing to do.",
+    );
   } else {
     if (fixed.length > 0) {
       console.log(`fix-dates: updated ${fixed.length} file(s):`);
@@ -695,7 +751,9 @@ function fixDates() {
       console.log("fix-dates: no mismatches found — nothing updated.");
     }
     if (skipped.length > 0) {
-      console.warn(`fix-dates: skipped ${skipped.length} file(s) with no git history:`);
+      console.warn(
+        `fix-dates: skipped ${skipped.length} file(s) with no git history:`,
+      );
       for (const file of skipped) {
         console.warn(`  - ${file}`);
       }

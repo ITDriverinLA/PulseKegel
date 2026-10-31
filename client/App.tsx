@@ -36,7 +36,7 @@ import {
 } from "@/lib/challengeNudge";
 import { storage } from "@/lib/storage";
 import { getWeek1WorkoutForDayIndex } from "@/data/workoutProgram";
-import { didAppBecomeActive } from "@/lib/appState";
+import { asAppState, didAppBecomeActive } from "@/lib/appState";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -85,7 +85,7 @@ function AppContent() {
   const { initialSettings, initialProgress, programStartDate } = useStartup();
   const navigationRef =
     useRef<NavigationContainerRef<RootStackParamList>>(null);
-  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
+  const appStateRef = useRef<AppStateStatus>(asAppState(AppState.currentState));
 
   useEffect(() => {
     (async () => {

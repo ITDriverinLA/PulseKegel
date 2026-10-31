@@ -16,6 +16,9 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useKeepAwake } from "expo-keep-awake";
+import { asAppState } from "@/lib/appState";
+import { reduceSessionAppState } from "@/lib/sessionAppState";
+import { contentInsets, readableColumn } from "@/lib/windowLayout";
 import Animated, {
   useAnimatedStyle,
   withSpring,
@@ -128,7 +131,10 @@ export default function WorkoutPlayerScreen() {
   const hapticPulseRef = useRef<HapticPulseController>(
     new HapticPulseController(),
   );
-  const appStateRef = useRef(AppState.currentState);
+  const appStateRef = useRef<AppStateStatus>(asAppState(AppState.currentState));
+  const sessionSuspendedRef = useRef(
+    asAppState(AppState.currentState) === "background",
+  );
   const startTimeRef = useRef<Date | null>(null);
   const shouldRedirectToCalibrationRef = useRef(false);
   const shouldRedirectToWeeklyCalibrationRef = useRef<number | null>(null);
@@ -494,10 +500,19 @@ export default function WorkoutPlayerScreen() {
     const subscription = AppState.addEventListener(
       "change",
       (nextAppState: AppStateStatus) => {
-        if (
-          appStateRef.current.match(/inactive|background/) &&
-          nextAppState === "active"
-        ) {
+        const previous = appStateRef.current;
+        const next = reduceSessionAppState(
+          previous,
+          nextAppState,
+          sessionSuspendedRef.current,
+        );
+        sessionSuspendedRef.current = next.suspended;
+        appStateRef.current = nextAppState;
+
+        // `inactive` (fold, Control Center) is not leaving the session.
+        // Suspending there would stop haptics and write Day-1 progress as if
+        // the user backgrounded, which skews abandon analytics.
+        if (next.action === "resume") {
           engineRef.current?.handleAppForeground();
 
           if (
@@ -513,7 +528,7 @@ export default function WorkoutPlayerScreen() {
               currentSegment.rampSteps,
             );
           }
-        } else if (nextAppState.match(/inactive|background/)) {
+        } else if (next.action === "suspend") {
           hapticPulseRef.current.stop();
           if (isFirstSession && !isCompleteRef.current) {
             const prog = progressRef.current;
@@ -536,7 +551,6 @@ export default function WorkoutPlayerScreen() {
             );
           }
         }
-        appStateRef.current = nextAppState;
       },
     );
 
@@ -848,10 +862,11 @@ export default function WorkoutPlayerScreen() {
         <View
           style={[
             styles.content,
-            {
-              paddingTop: insets.top + Spacing["3xl"],
-              paddingBottom: insets.bottom + Spacing.xl,
-            },
+            contentInsets(insets, {
+              top: Spacing["3xl"],
+              bottom: Spacing.xl,
+              horizontal: Spacing.xl,
+            }),
           ]}
         >
           <View style={styles.header}>
@@ -985,10 +1000,11 @@ export default function WorkoutPlayerScreen() {
       <View
         style={[
           styles.content,
-          {
-            paddingTop: insets.top + Spacing.xl,
-            paddingBottom: insets.bottom + Spacing.xl,
-          },
+          contentInsets(insets, {
+            top: Spacing.xl,
+            bottom: Spacing.xl,
+            horizontal: Spacing.xl,
+          }),
         ]}
       >
         <View style={styles.header}>
@@ -1252,7 +1268,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: Spacing.xl,
+    ...readableColumn,
   },
   header: {
     flexDirection: "row",

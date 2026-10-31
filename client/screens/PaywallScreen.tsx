@@ -25,6 +25,7 @@ import Purchases, { PurchasesPackage } from "react-native-purchases";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { Spacing, BorderRadius } from "@/constants/theme";
+import { contentInsets, readableColumn } from "@/lib/windowLayout";
 import { useThemePreference } from "@/contexts/ThemePreferenceContext";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { storage } from "@/lib/storage";
@@ -288,17 +289,22 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          {
-            paddingTop: insets.top + Spacing.lg,
-            paddingBottom: insets.bottom + Spacing.xl,
-          },
+          contentInsets(insets, {
+            top: Spacing.lg,
+            bottom: Spacing.xl,
+            horizontal: Spacing.lg,
+          }),
         ]}
         showsVerticalScrollIndicator={false}
       >
         <Pressable
           style={[
             styles.closeButton,
-            { top: insets.top + Spacing.sm, backgroundColor: cp.cardBorder },
+            {
+              top: insets.top + Spacing.sm,
+              right: insets.right + Spacing.lg,
+              backgroundColor: cp.cardBorder,
+            },
           ]}
           onPress={() => handleClose("close")}
           testID="button-close-paywall"
@@ -587,11 +593,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: Spacing.lg,
+    ...readableColumn,
   },
   closeButton: {
     position: "absolute",
-    right: Spacing.lg,
     zIndex: 10,
     width: 40,
     height: 40,

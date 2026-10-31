@@ -43,7 +43,10 @@ async function pingEndpoint(serverUrl, token) {
     try {
       const url = new URL(`${serverUrl}/api/invalidate-sitemap-cache`);
       const transport = url.protocol === "https:" ? https : http;
-      const headers = { "Content-Type": "application/json", "Content-Length": "0" };
+      const headers = {
+        "Content-Type": "application/json",
+        "Content-Length": "0",
+      };
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
       const req = transport.request(
@@ -56,9 +59,13 @@ async function pingEndpoint(serverUrl, token) {
         },
         (res) => {
           let body = "";
-          res.on("data", (chunk) => { body += chunk; });
-          res.on("end", () => resolve({ status: res.statusCode, body: body.trim() }));
-        }
+          res.on("data", (chunk) => {
+            body += chunk;
+          });
+          res.on("end", () =>
+            resolve({ status: res.statusCode, body: body.trim() }),
+          );
+        },
       );
       req.on("error", (err) => resolve({ status: null, error: err.message }));
       req.setTimeout(4000, () => {
@@ -85,7 +92,9 @@ async function main() {
   console.log("└─────────────────────────────────────────────────────────┘");
 
   console.log(`\n  ${pad("New token:")}  ${newToken}`);
-  console.log(`  ${pad("Token length:")} ${newToken.length} hex chars (${newToken.length / 2} bytes)`);
+  console.log(
+    `  ${pad("Token length:")} ${newToken.length} hex chars (${newToken.length / 2} bytes)`,
+  );
 
   // Optional: verify old token still works before rotation
   if (verify && currentToken) {
@@ -94,7 +103,9 @@ async function main() {
     if (result.status === 200) {
       console.log("  ✓  Current token accepted — server is healthy.");
     } else if (result.status === 401) {
-      console.log("  ✗  Current token rejected (401). It may already be stale.");
+      console.log(
+        "  ✗  Current token rejected (401). It may already be stale.",
+      );
     } else if (result.error) {
       console.log(`  !  Could not reach server: ${result.error}`);
     } else {
@@ -111,31 +122,31 @@ async function main() {
   printStep(
     2,
     "Open the Replit Secrets panel (padlock icon in the left sidebar)\n" +
-    "     and update  INVALIDATE_CACHE_TOKEN  with the new value.\n" +
-    "     (Replit secrets are stored encrypted; the value is never logged.)"
+      "     and update  INVALIDATE_CACHE_TOKEN  with the new value.\n" +
+      "     (Replit secrets are stored encrypted; the value is never logged.)",
   );
 
   printStep(
     3,
     "Restart the backend server so it loads the new secret:\n" +
-    "     • In Replit: click 'Restart' next to the Start Backend workflow, or\n" +
-    "     • From a terminal: npm run server:dev\n" +
-    "     The restart takes only a few seconds.  During this window the\n" +
-    "     /api/invalidate-sitemap-cache endpoint is briefly unavailable,\n" +
-    "     but no user-facing feature depends on it."
+      "     • In Replit: click 'Restart' next to the Start Backend workflow, or\n" +
+      "     • From a terminal: npm run server:dev\n" +
+      "     The restart takes only a few seconds.  During this window the\n" +
+      "     /api/invalidate-sitemap-cache endpoint is briefly unavailable,\n" +
+      "     but no user-facing feature depends on it.",
   );
 
   printStep(
     4,
     "If you use INVALIDATE_CACHE_TOKEN in a CI/CD pipeline or any\n" +
-    "     external automation, update the secret there too before the next run."
+      "     external automation, update the secret there too before the next run.",
   );
 
   printStep(
     5,
     "(Optional) Verify the new token works:\n" +
-    `     SERVER_URL=${serverUrl} INVALIDATE_CACHE_TOKEN=<new-token> \\\n` +
-    "       node scripts/rotate-cache-token.js --verify"
+      `     SERVER_URL=${serverUrl} INVALIDATE_CACHE_TOKEN=<new-token> \\\n` +
+      "       node scripts/rotate-cache-token.js --verify",
   );
 
   console.log("\n══════════════════════════════════════════════════════════");
@@ -157,8 +168,12 @@ async function main() {
 
   // Optional: verify new token after rotation (run again with new token in env)
   if (verify && !currentToken) {
-    console.log("  Tip: set INVALIDATE_CACHE_TOKEN=<new-token> in your shell and");
-    console.log("  re-run with --verify to confirm the new token is accepted.\n");
+    console.log(
+      "  Tip: set INVALIDATE_CACHE_TOKEN=<new-token> in your shell and",
+    );
+    console.log(
+      "  re-run with --verify to confirm the new token is accepted.\n",
+    );
   }
 }
 

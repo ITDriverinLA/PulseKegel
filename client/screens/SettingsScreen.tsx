@@ -14,7 +14,10 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { useNavigation } from "@react-navigation/native";
+import {
+  useNavigation,
+  CompositeNavigationProp,
+} from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
@@ -57,7 +60,6 @@ import {
 } from "@/contexts/ThemePreferenceContext";
 import { useAudio } from "@/contexts/AudioContext";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { CompositeNavigationProp } from "@react-navigation/native";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { SettingsStackParamList } from "@/navigation/SettingsStackNavigator";
 

@@ -2,12 +2,45 @@
 const { defineConfig } = require("eslint/config");
 const expoConfig = require("eslint-config-expo/flat");
 const eslintPluginPrettierRecommended = require("eslint-plugin-prettier/recommended");
+const globals = require("globals");
 
 module.exports = defineConfig([
   expoConfig,
   eslintPluginPrettierRecommended,
   {
-    ignores: ["dist/*"],
+    ignores: [
+      "dist/**",
+      "server_dist/**",
+      "static-build/**",
+      "attached_assets/**",
+    ],
+  },
+  {
+    // eslint-plugin-react-hooks 7 (SDK 58) turns React Compiler diagnostics
+    // into errors. This app already enables the compiler via
+    // experiments.reactCompiler and the compiler skips components it cannot
+    // optimize. These rules flag existing effects, refs, and animated values
+    // across the app; keep the classic hooks rules.
+    rules: {
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/immutability": "off",
+      "react-hooks/refs": "off",
+      "react-hooks/purity": "off",
+    },
+  },
+  {
+    // Jest tests register mocks before importing the module under test.
+    // import/first --fix hoists those imports and breaks mock initialization.
+    files: ["**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      "import/first": "off",
+    },
+  },
+  {
+    files: ["scripts/**/*.js"],
+    languageOptions: {
+      globals: globals.node,
+    },
   },
   {
     files: ["client/**/*.{js,ts,jsx,tsx}"],
