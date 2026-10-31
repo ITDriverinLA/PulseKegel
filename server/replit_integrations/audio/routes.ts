@@ -1,11 +1,7 @@
 import express, { type Express, type Request, type Response } from "express";
 import { chatStorage } from "../chat/storage";
 import { openai, speechToText, ensureCompatibleFormat } from "./client";
-
-function routeId(value: string | string[]): number {
-  const raw = Array.isArray(value) ? value[0] : value;
-  return parseInt(raw, 10);
-}
+import { parseRouteId } from "../../routeId";
 
 // Body parser with 50MB limit for audio payloads
 const audioBodyParser = express.json({ limit: "50mb" });
@@ -25,7 +21,11 @@ export function registerAudioRoutes(app: Express): void {
   // Get single conversation with messages
   app.get("/api/conversations/:id", async (req: Request, res: Response) => {
     try {
-      const id = routeId(req.params.id);
+      const id = parseRouteId(req.params.id);
+      if (id == null) {
+        res.status(400).json({ error: "Invalid id" });
+        return;
+      }
       const conversation = await chatStorage.getConversation(id);
       if (!conversation) {
         return res.status(404).json({ error: "Conversation not found" });
@@ -55,7 +55,11 @@ export function registerAudioRoutes(app: Express): void {
   // Delete conversation
   app.delete("/api/conversations/:id", async (req: Request, res: Response) => {
     try {
-      const id = routeId(req.params.id);
+      const id = parseRouteId(req.params.id);
+      if (id == null) {
+        res.status(400).json({ error: "Invalid id" });
+        return;
+      }
       await chatStorage.deleteConversation(id);
       res.status(204).send();
     } catch (error) {
@@ -72,7 +76,11 @@ export function registerAudioRoutes(app: Express): void {
     audioBodyParser,
     async (req: Request, res: Response) => {
       try {
-        const conversationId = routeId(req.params.id);
+        const conversationId = parseRouteId(req.params.id);
+        if (conversationId == null) {
+          res.status(400).json({ error: "Invalid id" });
+          return;
+        }
         const { audio, voice = "alloy" } = req.body;
 
         if (!audio) {
