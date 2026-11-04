@@ -39,7 +39,7 @@ const tips = [
   },
   {
     icon: "clock" as const,
-    title: "Be Patient",
+    title: "Stay Consistent",
     description:
       "Consistency beats intensity. A few minutes most days is the habit to build.",
   },
