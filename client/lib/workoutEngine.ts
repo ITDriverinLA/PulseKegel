@@ -9,10 +9,29 @@ export interface WorkoutSettings {
 }
 
 export const defaultWorkoutSettings: WorkoutSettings = {
-  restDuration: 5,
+  restDuration: 3,
   blockRestDuration: 25,
   cooldownEnabled: true,
 };
+
+/** Between-set rest. Unchanged by P7 (rep rest only). */
+export const SET_REST_SECONDS = 10;
+
+/**
+ * Countdown length for the phase the engine is actually running.
+ * Rep rest uses settings.restDuration (the same value advancePhase assigns).
+ * Set rest stays SET_REST_SECONDS.
+ */
+export function phaseCountdownSeconds(
+  phase: WorkoutPhase,
+  segment: Pick<Segment, "squeezeSeconds">,
+  settings: Pick<WorkoutSettings, "restDuration">,
+  isSetRest: boolean,
+): number {
+  if (phase === "squeeze") return segment.squeezeSeconds;
+  if (isSetRest) return SET_REST_SECONDS;
+  return settings.restDuration;
+}
 
 export interface WorkoutState {
   isRunning: boolean;
@@ -29,8 +48,6 @@ export interface WorkoutState {
   totalPausedTime: number;
   isSetRest: boolean;
 }
-
-const SET_REST_SECONDS = 10;
 
 export interface WorkoutEngineCallbacks {
   onStateChange: (state: WorkoutState) => void;
@@ -224,10 +241,12 @@ export class WorkoutEngine {
 
     if (!segment) return;
 
-    const phaseDuration =
-      this.state.phase === "squeeze"
-        ? segment.squeezeSeconds
-        : segment.restSeconds;
+    const phaseDuration = phaseCountdownSeconds(
+      this.state.phase,
+      segment,
+      this.settings,
+      this.state.isSetRest,
+    );
 
     if (elapsedSincePhaseStart >= phaseDuration) {
       const overflow = elapsedSincePhaseStart - phaseDuration;
@@ -303,7 +322,12 @@ export class WorkoutEngine {
       } else {
         // Normal rest between reps - use custom rest duration
         this.state.phase = "rest";
-        this.state.secondsRemaining = this.settings.restDuration;
+        this.state.secondsRemaining = phaseCountdownSeconds(
+          "rest",
+          segment,
+          this.settings,
+          false,
+        );
         this.state.phaseStartTime = Date.now();
         this.callbacks.onPhaseChange("rest", segment);
       }
@@ -357,7 +381,12 @@ export class WorkoutEngine {
 
     this.state.isSetRest = true;
     this.state.phase = "rest";
-    this.state.secondsRemaining = SET_REST_SECONDS;
+    this.state.secondsRemaining = phaseCountdownSeconds(
+      "rest",
+      segment,
+      this.settings,
+      true,
+    );
     this.state.phaseStartTime = Date.now();
     this.callbacks.onSetChange(this.state.setIndex + 1, segment.sets);
     this.callbacks.onPhaseChange("rest", segment);

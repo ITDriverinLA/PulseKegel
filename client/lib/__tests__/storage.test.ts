@@ -1,6 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { isRestDayForDate } from "@/data/workoutProgram";
-import { storage } from "../storage";
+import {
+  storage,
+  defaultSettings,
+  mergeStoredSettings,
+  LEGACY_DEFAULT_REST_DURATION,
+} from "../storage";
 
 jest.mock("@react-native-async-storage/async-storage", () => {
   const store = new Map<string, string>();
@@ -693,6 +698,75 @@ describe("H3 Day 1 elapsed banking", () => {
     expect(await storage.getFirstSessionElapsedSec()).toBe(7200);
     await storage.setFirstSessionInProgress(false);
     expect(await storage.getFirstSessionElapsedSec()).toBe(0);
+  });
+});
+
+describe("P7b rest default merge", () => {
+  it("uses 3s when nothing is stored", async () => {
+    expect(defaultSettings.restDuration).toBe(3);
+    expect(defaultSettings.blockRestDuration).toBe(25);
+    const settings = await storage.getSettings();
+    expect(settings.restDuration).toBe(3);
+  });
+
+  it("keeps a stored rest value, including the old default of 5", async () => {
+    await AsyncStorage.setItem(
+      "pulsekegel_settings",
+      JSON.stringify({ restDuration: 5, anatomyType: "female" }),
+    );
+    expect((await storage.getSettings()).restDuration).toBe(5);
+
+    await AsyncStorage.setItem(
+      "pulsekegel_settings",
+      JSON.stringify({ restDuration: 8 }),
+    );
+    expect((await storage.getSettings()).restDuration).toBe(8);
+  });
+
+  it("materializes the old 5s default when a stored object omits restDuration", async () => {
+    await AsyncStorage.setItem(
+      "pulsekegel_settings",
+      JSON.stringify({ anatomyType: "male", darkMode: false }),
+    );
+    const settings = await storage.getSettings();
+    expect(settings.restDuration).toBe(LEGACY_DEFAULT_REST_DURATION);
+    expect(settings.restDuration).toBe(5);
+    expect(settings.anatomyType).toBe("male");
+    expect(settings.theme).toBe("light");
+
+    await storage.saveSettings({ hapticsEnabled: false });
+    const raw = JSON.parse(
+      (await AsyncStorage.getItem("pulsekegel_settings")) ?? "{}",
+    );
+    expect(raw.restDuration).toBe(5);
+    expect(raw.hapticsEnabled).toBe(false);
+  });
+
+  it("writes 3s when the first save happens with no stored settings", async () => {
+    await storage.saveSettings({ anatomyType: "female" });
+    const raw = JSON.parse(
+      (await AsyncStorage.getItem("pulsekegel_settings")) ?? "{}",
+    );
+    expect(raw.restDuration).toBe(3);
+    expect(raw.anatomyType).toBe("female");
+  });
+
+  it("mergeStoredSettings does not treat a non-numeric rest as a saved choice", () => {
+    expect(mergeStoredSettings({ anatomyType: "female" }).restDuration).toBe(5);
+    expect(mergeStoredSettings({ restDuration: Number.NaN }).restDuration).toBe(
+      5,
+    );
+    expect(mergeStoredSettings({ restDuration: 3 }).restDuration).toBe(3);
+  });
+});
+
+describe("P7a how-to card seen flag", () => {
+  it("is false until the card is shown, then stays set", async () => {
+    expect(await storage.hasHowtoCardSeen()).toBe(false);
+    await storage.setHowtoCardSeen();
+    expect(await storage.hasHowtoCardSeen()).toBe(true);
+    await storage.setFirstSessionInProgress(false);
+    expect(await storage.hasHowtoCardSeen()).toBe(true);
   });
 });
 

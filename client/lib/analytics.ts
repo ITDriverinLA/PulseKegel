@@ -310,11 +310,38 @@ export function trackFirstSessionCompleted(data: {
   trackEvent("first_session_completed", data as Record<string, unknown>);
 }
 
+export type Day1AbandonPhase =
+  | "get_ready"
+  | "squeeze"
+  | "rest"
+  | "cool_down"
+  | "howto_card";
+
+export type Day1ExitSource = "end" | "x" | "android_back" | "other";
+
 export function trackFirstSessionAbandoned(data: {
   session_id: string;
   progress: number;
+  phase?: Day1AbandonPhase;
+  rep_index?: number;
+  elapsed_sec?: number;
+  exit_source?: Day1ExitSource;
 }): void {
   trackEvent("first_session_abandoned", data as Record<string, unknown>);
+}
+
+export type HowtoCardAction = "continue" | "skip" | "back";
+
+export function trackHowtoCardShown(data: { session_id: string }): void {
+  trackEvent("howto_card_shown", data as Record<string, unknown>);
+}
+
+export function trackHowtoCardDismissed(data: {
+  session_id: string;
+  action: HowtoCardAction;
+  dwell_ms: number;
+}): void {
+  trackEvent("howto_card_dismissed", data as Record<string, unknown>);
 }
 
 /** H3: Skip tap inside the Day 1 player (not the gate's "skip Day 1"). */

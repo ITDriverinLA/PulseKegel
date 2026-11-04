@@ -468,6 +468,132 @@ describe("P4 follow-up paywall events", () => {
   );
 });
 
+describe("P7d how-to card and abandon props", () => {
+  const parse = (type: string, data: Record<string, unknown>) =>
+    analyticsBatchSchema.safeParse({
+      deviceId,
+      events: [{ type, data }],
+    }).success;
+
+  it("accepts progress-only abandons from older clients", () => {
+    expect(
+      parse("first_session_abandoned", { session_id: "abc", progress: 40 }),
+    ).toBe(true);
+  });
+
+  it("accepts the new abandon fields and the how-to card events", () => {
+    expect(
+      parse("first_session_abandoned", {
+        session_id: "abc",
+        progress: 40,
+        phase: "rest",
+        rep_index: 3,
+        elapsed_sec: 48,
+        exit_source: "android_back",
+      }),
+    ).toBe(true);
+    expect(
+      parse("first_session_abandoned", {
+        session_id: "abc",
+        progress: 0,
+        phase: "howto_card",
+        elapsed_sec: 0,
+        exit_source: "x",
+      }),
+    ).toBe(true);
+    expect(parse("howto_card_shown", { session_id: "abc" })).toBe(true);
+    expect(
+      parse("howto_card_dismissed", {
+        session_id: "abc",
+        action: "continue",
+        dwell_ms: 1500,
+      }),
+    ).toBe(true);
+    expect(
+      parse("howto_card_dismissed", {
+        session_id: "abc",
+        action: "skip",
+        dwell_ms: 0,
+      }),
+    ).toBe(true);
+    expect(
+      parse("howto_card_dismissed", {
+        session_id: "abc",
+        action: "back",
+        dwell_ms: 86_400_000,
+      }),
+    ).toBe(true);
+  });
+
+  it("rejects unbounded or unknown how-to and abandon props", () => {
+    expect(
+      parse("first_session_abandoned", {
+        session_id: "abc",
+        progress: 40,
+        phase: "warmup",
+      }),
+    ).toBe(false);
+    expect(
+      parse("first_session_abandoned", {
+        session_id: "abc",
+        progress: 40,
+        rep_index: 101,
+      }),
+    ).toBe(false);
+    expect(
+      parse("first_session_abandoned", {
+        session_id: "abc",
+        progress: 40,
+        rep_index: 1.5,
+      }),
+    ).toBe(false);
+    expect(
+      parse("first_session_abandoned", {
+        session_id: "abc",
+        progress: 40,
+        elapsed_sec: 7201,
+      }),
+    ).toBe(false);
+    expect(
+      parse("first_session_abandoned", {
+        session_id: "abc",
+        progress: 40,
+        exit_source: "swipe",
+      }),
+    ).toBe(false);
+    expect(
+      parse("first_session_abandoned", {
+        session_id: "abc",
+        progress: 40,
+        extra: true,
+      }),
+    ).toBe(false);
+    expect(parse("first_session_abandoned", { session_id: "abc" })).toBe(false);
+    expect(parse("howto_card_shown", {})).toBe(false);
+    expect(
+      parse("howto_card_dismissed", {
+        session_id: "abc",
+        action: "leave",
+        dwell_ms: 10,
+      }),
+    ).toBe(false);
+    expect(
+      parse("howto_card_dismissed", {
+        session_id: "abc",
+        action: "skip",
+        dwell_ms: 86_400_001,
+      }),
+    ).toBe(false);
+    expect(
+      parse("howto_card_dismissed", {
+        session_id: "abc",
+        action: "skip",
+        dwell_ms: -1,
+      }),
+    ).toBe(false);
+  });
+});
+
 describe("G1fix3 sync_optin_reset", () => {
   const parse = (data: Record<string, unknown>) =>
     analyticsBatchSchema.safeParse({

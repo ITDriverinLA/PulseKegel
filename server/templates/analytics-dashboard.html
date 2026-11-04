@@ -774,6 +774,31 @@
     </div>
   </div>
 
+  <!-- P7: Day-1 how-to card, abandons, completion since the card shipped -->
+  <div class="two-col">
+    <div>
+      <div class="section-label">Day 1 How-to Card</div>
+      <div class="section-sub">Unique devices. P7 cutoff is the first howto_card_shown.</div>
+      <div class="hbar-wrap">
+        <div class="hbar-rows" id="day1-howto-card-rows"></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-label">Day 1 Completion by Platform</div>
+      <div class="section-sub">first_session_completed devices, all-time and since P7</div>
+      <div class="hbar-wrap">
+        <div class="hbar-rows" id="day1-howto-completion-rows"></div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="section-label">Day 1 Abandons by Phase and Rep</div>
+    <div class="section-sub">Distinct devices per phase and rep. Events without a phase are unspecified.</div>
+    <div class="hbar-wrap">
+      <div class="hbar-rows" id="day1-howto-abandon-rows"></div>
+    </div>
+  </div>
+
   <!-- P4b: paywall views by source + Day 1 finisher reach -->
   <div class="two-col">
     <div>
@@ -918,6 +943,7 @@
       renderSubscriptionFunnel(d.subscriptionFunnel || {});
       renderHBars('paywall-source-rows', d.paywallViewsBySource || [], 'source');
       renderDay1Reach(d.day1PaywallReach || {});
+      renderDay1Howto(d.day1Howto || {});
       renderHBars('paywall-dismissed-rows', d.paywallDismissedBySource || [], 'source');
       document.getElementById('day1-soft-deferred').textContent =
         (Number(d.day1SoftPaywallDeferred) || 0).toLocaleString();
@@ -1221,6 +1247,56 @@
       tapPct != null ? tapPct + '% of paywall views' : '';
     document.getElementById('sub-purchased-pct').textContent =
       purchasePct != null ? purchasePct + '% of paywall views' : '';
+  }
+
+  function renderHBarList(containerId, rows) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    if (!rows.length) {
+      container.textContent = 'No events yet';
+      return;
+    }
+    const max = Math.max.apply(null, rows.map(function(row) { return row.count; }));
+    container.innerHTML = rows.map(function(row) {
+      const count = row.count;
+      const barW = max > 0 ? (count / max * 100).toFixed(1) : '0';
+      return '<div class="hbar-row">' +
+        '<div class="hbar-label" title="' + esc(row.label) + '">' + esc(row.label) + '</div>' +
+        '<div class="hbar-bg"><div class="hbar-fill" style="width:' + barW + '%"></div></div>' +
+        '<div class="hbar-count">' + count.toLocaleString() + '</div>' +
+        '</div>';
+    }).join('');
+  }
+
+  function renderDay1Howto(summary) {
+    const card = summary.cardByDevice || {};
+    const cutoff = summary.p7Cutoff ? String(summary.p7Cutoff).slice(0, 10) : 'not live yet';
+    renderHBarList('day1-howto-card-rows', [
+      { label: 'Shown', count: Number(card.shown) || 0 },
+      { label: 'Continue', count: Number(card.continue) || 0 },
+      { label: 'Skip', count: Number(card.skip) || 0 },
+      { label: 'Back', count: Number(card.back) || 0 },
+    ]);
+    const completionRows = [];
+    (summary.day1CompletionByPlatform || []).forEach(function(row) {
+      const platform = String(row.platform || 'unknown');
+      completionRows.push({
+        label: platform + ' completed',
+        count: Number(row.completed) || 0,
+      });
+      completionRows.push({
+        label: platform + ' since P7 (' + cutoff + ')',
+        count: Number(row.completedSinceP7) || 0,
+      });
+    });
+    renderHBarList('day1-howto-completion-rows', completionRows);
+    renderHBarList('day1-howto-abandon-rows', (summary.abandonsByPhaseAndRep || []).map(function(row) {
+      const rep = row.repIndex == null ? 'no rep' : 'rep ' + row.repIndex;
+      return {
+        label: String(row.phase || 'unspecified') + ' · ' + rep,
+        count: Number(row.devices) || 0,
+      };
+    }));
   }
 
   function renderDay1Reach(r) {

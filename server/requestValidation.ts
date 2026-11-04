@@ -336,6 +336,37 @@ const analyticsEventSchema = z.discriminatedUnion("type", [
         .object({
           session_id: z.string().trim().min(1).max(128),
           progress: z.number().finite().min(0).max(100),
+          // P7d: optional so progress-only clients still validate.
+          phase: z
+            .enum(["get_ready", "squeeze", "rest", "cool_down", "howto_card"])
+            .optional(),
+          rep_index: z.number().int().min(0).max(100).optional(),
+          elapsed_sec: z.number().int().min(0).max(7200).optional(),
+          exit_source: z.enum(["end", "x", "android_back", "other"]).optional(),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("howto_card_shown"),
+      data: z
+        .object({
+          session_id: z.string().trim().min(1).max(128),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("howto_card_dismissed"),
+      data: z
+        .object({
+          session_id: z.string().trim().min(1).max(128),
+          action: z.enum(["continue", "skip", "back"]),
+          dwell_ms: z.number().int().min(0).max(86_400_000),
         })
         .strict(),
       ...eventMetadata,
