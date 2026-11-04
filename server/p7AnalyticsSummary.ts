@@ -1,7 +1,11 @@
 /**
  * P7d summary counts. Distinct devices only.
- * Cutoff is the first howto_card_shown (P7 live), same idea as P4's
- * first day1_soft paywall view. No new columns: everything is in event_data.
+ * No new columns: everything is in event_data.
+ *
+ * Cutoff for "since P7" is the P7_CUTOFF_ISO env var when it is set, so a
+ * dev or TestFlight device cannot move the ship instant by showing the card
+ * early. When that var is unset, the cutoff falls back to the earliest
+ * howto_card_shown. A set but unparseable value does not fall back.
  */
 
 export interface P7SummaryEvent {
@@ -12,8 +16,12 @@ export interface P7SummaryEvent {
   createdAt: Date | string | number;
 }
 
+export type P7CutoffSource = "env" | "first_howto_card_shown" | null;
+
 export interface P7Day1Summary {
   p7Cutoff: string | null;
+  /** Where p7Cutoff came from. "env" may still have a null cutoff if the var is unparseable. */
+  p7CutoffSource: P7CutoffSource;
   cardByDevice: {
     shown: number;
     continue: number;
@@ -32,12 +40,27 @@ export interface P7Day1Summary {
   }[];
 }
 
-const EMPTY: P7Day1Summary = {
-  p7Cutoff: null,
-  cardByDevice: { shown: 0, continue: 0, skip: 0, back: 0 },
-  abandonsByPhaseAndRep: [],
-  day1CompletionByPlatform: [],
-};
+/**
+ * `cutoffIso` is P7_CUTOFF_ISO. Blank or missing means unset.
+ * A non-empty unparseable value is explicit and does not fall back.
+ */
+export function resolveP7Cutoff(
+  cutoffIso: string | undefined | null,
+  earliestShownMs: number | null,
+): { cutoffMs: number | null; source: P7CutoffSource } {
+  const raw = typeof cutoffIso === "string" ? cutoffIso.trim() : "";
+  if (!raw) {
+    return {
+      cutoffMs: earliestShownMs,
+      source: earliestShownMs == null ? null : "first_howto_card_shown",
+    };
+  }
+  const parsed = Date.parse(raw);
+  if (!Number.isFinite(parsed)) {
+    return { cutoffMs: null, source: "env" };
+  }
+  return { cutoffMs: parsed, source: "env" };
+}
 
 function eventTime(value: Date | string | number): number | null {
   if (value instanceof Date) {
@@ -57,9 +80,10 @@ function asRecord(value: unknown): Record<string, unknown> | null {
   return value as Record<string, unknown>;
 }
 
-export function summarizeP7Day1(events: P7SummaryEvent[]): P7Day1Summary {
-  if (!events.length) return EMPTY;
-
+export function summarizeP7Day1(
+  events: P7SummaryEvent[],
+  options?: { cutoffIso?: string | null },
+): P7Day1Summary {
   const shown = new Set<string>();
   const continued = new Set<string>();
   const skipped = new Set<string>();
@@ -110,6 +134,7 @@ export function summarizeP7Day1(events: P7SummaryEvent[]): P7Day1Summary {
     }
   }
 
+  const resolved = resolveP7Cutoff(options?.cutoffIso, cutoffMs);
   const byPlatform = new Map<
     string,
     { completed: number; completedSinceP7: number }
@@ -120,7 +145,7 @@ export function summarizeP7Day1(events: P7SummaryEvent[]): P7Day1Summary {
       completedSinceP7: 0,
     };
     row.completed += 1;
-    if (cutoffMs != null && completion.at >= cutoffMs) {
+    if (resolved.cutoffMs != null && completion.at >= resolved.cutoffMs) {
       row.completedSinceP7 += 1;
     }
     byPlatform.set(completion.platform, row);
@@ -149,7 +174,11 @@ export function summarizeP7Day1(events: P7SummaryEvent[]): P7Day1Summary {
     });
 
   return {
-    p7Cutoff: cutoffMs == null ? null : new Date(cutoffMs).toISOString(),
+    p7Cutoff:
+      resolved.cutoffMs == null
+        ? null
+        : new Date(resolved.cutoffMs).toISOString(),
+    p7CutoffSource: resolved.source,
     cardByDevice: {
       shown: shown.size,
       continue: continued.size,

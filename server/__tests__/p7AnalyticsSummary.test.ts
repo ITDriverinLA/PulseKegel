@@ -16,6 +16,7 @@ describe("P7d summary per device", () => {
   it("returns zeros when there are no P7 events", () => {
     expect(summarizeP7Day1([])).toEqual({
       p7Cutoff: null,
+      p7CutoffSource: null,
       cardByDevice: { shown: 0, continue: 0, skip: 0, back: 0 },
       abandonsByPhaseAndRep: [],
       day1CompletionByPlatform: [],
@@ -90,6 +91,7 @@ describe("P7d summary per device", () => {
     ]);
 
     expect(summary.p7Cutoff).toBe("2026-11-10T00:00:00.000Z");
+    expect(summary.p7CutoffSource).toBe("first_howto_card_shown");
     expect(summary.cardByDevice).toEqual({
       shown: 3,
       continue: 1,
@@ -143,9 +145,58 @@ describe("P7d summary per device", () => {
     ]);
 
     expect(summary.p7Cutoff).toBe("2026-11-20T12:00:00.000Z");
+    expect(summary.p7CutoffSource).toBe("first_howto_card_shown");
     expect(summary.day1CompletionByPlatform).toEqual([
       { platform: "android", completed: 2, completedSinceP7: 1 },
       { platform: "ios", completed: 2, completedSinceP7: 1 },
+    ]);
+  });
+
+  it("uses P7_CUTOFF_ISO instead of an early howto_card_shown", () => {
+    const events = [
+      event({
+        deviceId: "testflight",
+        eventType: "howto_card_shown",
+        createdAt: "2026-01-01T00:00:00.000Z",
+      }),
+      event({
+        deviceId: "before",
+        platform: "ios",
+        eventType: "first_session_completed",
+        createdAt: "2026-06-01T00:00:00.000Z",
+      }),
+      event({
+        deviceId: "after",
+        platform: "android",
+        eventType: "first_session_completed",
+        createdAt: "2026-11-20T12:00:00.000Z",
+      }),
+    ];
+
+    const fromEnv = summarizeP7Day1(events, {
+      cutoffIso: "2026-11-20T00:00:00.000Z",
+    });
+    expect(fromEnv.p7Cutoff).toBe("2026-11-20T00:00:00.000Z");
+    expect(fromEnv.p7CutoffSource).toBe("env");
+    expect(fromEnv.day1CompletionByPlatform).toEqual([
+      { platform: "android", completed: 1, completedSinceP7: 1 },
+      { platform: "ios", completed: 1, completedSinceP7: 0 },
+    ]);
+
+    const unset = summarizeP7Day1(events, { cutoffIso: "  " });
+    expect(unset.p7Cutoff).toBe("2026-01-01T00:00:00.000Z");
+    expect(unset.p7CutoffSource).toBe("first_howto_card_shown");
+    expect(unset.day1CompletionByPlatform).toEqual([
+      { platform: "android", completed: 1, completedSinceP7: 1 },
+      { platform: "ios", completed: 1, completedSinceP7: 1 },
+    ]);
+
+    const invalid = summarizeP7Day1(events, { cutoffIso: "not-a-date" });
+    expect(invalid.p7Cutoff).toBeNull();
+    expect(invalid.p7CutoffSource).toBe("env");
+    expect(invalid.day1CompletionByPlatform).toEqual([
+      { platform: "android", completed: 1, completedSinceP7: 0 },
+      { platform: "ios", completed: 1, completedSinceP7: 0 },
     ]);
   });
 });

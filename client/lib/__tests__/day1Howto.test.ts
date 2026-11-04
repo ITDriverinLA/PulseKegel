@@ -188,6 +188,7 @@ describe("P7a how-to card", () => {
       "utf8",
     );
     expect(card).toContain("day1HowtoCopy");
+    expect(card).toContain("layout.maxWidth");
     expect(card).not.toMatch(/balls|marble|doctor|therapist/i);
     expect(player).toContain("phaseCountdownSeconds(");
     expect(player).not.toContain("segment.restSeconds");

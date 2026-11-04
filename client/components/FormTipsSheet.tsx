@@ -35,13 +35,13 @@ const tips = [
     icon: "alert-triangle" as const,
     title: "Don't Practice While Urinating",
     description:
-      "Never practice these exercises by stopping urine midstream. This can lead to bladder issues.",
+      "Stopping the flow is only for finding the muscle once. Don't train while peeing.",
   },
   {
     icon: "clock" as const,
     title: "Be Patient",
     description:
-      "Results take time. Most people notice improvements after 4-6 weeks of consistent practice.",
+      "Consistency beats intensity. A few minutes most days is the habit to build.",
   },
 ];
 

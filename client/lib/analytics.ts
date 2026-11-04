@@ -9,6 +9,13 @@ import {
   formatDeviceModel,
   windowWidthBucket,
 } from "./windowLayout";
+import type {
+  Day1AbandonPhase,
+  Day1ExitSource,
+  HowtoCardAction,
+} from "./day1Howto";
+
+export type { Day1AbandonPhase, Day1ExitSource, HowtoCardAction };
 
 const DEVICE_ID_KEY = "pulsekegel_analytics_device_id";
 
@@ -310,15 +317,6 @@ export function trackFirstSessionCompleted(data: {
   trackEvent("first_session_completed", data as Record<string, unknown>);
 }
 
-export type Day1AbandonPhase =
-  | "get_ready"
-  | "squeeze"
-  | "rest"
-  | "cool_down"
-  | "howto_card";
-
-export type Day1ExitSource = "end" | "x" | "android_back" | "other";
-
 export function trackFirstSessionAbandoned(data: {
   session_id: string;
   progress: number;
@@ -329,8 +327,6 @@ export function trackFirstSessionAbandoned(data: {
 }): void {
   trackEvent("first_session_abandoned", data as Record<string, unknown>);
 }
-
-export type HowtoCardAction = "continue" | "skip" | "back";
 
 export function trackHowtoCardShown(data: { session_id: string }): void {
   trackEvent("howto_card_shown", data as Record<string, unknown>);

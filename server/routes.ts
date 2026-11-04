@@ -1163,7 +1163,10 @@ ${blogUrls}
               "first_session_completed",
             ]),
           );
-        const day1Howto = summarizeP7Day1(p7EventRows);
+        const day1Howto = summarizeP7Day1(p7EventRows, {
+          // Set on the server at ship time. Unset falls back to the first card.
+          cutoffIso: process.env.P7_CUTOFF_ISO,
+        });
 
         res.json({
           totalDevices: totalDevices?.count ?? 0,

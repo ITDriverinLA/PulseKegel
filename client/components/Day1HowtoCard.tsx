@@ -16,7 +16,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useThemePreference } from "@/contexts/ThemePreferenceContext";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { Spacing, BorderRadius } from "@/constants/theme";
-import { contentInsets, readableColumn } from "@/lib/windowLayout";
+import { contentInsets } from "@/lib/windowLayout";
 import { day1HowtoCopy, day1HowtoLayout } from "@/lib/day1Howto";
 import type { AnatomyType } from "@/lib/storage";
 
@@ -128,6 +128,7 @@ export function Day1HowtoCard({
             bottom: Spacing.lg,
             horizontal: Spacing.xl,
           }),
+          { maxWidth: layout.maxWidth },
         ]}
       >
         <View style={styles.header}>
@@ -214,7 +215,8 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    ...readableColumn,
+    width: "100%",
+    alignSelf: "center",
   },
   header: {
     flexDirection: "row",
