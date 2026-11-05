@@ -763,6 +763,12 @@ var privacyPolicyHtml = `<!doctype html>
     }
   }
 </style>
+  <!-- Privacy-friendly analytics by Plausible -->
+  <script async src="https://plausible.io/js/pa-R6DrrA_T3Ucr4LAudvptX.js"></script>
+  <script>
+    window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+    plausible.init()
+  </script>
 </head>
 
 <body>
@@ -1145,7 +1151,7 @@ var privacyPolicyHtml = `<!doctype html>
 
   <div class="footer-bottom">
     <div class="left">
-      <span>\u25CF</span> \xA9 2026 PulseKegel. All rights reserved.
+      <span>\u25CF</span> \xA9 2026 PulseKegel. All rights reserved. \xB7 Founded by <a href="https://ashley-mason.com/">Ashley Mason</a>
     </div>
     <div class="right">v1.0 \xB7 VAULT STATUS</div>
   </div>
@@ -1188,10 +1194,23 @@ var schema_exports = {};
 __export(schema_exports, {
   analyticsEvents: () => analyticsEvents,
   insertUserSchema: () => insertUserSchema,
+  syncAccounts: () => syncAccounts,
+  syncSnapshots: () => syncSnapshots,
   users: () => users
 });
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, serial, jsonb, timestamp, index } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  varchar,
+  serial,
+  jsonb,
+  timestamp,
+  index,
+  boolean,
+  integer,
+  uniqueIndex
+} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 var users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -1211,6 +1230,11 @@ var analyticsEvents = pgTable(
     eventData: jsonb("event_data"),
     platform: varchar("platform", { length: 10 }),
     appVersion: varchar("app_version", { length: 20 }),
+    // P6: nullable so rows written before 2.2.5 stay valid. Summary queries
+    // do not read these columns, so existing summary fields stay unchanged.
+    deviceModel: varchar("device_model", { length: 64 }),
+    displayClass: varchar("display_class", { length: 16 }),
+    windowWidthBucket: varchar("window_width_bucket", { length: 16 }),
     createdAt: timestamp("created_at").defaultNow().notNull()
   },
   (table) => [
@@ -1219,10 +1243,46 @@ var analyticsEvents = pgTable(
     index("analytics_created_at_idx").on(table.createdAt)
   ]
 );
+var syncAccounts = pgTable(
+  "sync_accounts",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    provider: varchar("provider", { length: 16 }).notNull(),
+    providerSubject: varchar("provider_subject", { length: 255 }).notNull(),
+    accessTokenHash: varchar("access_token_hash", { length: 64 }).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    revoked: boolean("revoked").default(false).notNull()
+  },
+  (table) => [
+    uniqueIndex("sync_accounts_provider_subject_uidx").on(
+      table.provider,
+      table.providerSubject
+    ),
+    index("sync_accounts_token_hash_idx").on(table.accessTokenHash)
+  ]
+);
+var syncSnapshots = pgTable(
+  "sync_snapshots",
+  {
+    id: serial("id").primaryKey(),
+    accountId: varchar("account_id", { length: 64 }).notNull().references(() => syncAccounts.id, { onDelete: "cascade" }),
+    schemaVersion: integer("schema_version").notNull(),
+    payload: jsonb("payload").notNull(),
+    exportedAt: timestamp("exported_at").notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull()
+  },
+  (table) => [
+    uniqueIndex("sync_snapshots_account_uidx").on(table.accountId),
+    index("sync_snapshots_updated_at_idx").on(table.updatedAt)
+  ]
+);
 
 // server/db.ts
 if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL is not set \u2014 ensure the database is provisioned");
+  throw new Error(
+    "DATABASE_URL is not set \u2014 ensure the database is provisioned"
+  );
 }
 var pool = new Pool({
   connectionString: process.env.DATABASE_URL
@@ -1230,7 +1290,7 @@ var pool = new Pool({
 var db = drizzle(pool, { schema: schema_exports });
 
 // server/routes.ts
-import { sql as sql2, countDistinct } from "drizzle-orm";
+import { sql as sql2, countDistinct, inArray } from "drizzle-orm";
 
 // server/security.ts
 import { timingSafeEqual } from "node:crypto";
@@ -1283,6 +1343,41 @@ var requireAnalyticsAdmin = (req, res, next) => {
     return;
   }
   next();
+};
+function extractReadOnlyKey(authorizationHeader, analyticsKeyHeader) {
+  if (authorizationHeader?.startsWith("Bearer ")) {
+    const token = authorizationHeader.slice("Bearer ".length).trim();
+    if (token)
+      return token;
+  }
+  if (typeof analyticsKeyHeader === "string" && analyticsKeyHeader.trim()) {
+    return analyticsKeyHeader.trim();
+  }
+  return void 0;
+}
+function verifyReadOnlyKey(method, providedKey, expectedKey) {
+  if (!expectedKey)
+    return false;
+  if (method !== "GET" && method !== "HEAD")
+    return false;
+  if (!providedKey)
+    return false;
+  return safeEqual(providedKey, expectedKey);
+}
+var requireAnalyticsReadAccess = (req, res, next) => {
+  const provided = extractReadOnlyKey(
+    req.headers.authorization,
+    req.headers["x-analytics-key"]
+  );
+  if (verifyReadOnlyKey(req.method, provided, process.env.ANALYTICS_READONLY_KEY)) {
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("Referrer-Policy", "no-referrer");
+    next();
+    return;
+  }
+  requireAnalyticsAdmin(req, res, next);
 };
 function createRateLimiter({
   maxRequests,
@@ -1356,6 +1451,7 @@ var paywallSourceSchema = z.enum([
   "challenge_complete",
   "workout_gate",
   "settings",
+  "day1_soft",
   "unknown"
 ]);
 var purchaseResultSchema = z.enum([
@@ -1369,12 +1465,18 @@ var purchaseDataSchema = z.object({
   result: purchaseResultSchema,
   packageIdentifier: z.string().trim().min(1).max(100).optional(),
   productIdentifier: z.string().trim().min(1).max(150).optional(),
-  errorCode: z.string().trim().min(1).max(100).optional()
+  errorCode: z.string().trim().min(1).max(100).optional(),
+  source: paywallSourceSchema.optional()
 }).strict();
 var eventMetadata = {
   platform: z.enum(["ios", "android", "web", "windows", "macos"]).optional(),
   appVersion: z.string().trim().min(1).max(20).optional(),
-  occurredAt: z.string().datetime({ offset: true }).optional()
+  occurredAt: z.string().datetime({ offset: true }).optional(),
+  // P6: optional so events recorded before 2.2.5 still validate. New clients
+  // send all three on every event. No device id and no user-assigned name.
+  device_model: z.string().trim().min(1).max(64).optional(),
+  displayClass: z.enum(["compact", "regular"]).optional(),
+  windowWidthBucket: z.enum(["<500", "500-800", ">800"]).optional()
 };
 var analyticsEventSchema = z.discriminatedUnion("type", [
   z.object({
@@ -1464,6 +1566,19 @@ var analyticsEventSchema = z.discriminatedUnion("type", [
     ...eventMetadata
   }).strict(),
   z.object({
+    type: z.literal("paywall_dismissed"),
+    data: z.object({
+      source: paywallSourceSchema,
+      method: z.enum(["not_now", "close"])
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("day1_soft_paywall_deferred"),
+    data: z.object({ reason: z.literal("open_settings") }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
     type: z.literal("subscribe_tapped"),
     data: z.object({
       source: paywallSourceSchema,
@@ -1499,6 +1614,322 @@ var analyticsEventSchema = z.discriminatedUnion("type", [
     ...eventMetadata
   }).strict(),
   z.object({
+    type: z.literal("onboarding_screen_viewed"),
+    data: z.object({
+      screen_key: z.string().trim().min(1).max(64),
+      index: z.number().int().min(0).max(20),
+      total: z.number().int().min(1).max(20)
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("onboarding_anatomy_selected"),
+    data: z.object({
+      anatomy: anatomyTypeSchema
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("onboarding_cta_tapped"),
+    data: z.object({
+      screen_key: z.string().trim().min(1).max(64)
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("onboarding_abandoned"),
+    data: z.object({
+      last_screen_key: z.string().trim().min(1).max(64),
+      index: z.number().int().min(0).max(20)
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("first_session_gate_shown"),
+    data: z.object({
+      source: z.enum(["post_onboarding", "cold_open", "resume"])
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("first_session_cta_tapped"),
+    data: z.object({
+      source: z.enum(["post_onboarding", "cold_open", "resume"])
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("first_session_started"),
+    data: z.object({
+      session_id: z.string().trim().min(1).max(128),
+      source: z.enum(["post_onboarding", "cold_open", "resume", "restart"]).optional(),
+      auto_start: z.boolean().optional()
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("first_session_completed"),
+    data: z.object({
+      session_id: z.string().trim().min(1).max(128),
+      duration_sec: z.number().finite().min(0).max(7200)
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("first_session_abandoned"),
+    data: z.object({
+      session_id: z.string().trim().min(1).max(128),
+      progress: z.number().finite().min(0).max(100),
+      // P7d: optional so progress-only clients still validate.
+      phase: z.enum(["get_ready", "squeeze", "rest", "cool_down", "howto_card"]).optional(),
+      rep_index: z.number().int().min(0).max(100).optional(),
+      elapsed_sec: z.number().int().min(0).max(7200).optional(),
+      exit_source: z.enum(["end", "x", "android_back", "other"]).optional()
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("howto_card_shown"),
+    data: z.object({
+      session_id: z.string().trim().min(1).max(128)
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("howto_card_dismissed"),
+    data: z.object({
+      session_id: z.string().trim().min(1).max(128),
+      action: z.enum(["continue", "skip", "back"]),
+      dwell_ms: z.number().int().min(0).max(864e5)
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("day1_skip"),
+    data: z.object({
+      session_id: z.string().trim().min(1).max(128),
+      step_index: z.number().int().min(0).max(100),
+      progress: z.number().finite().min(0).max(100)
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("first_session_skipped"),
+    data: z.object({
+      source: z.enum(["post_onboarding", "cold_open", "resume"]).optional()
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("first_session_resume_shown"),
+    data: z.object({
+      source: z.enum([
+        "post_onboarding",
+        "cold_open",
+        "resume",
+        "cold",
+        "warm"
+      ]),
+      step_index: z.number().int().min(0).max(100)
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("first_session_resume_tapped"),
+    data: z.object({
+      step_index: z.number().int().min(0).max(100).optional()
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("first_session_restart_tapped"),
+    data: z.object({
+      reason: z.string().trim().min(1).max(64)
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("permission_prompt_shown"),
+    data: z.object({
+      type: z.enum(["push", "att", "other"]),
+      surface: z.string().trim().min(1).max(64).optional(),
+      status: z.string().trim().min(1).max(32).optional(),
+      deferred: z.boolean().optional(),
+      after_first_session: z.boolean().optional()
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("permission_result"),
+    data: z.object({
+      type: z.enum(["push", "att", "other"]),
+      status: z.string().trim().min(1).max(32),
+      surface: z.string().trim().min(1).max(64).optional(),
+      deferred: z.boolean().optional(),
+      already_granted: z.boolean().optional(),
+      after_first_session: z.boolean().optional()
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("onboarding_resumed"),
+    data: z.object({
+      screen_key: z.string().trim().min(1).max(64),
+      index: z.number().int().min(0).max(20),
+      total: z.number().int().min(1).max(20)
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("gate_back_blocked"),
+    data: z.object({
+      surface: z.enum(["onboarding", "gate", "first_session"]),
+      action: z.enum([
+        "previous_step",
+        "blocked",
+        "exit",
+        "confirm_shown",
+        "stay",
+        "leave"
+      ]),
+      index: z.number().int().min(0).max(20).optional(),
+      // P2.2c: optional so pre-P2.2 clients (no source) still ingest.
+      source: z.enum(["hardware_back", "ui_x"]).optional()
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("first_open_path"),
+    data: z.object({
+      landing_route: z.string().trim().min(1).max(64),
+      onboarded_already: z.boolean(),
+      launch_type: z.enum(["cold", "warm"]).optional(),
+      app_state: z.string().trim().min(1).max(32).optional(),
+      att_status: z.string().trim().min(1).max(32).optional(),
+      build_channel: z.string().trim().min(1).max(64).optional(),
+      platform: z.enum(["ios", "android", "web", "windows", "macos"]).optional()
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("challenge_day_viewed"),
+    data: z.object({
+      week: z.number().int().min(1).max(12),
+      day: z.number().int().min(1).max(7),
+      state: z.enum(["locked", "available", "complete", "rest"])
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("challenge_day_started"),
+    data: z.object({
+      week: z.number().int().min(1).max(12),
+      day: z.number().int().min(1).max(7)
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("challenge_day_completed"),
+    data: z.object({
+      week: z.number().int().min(1).max(12),
+      day: z.number().int().min(1).max(7)
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("challenge_day2_nudge_scheduled"),
+    data: z.object({
+      channel: z.enum(["push", "in_app"])
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("challenge_day2_nudge_shown"),
+    data: z.object({
+      channel: z.enum(["push", "in_app"])
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("challenge_day2_nudge_tapped"),
+    data: z.object({
+      channel: z.enum(["push", "in_app"])
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("settings_tip_shown"),
+    data: z.object({}).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("settings_tip_dismissed"),
+    data: z.object({}).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("settings_tip_open_settings"),
+    data: z.object({}).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("transfer_flow_started"),
+    data: z.object({
+      path: z.string().trim().min(1).max(64)
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("transfer_flow_completed"),
+    data: z.object({
+      path: z.string().trim().min(1).max(64)
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("transfer_flow_fallback_backup"),
+    data: z.object({
+      reason: z.string().trim().min(1).max(64)
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("sync_enabled"),
+    data: z.object({
+      provider: z.string().trim().min(1).max(32).optional(),
+      platform: z.enum(["ios", "android", "web", "windows", "macos"]).optional()
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("sync_optin_reset"),
+    data: z.object({
+      provider: z.enum(["apple", "google", "none"]),
+      platform: z.enum(["ios", "android", "web", "windows", "macos"]).optional()
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("sync_pull_ok"),
+    data: z.object({}).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("sync_push_ok"),
+    data: z.object({}).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("sync_conflict"),
+    data: z.record(z.unknown()),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("sync_error"),
+    data: z.record(z.unknown()),
+    ...eventMetadata
+  }).strict(),
+  z.object({
     type: z.enum([
       "restore_started",
       "restore_completed",
@@ -1506,7 +1937,8 @@ var analyticsEventSchema = z.discriminatedUnion("type", [
       "restore_failed"
     ]),
     data: z.object({
-      result: z.enum(["started", "completed", "not_found", "failed"])
+      result: z.enum(["started", "completed", "not_found", "failed"]),
+      errorCode: z.string().trim().min(1).max(100).optional()
     }).strict(),
     ...eventMetadata
   }).strict()
@@ -1527,12 +1959,538 @@ var weeklyReviewSchema = z.object({
   currentStreak: z.number().int().min(0).max(1e4).default(0)
 }).strict();
 
+// server/analyticsIngest.ts
+import {
+  jsonb as jsonb2,
+  pgTable as pgTable2,
+  serial as serial2,
+  timestamp as timestamp2,
+  varchar as varchar2
+} from "drizzle-orm/pg-core";
+var analyticsEventsLegacy = pgTable2("analytics_events", {
+  id: serial2("id").primaryKey(),
+  deviceId: varchar2("device_id", { length: 64 }).notNull(),
+  eventType: varchar2("event_type", { length: 50 }).notNull(),
+  eventData: jsonb2("event_data"),
+  platform: varchar2("platform", { length: 10 }),
+  appVersion: varchar2("app_version", { length: 20 }),
+  createdAt: timestamp2("created_at").defaultNow().notNull()
+});
+var ANALYTICS_P6_STARTUP_STATEMENTS = [
+  "ALTER TABLE analytics_events ADD COLUMN IF NOT EXISTS device_model varchar(64)",
+  "ALTER TABLE analytics_events ADD COLUMN IF NOT EXISTS display_class varchar(16)",
+  "ALTER TABLE analytics_events ADD COLUMN IF NOT EXISTS window_width_bucket varchar(16)"
+];
+var MISSING_P6_COLUMNS_WARNING = "Analytics insert retried without device_model, display_class, and window_width_bucket because those columns are not in the database yet. The startup migration and npm run db:push add them.";
+function toAnalyticsRows(deviceId, events, now = /* @__PURE__ */ new Date()) {
+  return events.map((event) => {
+    const row = {
+      deviceId,
+      eventType: event.type,
+      eventData: event.data,
+      platform: event.platform ?? null,
+      appVersion: event.appVersion ?? null,
+      createdAt: now
+    };
+    if (event.device_model !== void 0)
+      row.deviceModel = event.device_model;
+    if (event.displayClass !== void 0)
+      row.displayClass = event.displayClass;
+    if (event.windowWidthBucket !== void 0) {
+      row.windowWidthBucket = event.windowWidthBucket;
+    }
+    return row;
+  });
+}
+function toLegacyRow(row) {
+  return {
+    deviceId: row.deviceId,
+    eventType: row.eventType,
+    eventData: row.eventData,
+    platform: row.platform,
+    appVersion: row.appVersion,
+    createdAt: row.createdAt
+  };
+}
+function isMissingColumnError(err) {
+  const seen = /* @__PURE__ */ new Set();
+  let current = err;
+  while (current && typeof current === "object" && !seen.has(current)) {
+    seen.add(current);
+    const record = current;
+    if (record.code === "42703")
+      return true;
+    if (typeof record.message === "string" && /column ["']?.+["']? does not exist/i.test(record.message)) {
+      return true;
+    }
+    current = record.cause;
+  }
+  return false;
+}
+async function insertAnalyticsEvents(database, rows) {
+  try {
+    await database.insert(analyticsEvents).values(rows);
+  } catch (err) {
+    if (!isMissingColumnError(err))
+      throw err;
+    console.warn(MISSING_P6_COLUMNS_WARNING);
+    await database.insert(analyticsEventsLegacy).values(rows.map(toLegacyRow));
+  }
+}
+var ANALYTICS_P6_STATEMENT_TIMEOUT = "5s";
+var ANALYTICS_P6_LOCK_TIMEOUT = "2s";
+function migrationFailure(err) {
+  return err instanceof Error ? err.message.split("\n")[0] : "unknown";
+}
+async function ensureAnalyticsP6Columns(pool2) {
+  let client;
+  try {
+    client = await pool2.connect();
+    for (const statement of ANALYTICS_P6_STARTUP_STATEMENTS) {
+      try {
+        await client.query("BEGIN");
+        await client.query(
+          `SET LOCAL statement_timeout = '${ANALYTICS_P6_STATEMENT_TIMEOUT}'`
+        );
+        await client.query(
+          `SET LOCAL lock_timeout = '${ANALYTICS_P6_LOCK_TIMEOUT}'`
+        );
+        await client.query(statement);
+        await client.query("COMMIT");
+      } catch (err) {
+        try {
+          await client.query("ROLLBACK");
+        } catch {
+        }
+        console.warn(
+          `Analytics P6 startup migration failed (${migrationFailure(err)}). Inserts omit the new columns until they exist. Run npm run db:push against production as well.`
+        );
+      }
+    }
+  } catch (err) {
+    console.warn(
+      `Analytics P6 startup migration failed to start (${migrationFailure(err)}). Inserts omit the new columns until they exist. Run npm run db:push against production as well.`
+    );
+  } finally {
+    client?.release();
+  }
+}
+
+// server/p7AnalyticsSummary.ts
+function resolveP7Cutoff(cutoffIso, earliestShownMs) {
+  const raw = typeof cutoffIso === "string" ? cutoffIso.trim() : "";
+  if (!raw) {
+    return {
+      cutoffMs: earliestShownMs,
+      source: earliestShownMs == null ? null : "first_howto_card_shown"
+    };
+  }
+  const parsed = Date.parse(raw);
+  if (!Number.isFinite(parsed)) {
+    return { cutoffMs: null, source: "env" };
+  }
+  return { cutoffMs: parsed, source: "env" };
+}
+function eventTime(value) {
+  if (value instanceof Date) {
+    const t = value.getTime();
+    return Number.isFinite(t) ? t : null;
+  }
+  if (typeof value === "number")
+    return Number.isFinite(value) ? value : null;
+  if (typeof value === "string") {
+    const t = Date.parse(value);
+    return Number.isFinite(t) ? t : null;
+  }
+  return null;
+}
+function asRecord(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    return null;
+  return value;
+}
+function summarizeP7Day1(events, options) {
+  const shown = /* @__PURE__ */ new Set();
+  const continued = /* @__PURE__ */ new Set();
+  const skipped = /* @__PURE__ */ new Set();
+  const backed = /* @__PURE__ */ new Set();
+  let cutoffMs = null;
+  const abandonBuckets = /* @__PURE__ */ new Map();
+  const completions = /* @__PURE__ */ new Map();
+  for (const event of events) {
+    if (!event.deviceId)
+      continue;
+    const data = asRecord(event.eventData);
+    const at = eventTime(event.createdAt);
+    if (event.eventType === "howto_card_shown") {
+      shown.add(event.deviceId);
+      if (at != null && (cutoffMs == null || at < cutoffMs))
+        cutoffMs = at;
+    } else if (event.eventType === "howto_card_dismissed") {
+      const action = data?.action;
+      if (action === "continue")
+        continued.add(event.deviceId);
+      else if (action === "skip")
+        skipped.add(event.deviceId);
+      else if (action === "back")
+        backed.add(event.deviceId);
+    } else if (event.eventType === "first_session_abandoned") {
+      const phase = typeof data?.phase === "string" && data.phase.trim() ? data.phase : "unspecified";
+      const rep = typeof data?.rep_index === "number" && Number.isFinite(data.rep_index) ? data.rep_index : null;
+      const key = `${phase}
+${rep == null ? "" : String(rep)}`;
+      let devices = abandonBuckets.get(key);
+      if (!devices) {
+        devices = /* @__PURE__ */ new Set();
+        abandonBuckets.set(key, devices);
+      }
+      devices.add(event.deviceId);
+    } else if (event.eventType === "first_session_completed" && at != null) {
+      const platform = typeof event.platform === "string" && event.platform.trim() ? event.platform : "unknown";
+      const existing = completions.get(event.deviceId);
+      if (!existing || at < existing.at) {
+        completions.set(event.deviceId, { platform, at });
+      }
+    }
+  }
+  const resolved = resolveP7Cutoff(options?.cutoffIso, cutoffMs);
+  const byPlatform = /* @__PURE__ */ new Map();
+  for (const completion of completions.values()) {
+    const row = byPlatform.get(completion.platform) ?? {
+      completed: 0,
+      completedSinceP7: 0
+    };
+    row.completed += 1;
+    if (resolved.cutoffMs != null && completion.at >= resolved.cutoffMs) {
+      row.completedSinceP7 += 1;
+    }
+    byPlatform.set(completion.platform, row);
+  }
+  const abandonsByPhaseAndRep = Array.from(abandonBuckets.entries()).map(([key, devices]) => {
+    const [phase, repRaw] = key.split("\n");
+    return {
+      phase,
+      repIndex: repRaw === "" ? null : Number(repRaw),
+      devices: devices.size
+    };
+  }).sort((a, b) => {
+    if (b.devices !== a.devices)
+      return b.devices - a.devices;
+    if (a.phase !== b.phase)
+      return a.phase.localeCompare(b.phase);
+    return (a.repIndex ?? -1) - (b.repIndex ?? -1);
+  });
+  const day1CompletionByPlatform = Array.from(byPlatform.entries()).map(([platform, counts]) => ({ platform, ...counts })).sort((a, b) => {
+    if (b.completed !== a.completed)
+      return b.completed - a.completed;
+    return a.platform.localeCompare(b.platform);
+  });
+  return {
+    p7Cutoff: resolved.cutoffMs == null ? null : new Date(resolved.cutoffMs).toISOString(),
+    p7CutoffSource: resolved.source,
+    cardByDevice: {
+      shown: shown.size,
+      continue: continued.size,
+      skip: skipped.size,
+      back: backed.size
+    },
+    abandonsByPhaseAndRep,
+    day1CompletionByPlatform
+  };
+}
+
+// server/syncRoutes.ts
+import { randomBytes } from "node:crypto";
+import { and, eq } from "drizzle-orm";
+import { z as z2 } from "zod";
+
+// shared/progressTransfer.ts
+var PROGRESS_TRANSFER_SCHEMA_VERSION = 1;
+var IN_PROGRESS_SESSION_TTL_MS = 48 * 60 * 60 * 1e3;
+
+// server/syncAuth.ts
+import { createHash, timingSafeEqual as timingSafeEqual2 } from "node:crypto";
+import { createRemoteJWKSet, jwtVerify } from "jose";
+var APPLE_ISSUER = "https://appleid.apple.com";
+var GOOGLE_ISSUERS = [
+  "https://accounts.google.com",
+  "accounts.google.com"
+];
+var APPLE_JWKS_URL = "https://appleid.apple.com/auth/keys";
+var GOOGLE_JWKS_URL = "https://www.googleapis.com/oauth2/v3/certs";
+var appleJwks = createRemoteJWKSet(new URL(APPLE_JWKS_URL));
+var googleJwks = createRemoteJWKSet(new URL(GOOGLE_JWKS_URL));
+var testJwks = {};
+function jwksFor(provider) {
+  if (provider === "apple")
+    return testJwks.apple ?? appleJwks;
+  return testJwks.google ?? googleJwks;
+}
+function safeEqualString(a, b) {
+  const aBuf = Buffer.from(a, "utf8");
+  const bBuf = Buffer.from(b, "utf8");
+  if (aBuf.length !== bBuf.length) {
+    timingSafeEqual2(aBuf, aBuf);
+    return false;
+  }
+  return timingSafeEqual2(aBuf, bBuf);
+}
+function verifyDevIdentityToken(identityToken, devSecret) {
+  if (!devSecret || !identityToken.startsWith("dev:")) {
+    return null;
+  }
+  const rest = identityToken.slice("dev:".length);
+  if (!rest)
+    return null;
+  const firstColon = rest.indexOf(":");
+  if (firstColon === -1) {
+    if (!safeEqualString(rest, devSecret))
+      return null;
+    return { subject: "dev-lab" };
+  }
+  const secretPart = rest.slice(0, firstColon);
+  const subjectPart = rest.slice(firstColon + 1);
+  if (!safeEqualString(secretPart, devSecret))
+    return null;
+  if (!/^[A-Za-z0-9_-]{1,128}$/.test(subjectPart))
+    return null;
+  return { subject: subjectPart };
+}
+async function verifyIdentityToken(provider, identityToken, env = {
+  appleClientId: process.env.APPLE_CLIENT_ID,
+  googleClientId: process.env.GOOGLE_CLIENT_ID,
+  devSecret: process.env.SYNC_DEV_AUTH_SECRET
+}) {
+  const appleClientId = env.appleClientId;
+  const googleClientId = env.googleClientId;
+  const devSecret = env.devSecret;
+  const clientId = provider === "apple" ? appleClientId : googleClientId;
+  if (!clientId) {
+    const dev = verifyDevIdentityToken(identityToken, devSecret);
+    if (dev)
+      return dev;
+    return {
+      error: provider === "apple" ? "Apple Sign-In not configured (set APPLE_CLIENT_ID)" : "Google Sign-In not configured (set GOOGLE_CLIENT_ID)",
+      status: 503
+    };
+  }
+  if (identityToken.startsWith("dev:")) {
+    return { error: "Invalid identity token", status: 401 };
+  }
+  try {
+    const { payload } = await jwtVerify(identityToken, jwksFor(provider), {
+      issuer: provider === "apple" ? APPLE_ISSUER : [...GOOGLE_ISSUERS],
+      audience: clientId,
+      algorithms: ["RS256"]
+    });
+    if (typeof payload.sub !== "string" || !payload.sub) {
+      return { error: "Invalid identity token (no sub)", status: 401 };
+    }
+    return { subject: payload.sub };
+  } catch {
+    return { error: "Invalid identity token", status: 401 };
+  }
+}
+function sha256Hex(value) {
+  return createHash("sha256").update(value).digest("hex");
+}
+
+// server/syncRoutes.ts
+var syncAuthSchema = z2.object({
+  provider: z2.enum(["apple", "google"]),
+  identityToken: z2.string().trim().min(10).max(8192)
+}).strict();
+var syncPushSchema = z2.object({
+  payload: z2.object({
+    schema_version: z2.literal(PROGRESS_TRANSFER_SCHEMA_VERSION),
+    exported_at: z2.string().min(1),
+    progress: z2.record(z2.unknown()),
+    settings: z2.record(z2.unknown()),
+    audio_settings: z2.record(z2.unknown()).optional(),
+    in_progress_session: z2.unknown().nullable().optional(),
+    tips_seen: z2.record(z2.unknown()).optional(),
+    purchases_cache: z2.record(z2.unknown()).optional()
+  }).passthrough()
+}).strict();
+async function requireSyncAuth(req, res, next) {
+  const auth = req.headers.authorization ?? "";
+  if (!auth.startsWith("Bearer ")) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const token = auth.slice("Bearer ".length).trim();
+  if (!token) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const tokenHash = sha256Hex(token);
+  try {
+    const rows = await db.select().from(syncAccounts).where(eq(syncAccounts.accessTokenHash, tokenHash)).limit(1);
+    const account = rows[0];
+    if (!account || account.revoked) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+    req.syncAccountId = account.id;
+    next();
+  } catch {
+    res.status(503).json({ error: "Sync storage unavailable" });
+  }
+}
+function registerSyncRoutes(app2) {
+  const authLimit = createRateLimiter({
+    maxRequests: 20,
+    windowMs: 6e4
+  });
+  const syncLimit = createRateLimiter({
+    maxRequests: 30,
+    windowMs: 6e4
+  });
+  app2.post("/api/sync/auth", authLimit, async (req, res) => {
+    const parsed = syncAuthSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "Invalid auth request" });
+      return;
+    }
+    const verified = await verifyIdentityToken(
+      parsed.data.provider,
+      parsed.data.identityToken
+    );
+    if ("error" in verified) {
+      res.status(verified.status).json({ error: verified.error });
+      return;
+    }
+    const accessToken = randomBytes(32).toString("hex");
+    const accessTokenHash = sha256Hex(accessToken);
+    try {
+      const existing = await db.select().from(syncAccounts).where(
+        and(
+          eq(syncAccounts.provider, parsed.data.provider),
+          eq(syncAccounts.providerSubject, verified.subject)
+        )
+      ).limit(1);
+      let accountId;
+      if (existing[0]) {
+        accountId = existing[0].id;
+        await db.update(syncAccounts).set({
+          accessTokenHash,
+          revoked: false,
+          updatedAt: /* @__PURE__ */ new Date()
+        }).where(eq(syncAccounts.id, accountId));
+      } else {
+        const inserted = await db.insert(syncAccounts).values({
+          provider: parsed.data.provider,
+          providerSubject: verified.subject,
+          accessTokenHash
+        }).returning({ id: syncAccounts.id });
+        accountId = inserted[0].id;
+      }
+      res.json({
+        accountId,
+        accessToken,
+        provider: parsed.data.provider
+      });
+    } catch {
+      res.status(503).json({ error: "Sync storage unavailable" });
+    }
+  });
+  app2.post(
+    "/api/sync/push",
+    syncLimit,
+    requireSyncAuth,
+    async (req, res) => {
+      const parsed = syncPushSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: "Invalid sync payload" });
+        return;
+      }
+      const accountId = req.syncAccountId;
+      if (!accountId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+      const exportedAt = new Date(parsed.data.payload.exported_at);
+      if (Number.isNaN(exportedAt.getTime())) {
+        res.status(400).json({ error: "Invalid exported_at" });
+        return;
+      }
+      try {
+        const existing = await db.select().from(syncSnapshots).where(eq(syncSnapshots.accountId, accountId)).limit(1);
+        if (existing[0]) {
+          await db.update(syncSnapshots).set({
+            payload: parsed.data.payload,
+            schemaVersion: PROGRESS_TRANSFER_SCHEMA_VERSION,
+            exportedAt,
+            updatedAt: /* @__PURE__ */ new Date()
+          }).where(eq(syncSnapshots.accountId, accountId));
+        } else {
+          await db.insert(syncSnapshots).values({
+            accountId,
+            schemaVersion: PROGRESS_TRANSFER_SCHEMA_VERSION,
+            payload: parsed.data.payload,
+            exportedAt
+          });
+        }
+        res.json({ ok: true });
+      } catch {
+        res.status(503).json({ error: "Sync storage unavailable" });
+      }
+    }
+  );
+  app2.get(
+    "/api/sync/pull",
+    syncLimit,
+    requireSyncAuth,
+    async (req, res) => {
+      const accountId = req.syncAccountId;
+      if (!accountId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+      try {
+        const rows = await db.select().from(syncSnapshots).where(eq(syncSnapshots.accountId, accountId)).limit(1);
+        if (!rows[0]) {
+          res.status(404).json({ error: "No remote snapshot" });
+          return;
+        }
+        res.json({
+          payload: rows[0].payload,
+          updatedAt: rows[0].updatedAt
+        });
+      } catch {
+        res.status(503).json({ error: "Sync storage unavailable" });
+      }
+    }
+  );
+  app2.delete(
+    "/api/sync/delete",
+    syncLimit,
+    requireSyncAuth,
+    async (req, res) => {
+      const accountId = req.syncAccountId;
+      if (!accountId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+      try {
+        await db.delete(syncSnapshots).where(eq(syncSnapshots.accountId, accountId));
+        await db.update(syncAccounts).set({ revoked: true, updatedAt: /* @__PURE__ */ new Date() }).where(eq(syncAccounts.id, accountId));
+        res.json({ ok: true });
+      } catch {
+        res.status(503).json({ error: "Sync storage unavailable" });
+      }
+    }
+  );
+}
+
 // server/routes.ts
 var __filename = fileURLToPath(import.meta.url);
 var __dirname = dirname(__filename);
 var APP_VERSION = "0.0.0";
 try {
-  const appJson = JSON.parse(readFileSync(join(process.cwd(), "app.json"), "utf8"));
+  const appJson = JSON.parse(
+    readFileSync(join(process.cwd(), "app.json"), "utf8")
+  );
   APP_VERSION = appJson?.expo?.extra?.minimumVersion ?? appJson?.expo?.version ?? "0.0.0";
 } catch {
 }
@@ -1616,7 +2574,12 @@ function discoverBlogSlugs() {
         continue;
       seen.add(slug);
       const filePath = join(dir, f);
-      slugs.push({ slug, lastmod: readLastmod(filePath), title: readBlogTitle(filePath, slug), description: readBlogDescription(filePath) });
+      slugs.push({
+        slug,
+        lastmod: readLastmod(filePath),
+        title: readBlogTitle(filePath, slug),
+        description: readBlogDescription(filePath)
+      });
     }
   }
   slugs.sort((a, b) => a.slug.localeCompare(b.slug));
@@ -1665,7 +2628,11 @@ function buildFallback(daysWorkedOut, scheduledDays, weekNumber) {
   return `${daysWorkedOut} of ${scheduledDays} scheduled sessions completed this week \u2014 ${missedDays} missed. That is not the week you needed. Next week, start on day one and do not let the first miss become two.`;
 }
 async function registerRoutes(app2) {
-  app2.use("/sounds", express.static(resolve(process.cwd(), "client", "assets", "sounds")));
+  registerSyncRoutes(app2);
+  app2.use(
+    "/sounds",
+    express.static(resolve(process.cwd(), "client", "assets", "sounds"))
+  );
   app2.post("/api/invalidate-sitemap-cache", (req, res) => {
     const token = process.env.INVALIDATE_CACHE_TOKEN;
     if (!token) {
@@ -1864,7 +2831,7 @@ Sitemap: https://pulsekegel.com/sitemap.xml
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://pulsekegel.com/blog</loc>
+    <loc>https://pulsekegel.com/blog/</loc>
     <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -1908,7 +2875,12 @@ ${blogUrls}
     if (slug.endsWith(".html")) {
       return res.redirect(301, `/blog/${slug.replace(".html", "")}`);
     }
-    const staticPath = join(process.cwd(), "static-build", "blog", `${slug}.html`);
+    const staticPath = join(
+      process.cwd(),
+      "static-build",
+      "blog",
+      `${slug}.html`
+    );
     if (existsSync(staticPath)) {
       return res.sendFile(staticPath);
     }
@@ -1962,51 +2934,48 @@ ${blogUrls}
     }
     const { deviceId, events } = parsedRequest.data;
     try {
-      const rows = events.map((event) => ({
-        deviceId,
-        eventType: event.type,
-        eventData: event.data,
-        platform: event.platform ?? null,
-        appVersion: event.appVersion ?? null,
-        // Server time is authoritative so clients cannot backdate analytics.
-        createdAt: /* @__PURE__ */ new Date()
-      }));
-      await db.insert(analyticsEvents).values(rows);
+      await insertAnalyticsEvents(db, toAnalyticsRows(deviceId, events));
       res.json({ ok: true });
     } catch (err) {
-      console.error("Analytics ingest error:", err);
+      console.error("Analytics ingest error:", {
+        message: err instanceof Error ? err.message.split("\n")[0] : "unknown",
+        code: err?.code
+      });
       res.status(500).json({ error: "Failed to record events" });
     }
   });
-  app2.get("/api/analytics/summary", requireAnalyticsAdmin, async (_req, res) => {
-    try {
-      const now = /* @__PURE__ */ new Date();
-      const h24 = new Date(now.getTime() - 24 * 60 * 60 * 1e3);
-      const d7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1e3);
-      const d30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1e3);
-      const [totalDevices] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents);
-      const [dau] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(sql2`${analyticsEvents.createdAt} >= ${h24}`);
-      const [wau] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(sql2`${analyticsEvents.createdAt} >= ${d7}`);
-      const [mau] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(sql2`${analyticsEvents.createdAt} >= ${d30}`);
-      const eventCounts = await db.select({
-        eventType: analyticsEvents.eventType,
-        count: sql2`count(*)::int`
-      }).from(analyticsEvents).groupBy(analyticsEvents.eventType).orderBy(sql2`count(*) desc`);
-      const [newDevicesWeek] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(
-        sql2`${analyticsEvents.deviceId} not in (
+  app2.get(
+    "/api/analytics/summary",
+    requireAnalyticsReadAccess,
+    async (_req, res) => {
+      try {
+        const now = /* @__PURE__ */ new Date();
+        const h24 = new Date(now.getTime() - 24 * 60 * 60 * 1e3);
+        const d7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1e3);
+        const d30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1e3);
+        const [totalDevices] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents);
+        const [dau] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(sql2`${analyticsEvents.createdAt} >= ${h24}`);
+        const [wau] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(sql2`${analyticsEvents.createdAt} >= ${d7}`);
+        const [mau] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(sql2`${analyticsEvents.createdAt} >= ${d30}`);
+        const eventCounts = await db.select({
+          eventType: analyticsEvents.eventType,
+          count: sql2`count(*)::int`
+        }).from(analyticsEvents).groupBy(analyticsEvents.eventType).orderBy(sql2`count(*) desc`);
+        const [newDevicesWeek] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(
+          sql2`${analyticsEvents.deviceId} not in (
             select distinct device_id from analytics_events
             where created_at < ${d7}
           )`
-      );
-      const topWeeklyDevicesRaw = await db.select({
-        eventCount: sql2`count(*)::int`
-      }).from(analyticsEvents).where(sql2`${analyticsEvents.createdAt} >= ${d7}`).groupBy(analyticsEvents.deviceId).orderBy(sql2`count(*) desc`).limit(10);
-      const topWeeklyDevices = topWeeklyDevicesRaw.map((row, i) => ({
-        rank: i + 1,
-        eventCount: row.eventCount
-      }));
-      const dailyUniqueUsersRaw = await db.execute(
-        sql2`
+        );
+        const topWeeklyDevicesRaw = await db.select({
+          eventCount: sql2`count(*)::int`
+        }).from(analyticsEvents).where(sql2`${analyticsEvents.createdAt} >= ${d7}`).groupBy(analyticsEvents.deviceId).orderBy(sql2`count(*) desc`).limit(10);
+        const topWeeklyDevices = topWeeklyDevicesRaw.map((row, i) => ({
+          rank: i + 1,
+          eventCount: row.eventCount
+        }));
+        const dailyUniqueUsersRaw = await db.execute(
+          sql2`
           SELECT
             to_char(days.day, 'YYYY-MM-DD') AS date,
             COUNT(DISTINCT ae.device_id)::int AS count
@@ -2020,9 +2989,9 @@ ${blogUrls}
           GROUP BY days.day
           ORDER BY days.day
         `
-      );
-      const devicesByPlatformRaw = await db.execute(
-        sql2`
+        );
+        const devicesByPlatformRaw = await db.execute(
+          sql2`
           SELECT
             COALESCE(platform, 'unknown') AS platform,
             COUNT(DISTINCT device_id)::int AS count
@@ -2030,9 +2999,9 @@ ${blogUrls}
           GROUP BY COALESCE(platform, 'unknown')
           ORDER BY count DESC
         `
-      );
-      const challengeResultBreakdownRaw = await db.execute(
-        sql2`
+        );
+        const challengeResultBreakdownRaw = await db.execute(
+          sql2`
           WITH explicit_results AS (
             SELECT DISTINCT ON (device_id)
               device_id,
@@ -2088,9 +3057,9 @@ ${blogUrls}
           GROUP BY result_rank
           ORDER BY count DESC
         `
-      );
-      const wauByPlatformRaw = await db.execute(
-        sql2`
+        );
+        const wauByPlatformRaw = await db.execute(
+          sql2`
           SELECT
             COALESCE(platform, 'unknown') AS platform,
             COUNT(DISTINCT device_id)::int AS count
@@ -2099,22 +3068,22 @@ ${blogUrls}
           GROUP BY COALESCE(platform, 'unknown')
           ORDER BY count DESC
         `
-      );
-      const [installsNoChallenge] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(
-        sql2`${analyticsEvents.deviceId} NOT IN (
+        );
+        const [installsNoChallenge] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(
+          sql2`${analyticsEvents.deviceId} NOT IN (
             SELECT DISTINCT device_id FROM analytics_events
             WHERE event_type = 'session_complete'
           )`
-      );
-      const [neverOnboarded] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(
-        sql2`${analyticsEvents.eventType} = 'app_open'
+        );
+        const [neverOnboarded] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(
+          sql2`${analyticsEvents.eventType} = 'app_open'
             AND ${analyticsEvents.deviceId} NOT IN (
               SELECT DISTINCT device_id FROM analytics_events
               WHERE event_type = 'onboarding_complete'
             )`
-      );
-      const retentionRaw = await db.execute(
-        sql2`
+        );
+        const retentionRaw = await db.execute(
+          sql2`
           WITH cohort AS (
             SELECT device_id, MIN(created_at) AS first_seen
             FROM analytics_events
@@ -2150,11 +3119,73 @@ ${blogUrls}
             ) THEN 1 END)::int
           FROM cohort WHERE cohort.first_seen <= NOW() - INTERVAL '30 days'
         `
-      );
-      const [funnelOnboarded] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(sql2`${analyticsEvents.eventType} = 'onboarding_complete'`);
-      const [funnelSession] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(sql2`${analyticsEvents.eventType} = 'session_complete'`);
-      const [funnelSessionStarted] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(sql2`${analyticsEvents.eventType} = 'session_started'`);
-      const subscriptionFunnelRaw = await db.execute(sql2`
+        );
+        const [funnelOnboarded] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(sql2`${analyticsEvents.eventType} = 'onboarding_complete'`);
+        const [funnelSession] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(sql2`${analyticsEvents.eventType} = 'session_complete'`);
+        const [funnelSessionStarted] = await db.select({ count: countDistinct(analyticsEvents.deviceId) }).from(analyticsEvents).where(sql2`${analyticsEvents.eventType} = 'session_started'`);
+        const funnelByPlatformRaw = await db.execute(sql2`
+        SELECT
+          COALESCE(platform, 'unknown') AS platform,
+          COUNT(DISTINCT device_id)::int AS opens,
+          COUNT(DISTINCT device_id) FILTER (
+            WHERE device_id IN (
+              SELECT DISTINCT device_id FROM analytics_events
+              WHERE event_type = 'onboarding_complete'
+            )
+          )::int AS onboarded,
+          COUNT(DISTINCT device_id) FILTER (
+            WHERE device_id IN (
+              SELECT DISTINCT device_id FROM analytics_events
+              WHERE event_type = 'session_started'
+            )
+          )::int AS started,
+          COUNT(DISTINCT device_id) FILTER (
+            WHERE device_id IN (
+              SELECT DISTINCT device_id FROM analytics_events
+              WHERE event_type = 'session_complete'
+            )
+          )::int AS sessions
+        FROM analytics_events
+        GROUP BY COALESCE(platform, 'unknown')
+        ORDER BY opens DESC
+      `);
+        const firstRunFunnelByPlatformRaw = await db.execute(sql2`
+        WITH cohort AS (
+          SELECT DISTINCT ON (device_id)
+            device_id,
+            COALESCE(platform, 'unknown') AS platform
+          FROM analytics_events
+          WHERE event_type = 'first_open_path'
+            AND (event_data->>'onboarded_already') = 'false'
+          ORDER BY device_id, created_at ASC
+        ),
+        stages AS (
+          SELECT device_id, event_type
+          FROM analytics_events
+          WHERE device_id IN (SELECT device_id FROM cohort)
+            AND event_type IN (
+              'onboarding_complete',
+              'first_session_gate_shown',
+              'first_session_started',
+              'first_session_completed',
+              'gate_back_blocked'
+            )
+          GROUP BY device_id, event_type
+        )
+        SELECT
+          c.platform,
+          COUNT(DISTINCT c.device_id)::int AS new_installs,
+          COUNT(DISTINCT s.device_id) FILTER (WHERE s.event_type = 'onboarding_complete')::int AS onboarded,
+          COUNT(DISTINCT s.device_id) FILTER (WHERE s.event_type = 'first_session_gate_shown')::int AS gate_shown,
+          COUNT(DISTINCT s.device_id) FILTER (WHERE s.event_type = 'first_session_started')::int AS first_started,
+          COUNT(DISTINCT s.device_id) FILTER (WHERE s.event_type = 'first_session_completed')::int AS first_completed,
+          COUNT(DISTINCT s.device_id) FILTER (WHERE s.event_type = 'gate_back_blocked')::int AS back_intercepts
+        FROM cohort c
+        LEFT JOIN stages s ON s.device_id = c.device_id
+        GROUP BY c.platform
+        ORDER BY new_installs DESC
+      `);
+        const subscriptionFunnelRaw = await db.execute(sql2`
         SELECT event_type, COUNT(DISTINCT device_id)::int AS count
         FROM analytics_events
         WHERE event_type IN (
@@ -2164,14 +3195,84 @@ ${blogUrls}
         )
         GROUP BY event_type
       `);
-      const subscriptionFunnel = Object.fromEntries(
-        subscriptionFunnelRaw.rows.map((row) => [
-          row.event_type,
-          Number(row.count) || 0
-        ])
-      );
-      const programWeekDistRaw = await db.execute(
-        sql2`
+        const paywallBySourceRaw = await db.execute(sql2`
+        SELECT COALESCE(event_data->>'source', 'unknown') AS source,
+          COUNT(DISTINCT device_id)::int AS count
+        FROM analytics_events
+        WHERE event_type = 'paywall_viewed'
+        GROUP BY COALESCE(event_data->>'source', 'unknown')
+        ORDER BY count DESC
+      `);
+        const day1PaywallReachRaw = await db.execute(sql2`
+        WITH cutoff AS (
+          -- L2: P4 went live when the first day1_soft paywall was seen.
+          SELECT MIN(created_at) AS at
+          FROM analytics_events
+          WHERE event_type = 'paywall_viewed'
+            AND event_data->>'source' = 'day1_soft'
+        ),
+        finishers AS (
+          SELECT device_id, MIN(created_at) AS finished_at
+          FROM analytics_events
+          WHERE event_type = 'session_complete'
+            AND event_data->>'weekNumber' = '1'
+            AND event_data->>'dayNumber' = '1'
+          GROUP BY device_id
+        ),
+        reach AS (
+          SELECT f.finished_at,
+            EXISTS (
+              SELECT 1 FROM analytics_events p
+              WHERE p.device_id = f.device_id
+                AND p.event_type = 'paywall_viewed'
+                AND p.created_at >= f.finished_at
+            ) AS any_pw,
+            EXISTS (
+              SELECT 1 FROM analytics_events p
+              WHERE p.device_id = f.device_id
+                AND p.event_type = 'paywall_viewed'
+                AND p.event_data->>'source' = 'day1_soft'
+                AND p.created_at >= f.finished_at
+            ) AS soft_pw
+          FROM finishers f
+        )
+        SELECT
+          COUNT(*)::int AS finishers,
+          COUNT(*) FILTER (WHERE any_pw)::int AS reached_any,
+          COUNT(*) FILTER (WHERE soft_pw)::int AS reached_day1_soft,
+          (SELECT at FROM cutoff)::text AS p4_cutoff,
+          COUNT(*) FILTER (WHERE finished_at >= (SELECT at FROM cutoff))::int
+            AS finishers_since_p4,
+          COUNT(*) FILTER (WHERE any_pw
+            AND finished_at >= (SELECT at FROM cutoff))::int
+            AS reached_any_since_p4,
+          COUNT(*) FILTER (WHERE soft_pw
+            AND finished_at >= (SELECT at FROM cutoff))::int
+            AS reached_day1_soft_since_p4
+        FROM reach
+      `);
+        const day1Reach = day1PaywallReachRaw.rows[0];
+        const paywallDismissedBySourceRaw = await db.execute(sql2`
+        SELECT COALESCE(event_data->>'source', 'unknown') AS source,
+          COUNT(DISTINCT device_id)::int AS count
+        FROM analytics_events
+        WHERE event_type = 'paywall_dismissed'
+        GROUP BY COALESCE(event_data->>'source', 'unknown')
+        ORDER BY count DESC
+      `);
+        const day1DeferredRaw = await db.execute(sql2`
+        SELECT COUNT(DISTINCT device_id)::int AS count
+        FROM analytics_events
+        WHERE event_type = 'day1_soft_paywall_deferred'
+      `);
+        const subscriptionFunnel = Object.fromEntries(
+          subscriptionFunnelRaw.rows.map((row) => [
+            row.event_type,
+            Number(row.count) || 0
+          ])
+        );
+        const programWeekDistRaw = await db.execute(
+          sql2`
           SELECT
             event_data->>'programWeek' AS week,
             COUNT(DISTINCT device_id)::int AS count
@@ -2183,9 +3284,9 @@ ${blogUrls}
           GROUP BY event_data->>'programWeek'
           ORDER BY (event_data->>'programWeek')::int
         `
-      );
-      const workoutTypeRaw = await db.execute(
-        sql2`
+        );
+        const workoutTypeRaw = await db.execute(
+          sql2`
           SELECT
             COALESCE(event_data->>'workoutType', 'unknown') AS "workoutType",
             COUNT(*)::int AS count
@@ -2194,9 +3295,9 @@ ${blogUrls}
           GROUP BY COALESCE(event_data->>'workoutType', 'unknown')
           ORDER BY count DESC
         `
-      );
-      const anatomySplitRaw = await db.execute(
-        sql2`
+        );
+        const anatomySplitRaw = await db.execute(
+          sql2`
           SELECT
             COALESCE(event_data->>'anatomyType', 'unknown') AS "anatomyType",
             COUNT(DISTINCT device_id)::int AS count
@@ -2205,9 +3306,9 @@ ${blogUrls}
           GROUP BY COALESCE(event_data->>'anatomyType', 'unknown')
           ORDER BY count DESC
         `
-      );
-      const appVersionRaw = await db.execute(
-        sql2`
+        );
+        const appVersionRaw = await db.execute(
+          sql2`
           SELECT
             COALESCE(app_version, 'unknown') AS "appVersion",
             COUNT(DISTINCT device_id)::int AS count
@@ -2217,15 +3318,15 @@ ${blogUrls}
           ORDER BY count DESC
           LIMIT 10
         `
-      );
-      const [sessionsInWau] = await db.select({ count: sql2`count(*)::int` }).from(analyticsEvents).where(
-        sql2`${analyticsEvents.eventType} = 'session_complete'
+        );
+        const [sessionsInWau] = await db.select({ count: sql2`count(*)::int` }).from(analyticsEvents).where(
+          sql2`${analyticsEvents.eventType} = 'session_complete'
             AND ${analyticsEvents.createdAt} >= ${d7}`
-      );
-      const wauCount = Number(wau?.count ?? 0);
-      const avgSessionsPerWau = wauCount > 0 ? Math.round(Number(sessionsInWau?.count ?? 0) / wauCount * 10) / 10 : 0;
-      const weekCompletionRaw = await db.execute(
-        sql2`
+        );
+        const wauCount = Number(wau?.count ?? 0);
+        const avgSessionsPerWau = wauCount > 0 ? Math.round(Number(sessionsInWau?.count ?? 0) / wauCount * 10) / 10 : 0;
+        const weekCompletionRaw = await db.execute(
+          sql2`
           SELECT
             ROUND(
               AVG(CASE
@@ -2247,57 +3348,105 @@ ${blogUrls}
             AND event_data->>'scheduledDays' IS NOT NULL
             AND created_at >= NOW() - INTERVAL '30 days'
         `
-      );
-      res.json({
-        totalDevices: totalDevices?.count ?? 0,
-        dau: dau?.count ?? 0,
-        wau: wau?.count ?? 0,
-        mau: mau?.count ?? 0,
-        newDevicesLast7Days: newDevicesWeek?.count ?? 0,
-        installsNoChallenge: installsNoChallenge?.count ?? 0,
-        neverOnboarded: neverOnboarded?.count ?? 0,
-        eventsByType: eventCounts,
-        topWeeklyDevices,
-        dailyUniqueUsers: dailyUniqueUsersRaw.rows,
-        devicesByPlatform: devicesByPlatformRaw.rows,
-        wauByPlatform: wauByPlatformRaw.rows,
-        challengeResultBreakdown: challengeResultBreakdownRaw.rows,
-        retention: retentionRaw.rows,
-        funnel: {
-          opens: totalDevices?.count ?? 0,
-          onboarded: funnelOnboarded?.count ?? 0,
-          started: funnelSessionStarted?.count ?? 0,
-          sessions: funnelSession?.count ?? 0
-        },
-        subscriptionFunnel: {
-          viewed: subscriptionFunnel.paywall_viewed ?? 0,
-          tapped: subscriptionFunnel.subscribe_tapped ?? 0,
-          purchased: subscriptionFunnel.purchase_completed ?? 0
-        },
-        programWeekDist: programWeekDistRaw.rows,
-        workoutTypeBreakdown: workoutTypeRaw.rows,
-        anatomySplit: anatomySplitRaw.rows,
-        appVersionDist: appVersionRaw.rows,
-        avgSessionsPerWau,
-        weekCompletionRate: {
-          avgRate: weekCompletionRaw.rows[0]?.avg_rate ?? null,
-          totalWeeks: Number(weekCompletionRaw.rows[0]?.total_weeks ?? 0)
-        }
-      });
-    } catch (err) {
-      console.error("Analytics summary error:", err);
-      res.status(500).json({ error: "Failed to load analytics summary" });
+        );
+        const p7EventRows = await db.select({
+          deviceId: analyticsEvents.deviceId,
+          platform: analyticsEvents.platform,
+          eventType: analyticsEvents.eventType,
+          eventData: analyticsEvents.eventData,
+          createdAt: analyticsEvents.createdAt
+        }).from(analyticsEvents).where(
+          inArray(analyticsEvents.eventType, [
+            "howto_card_shown",
+            "howto_card_dismissed",
+            "first_session_abandoned",
+            "first_session_completed"
+          ])
+        );
+        const day1Howto = summarizeP7Day1(p7EventRows, {
+          // Set on the server at ship time. Unset falls back to the first card.
+          cutoffIso: process.env.P7_CUTOFF_ISO
+        });
+        res.json({
+          totalDevices: totalDevices?.count ?? 0,
+          dau: dau?.count ?? 0,
+          wau: wau?.count ?? 0,
+          mau: mau?.count ?? 0,
+          newDevicesLast7Days: newDevicesWeek?.count ?? 0,
+          installsNoChallenge: installsNoChallenge?.count ?? 0,
+          neverOnboarded: neverOnboarded?.count ?? 0,
+          eventsByType: eventCounts,
+          topWeeklyDevices,
+          dailyUniqueUsers: dailyUniqueUsersRaw.rows,
+          devicesByPlatform: devicesByPlatformRaw.rows,
+          wauByPlatform: wauByPlatformRaw.rows,
+          challengeResultBreakdown: challengeResultBreakdownRaw.rows,
+          retention: retentionRaw.rows,
+          funnel: {
+            opens: totalDevices?.count ?? 0,
+            onboarded: funnelOnboarded?.count ?? 0,
+            started: funnelSessionStarted?.count ?? 0,
+            sessions: funnelSession?.count ?? 0
+          },
+          funnelByPlatform: funnelByPlatformRaw.rows,
+          firstRunFunnelByPlatform: firstRunFunnelByPlatformRaw.rows,
+          subscriptionFunnel: {
+            viewed: subscriptionFunnel.paywall_viewed ?? 0,
+            tapped: subscriptionFunnel.subscribe_tapped ?? 0,
+            purchased: subscriptionFunnel.purchase_completed ?? 0
+          },
+          paywallViewsBySource: paywallBySourceRaw.rows.map((row) => ({
+            source: row.source,
+            count: Number(row.count) || 0
+          })),
+          day1Howto,
+          day1PaywallReach: {
+            finishers: Number(day1Reach?.finishers ?? 0),
+            reachedAny: Number(day1Reach?.reached_any ?? 0),
+            reachedDay1Soft: Number(day1Reach?.reached_day1_soft ?? 0),
+            // L2: cutoff = first day1_soft paywall_viewed (null until P4 is live)
+            p4Cutoff: day1Reach?.p4_cutoff ?? null,
+            sinceP4: {
+              finishers: Number(day1Reach?.finishers_since_p4 ?? 0),
+              reachedAny: Number(day1Reach?.reached_any_since_p4 ?? 0),
+              reachedDay1Soft: Number(
+                day1Reach?.reached_day1_soft_since_p4 ?? 0
+              )
+            }
+          },
+          paywallDismissedBySource: paywallDismissedBySourceRaw.rows.map(
+            (row) => ({ source: row.source, count: Number(row.count) || 0 })
+          ),
+          day1SoftPaywallDeferred: Number(day1DeferredRaw.rows[0]?.count ?? 0),
+          programWeekDist: programWeekDistRaw.rows,
+          workoutTypeBreakdown: workoutTypeRaw.rows,
+          anatomySplit: anatomySplitRaw.rows,
+          appVersionDist: appVersionRaw.rows,
+          avgSessionsPerWau,
+          weekCompletionRate: {
+            avgRate: weekCompletionRaw.rows[0]?.avg_rate ?? null,
+            totalWeeks: Number(weekCompletionRaw.rows[0]?.total_weeks ?? 0)
+          }
+        });
+      } catch (err) {
+        console.error("Analytics summary error:", err);
+        res.status(500).json({ error: "Failed to load analytics summary" });
+      }
     }
-  });
-  app2.delete("/api/analytics/reset", requireAnalyticsAdmin, async (_req, res) => {
-    try {
-      await db.execute(sql2`TRUNCATE TABLE analytics_events RESTART IDENTITY`);
-      res.json({ ok: true, message: "Analytics reset" });
-    } catch (err) {
-      console.error("Analytics reset error:", err);
-      res.status(500).json({ error: "Failed to reset analytics" });
+  );
+  app2.delete(
+    "/api/analytics/reset",
+    requireAnalyticsAdmin,
+    async (_req, res) => {
+      try {
+        await db.execute(sql2`TRUNCATE TABLE analytics_events RESTART IDENTITY`);
+        res.json({ ok: true, message: "Analytics reset" });
+      } catch (err) {
+        console.error("Analytics reset error:", err);
+        res.status(500).json({ error: "Failed to reset analytics" });
+      }
     }
-  });
+  );
   const httpServer = createServer(app2);
   return httpServer;
 }
@@ -2451,6 +3600,17 @@ function configureExpoAndLanding(app2) {
   app2.use(express2.static(path.resolve(process.cwd(), "static-build")));
   log("Expo routing: Checking expo-platform header on / and /manifest");
 }
+function setupApexHostRedirect(app2) {
+  app2.use((req, res, next) => {
+    const raw = req.header("x-forwarded-host") || req.get("host") || "";
+    const host = raw.split(",")[0]?.trim().toLowerCase() || "";
+    if (host === "www.pulsekegel.com" || host.startsWith("www.pulsekegel.com:")) {
+      const targetPath = req.originalUrl || "/";
+      return res.redirect(301, `https://pulsekegel.com${targetPath}`);
+    }
+    next();
+  });
+}
 function setupIndexingHeaders(app2) {
   app2.use((req, res, next) => {
     if (!req.path.startsWith("/api")) {
@@ -2473,6 +3633,7 @@ function setupErrorHandler(app2) {
 }
 (async () => {
   app.set("trust proxy", 1);
+  setupApexHostRedirect(app);
   setupCors(app);
   setupBodyParsing(app);
   setupRequestLogging(app);
@@ -2489,6 +3650,7 @@ function setupErrorHandler(app2) {
     },
     () => {
       log(`express server serving on port ${port}`);
+      void ensureAnalyticsP6Columns(pool);
     }
   );
 })();
