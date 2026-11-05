@@ -133,3 +133,8 @@ isValidation = true
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 60000
+
+[userenv]
+
+[userenv.production]
+P7_CUTOFF_ISO = "2026-11-05T00:51:20Z"
