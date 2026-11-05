@@ -9,6 +9,13 @@ import {
   formatDeviceModel,
   windowWidthBucket,
 } from "./windowLayout";
+import type {
+  Day1AbandonPhase,
+  Day1ExitSource,
+  HowtoCardAction,
+} from "./day1Howto";
+
+export type { Day1AbandonPhase, Day1ExitSource, HowtoCardAction };
 
 const DEVICE_ID_KEY = "pulsekegel_analytics_device_id";
 
@@ -313,8 +320,24 @@ export function trackFirstSessionCompleted(data: {
 export function trackFirstSessionAbandoned(data: {
   session_id: string;
   progress: number;
+  phase?: Day1AbandonPhase;
+  rep_index?: number;
+  elapsed_sec?: number;
+  exit_source?: Day1ExitSource;
 }): void {
   trackEvent("first_session_abandoned", data as Record<string, unknown>);
+}
+
+export function trackHowtoCardShown(data: { session_id: string }): void {
+  trackEvent("howto_card_shown", data as Record<string, unknown>);
+}
+
+export function trackHowtoCardDismissed(data: {
+  session_id: string;
+  action: HowtoCardAction;
+  dwell_ms: number;
+}): void {
+  trackEvent("howto_card_dismissed", data as Record<string, unknown>);
 }
 
 /** H3: Skip tap inside the Day 1 player (not the gate's "skip Day 1"). */

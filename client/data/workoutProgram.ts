@@ -1003,7 +1003,7 @@ export const getLegacyFirstSessionWorkout = (): DayTemplate =>
  *
  * Length (documented for ship notes):
  * - Before (legacy calibration gate): 7 segments, ~4 minutes (~232s work clock)
- * - After (short_day1): 3 segments, ~2 minutes (~85s work clock)
+ * - After (short_day1): 3 segments, ~2 minutes (~73s work clock at the 3s rep-rest default)
  * - Reduction: ~57% fewer steps, ~50% shorter by minutes
  */
 export const getFirstSessionWorkout = (
@@ -1015,7 +1015,7 @@ export const getFirstSessionWorkout = (
   const sets = 1;
   const reps = 6;
   const hold = 5;
-  const rest = 5;
+  const rest = 3;
   const cooldownSec = 20;
   const getReadyApproxSec = 5;
   const totalSeconds =

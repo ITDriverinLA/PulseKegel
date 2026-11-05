@@ -49,6 +49,7 @@ const STORAGE_KEYS = {
   FIRST_SESSION_CELEBRATED: "pulsekegel_first_session_celebrated",
   FIRST_SESSION_GATE_SOURCE: "pulsekegel_first_session_gate_source",
   FIRST_SESSION_ID: "pulsekegel_first_session_id",
+  HOW_TO_CARD_SEEN: "pulsekegel_howto_card_seen",
   SETTINGS_TIP_SEEN: "pulsekegel_settings_tip_seen",
   PENDING_OPEN_SETTINGS: "pulsekegel_pending_open_settings",
   DAY1_SOFT_PAYWALL_PENDING: "pulsekegel_day1_soft_paywall_pending",
@@ -256,7 +257,7 @@ export const defaultSettings: UserSettings = {
   highContrastMode: false,
   largeTextMode: false,
   recoveryMode: false,
-  restDuration: 5,
+  restDuration: 3,
   blockRestDuration: 25,
   cooldownEnabled: true,
   anatomyType: null,
@@ -266,6 +267,37 @@ export const defaultSettings: UserSettings = {
   reminderEnabled: false,
   reminderTime: "08:00",
 };
+
+/**
+ * Rep-rest default before P7b. A stored settings object that never recorded
+ * restDuration was saved under this value (the spread would otherwise pick
+ * up the new default of 3).
+ */
+export const LEGACY_DEFAULT_REST_DURATION = 5;
+
+/**
+ * Merge a stored settings blob over the current defaults.
+ * No blob → caller uses defaultSettings (rest 3).
+ * Blob with a numeric restDuration → that value wins.
+ * Blob that omits restDuration → keep the pre-P7 default of 5.
+ */
+export function mergeStoredSettings(parsed: object): UserSettings {
+  const stored = parsed as Partial<UserSettings>;
+  const record = parsed as Record<string, unknown>;
+  const merged: UserSettings = { ...defaultSettings, ...stored };
+  const rest = record.restDuration;
+  const hasRest =
+    Object.prototype.hasOwnProperty.call(record, "restDuration") &&
+    typeof rest === "number" &&
+    Number.isFinite(rest);
+  if (!hasRest) {
+    merged.restDuration = LEGACY_DEFAULT_REST_DURATION;
+  }
+  if (!stored.theme) {
+    merged.theme = stored.darkMode === false ? "light" : "dark";
+  }
+  return merged;
+}
 
 export interface UserProgress {
   completedDates: string[];
@@ -808,11 +840,10 @@ export const storage = {
       const data = await AsyncStorage.getItem(STORAGE_KEYS.SETTINGS);
       if (!data) return defaultSettings;
       const parsed = JSON.parse(data);
-      const merged: UserSettings = { ...defaultSettings, ...parsed };
-      if (!parsed.theme) {
-        merged.theme = parsed.darkMode === false ? "light" : "dark";
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return defaultSettings;
       }
-      return merged;
+      return mergeStoredSettings(parsed);
     } catch {
       return defaultSettings;
     }
@@ -1074,6 +1105,25 @@ export const storage = {
       return await AsyncStorage.getItem(STORAGE_KEYS.FIRST_SESSION_ID);
     } catch {
       return null;
+    }
+  },
+
+  async hasHowtoCardSeen(): Promise<boolean> {
+    try {
+      return (
+        (await AsyncStorage.getItem(STORAGE_KEYS.HOW_TO_CARD_SEEN)) === "true"
+      );
+    } catch {
+      return false;
+    }
+  },
+
+  /** Persist as soon as the Day-1 card is shown. Once true, it is never cleared. */
+  async setHowtoCardSeen(): Promise<void> {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.HOW_TO_CARD_SEEN, "true");
+    } catch (error) {
+      console.error("Error saving how-to card seen:", error);
     }
   },
 

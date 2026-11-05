@@ -8,7 +8,7 @@ import OpenAI from "openai";
 import { privacyPolicyHtml } from "./staticContent";
 import { db } from "./db";
 import { analyticsEvents } from "../shared/schema";
-import { sql, countDistinct } from "drizzle-orm";
+import { sql, countDistinct, inArray } from "drizzle-orm";
 import {
   createRateLimiter,
   requireAnalyticsAdmin,
@@ -16,6 +16,7 @@ import {
 } from "./security";
 import { analyticsBatchSchema, weeklyReviewSchema } from "./requestValidation";
 import { insertAnalyticsEvents, toAnalyticsRows } from "./analyticsIngest";
+import { summarizeP7Day1 } from "./p7AnalyticsSummary";
 import { registerSyncRoutes } from "./syncRoutes";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -1145,6 +1146,28 @@ ${blogUrls}
         `,
         );
 
+        const p7EventRows = await db
+          .select({
+            deviceId: analyticsEvents.deviceId,
+            platform: analyticsEvents.platform,
+            eventType: analyticsEvents.eventType,
+            eventData: analyticsEvents.eventData,
+            createdAt: analyticsEvents.createdAt,
+          })
+          .from(analyticsEvents)
+          .where(
+            inArray(analyticsEvents.eventType, [
+              "howto_card_shown",
+              "howto_card_dismissed",
+              "first_session_abandoned",
+              "first_session_completed",
+            ]),
+          );
+        const day1Howto = summarizeP7Day1(p7EventRows, {
+          // Set on the server at ship time. Unset falls back to the first card.
+          cutoffIso: process.env.P7_CUTOFF_ISO,
+        });
+
         res.json({
           totalDevices: totalDevices?.count ?? 0,
           dau: dau?.count ?? 0,
@@ -1177,6 +1200,7 @@ ${blogUrls}
             source: row.source,
             count: Number(row.count) || 0,
           })),
+          day1Howto,
           day1PaywallReach: {
             finishers: Number(day1Reach?.finishers ?? 0),
             reachedAny: Number(day1Reach?.reached_any ?? 0),

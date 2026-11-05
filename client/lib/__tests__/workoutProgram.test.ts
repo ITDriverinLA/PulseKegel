@@ -41,7 +41,16 @@ describe("F2 short first-win session", () => {
     expect(workout.segments).toHaveLength(3);
     expect(workout.segments[0].type).toBe("getReady");
     expect(workout.segments[1].type).toBe("slowHolds");
+    expect(workout.segments[1].restSeconds).toBe(3);
     expect(workout.segments[2].type).toBe("breathing");
+    const ready = 5;
+    const work =
+      workout.segments[1].sets *
+      workout.segments[1].repsPerSet *
+      (workout.segments[1].squeezeSeconds + workout.segments[1].restSeconds);
+    const total = ready + work + workout.segments[2].squeezeSeconds;
+    expect(total).toBe(73);
+    expect(workout.estimatedMinutes).toBe(2);
     expect(getFirstSessionPlannedSteps(workout)).toBe(3);
     const legacy = getLegacyFirstSessionWorkout();
     expect(legacy.segments.length).toBeGreaterThan(workout.segments.length);

@@ -35,6 +35,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { PowerBar } from "@/components/PowerBar";
 import { CircularProgressRing } from "@/components/CircularProgressRing";
 import { FormTipsSheet } from "@/components/FormTipsSheet";
+import { Day1HowtoCard } from "@/components/Day1HowtoCard";
 import { BadgeToast } from "@/components/BadgeToast";
 import { useThemePreference } from "@/contexts/ThemePreferenceContext";
 import { Spacing, BorderRadius } from "@/constants/theme";
@@ -54,7 +55,12 @@ import {
   isRestDayForDate,
   getLastWorkoutDayIndexForWeek,
 } from "@/data/workoutProgram";
-import { WorkoutEngine, WorkoutState, WorkoutPhase } from "@/lib/workoutEngine";
+import {
+  WorkoutEngine,
+  WorkoutState,
+  WorkoutPhase,
+  phaseCountdownSeconds,
+} from "@/lib/workoutEngine";
 import { hapticsManager, HapticPulseController } from "@/lib/hapticsManager";
 import { storage, UserSettings, defaultSettings } from "@/lib/storage";
 import { useAudio } from "@/contexts/AudioContext";
@@ -69,6 +75,8 @@ import {
   trackSessionStarted,
   trackFirstSessionCompleted,
   trackFirstSessionAbandoned,
+  trackHowtoCardShown,
+  trackHowtoCardDismissed,
   trackDay1Skip,
   trackGateBackBlocked,
   trackChallengeDayStarted,
@@ -76,6 +84,13 @@ import {
   type BackInterceptSource,
 } from "@/lib/analytics";
 import { shouldConfirmDay1Close } from "@/lib/firstRunRouting";
+import {
+  shouldShowDay1HowtoCard,
+  howtoDwellMs,
+  buildFirstSessionAbandonedPayload,
+  type Day1ExitSource,
+  type HowtoCardAction,
+} from "@/lib/day1Howto";
 import {
   cancelChallengeDay2Nudge,
   scheduleChallengeDay2Nudge,
@@ -126,6 +141,9 @@ export default function WorkoutPlayerScreen() {
   const [totalSeconds, setTotalSeconds] = useState(0);
   const [phaseDuration, setPhaseDuration] = useState(3);
   const [newBadgeIds, setNewBadgeIds] = useState<string[]>([]);
+  const [howtoGate, setHowtoGate] = useState<"pending" | "card" | "play">(
+    isFirstSession ? "pending" : "play",
+  );
 
   const engineRef = useRef<WorkoutEngine | null>(null);
   const hapticPulseRef = useRef<HapticPulseController>(
@@ -156,6 +174,49 @@ export default function WorkoutPlayerScreen() {
     bankedElapsedRef.current +
     (engineRef.current?.getState().totalElapsedSeconds ?? 0);
   progressRef.current = progress;
+  const howtoGateRef = useRef(howtoGate);
+  howtoGateRef.current = howtoGate;
+  const cardShownAtRef = useRef<number | null>(null);
+  const howtoTrackedRef = useRef(false);
+  const howtoDismissedRef = useRef(false);
+
+  useEffect(() => {
+    if (!isFirstSession) return;
+    let cancelled = false;
+    (async () => {
+      const [seen, completed] = await Promise.all([
+        storage.hasHowtoCardSeen(),
+        storage.hasCompletedFirstSession(),
+      ]);
+      if (cancelled) return;
+      const show = shouldShowDay1HowtoCard({
+        isFirstSession: true,
+        day1Completed: completed,
+        howtoCardSeen: seen,
+        resumeStepIndex: resumeStepIndex ?? 0,
+      });
+      if (!show) {
+        setHowtoGate("play");
+        return;
+      }
+      // Persist before the card paints so a kill during the card does not reshow it.
+      await storage.setHowtoCardSeen();
+      if (cancelled) return;
+      if (cardShownAtRef.current == null) {
+        cardShownAtRef.current = Date.now();
+      }
+      if (!howtoTrackedRef.current) {
+        howtoTrackedRef.current = true;
+        trackHowtoCardShown({
+          session_id: firstSessionId ?? "unknown",
+        });
+      }
+      setHowtoGate("card");
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isFirstSession, resumeStepIndex, firstSessionId]);
 
   const phaseScale = useSharedValue(1);
   const phaseOpacity = useSharedValue(1);
@@ -229,6 +290,18 @@ export default function WorkoutPlayerScreen() {
   }, []);
 
   useEffect(() => {
+    if (howtoGate !== "play") {
+      if (!isFirstSession) return;
+      let cancelled = false;
+      bankedLoadRef.current = storage
+        .loadDay1BankedElapsed(true)
+        .then((sec) => {
+          if (!cancelled) bankedElapsedRef.current = sec;
+        });
+      return () => {
+        cancelled = true;
+      };
+    }
     startTimeRef.current = new Date();
     bankedElapsedRef.current = 0;
     bankedLoadRef.current = storage
@@ -261,10 +334,12 @@ export default function WorkoutPlayerScreen() {
             duration: ANIM_DURATION_ENTER,
           });
 
-          const duration =
-            newPhase === "squeeze"
-              ? segment.squeezeSeconds
-              : segment.restSeconds;
+          const duration = phaseCountdownSeconds(
+            newPhase,
+            segment,
+            settings,
+            engine.getState().isSetRest,
+          );
           setPhaseDuration(duration);
 
           phaseScale.value = 0.8;
@@ -494,6 +569,7 @@ export default function WorkoutPlayerScreen() {
     isFirstSession,
     firstSessionId,
     resumeStepIndex,
+    howtoGate,
   ]);
 
   useEffect(() => {
@@ -508,6 +584,10 @@ export default function WorkoutPlayerScreen() {
         );
         sessionSuspendedRef.current = next.suspended;
         appStateRef.current = nextAppState;
+
+        // The how-to card has no running timer. Backgrounding it is not an
+        // abandon and must not bank elapsed time over a resume.
+        if (howtoGateRef.current !== "play") return;
 
         // `inactive` (fold, Control Center) is not leaving the session.
         // Suspending there would stop haptics and write Day-1 progress as if
@@ -637,7 +717,9 @@ export default function WorkoutPlayerScreen() {
     });
   };
 
-  const markFirstSessionAbandonedIfNeeded = async () => {
+  const markFirstSessionAbandonedIfNeeded = async (
+    exitSource: Day1ExitSource,
+  ) => {
     if (!isFirstSession || isCompleteRef.current) return;
     const pct =
       progress.total > 0
@@ -646,26 +728,57 @@ export default function WorkoutPlayerScreen() {
     const step = segmentIndexRef.current;
     await storage.setFirstSessionInProgress(true, pct, step);
     await saveDay1Elapsed();
-    trackFirstSessionAbandoned({
-      session_id: firstSessionId ?? "unknown",
-      progress: pct,
-    });
+    const engineState = engineRef.current?.getState();
+    const liveSegment =
+      engineRef.current?.getCurrentSegment() ?? currentSegment;
+    trackFirstSessionAbandoned(
+      buildFirstSessionAbandonedPayload({
+        sessionId: firstSessionId ?? "unknown",
+        progress: pct,
+        cardVisible: howtoGateRef.current === "card",
+        segmentType: liveSegment?.type ?? null,
+        segmentId: liveSegment?.id ?? null,
+        phase: engineState?.phase ?? currentPhase,
+        repIndex: engineState?.repIndex,
+        elapsedSec: getDay1ElapsedSec(),
+        exitSource,
+      }),
+    );
   };
 
   const handleEnd = async () => {
     if (!engineRef.current) return;
     await hapticsManager.triggerWarning();
     hapticPulseRef.current.stop();
-    await markFirstSessionAbandonedIfNeeded();
+    await markFirstSessionAbandonedIfNeeded("end");
     animateOut(ANIM_DURATION_EXIT);
   };
 
-  const handleClose = () => {
+  const handleClose = (exitSource?: Day1ExitSource) => {
+    const source: Day1ExitSource =
+      exitSource === "end" ||
+      exitSource === "x" ||
+      exitSource === "android_back" ||
+      exitSource === "other"
+        ? exitSource
+        : "other";
     hapticPulseRef.current.stop();
     if (!isComplete) {
-      void markFirstSessionAbandonedIfNeeded();
+      void markFirstSessionAbandonedIfNeeded(source);
     }
     animateOut(isComplete ? ANIM_DURATION_EXIT_COMPLETE : ANIM_DURATION_EXIT);
+  };
+
+  const dismissHowtoCard = (action: HowtoCardAction) => {
+    if (howtoDismissedRef.current) return;
+    howtoDismissedRef.current = true;
+    trackHowtoCardDismissed({
+      session_id: firstSessionId ?? "unknown",
+      action,
+      dwell_ms: howtoDwellMs(cardShownAtRef.current, Date.now()),
+    });
+    if (action === "back") return;
+    setHowtoGate("play");
   };
 
   // P2.2c: Day 1 header X and Android hardware/gesture back share this
@@ -718,7 +831,10 @@ export default function WorkoutPlayerScreen() {
               action: "leave",
               source,
             });
-            handleClose();
+            if (howtoGateRef.current === "card") {
+              dismissHowtoCard("back");
+            }
+            handleClose(source === "hardware_back" ? "android_back" : "x");
           },
         },
       ],
@@ -844,6 +960,34 @@ export default function WorkoutPlayerScreen() {
     }
   };
 
+  if (howtoGate === "pending") {
+    return (
+      <View style={[styles.container, { backgroundColor: cp.bg }]}>
+        <LinearGradient
+          colors={cp.gradient as unknown as [string, string, ...string[]]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+      </View>
+    );
+  }
+
+  if (howtoGate === "card") {
+    return (
+      <View style={styles.container}>
+        <Day1HowtoCard
+          anatomyType={settings.anatomyType}
+          onContinue={() => dismissHowtoCard("continue")}
+          onSkip={() => dismissHowtoCard("skip")}
+          onClose={() => confirmLeaveDay1("ui_x")}
+          onMoreTips={() => setShowTips(true)}
+        />
+        <FormTipsSheet visible={showTips} onClose={() => setShowTips(false)} />
+      </View>
+    );
+  }
+
   if (isComplete) {
     return (
       <Animated.View
@@ -874,7 +1018,10 @@ export default function WorkoutPlayerScreen() {
             <ThemedText type="h4" style={{ color: cp.text }}>
               Complete
             </ThemedText>
-            <Pressable onPress={handleClose} style={styles.headerButton}>
+            <Pressable
+              onPress={() => handleClose()}
+              style={styles.headerButton}
+            >
               <Feather name="x" size={24} color={cp.text} />
             </Pressable>
           </View>
@@ -961,7 +1108,7 @@ export default function WorkoutPlayerScreen() {
           </View>
 
           <Pressable
-            onPress={handleClose}
+            onPress={() => handleClose()}
             style={[styles.doneButton, { backgroundColor: cp.neonGreen }]}
           >
             <ThemedText
@@ -1010,7 +1157,9 @@ export default function WorkoutPlayerScreen() {
         <View style={styles.header}>
           <Pressable
             onPress={
-              isFirstSession ? () => confirmLeaveDay1("ui_x") : handleClose
+              isFirstSession
+                ? () => confirmLeaveDay1("ui_x")
+                : () => handleClose()
             }
             style={styles.headerButton}
           >

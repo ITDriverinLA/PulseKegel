@@ -1,4 +1,9 @@
-import { WorkoutEngine, defaultWorkoutSettings } from "../workoutEngine";
+import {
+  WorkoutEngine,
+  defaultWorkoutSettings,
+  phaseCountdownSeconds,
+  SET_REST_SECONDS,
+} from "../workoutEngine";
 import {
   getFirstSessionPlannedSteps,
   getFirstSessionWorkout,
@@ -89,5 +94,83 @@ describe("F1 WorkoutEngine resume seek", () => {
       "fs-short-cooldown",
     );
     withoutCooldown.end();
+  });
+});
+
+describe("P7c foreground resume rest source", () => {
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it("keeps the new rep-rest default at 3s and set rest at 10s", () => {
+    expect(defaultWorkoutSettings.restDuration).toBe(3);
+    expect(defaultWorkoutSettings.blockRestDuration).toBe(25);
+    expect(SET_REST_SECONDS).toBe(10);
+    expect(
+      phaseCountdownSeconds(
+        "rest",
+        { squeezeSeconds: 5 },
+        { restDuration: 3 },
+        false,
+      ),
+    ).toBe(3);
+    expect(
+      phaseCountdownSeconds(
+        "rest",
+        { squeezeSeconds: 5 },
+        { restDuration: 3 },
+        true,
+      ),
+    ).toBe(10);
+  });
+
+  it("recomputes rep rest from settings.restDuration, not segment.restSeconds", () => {
+    jest.useFakeTimers();
+    const workout = getFirstSessionWorkout();
+    const segments = workout.segments.map((segment) =>
+      segment.type === "slowHolds"
+        ? { ...segment, squeezeSeconds: 1, restSeconds: 8 }
+        : segment,
+    );
+    const engine = new WorkoutEngine(
+      { ...workout, segments },
+      silentCallbacks(),
+      { restDuration: 3, blockRestDuration: 25, cooldownEnabled: true },
+      1,
+    );
+    engine.start();
+    expect(engine.getState().secondsRemaining).toBe(1);
+    jest.advanceTimersByTime(1000);
+    expect(engine.getState().phase).toBe("rest");
+    expect(engine.getState().isSetRest).toBe(false);
+    expect(engine.getState().secondsRemaining).toBe(3);
+    engine.handleAppForeground();
+    expect(engine.getState().secondsRemaining).toBe(3);
+    engine.end();
+  });
+
+  it("keeps set rest at 10s on foreground", () => {
+    jest.useFakeTimers();
+    const workout = getFirstSessionWorkout();
+    const segment = {
+      ...workout.segments[1],
+      sets: 2,
+      repsPerSet: 1,
+      squeezeSeconds: 1,
+      restSeconds: 8,
+    };
+    const engine = new WorkoutEngine(
+      { ...workout, id: "set-rest-check", segments: [segment] },
+      silentCallbacks(),
+      { restDuration: 3, blockRestDuration: 25, cooldownEnabled: true },
+    );
+    engine.start();
+    jest.advanceTimersByTime(4000);
+    expect(engine.getState().isSetRest).toBe(true);
+    expect(engine.getState().phase).toBe("rest");
+    expect(engine.getState().secondsRemaining).toBe(10);
+    engine.handleAppForeground();
+    expect(engine.getState().secondsRemaining).toBe(10);
+    engine.end();
   });
 });
