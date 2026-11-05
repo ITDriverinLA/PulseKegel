@@ -1,3 +1,11 @@
+import {
+  getAttStatus,
+  getBuildChannel,
+  getLaunchType,
+  markColdLaunch,
+  markWarmResume,
+} from "../activationDiagnostics";
+
 jest.mock("react-native", () => ({
   Platform: { OS: "ios" },
   AppState: { currentState: "active" },
@@ -32,14 +40,6 @@ jest.mock("../storage", () => ({
     hasCompletedFirstSession: jest.fn(() => Promise.resolve(false)),
   },
 }));
-
-import {
-  getAttStatus,
-  getBuildChannel,
-  getLaunchType,
-  markColdLaunch,
-  markWarmResume,
-} from "../activationDiagnostics";
 
 describe("activation diagnostics", () => {
   it("starts cold and flips to warm on resume", () => {

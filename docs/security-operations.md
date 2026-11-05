@@ -35,6 +35,31 @@ and credentials before running it.
 - Weekly AI reviews accept bounded, validated workout data. They are limited to
   10 requests per IP per hour and 250 requests globally per hour.
 
+## Deploy schema
+
+The Replit deployment build (`.replit`) runs `npm run expo:static:build` and
+`node scripts/server-build.js`. It does not run `npm run db:push`.
+
+After the process starts listening, it runs this idempotent migration in the
+background on its own connection (`SET LOCAL statement_timeout` 5s and `lock_timeout` 2s inside a transaction, so the limits do not stick to the pooled client)
+so a locked `ALTER` cannot hold startup. The columns are nullable:
+
+```sql
+ALTER TABLE analytics_events ADD COLUMN IF NOT EXISTS device_model varchar(64);
+ALTER TABLE analytics_events ADD COLUMN IF NOT EXISTS display_class varchar(16);
+ALTER TABLE analytics_events ADD COLUMN IF NOT EXISTS window_width_bucket varchar(16);
+```
+
+If that migration cannot run, analytics inserts fall back to a legacy INSERT
+that does not name those columns, so older app versions keep recording events.
+A failed migration is logged and does not stop the process.
+
+`npm run db:push` is still the step that applies the full Drizzle schema
+(`shared/schema.ts`), including indexes and any table that is not created by
+the startup statements above. Run it against the production database after
+deploy whenever that schema changes (sync tables included). The startup ALTER
+only adds these three analytics columns.
+
 ## Cloud sync (Epic G1 Path A)
 
 Progress sync routes (`/api/sync/*`) require a Bearer token issued only after
@@ -62,4 +87,3 @@ is covered by an applicable US export exemption for this product. The flag is
 **not** a claim that the app uses only HTTPS/OS crypto — Path B uses AEAD for
 optional local transfer backups. Revisit this Info.plist value if encryption
 scope changes (e.g. new algorithms, server-side encryption of user content).
-

@@ -1,3 +1,5 @@
+import { __day2NudgeTestUtils } from "../challengeNudge";
+
 jest.mock("react-native", () => ({
   Platform: { OS: "ios" },
 }));
@@ -35,8 +37,6 @@ jest.mock("../notifications", () => ({
   getNotificationPermissionStatus: jest.fn(async () => "undetermined"),
   requestNotificationPermissionInstrumented: jest.fn(async () => false),
 }));
-
-import { __day2NudgeTestUtils } from "../challengeNudge";
 
 describe("challenge day2 nudge timing", () => {
   it("prefers next calendar morning when inside 20–28h window", () => {

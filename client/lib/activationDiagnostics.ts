@@ -23,6 +23,7 @@ import {
   trackPermissionPromptShown,
   trackPermissionResult,
 } from "./analytics";
+import { asAppState } from "./appState";
 import { storage } from "./storage";
 
 const FIRST_OPEN_PATH_KEY = "pulsekegel_first_open_path_sent";
@@ -133,7 +134,7 @@ export async function emitFirstOpenPathOnce(
       landing_route: landingRoute,
       onboarded_already: onboardedAlready,
       launch_type: getLaunchType(),
-      app_state: AppState.currentState,
+      app_state: asAppState(AppState.currentState),
       att_status: attStatus,
       ...(buildChannel ? { build_channel: buildChannel } : {}),
     });

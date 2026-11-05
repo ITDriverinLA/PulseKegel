@@ -1,3 +1,5 @@
+import { requestNotificationPermissionInstrumented } from "../notifications";
+
 jest.mock("react-native", () => ({
   Platform: { OS: "android" },
 }));
@@ -28,8 +30,6 @@ jest.mock("../storage", () => ({
 }));
 
 jest.mock("@/data/workoutProgram", () => ({ isRestDayForDate: () => false }));
-
-import { requestNotificationPermissionInstrumented } from "../notifications";
 
 describe("P2c push permission timing", () => {
   beforeEach(() => {

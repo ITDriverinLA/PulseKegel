@@ -35,6 +35,11 @@ const eventMetadata = {
   platform: z.enum(["ios", "android", "web", "windows", "macos"]).optional(),
   appVersion: z.string().trim().min(1).max(20).optional(),
   occurredAt: z.string().datetime({ offset: true }).optional(),
+  // P6: optional so events recorded before 2.2.5 still validate. New clients
+  // send all three on every event. No device id and no user-assigned name.
+  device_model: z.string().trim().min(1).max(64).optional(),
+  displayClass: z.enum(["compact", "regular"]).optional(),
+  windowWidthBucket: z.enum(["<500", "500-800", ">800"]).optional(),
 };
 
 const analyticsEventSchema = z.discriminatedUnion("type", [

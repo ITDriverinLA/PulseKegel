@@ -2156,7 +2156,10 @@ export const storage = {
     if (state.lastSessionDate === today) {
       return { state, rankUp: null, backOnTrack: false, gain: 0 };
     }
-    if (state.lastScoreUpdateDate < today) {
+    if (
+      state.lastScoreUpdateDate != null &&
+      state.lastScoreUpdateDate < today
+    ) {
       const yesterday = addDays(today, -1);
       let cursor = state.lastScoreUpdateDate;
       while (cursor < yesterday) {

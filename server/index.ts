@@ -1,6 +1,8 @@
 import express from "express";
 import type { Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
+import { pool } from "./db";
+import { ensureAnalyticsP6Columns } from "./analyticsIngest";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -22,7 +24,7 @@ function setupCors(app: express.Application) {
     }
 
     if (process.env.REPLIT_DOMAINS) {
-      process.env.REPLIT_DOMAINS.split(",").forEach((d) => {
+      process.env.REPLIT_DOMAINS.split(",").forEach((d: string) => {
         origins.add(`https://${d.trim()}`);
       });
     }
@@ -205,14 +207,15 @@ function configureExpoAndLanding(app: express.Application) {
   log("Expo routing: Checking expo-platform header on / and /manifest");
 }
 
-
 function setupApexHostRedirect(app: express.Application) {
   // Prefer a single host for indexing: 301 www → apex.
   app.use((req, res, next) => {
-    const raw =
-      req.header("x-forwarded-host") || req.get("host") || "";
+    const raw = req.header("x-forwarded-host") || req.get("host") || "";
     const host = raw.split(",")[0]?.trim().toLowerCase() || "";
-    if (host === "www.pulsekegel.com" || host.startsWith("www.pulsekegel.com:")) {
+    if (
+      host === "www.pulsekegel.com" ||
+      host.startsWith("www.pulsekegel.com:")
+    ) {
       const targetPath = req.originalUrl || "/";
       return res.redirect(301, `https://pulsekegel.com${targetPath}`);
     }
@@ -273,6 +276,9 @@ function setupErrorHandler(app: express.Application) {
     },
     () => {
       log(`express server serving on port ${port}`);
+      // Do not block listen on DDL. A lock wait is capped inside
+      // ensureAnalyticsP6Columns (statement_timeout / lock_timeout).
+      void ensureAnalyticsP6Columns(pool);
     },
   );
 })();

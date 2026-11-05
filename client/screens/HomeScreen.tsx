@@ -80,7 +80,7 @@ import {
   getExerciseTypesIn,
   SEGMENT_TYPE_LABEL,
 } from "@/data/controlModeWorkouts";
-import { didAppBecomeActive } from "@/lib/appState";
+import { asAppState, didAppBecomeActive } from "@/lib/appState";
 import { CloudSyncOptInModal } from "@/components/CloudSyncOptInModal";
 import {
   dismissCloudSyncPrompt,
@@ -103,7 +103,7 @@ export default function HomeScreen() {
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [showCloudOptIn, setShowCloudOptIn] = useState(false);
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
-  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
+  const appStateRef = useRef<AppStateStatus>(asAppState(AppState.currentState));
 
   useEffect(() => {
     if (!isFocused) return;

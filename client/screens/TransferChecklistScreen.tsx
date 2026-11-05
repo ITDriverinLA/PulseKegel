@@ -262,7 +262,7 @@ export default function TransferChecklistScreen() {
 
   return (
     <ScrollView
-      style={[styles.container, { backgroundColor: cp.background }]}
+      style={[styles.container, { backgroundColor: cp.bg }]}
       contentContainerStyle={{
         paddingTop: headerHeight + Spacing.md,
         paddingBottom: insets.bottom + Spacing.xl,

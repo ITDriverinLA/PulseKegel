@@ -4,7 +4,7 @@ import {
   Image,
   ScrollView,
   Pressable,
-  Dimensions,
+  useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -12,12 +12,17 @@ import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useThemePreference } from "@/contexts/ThemePreferenceContext";
 import { Spacing } from "@/constants/theme";
+import { READABLE_MAX_WIDTH } from "@/lib/windowLayout";
 
-const { width } = Dimensions.get("window");
 const IMAGE_ASPECT = 576 / 1024;
 
 export default function TechniqueGuideScreen() {
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const imageWidth = Math.min(
+    Math.max(width - insets.left - insets.right, 0),
+    READABLE_MAX_WIDTH,
+  );
   const navigation = useNavigation();
   const { cp } = useThemePreference();
 
@@ -31,6 +36,7 @@ export default function TechniqueGuideScreen() {
           styles.closeButton,
           {
             top: insets.top + Spacing.sm,
+            right: insets.right + Spacing.lg,
             backgroundColor: `${cp.cardBorder}CC`,
           },
         ]}
@@ -54,7 +60,10 @@ export default function TechniqueGuideScreen() {
       >
         <Image
           source={require("../../assets/images/find-the-target.png")}
-          style={[styles.image, { width, height: width / IMAGE_ASPECT }]}
+          style={[
+            styles.image,
+            { width: imageWidth, height: imageWidth / IMAGE_ASPECT },
+          ]}
           resizeMode="contain"
         />
       </ScrollView>
@@ -68,7 +77,6 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: "absolute",
-    right: Spacing.lg,
     zIndex: 10,
     width: 40,
     height: 40,

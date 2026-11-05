@@ -1,4 +1,13 @@
-jest.mock("react-native", () => ({ Platform: { OS: "android" } }));
+import { trackEvent, __resetDeviceIdForTests } from "../analytics";
+
+jest.mock("react-native", () => ({
+  Platform: { OS: "android" },
+  Dimensions: { get: () => ({ width: 466, height: 678 }) },
+}));
+jest.mock("expo-device", () => ({
+  modelId: null,
+  modelName: "Pixel 8",
+}));
 
 const store: Record<string, string> = {};
 jest.mock("@react-native-async-storage/async-storage", () => ({
@@ -27,8 +36,6 @@ jest.mock("../query-client", () => ({
   getApiUrl: () => "https://example.test",
 }));
 
-import { trackEvent, __resetDeviceIdForTests } from "../analytics";
-
 describe("P2.3 analytics device id", () => {
   it("concurrent first-launch events share one device id", async () => {
     __resetDeviceIdForTests();
@@ -48,5 +55,11 @@ describe("P2.3 analytics device id", () => {
     const ids = new Set(bodies.map((b) => JSON.parse(b).deviceId));
     expect(bodies).toHaveLength(3);
     expect(ids.size).toBe(1);
+    for (const body of bodies) {
+      const event = JSON.parse(body).events[0];
+      expect(event.device_model).toBe("Pixel 8");
+      expect(event.displayClass).toBe("compact");
+      expect(event.windowWidthBucket).toBe("<500");
+    }
   });
 });

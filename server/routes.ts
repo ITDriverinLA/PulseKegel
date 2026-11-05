@@ -15,6 +15,7 @@ import {
   requireAnalyticsReadAccess,
 } from "./security";
 import { analyticsBatchSchema, weeklyReviewSchema } from "./requestValidation";
+import { insertAnalyticsEvents, toAnalyticsRows } from "./analyticsIngest";
 import { registerSyncRoutes } from "./syncRoutes";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -563,16 +564,10 @@ ${blogUrls}
 
     const { deviceId, events } = parsedRequest.data;
     try {
-      const rows = events.map((event) => ({
-        deviceId,
-        eventType: event.type,
-        eventData: event.data,
-        platform: event.platform ?? null,
-        appVersion: event.appVersion ?? null,
-        // Server time is authoritative so clients cannot backdate analytics.
-        createdAt: new Date(),
-      }));
-      await db.insert(analyticsEvents).values(rows);
+      // Server time is authoritative so clients cannot backdate analytics.
+      // P6 columns are omitted unless this client sent them, and a missing
+      // column retries without them so a deploy before db:push still ingests.
+      await insertAnalyticsEvents(db, toAnalyticsRows(deviceId, events));
       res.json({ ok: true });
     } catch (err) {
       console.error("Analytics ingest error:", {

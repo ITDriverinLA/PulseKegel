@@ -32,6 +32,8 @@ import {
   ANIM_DURATION_MICRO_SETTLE,
 } from "@/constants/animation";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { asAppState } from "@/lib/appState";
+import { reduceSessionAppState } from "@/lib/sessionAppState";
 
 type SessionRoute = RouteProp<RootStackParamList, "BreathworkSession">;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -84,6 +86,10 @@ export default function BreathworkSessionScreen() {
   const currentPhaseClipRef = useRef<
     keyof typeof BREATHWORK_AUDIO_SOURCES | null
   >(null);
+  const appStateRef = useRef(asAppState(AppState.currentState));
+  const sessionSuspendedRef = useRef(
+    asAppState(AppState.currentState) === "background",
+  );
 
   const introPlayer = useAudioPlayer(
     BREATHWORK_AUDIO_SOURCES[config.introClip],
@@ -484,7 +490,7 @@ export default function BreathworkSessionScreen() {
       if (outroTimerRef.current) clearTimeout(outroTimerRef.current);
       if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
       if (clipPlayTimerRef.current) clearTimeout(clipPlayTimerRef.current);
-      sessionDepsRef.current.clearBreathHaptics();
+      sessionDepsRef.current?.clearBreathHaptics();
       isRunningRef.current = false;
     };
   }, []);
@@ -492,11 +498,21 @@ export default function BreathworkSessionScreen() {
   // Mount-only: resync countdown and resume audio when app returns to foreground.
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextState) => {
-      if (
-        nextState === "active" &&
-        sessionWallClockStartRef.current !== null &&
-        isRunningRef.current
-      ) {
+      const previous = appStateRef.current;
+      const next = reduceSessionAppState(
+        previous,
+        nextState,
+        sessionSuspendedRef.current,
+      );
+      sessionSuspendedRef.current = next.suspended;
+      appStateRef.current = nextState;
+
+      // Fold/unfold emits `inactive` while timers and audio keep running.
+      // Resyncing on that beat restarts clips and skips phases. Only a real
+      // background (JS was suspended) needs the wall-clock catch-up.
+      if (next.action !== "resume") return;
+
+      if (sessionWallClockStartRef.current !== null && isRunningRef.current) {
         const state = sessionStateRef.current;
         if (
           state === "breathing" ||
@@ -761,7 +777,12 @@ export default function BreathworkSessionScreen() {
     <View
       style={[
         styles.container,
-        { paddingTop: insets.top, backgroundColor: bwColors.bg_session },
+        {
+          paddingTop: insets.top,
+          paddingLeft: insets.left,
+          paddingRight: insets.right,
+          backgroundColor: bwColors.bg_session,
+        },
       ]}
     >
       <View style={styles.topBar}>

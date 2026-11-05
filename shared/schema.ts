@@ -39,6 +39,11 @@ export const analyticsEvents = pgTable(
     eventData: jsonb("event_data"),
     platform: varchar("platform", { length: 10 }),
     appVersion: varchar("app_version", { length: 20 }),
+    // P6: nullable so rows written before 2.2.5 stay valid. Summary queries
+    // do not read these columns, so existing summary fields stay unchanged.
+    deviceModel: varchar("device_model", { length: 64 }),
+    displayClass: varchar("display_class", { length: 16 }),
+    windowWidthBucket: varchar("window_width_bucket", { length: 16 }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [

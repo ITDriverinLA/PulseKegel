@@ -1,3 +1,10 @@
+import {
+  decryptBackupPayload,
+  encryptBackupPayload,
+  looksLikeEncryptedBackup,
+  MIN_PASSPHRASE_LENGTH,
+} from "../backupCrypto";
+
 jest.mock("expo-crypto", () => {
   const nodeCrypto = require("node:crypto") as typeof import("node:crypto");
   return {
@@ -10,13 +17,6 @@ jest.mock("expo-crypto", () => {
     ),
   };
 });
-
-import {
-  decryptBackupPayload,
-  encryptBackupPayload,
-  looksLikeEncryptedBackup,
-  MIN_PASSPHRASE_LENGTH,
-} from "../backupCrypto";
 
 describe("backupCrypto (PKB2 AES-GCM)", () => {
   it("roundtrips encrypt → decrypt", async () => {

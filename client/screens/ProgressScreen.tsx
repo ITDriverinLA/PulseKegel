@@ -573,6 +573,7 @@ export default function ProgressScreen() {
         totalMinutes={progress?.totalMinutes || 0}
         anatomyType={settings.anatomyType}
         userName={settings.userName}
+        currentStreak={progress?.currentStreak ?? 0}
         onMessageReady={setPendingReviewMessage}
       />
     </View>

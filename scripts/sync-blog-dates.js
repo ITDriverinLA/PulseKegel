@@ -90,7 +90,9 @@ function jsonLdDatePublished(content) {
  */
 function resolveDate(filePath, content, forceDate = null) {
   if (forceDate) return forceDate;
-  return gitLastCommitDate(filePath) || jsonLdDateModified(content) || todayUtc();
+  return (
+    gitLastCommitDate(filePath) || jsonLdDateModified(content) || todayUtc()
+  );
 }
 
 function setLastmodComment(content, date) {
@@ -104,14 +106,14 @@ function setLastmodComment(content, date) {
 function setJsonLdDateModified(content, date) {
   return content.replace(
     /("dateModified"\s*:\s*")(\d{4}-\d{2}-\d{2})(")/g,
-    `$1${date}$3`
+    `$1${date}$3`,
   );
 }
 
 function setJsonLdDatePublished(content, date) {
   return content.replace(
     /("datePublished"\s*:\s*")(\d{4}-\d{2}-\d{2})(")/g,
-    `$1${date}$3`
+    `$1${date}$3`,
   );
 }
 
@@ -135,13 +137,13 @@ function syncFile(filePath, forceDate = null) {
   content = setJsonLdDateModified(content, date);
 
   const publishedDate =
-    gitFirstCommitDate(filePath) ||
-    jsonLdDatePublished(content) ||
-    date;
+    gitFirstCommitDate(filePath) || jsonLdDatePublished(content) || date;
   content = setJsonLdDatePublished(content, publishedDate);
 
   fs.writeFileSync(filePath, content, "utf-8");
-  console.log(`synced  ${basename}  →  lastmod:${date}  datePublished:${publishedDate}`);
+  console.log(
+    `synced  ${basename}  →  lastmod:${date}  datePublished:${publishedDate}`,
+  );
 }
 
 /**

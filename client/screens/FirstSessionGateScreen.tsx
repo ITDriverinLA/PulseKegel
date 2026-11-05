@@ -4,10 +4,10 @@ import {
   View,
   Text,
   Pressable,
-  Dimensions,
   BackHandler,
   Platform,
   ToastAndroid,
+  useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -22,6 +22,7 @@ import Animated, {
 import * as Crypto from "expo-crypto";
 
 import { Spacing, BorderRadius } from "@/constants/theme";
+import { contentInsets, readableColumn } from "@/lib/windowLayout";
 import { DAY1_BACK_TOAST } from "@/constants/day1Copy";
 import {
   ANIM_DURATION_MICRO,
@@ -79,7 +80,34 @@ const BG_GRADIENT: [string, string, string, string] = [
   "#070818",
 ];
 
-const { width } = Dimensions.get("window");
+function GateScreen({
+  insets,
+  centered,
+  children,
+}: {
+  insets: { top: number; bottom: number; left: number; right: number };
+  centered?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <View style={styles.root}>
+      <LinearGradient colors={BG_GRADIENT} style={StyleSheet.absoluteFill} />
+      <View
+        style={[
+          styles.readable,
+          centered ? styles.centered : null,
+          contentInsets(insets, {
+            top: 24,
+            bottom: 24,
+            horizontal: Spacing.xl,
+          }),
+        ]}
+      >
+        {children}
+      </View>
+    </View>
+  );
+}
 
 export default function FirstSessionGateScreen({
   onUnlocked,
@@ -88,6 +116,8 @@ export default function FirstSessionGateScreen({
   completed_steps,
 }: FirstSessionGateScreenProps) {
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const ringSize = Math.min(width * 0.28, 120);
   const navigation = useNavigation<NavigationProp>();
   const isFocused = useIsFocused();
   const [source, setSource] = useState<FirstSessionGateSource>("cold_open");
@@ -419,18 +449,7 @@ export default function FirstSessionGateScreen({
 
   if (celebrating) {
     return (
-      <View
-        style={[
-          styles.root,
-          styles.centered,
-          {
-            paddingTop: insets.top + 24,
-            paddingBottom: insets.bottom + 24,
-            paddingHorizontal: Spacing.xl,
-          },
-        ]}
-      >
-        <LinearGradient colors={BG_GRADIENT} style={StyleSheet.absoluteFill} />
+      <GateScreen insets={insets} centered>
         <View style={styles.badge}>
           <Feather name="check-circle" size={42} color={BLUE} />
         </View>
@@ -478,24 +497,13 @@ export default function FirstSessionGateScreen({
           }}
           testID="button-first-session-celebration-continue"
         />
-      </View>
+      </GateScreen>
     );
   }
 
   if (resume) {
     return (
-      <View
-        style={[
-          styles.root,
-          {
-            paddingTop: insets.top + 24,
-            paddingBottom: insets.bottom + 24,
-            paddingHorizontal: Spacing.xl,
-          },
-        ]}
-      >
-        <LinearGradient colors={BG_GRADIENT} style={StyleSheet.absoluteFill} />
-
+      <GateScreen insets={insets}>
         <View style={styles.header}>
           <Text style={styles.logoText}>
             <Text style={{ color: TEXT }}>PULSE</Text>
@@ -505,7 +513,7 @@ export default function FirstSessionGateScreen({
         </View>
 
         <View style={styles.body}>
-          <View style={styles.ring}>
+          <View style={[styles.ring, { width: ringSize, height: ringSize }]}>
             <Feather name="play-circle" size={36} color={BLUE} />
           </View>
           <Text style={styles.headline}>Continue where you left off</Text>
@@ -548,23 +556,12 @@ export default function FirstSessionGateScreen({
             </Pressable>
           </>
         )}
-      </View>
+      </GateScreen>
     );
   }
 
   return (
-    <View
-      style={[
-        styles.root,
-        {
-          paddingTop: insets.top + 24,
-          paddingBottom: insets.bottom + 24,
-          paddingHorizontal: Spacing.xl,
-        },
-      ]}
-    >
-      <LinearGradient colors={BG_GRADIENT} style={StyleSheet.absoluteFill} />
-
+    <GateScreen insets={insets}>
       <View style={styles.header}>
         <Text style={styles.logoText}>
           <Text style={{ color: TEXT }}>PULSE</Text>
@@ -574,7 +571,7 @@ export default function FirstSessionGateScreen({
       </View>
 
       <View style={styles.body}>
-        <View style={styles.ring}>
+        <View style={[styles.ring, { width: ringSize, height: ringSize }]}>
           <Feather name="play" size={36} color={BLUE} />
         </View>
         <Text style={styles.headline}>Start your first session</Text>
@@ -604,7 +601,7 @@ export default function FirstSessionGateScreen({
           Moving from another phone? Restore progress
         </Text>
       </Pressable>
-    </View>
+    </GateScreen>
   );
 }
 
@@ -653,6 +650,10 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
   },
+  readable: {
+    flex: 1,
+    ...readableColumn,
+  },
   centered: {
     justifyContent: "center",
   },
@@ -680,8 +681,6 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   ring: {
-    width: Math.min(width * 0.28, 120),
-    height: Math.min(width * 0.28, 120),
     borderRadius: 999,
     borderWidth: 2,
     borderColor: BLUE,

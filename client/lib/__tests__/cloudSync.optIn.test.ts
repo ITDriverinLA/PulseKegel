@@ -1,5 +1,21 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import {
+  canUploadProgress,
+  enableCloudSyncOptIn,
+  isCloudSyncOptedIn,
+  pushProgressIfOptedIn,
+  setCloudAuthSession,
+  shouldShowCloudSyncPrompt,
+  _resetCloudSyncPrefsForTests,
+  resetStaleCloudOptInIfUnconfigured,
+} from "../cloudSync";
+import { trackEvent } from "../analytics";
+import {
+  isCloudSignInConfigured,
+  shouldShowCloudSyncSection,
+} from "../cloudAuth";
+
 jest.mock("react-native", () => ({
   Platform: { OS: "ios" },
 }));
@@ -72,22 +88,6 @@ jest.mock("../progressTransfer", () => ({
   buildTransferPayload: jest.fn(),
   applyTransferPayload: jest.fn(),
 }));
-
-import {
-  canUploadProgress,
-  enableCloudSyncOptIn,
-  isCloudSyncOptedIn,
-  pushProgressIfOptedIn,
-  setCloudAuthSession,
-  shouldShowCloudSyncPrompt,
-  _resetCloudSyncPrefsForTests,
-  resetStaleCloudOptInIfUnconfigured,
-} from "../cloudSync";
-import { trackEvent } from "../analytics";
-import {
-  isCloudSignInConfigured,
-  shouldShowCloudSyncSection,
-} from "../cloudAuth";
 
 const store = (AsyncStorage as unknown as { __store: Map<string, string> })
   .__store;

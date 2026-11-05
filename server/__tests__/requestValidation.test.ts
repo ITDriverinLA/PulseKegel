@@ -19,6 +19,37 @@ describe("analyticsBatchSchema", () => {
     expect(result.success).toBe(true);
   });
 
+  it("accepts P6 device context and still accepts events without it", () => {
+    const withContext = analyticsBatchSchema.safeParse({
+      deviceId,
+      events: [
+        {
+          type: "app_open",
+          data: {},
+          platform: "ios",
+          appVersion: "2.2.5",
+          device_model: "iPhone18,1",
+          displayClass: "regular",
+          windowWidthBucket: "500-800",
+        },
+      ],
+    });
+    expect(withContext.success).toBe(true);
+
+    const legacy = analyticsBatchSchema.safeParse({
+      deviceId,
+      events: [
+        {
+          type: "session_started",
+          data: { workoutType: "daily", weekNumber: 1, dayNumber: 1 },
+          platform: "android",
+          appVersion: "2.2.4",
+        },
+      ],
+    });
+    expect(legacy.success).toBe(true);
+  });
+
   it.each([
     {
       type: "session_complete",

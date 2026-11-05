@@ -3,7 +3,6 @@ import {
   StyleSheet,
   View,
   Image,
-  Dimensions,
   Pressable,
   ScrollView,
   Text,
@@ -12,6 +11,7 @@ import {
   AppStateStatus,
   BackHandler,
   Platform,
+  useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -27,8 +27,13 @@ import {
 import { Feather } from "@expo/vector-icons";
 
 import { Spacing, BorderRadius } from "@/constants/theme";
+import {
+  contentInsets,
+  heroResizeMode,
+  readableColumn,
+} from "@/lib/windowLayout";
 import { storage, AnatomyType } from "@/lib/storage";
-import { didAppBecomeActive } from "@/lib/appState";
+import { asAppState, didAppBecomeActive } from "@/lib/appState";
 import { DAY1_ONBOARDING_DURATION_LINE } from "@/constants/day1Copy";
 import {
   onboardingBackAction,
@@ -47,8 +52,6 @@ import {
 interface OnboardingScreenProps {
   onComplete: () => void;
 }
-
-const { width, height } = Dimensions.get("window");
 
 const HERO_COMBINED = require("../assets/images/onboarding/hero-combined.jpg");
 const MAN_HERO = require("../assets/images/onboarding/male-hero.jpg");
@@ -86,7 +89,7 @@ export default function OnboardingScreen({
   const lastScreenKeyRef = useRef<OnboardingScreenKey>("welcome");
   const lastIndexRef = useRef(0);
   const completedRef = useRef(false);
-  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
+  const appStateRef = useRef<AppStateStatus>(asAppState(AppState.currentState));
   const abandonedTrackedRef = useRef(false);
 
   const screenKey = ONBOARDING_SCREEN_KEYS[stepIndex];
@@ -145,7 +148,8 @@ export default function OnboardingScreen({
   useEffect(() => {
     const sub = AppState.addEventListener("change", (next) => {
       const prev = appStateRef.current;
-      const leaving = prev === "active" && !!next.match(/inactive|background/);
+      // A fold is `inactive`, not a leave. Logging abandon there skews the funnel.
+      const leaving = next === "background" && prev !== "background";
       if (leaving && !completedRef.current && !abandonedTrackedRef.current) {
         abandonedTrackedRef.current = true;
         trackOnboardingAbandoned({
@@ -303,11 +307,12 @@ function WelcomeScreen({
   onContinue: () => void;
   stepIndex: number;
 }) {
+  const { width, height } = useWindowDimensions();
   return (
     <View
       style={[
         styles.screen,
-        { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16 },
+        contentInsets(insets, { top: 16, bottom: 16, horizontal: Spacing.xl }),
       ]}
     >
       <View style={styles.genderHeader}>
@@ -322,7 +327,7 @@ function WelcomeScreen({
         <Image
           source={HERO_COMBINED}
           style={styles.genderHeroImage}
-          resizeMode="cover"
+          resizeMode={heroResizeMode(width, height)}
         />
       </View>
 
@@ -366,7 +371,7 @@ function AnatomyScreen({
     <View
       style={[
         styles.screen,
-        { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16 },
+        contentInsets(insets, { top: 16, bottom: 16, horizontal: Spacing.xl }),
       ]}
     >
       <View style={styles.genderHeader}>
@@ -434,10 +439,23 @@ function StartScreen({
   stepIndex: number;
 }) {
   const isMale = gender !== "female";
-  const HERO_H = Math.min(height * 0.42, 360);
+  const { width, height } = useWindowDimensions();
+  const contained = heroResizeMode(width, height) === "contain";
+  const HERO_H = contained
+    ? Math.min(height * 0.32, 240)
+    : Math.min(height * 0.42, 360);
 
   return (
-    <View style={[styles.screenFlush, { paddingBottom: insets.bottom + 16 }]}>
+    <View
+      style={[
+        styles.screenFlush,
+        {
+          paddingBottom: insets.bottom + 16,
+          paddingLeft: insets.left,
+          paddingRight: insets.right,
+        },
+      ]}
+    >
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: 12 }}
@@ -620,10 +638,11 @@ const styles = StyleSheet.create({
   },
   screen: {
     flex: 1,
-    paddingHorizontal: Spacing.xl,
+    ...readableColumn,
   },
   screenFlush: {
     flex: 1,
+    ...readableColumn,
   },
   logoText: {
     fontSize: 22,
@@ -726,7 +745,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   ctaHeroContainer: {
-    width,
+    width: "100%",
     overflow: "hidden",
   },
   ctaLogoOverlay: {

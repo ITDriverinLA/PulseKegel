@@ -3,10 +3,10 @@ import {
   StyleSheet,
   View,
   Image,
-  Dimensions,
   Pressable,
   ScrollView,
   Text,
+  useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -19,13 +19,12 @@ import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
 import { Spacing, BorderRadius } from "@/constants/theme";
+import { heroResizeMode, readableColumn } from "@/lib/windowLayout";
 import { storage, AnatomyType } from "@/lib/storage";
 import {
   ANIM_DURATION_RESET_FAST,
   ANIM_DURATION_MICRO,
 } from "@/constants/animation";
-
-const { height } = Dimensions.get("window");
 
 const MALE_STEP1 = require("../assets/images/onboarding/male-anatomy-step1.jpg");
 const MALE_STEP2 = require("../assets/images/onboarding/male-anatomy-step2.jpg");
@@ -88,6 +87,8 @@ export default function KegelsGuideScreen() {
         },
       ];
 
+  const { width, height } = useWindowDimensions();
+  const imageMode = heroResizeMode(width, height);
   const STEP_IMAGE_H = Math.min(height * 0.2, 160);
 
   const scale = useSharedValue(1);
@@ -109,7 +110,16 @@ export default function KegelsGuideScreen() {
       colors={["#07081A", "#0A0B22", "#0D0E28", "#070818"]}
       style={styles.container}
     >
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+      <View
+        style={[
+          styles.header,
+          {
+            paddingTop: insets.top + 8,
+            paddingLeft: insets.left + Spacing.lg,
+            paddingRight: insets.right + Spacing.lg,
+          },
+        ]}
+      >
         <Pressable
           onPress={() => navigation.goBack()}
           style={styles.closeButton}
@@ -123,7 +133,11 @@ export default function KegelsGuideScreen() {
         style={{ flex: 1 }}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: insets.bottom + 24 },
+          {
+            paddingBottom: insets.bottom + 24,
+            paddingLeft: insets.left + Spacing.xl,
+            paddingRight: insets.right + Spacing.xl,
+          },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -176,7 +190,7 @@ export default function KegelsGuideScreen() {
             <Image
               source={s.image}
               style={[styles.stepImage, { height: STEP_IMAGE_H }]}
-              resizeMode="cover"
+              resizeMode={imageMode}
             />
             <View style={styles.stepBody}>
               <View
@@ -245,7 +259,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingHorizontal: Spacing.lg,
     paddingBottom: 8,
     flexDirection: "row",
     justifyContent: "flex-end",
@@ -261,8 +274,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   scrollContent: {
-    paddingHorizontal: Spacing.xl,
     gap: 16,
+    ...readableColumn,
   },
   headline: {
     fontSize: 28,

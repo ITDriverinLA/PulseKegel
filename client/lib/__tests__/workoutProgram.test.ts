@@ -1,5 +1,5 @@
-import { isRestDayForDate } from "@/data/workoutProgram";
 import {
+  isRestDayForDate,
   describeFirstSessionLengthChange,
   FIRST_SESSION_VARIANT_SHORT_DAY1,
   getFirstSessionPlannedSteps,
