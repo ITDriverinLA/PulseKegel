@@ -443,19 +443,17 @@ const BRAND_HEADER = `<header class="pk-header">
 const BRAND_FOOTER = `<footer class="pk-footer">
     <div class="pk-footer-links">
       <a href="/blog">Back to Blog</a>
-      <a href="https://apps.apple.com/app/pulsekegel/id6741057595" target="_blank" rel="noopener">Download on the App Store</a>
+      <a href="https://apps.apple.com/us/app/pulsekegel/id6758308054" target="_blank" rel="noopener">Download on the App Store</a>
     </div>
     <p class="pk-footer-copy">&copy; 2026 PulseKegel. All rights reserved. · Founded by <a href="https://ashley-mason.com/">Ashley Mason</a></p>
   </footer>`;
 
 const BLOG_KEGEL_MEN_FILE = "kegel-exercises-for-men.html";
-const DEAD_APP_STORE_URL = "https://apps.apple.com/app/pulsekegel/id6741057595";
 const BLOG_KEGEL_MEN_APP_STORE_URL =
   "https://apps.apple.com/us/app/pulsekegel/id6758308054?ct=blog-kegel-men";
 
 function applyKegelMenStoreLinks(filename, html) {
   if (filename !== BLOG_KEGEL_MEN_FILE) return html;
-  html = html.split(DEAD_APP_STORE_URL).join(BLOG_KEGEL_MEN_APP_STORE_URL);
   return html.replace(
     /https:\/\/apps\.apple\.com\/(?:us\/)?app\/pulsekegel\/id6758308054(?![^"\s]*ct=blog-kegel-men)/g,
     BLOG_KEGEL_MEN_APP_STORE_URL,
@@ -677,12 +675,14 @@ async function buildBlog() {
   const onlyFile = getOnlyFilename();
   console.log(onlyFile ? `Building blog (${onlyFile})...` : "Building blog...");
 
+  const skipSync = process.argv.includes("--no-sync");
+
   if (onlyFile) {
     const onlyPath = path.join(SOURCE_DIR, onlyFile);
     if (!fs.existsSync(onlyPath)) {
       throw new Error(`Blog source not found: ${onlyPath}`);
     }
-  } else {
+  } else if (!skipSync) {
     console.log("Syncing lastmod dates...");
     syncAll();
   }
