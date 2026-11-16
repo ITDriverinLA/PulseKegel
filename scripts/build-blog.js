@@ -448,6 +448,20 @@ const BRAND_FOOTER = `<footer class="pk-footer">
     <p class="pk-footer-copy">&copy; 2026 PulseKegel. All rights reserved. · Founded by <a href="https://ashley-mason.com/">Ashley Mason</a></p>
   </footer>`;
 
+const BLOG_KEGEL_MEN_FILE = "kegel-exercises-for-men.html";
+const DEAD_APP_STORE_URL = "https://apps.apple.com/app/pulsekegel/id6741057595";
+const BLOG_KEGEL_MEN_APP_STORE_URL =
+  "https://apps.apple.com/us/app/pulsekegel/id6758308054?ct=blog-kegel-men";
+
+function applyKegelMenStoreLinks(filename, html) {
+  if (filename !== BLOG_KEGEL_MEN_FILE) return html;
+  html = html.split(DEAD_APP_STORE_URL).join(BLOG_KEGEL_MEN_APP_STORE_URL);
+  return html.replace(
+    /https:\/\/apps\.apple\.com\/(?:us\/)?app\/pulsekegel\/id6758308054(?![^"\s]*ct=blog-kegel-men)/g,
+    BLOG_KEGEL_MEN_APP_STORE_URL,
+  );
+}
+
 function applyBrandStyling(html) {
   if (!html.includes('<link rel="icon"')) {
     const inject = html.includes("plausible.io/js")
@@ -542,6 +556,7 @@ function processFile(filename, strictErrors) {
   html = ensureOgTags(html, metaTitle || headline, description || "", fullUrl);
   html = ensureBreadcrumbSchema(html, headline, slug);
   html = applyBrandStyling(html);
+  html = applyKegelMenStoreLinks(filename, html);
 
   fs.writeFileSync(outputPath, html);
   console.log(`  ${filename} → processed`);
@@ -648,17 +663,37 @@ function invalidateSitemapCache() {
   });
 }
 
-async function buildBlog() {
-  console.log("Building blog...");
+function getOnlyFilename() {
+  const idx = process.argv.indexOf("--only");
+  if (idx === -1) return null;
+  const value = process.argv[idx + 1];
+  if (!value || value.startsWith("--")) {
+    throw new Error("Usage: node scripts/build-blog.js --only <filename.html>");
+  }
+  return path.basename(value);
+}
 
-  console.log("Syncing lastmod dates...");
-  syncAll();
+async function buildBlog() {
+  const onlyFile = getOnlyFilename();
+  console.log(onlyFile ? `Building blog (${onlyFile})...` : "Building blog...");
+
+  if (onlyFile) {
+    const onlyPath = path.join(SOURCE_DIR, onlyFile);
+    if (!fs.existsSync(onlyPath)) {
+      throw new Error(`Blog source not found: ${onlyPath}`);
+    }
+  } else {
+    console.log("Syncing lastmod dates...");
+    syncAll();
+  }
 
   if (!fs.existsSync(OUTPUT_DIR)) {
     fs.mkdirSync(OUTPUT_DIR, { recursive: true });
   }
 
-  const files = fs.readdirSync(SOURCE_DIR).filter((f) => f.endsWith(".html"));
+  const files = onlyFile
+    ? [onlyFile]
+    : fs.readdirSync(SOURCE_DIR).filter((f) => f.endsWith(".html"));
 
   const strictErrors = [];
   for (const file of files) {
