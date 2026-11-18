@@ -421,6 +421,9 @@ export default function HomeScreen() {
         : (todaysWorkout?.week.phaseDescription ?? "");
 
   const handleDay2NudgeStart = async () => {
+    // Rev L7: a tap within the 2s seen-window still counts as seen, so the
+    // funnel never shows tapped > shown. Deduped per local day.
+    await markInAppDay2NudgeRendered();
     trackChallengeDay2NudgeTapped({ channel: "in_app" });
     setShowDay2Nudge(false);
     await cancelChallengeDay2Nudge();
