@@ -27,18 +27,28 @@ import {
   useThemePreference,
 } from "@/contexts/ThemePreferenceContext";
 import { StartupProvider, useStartup } from "@/contexts/StartupContext";
-import { scheduleDailyReminder } from "@/lib/notifications";
+import {
+  migrateLegacyDailyReminders,
+  scheduleDailyReminder,
+} from "@/lib/notifications";
 import { trackAppOpen, trackChallengeDay2NudgeTapped } from "@/lib/analytics";
 import { markColdLaunch, markWarmResume } from "@/lib/activationDiagnostics";
 import {
   cancelChallengeDay2Nudge,
-  markPushDay2NudgeShown,
+  cancelChallengeDay3Push,
+  claimNotificationResponse,
+  reconcileChallengeDay3Push,
+  reportDay2NudgeFirePassed,
+  reportDay2NudgeReceived,
 } from "@/lib/challengeNudge";
 import { storage } from "@/lib/storage";
 import { getWeek1WorkoutForDayIndex } from "@/data/workoutProgram";
 import { asAppState, didAppBecomeActive } from "@/lib/appState";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+// P8.1.6: notification responses already handled in this process.
+const handledResponseKeys = new Set<string>();
 
 markColdLaunch();
 
@@ -58,9 +68,16 @@ async function openChallengeDay(
   week: number,
   day: number,
   channel: "push" | "in_app",
+  followupDay?: 3,
 ) {
-  trackChallengeDay2NudgeTapped({ channel });
-  await cancelChallengeDay2Nudge();
+  if (followupDay === 3) {
+    // P8 Phase B Day-3 push (rest-day paths): same tap handling as Day 2.
+    trackChallengeDay2NudgeTapped({ channel, followup_day: 3 });
+    await cancelChallengeDay3Push();
+  } else {
+    trackChallengeDay2NudgeTapped({ channel });
+    await cancelChallengeDay2Nudge();
+  }
 
   if (!navigation) return;
   const hasFirst = await storage.hasCompletedFirstSession();
@@ -90,6 +107,9 @@ function AppContent() {
   useEffect(() => {
     (async () => {
       try {
+        // P8.2: one-time cleanup of legacy unidentified daily reminders,
+        // then (re)schedule with the fixed id.
+        await migrateLegacyDailyReminders();
         if (initialSettings.reminderEnabled) {
           await scheduleDailyReminder(initialSettings.reminderTime);
         }
@@ -118,6 +138,7 @@ function AppContent() {
     const onChange = (next: AppStateStatus) => {
       if (didAppBecomeActive(appStateRef.current, next)) {
         markWarmResume();
+        void reportDay2NudgeFirePassed();
       }
       appStateRef.current = next;
     };
@@ -126,29 +147,63 @@ function AppContent() {
   }, []);
 
   useEffect(() => {
-    const handleResponse = (response: Notifications.NotificationResponse) => {
+    const handleResponse = async (
+      response: Notifications.NotificationResponse,
+    ) => {
       const data = response.notification.request.content.data as {
         screen?: string;
         week?: number;
         day?: number;
         nudge?: string;
+        followup_day?: number;
       };
       if (data?.nudge === "day2" || data?.screen === "ChallengeDay") {
-        void markPushDay2NudgeShown();
-        void openChallengeDay(
+        // P8.1.6: getLastNotificationResponseAsync replays the last tap on
+        // every cold launch. Handle each response once (id + fire date).
+        const key = `${response.notification.request.identifier}|${response.notification.date}`;
+        // Same-process double delivery (response listener + getLast on a
+        // cold launch): a synchronous in-memory check catches it before any
+        // await. The persisted atomic claim covers later cold launches.
+        if (handledResponseKeys.has(key)) return;
+        handledResponseKeys.add(key);
+        if (!(await claimNotificationResponse(key))) return;
+        try {
+          await Notifications.clearLastNotificationResponseAsync();
+        } catch {}
+        // P8.1.5: a tap is a tap; push "shown" is no longer logged here.
+        await openChallengeDay(
           navigationRef.current,
           Number(data.week) || 1,
           Number(data.day) || 2,
           "push",
+          data.nudge === "followup" && data.followup_day === 3 ? 3 : undefined,
         );
       }
     };
 
-    const sub =
-      Notifications.addNotificationResponseReceivedListener(handleResponse);
+    // P8.1.4: report a passed fire time once per open, then drop the
+    // Day-3 push if Day 3 is already complete.
+    void reportDay2NudgeFirePassed().then(() => reconcileChallengeDay3Push());
+
+    const receivedSub = Notifications.addNotificationReceivedListener(
+      (notification) => {
+        void reportDay2NudgeReceived(
+          notification.request.content.data as {
+            nudge?: unknown;
+            followup_day?: unknown;
+          },
+        );
+      },
+    );
+
+    const sub = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        void handleResponse(response);
+      },
+    );
     Notifications.getLastNotificationResponseAsync()
       .then((response) => {
-        if (response) handleResponse(response);
+        if (response) void handleResponse(response);
       })
       .catch(() => {});
 
@@ -180,6 +235,7 @@ function AppContent() {
 
     return () => {
       sub.remove();
+      receivedSub.remove();
       linkSub.remove();
     };
   }, []);

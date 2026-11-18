@@ -74,6 +74,10 @@ const STORAGE_KEYS = {
   SEGMENT_TYPE_HISTORY: "pulsekegel_segment_type_history",
   CHALLENGE_DAY2_NUDGE_SCHEDULED: "pulsekegel_challenge_day2_nudge_scheduled",
   CHALLENGE_DAY2_IN_APP_NUDGE: "pulsekegel_challenge_day2_in_app_nudge",
+  // P8 Phase B: Day-2 nudge timing / delivery bookkeeping (JSON).
+  CHALLENGE_DAY2_NUDGE_STATE: "pulsekegel_challenge_day2_nudge_state",
+  // P8.2: one-time removal of legacy (unidentified) daily reminders.
+  DAILY_REMINDER_ID_MIGRATED: "pulsekegel_daily_reminder_id_migrated",
   CHALLENGE_DAYS_STARTED: "pulsekegel_challenge_days_started",
   CHALLENGE_DAYS_COMPLETED: "pulsekegel_challenge_days_completed",
   CHALLENGE_DAY_VIEWED: "pulsekegel_challenge_day_viewed",
@@ -219,6 +223,30 @@ const levelToPath = (level: CalibrationLevel): DifficultyPath =>
     : level === "tooHard"
       ? "gentle"
       : "standard";
+
+/** P8 Phase B: Day-2 nudge bookkeeping. Dates are local YYYY-MM-DD. */
+export interface ChallengeDay2NudgeState {
+  /** Local date after Day-1 completion; the banner shows on/after this day. */
+  eligibleFromLocalDate?: string;
+  /** Local date the in-app banner last logged "shown" (once per day). */
+  lastShownLocalDate?: string;
+  /** Banner seen (visible on focused Home for a moment); leaving Home now clears it. */
+  renderedOnEligibleDay?: boolean;
+  /** Scheduled Day-2 push, for foreground-receipt / fire-passed events. */
+  push?: {
+    fireAt: string;
+    receivedLogged?: boolean;
+    firePassedLogged?: boolean;
+  } | null;
+  /** Scheduled Day-3 push (rest-day paths), same bookkeeping as `push`. */
+  followupD3?: {
+    fireAt: string;
+    receivedLogged?: boolean;
+    firePassedLogged?: boolean;
+  } | null;
+  /** Last handled notification response, so a cold-launch replay is ignored. */
+  lastHandledResponseKey?: string;
+}
 
 export interface WeeklyReviewEntry {
   weekNumber: number;
@@ -419,6 +447,9 @@ const runScoreSerialized = <T>(fn: () => Promise<T>): Promise<T> => {
   scoreWriteQueue = next.catch(() => undefined);
   return next;
 };
+
+// Serializes writes to the P8 Day-2 nudge state (see mutateChallengeDay2NudgeState).
+let nudgeStateChain: Promise<unknown> = Promise.resolve();
 
 export const storage = {
   async getCompletedDates(): Promise<string[]> {
@@ -1784,6 +1815,83 @@ export const storage = {
     }
   },
 
+  async getChallengeDay2NudgeState(): Promise<ChallengeDay2NudgeState> {
+    try {
+      const raw = await AsyncStorage.getItem(
+        STORAGE_KEYS.CHALLENGE_DAY2_NUDGE_STATE,
+      );
+      const parsed = raw ? JSON.parse(raw) : {};
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch {
+      return {};
+    }
+  },
+
+  /**
+   * Atomic read-modify-write of the Day-2 nudge state. Every write to this
+   * key goes through one module-level promise chain, so concurrent callers
+   * (cold-launch tap + fire-passed check, Home render + blur) never lose
+   * each other's fields. `fn` sees the latest state and returns an optional
+   * patch plus a result. Do not call other nudge-state writers inside `fn`.
+   */
+  mutateChallengeDay2NudgeState<T>(
+    fn: (state: ChallengeDay2NudgeState) => {
+      patch?: Partial<ChallengeDay2NudgeState>;
+      result: T;
+    },
+  ): Promise<T> {
+    const run = nudgeStateChain.then(async () => {
+      const current = await this.getChallengeDay2NudgeState();
+      const { patch, result } = fn(current);
+      if (patch) {
+        try {
+          await AsyncStorage.setItem(
+            STORAGE_KEYS.CHALLENGE_DAY2_NUDGE_STATE,
+            JSON.stringify({ ...current, ...patch }),
+          );
+        } catch (error) {
+          console.error("Error saving day2 nudge state:", error);
+        }
+      }
+      return result;
+    });
+    nudgeStateChain = run.catch(() => undefined);
+    return run;
+  },
+
+  /** Serialized merge of `patch` into the Day-2 nudge state. */
+  updateChallengeDay2NudgeState(
+    patch: Partial<ChallengeDay2NudgeState>,
+  ): Promise<ChallengeDay2NudgeState> {
+    return this.mutateChallengeDay2NudgeState((state) => ({
+      patch,
+      result: { ...state, ...patch },
+    }));
+  },
+
+  async isDailyReminderIdMigrated(): Promise<boolean> {
+    try {
+      return (
+        (await AsyncStorage.getItem(
+          STORAGE_KEYS.DAILY_REMINDER_ID_MIGRATED,
+        )) === "true"
+      );
+    } catch {
+      return false;
+    }
+  },
+
+  async markDailyReminderIdMigrated(): Promise<void> {
+    try {
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.DAILY_REMINDER_ID_MIGRATED,
+        "true",
+      );
+    } catch (error) {
+      console.error("Error marking daily reminder migration:", error);
+    }
+  },
+
   async setChallengeDay2InAppNudgePending(pending: boolean): Promise<void> {
     try {
       if (pending) {
@@ -1911,6 +2019,7 @@ export const storage = {
         STORAGE_KEYS.WEEKLY_CALIBRATION_PROMPTED,
         STORAGE_KEYS.CHALLENGE_DAY2_NUDGE_SCHEDULED,
         STORAGE_KEYS.CHALLENGE_DAY2_IN_APP_NUDGE,
+        STORAGE_KEYS.CHALLENGE_DAY2_NUDGE_STATE,
         STORAGE_KEYS.CHALLENGE_DAYS_STARTED,
         STORAGE_KEYS.CHALLENGE_DAYS_COMPLETED,
         STORAGE_KEYS.CHALLENGE_DAY_VIEWED,
@@ -1969,6 +2078,29 @@ export const storage = {
       );
     } catch (error) {
       console.error("Error saving calibration state:", error);
+    }
+  },
+
+  /**
+   * Weekly check-in answer (Ashley-approved addition, Nov 17 2026). Saves the
+   * weekly level and, only when there is no calibration record yet, also sets
+   * the Week-1 calibration from the same answer via setCalibrationState (same
+   * levelToPath mapping as Day 1). Existing records are never changed.
+   */
+  async saveWeeklyCalibrationAnswer(
+    weekNumber: number,
+    level: CalibrationLevel,
+  ): Promise<void> {
+    await this.setWeeklyCalibrationLevel(weekNumber, level);
+    try {
+      const existing = await AsyncStorage.getItem(
+        STORAGE_KEYS.CHALLENGE_CALIBRATION,
+      );
+      if (existing == null) {
+        await this.setCalibrationState(level);
+      }
+    } catch (error) {
+      console.error("Error applying weekly answer to calibration:", error);
     }
   },
 

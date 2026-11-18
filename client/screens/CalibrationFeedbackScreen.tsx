@@ -88,7 +88,8 @@ export default function CalibrationFeedbackScreen() {
     if (!selected || isSaving) return;
     setIsSaving(true);
     if (isWeekly && weekNumber) {
-      await storage.setWeeklyCalibrationLevel(weekNumber, selected);
+      // Also sets the Week-1 path when no calibration record exists yet.
+      await storage.saveWeeklyCalibrationAnswer(weekNumber, selected);
     } else {
       await storage.setCalibrationState(selected);
     }

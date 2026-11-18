@@ -93,6 +93,8 @@ import {
 } from "@/lib/day1Howto";
 import {
   cancelChallengeDay2Nudge,
+  cancelChallengeDay3Push,
+  cancelChallengeDay3PushOnSessionStart,
   scheduleChallengeDay2Nudge,
 } from "@/lib/challengeNudge";
 
@@ -233,6 +235,8 @@ export default function WorkoutPlayerScreen() {
       weekNumber,
       dayNumber,
     });
+    // P8 Phase B: any session start after Day 1 cancels the Day-3 push.
+    void cancelChallengeDay3PushOnSessionStart();
     if (
       weekNumber === 1 &&
       typeof dayNumber === "number" &&
@@ -460,6 +464,10 @@ export default function WorkoutPlayerScreen() {
             }
             if (dayNumber === 2) {
               await cancelChallengeDay2Nudge();
+            }
+            if (dayNumber === 3) {
+              // P8 Phase B: Day 3 done — drop the rest-day Day-3 push.
+              await cancelChallengeDay3Push();
             }
           }
 
