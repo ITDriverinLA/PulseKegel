@@ -35,7 +35,9 @@ import { trackAppOpen, trackChallengeDay2NudgeTapped } from "@/lib/analytics";
 import { markColdLaunch, markWarmResume } from "@/lib/activationDiagnostics";
 import {
   cancelChallengeDay2Nudge,
+  cancelChallengeDay3Push,
   claimNotificationResponse,
+  reconcileChallengeDay3Push,
   reportDay2NudgeFirePassed,
   reportDay2NudgeReceived,
 } from "@/lib/challengeNudge";
@@ -63,9 +65,16 @@ async function openChallengeDay(
   week: number,
   day: number,
   channel: "push" | "in_app",
+  followupDay?: 3,
 ) {
-  trackChallengeDay2NudgeTapped({ channel });
-  await cancelChallengeDay2Nudge();
+  if (followupDay === 3) {
+    // P8 Phase B Day-3 push (rest-day paths): same tap handling as Day 2.
+    trackChallengeDay2NudgeTapped({ channel, followup_day: 3 });
+    await cancelChallengeDay3Push();
+  } else {
+    trackChallengeDay2NudgeTapped({ channel });
+    await cancelChallengeDay2Nudge();
+  }
 
   if (!navigation) return;
   const hasFirst = await storage.hasCompletedFirstSession();
@@ -143,6 +152,7 @@ function AppContent() {
         week?: number;
         day?: number;
         nudge?: string;
+        followup_day?: number;
       };
       if (data?.nudge === "day2" || data?.screen === "ChallengeDay") {
         // P8.1.6: getLastNotificationResponseAsync replays the last tap on
@@ -158,17 +168,22 @@ function AppContent() {
           Number(data.week) || 1,
           Number(data.day) || 2,
           "push",
+          data.nudge === "followup" && data.followup_day === 3 ? 3 : undefined,
         );
       }
     };
 
-    // P8.1.4: report a passed fire time once per open.
-    void reportDay2NudgeFirePassed();
+    // P8.1.4: report a passed fire time once per open, then drop the
+    // Day-3 push if Day 3 is already complete.
+    void reportDay2NudgeFirePassed().then(() => reconcileChallengeDay3Push());
 
     const receivedSub = Notifications.addNotificationReceivedListener(
       (notification) => {
         void reportDay2NudgeReceived(
-          notification.request.content.data as { nudge?: unknown },
+          notification.request.content.data as {
+            nudge?: unknown;
+            followup_day?: unknown;
+          },
         );
       },
     );

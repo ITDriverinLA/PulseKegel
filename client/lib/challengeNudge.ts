@@ -5,8 +5,9 @@
  * - The nudge targets the next *workout* day (P8 open Q1 default). Only the
  *   accelerated path trains on Day 2, so only it gets the Day-2 push (9:00
  *   next morning, or 24h) or the in-app Day-2 banner. Standard, gentle and
- *   uncalibrated paths rest on Day 2 and get no Day-2 nudge; their first
- *   nudge is the Day-3 follow-up (P8.3, Phase C).
+ *   uncalibrated paths rest on Day 2 and get no Day-2 nudge; instead they
+ *   get one Day-3 push at 9:00 local on challenge Day 3 (see
+ *   scheduleChallengeDay3Push).
  * - The in-app banner is eligible from the next local calendar day after
  *   Day 1, logs "shown" when it renders (once per local day), and clears only
  *   after it rendered on an eligible day and was tapped or Home was left.
@@ -31,6 +32,13 @@ import {
 import { getWeek1WorkoutForDayIndex } from "@/data/workoutProgram";
 
 const NUDGE_ID = "challenge-day2-nudge";
+/**
+ * Day-3 push for rest-day paths. Phase C's "2 minutes" Day-3 follow-up
+ * (P8.3) REPLACES this push rather than adding a second one: it reuses this
+ * id, so scheduling it overwrites this notification, and this Phase B
+ * scheduler should be removed in the same change.
+ */
+const DAY3_PUSH_ID = "challenge-followup-d3";
 const MIN_DELAY_MS = 20 * 60 * 60 * 1000;
 const MAX_DELAY_MS = 28 * 60 * 60 * 1000;
 const DEFAULT_DELAY_MS = 24 * 60 * 60 * 1000;
@@ -117,10 +125,12 @@ export async function scheduleChallengeDay2Nudge(
     // P8.1.7: web always uses the in-app banner.
     if (Platform.OS === "web") channel = "in_app";
 
-    // P8 open Q1 default: no Day-2 nudge when Day 2 is a rest day.
+    // P8 open Q1 default: no Day-2 nudge when Day 2 is a rest day. These
+    // paths get one Day-3 push at 9:00 instead (push channel only).
     const calibration = await storage.getCalibrationState();
     if (!isDay2WorkoutDay(calibration.difficultyPath)) {
       await storage.setChallengeDay2InAppNudgePending(false);
+      if (channel === "push") await scheduleChallengeDay3Push(now);
       await storage.markChallengeDay2NudgeScheduled();
       return;
     }
@@ -175,39 +185,157 @@ export async function scheduleChallengeDay2Nudge(
   }
 }
 
+/** Local Date for 9:00 on challenge day `day` (1-based) from a YYYY-MM-DD start. */
+export function challengeDayMorning(startLocalDate: string, day: number): Date {
+  const [y, m, d] = startLocalDate.split("-").map(Number);
+  return new Date(y, m - 1, d + (day - 1), 9, 0, 0, 0);
+}
+
 /**
- * Log challenge_nudge_fire_passed once if the stored push's fire time has
- * passed. Called on every app open / resume, and before cancelling.
+ * Rest-day paths (standard, gentle, uncalibrated): one local push at 9:00 on
+ * challenge Day 3, opening the Day-3 workout. Skipped if that time has passed
+ * or Day 3 is already complete. Copy is Keg-cleared; no "2 minutes" because
+ * the tap opens the full Day-3 workout, not the short session.
+ * Phase C's "2 minutes" follow-up replaces this push (same id); it does not
+ * add a second Day-3 push.
+ */
+export async function scheduleChallengeDay3Push(
+  now: Date = new Date(),
+): Promise<void> {
+  try {
+    if (await storage.hasChallengeDayCompleted(1, 3)) return;
+    const start = (await storage.getProgramStartDate()) ?? localDateString(now);
+    const when = challengeDayMorning(start, 3);
+    const seconds = Math.round((when.getTime() - now.getTime()) / 1000);
+    if (seconds < 60) return;
+    const fireAt = when.toISOString();
+    await Notifications.scheduleNotificationAsync({
+      identifier: DAY3_PUSH_ID,
+      content: {
+        title: "Day 3 is ready",
+        body: "Pick up where you left off.",
+        data: {
+          screen: "ChallengeDay",
+          week: 1,
+          day: 3,
+          nudge: "followup",
+          followup_day: 3,
+          fire_at: fireAt,
+        },
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds,
+        repeats: false,
+      },
+    });
+    await storage.updateChallengeDay2NudgeState({ followupD3: { fireAt } });
+    trackChallengeDay2NudgeScheduled({
+      channel: "push",
+      followup_day: 3,
+      fire_at: fireAt,
+    });
+  } catch {
+    /* Nudge must never break session completion. */
+  }
+}
+
+/** Cancel the Day-3 push (Day 3 completed, or the push was tapped). */
+export async function cancelChallengeDay3Push(): Promise<void> {
+  await reportDay2NudgeFirePassed();
+  try {
+    await Notifications.cancelScheduledNotificationAsync(DAY3_PUSH_ID);
+  } catch {
+    /* ignore */
+  }
+  try {
+    await storage.updateChallengeDay2NudgeState({ followupD3: null });
+  } catch {
+    /* ignore */
+  }
+}
+
+/** On open: Day 3 already completed (e.g. restored progress) — drop the push. */
+export async function reconcileChallengeDay3Push(): Promise<void> {
+  try {
+    const state = await storage.getChallengeDay2NudgeState();
+    if (!state.followupD3) return;
+    if (await storage.hasChallengeDayCompleted(1, 3)) {
+      await cancelChallengeDay3Push();
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Log challenge_nudge_fire_passed once per scheduled push (Day-2 and the
+ * Day-3 push) whose fire time has passed. Called on every app open / resume,
+ * and before cancelling.
  */
 export async function reportDay2NudgeFirePassed(
   now: Date = new Date(),
 ): Promise<void> {
   try {
     const state = await storage.getChallengeDay2NudgeState();
-    const push = state.push;
-    if (!push || push.firePassedLogged) return;
-    const fireMs = Date.parse(push.fireAt);
-    if (!Number.isFinite(fireMs) || fireMs > now.getTime()) return;
+    const due = (
+      r: { fireAt: string; firePassedLogged?: boolean } | null | undefined,
+    ) => {
+      if (!r || r.firePassedLogged) return false;
+      const fireMs = Date.parse(r.fireAt);
+      return Number.isFinite(fireMs) && fireMs <= now.getTime();
+    };
+    const day2Due = due(state.push);
+    const day3Due = due(state.followupD3);
+    if (!day2Due && !day3Due) return;
     await storage.updateChallengeDay2NudgeState({
-      push: { ...push, firePassedLogged: true },
+      ...(day2Due && state.push
+        ? { push: { ...state.push, firePassedLogged: true } }
+        : {}),
+      ...(day3Due && state.followupD3
+        ? { followupD3: { ...state.followupD3, firePassedLogged: true } }
+        : {}),
     });
-    const status = await getNotificationPermissionStatus();
-    trackChallengeNudgeFirePassed({
-      nudge: "day2",
-      permission_status: toPermissionStatus(status),
-    });
+    const permission_status = toPermissionStatus(
+      await getNotificationPermissionStatus(),
+    );
+    if (day2Due) {
+      trackChallengeNudgeFirePassed({ nudge: "day2", permission_status });
+    }
+    if (day3Due) {
+      trackChallengeNudgeFirePassed({
+        nudge: "followup",
+        followup_day: 3,
+        permission_status,
+      });
+    }
   } catch {
     /* ignore */
   }
 }
 
-/** Foreground receipt of the Day-2 push (app open when it fired). Once. */
+/** Foreground receipt of a challenge push (app open when it fired). Once each. */
 export async function reportDay2NudgeReceived(
-  data: { nudge?: unknown } | null | undefined,
+  data: { nudge?: unknown; followup_day?: unknown } | null | undefined,
 ): Promise<void> {
-  if (data?.nudge !== "day2") return;
+  const isDay3 = data?.nudge === "followup" && data?.followup_day === 3;
+  if (data?.nudge !== "day2" && !isDay3) return;
   try {
     const state = await storage.getChallengeDay2NudgeState();
+    if (isDay3) {
+      if (state.followupD3?.receivedLogged) return;
+      if (state.followupD3) {
+        await storage.updateChallengeDay2NudgeState({
+          followupD3: { ...state.followupD3, receivedLogged: true },
+        });
+      }
+      trackChallengeNudgeReceived({
+        nudge: "followup",
+        followup_day: 3,
+        method: "foreground",
+      });
+      return;
+    }
     if (state.push?.receivedLogged) return;
     if (state.push) {
       await storage.updateChallengeDay2NudgeState({
@@ -327,4 +455,5 @@ export const __day2NudgeTestUtils = {
   MAX_DELAY_MS,
   DEFAULT_DELAY_MS,
   NUDGE_ID,
+  DAY3_PUSH_ID,
 };

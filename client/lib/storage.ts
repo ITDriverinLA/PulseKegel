@@ -238,6 +238,12 @@ export interface ChallengeDay2NudgeState {
     receivedLogged?: boolean;
     firePassedLogged?: boolean;
   } | null;
+  /** Scheduled Day-3 push (rest-day paths), same bookkeeping as `push`. */
+  followupD3?: {
+    fireAt: string;
+    receivedLogged?: boolean;
+    firePassedLogged?: boolean;
+  } | null;
   /** Last handled notification response, so a cold-launch replay is ignored. */
   lastHandledResponseKey?: string;
 }

@@ -93,6 +93,7 @@ import {
 } from "@/lib/day1Howto";
 import {
   cancelChallengeDay2Nudge,
+  cancelChallengeDay3Push,
   scheduleChallengeDay2Nudge,
 } from "@/lib/challengeNudge";
 
@@ -460,6 +461,10 @@ export default function WorkoutPlayerScreen() {
             }
             if (dayNumber === 2) {
               await cancelChallengeDay2Nudge();
+            }
+            if (dayNumber === 3) {
+              // P8 Phase B: Day 3 done — drop the rest-day Day-3 push.
+              await cancelChallengeDay3Push();
             }
           }
 

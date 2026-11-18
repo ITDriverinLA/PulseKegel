@@ -6,11 +6,13 @@
 import {
   __day2NudgeTestUtils,
   cancelChallengeDay2Nudge,
+  cancelChallengeDay3Push,
   claimNotificationResponse,
   isDay2WorkoutDay,
   markInAppDay2NudgeRendered,
   nextLocalDateString,
   onHomeLeftAfterDay2Nudge,
+  reconcileChallengeDay3Push,
   reportDay2NudgeFirePassed,
   reportDay2NudgeReceived,
   scheduleChallengeDay2Nudge,
@@ -64,6 +66,8 @@ const mockDb: {
   path: Path;
   completedDates: string[];
   state: Record<string, unknown>;
+  programStart: string | null;
+  day3Completed: boolean;
 } = {
   scheduled: false,
   day2Started: false,
@@ -71,6 +75,8 @@ const mockDb: {
   path: null,
   completedDates: [],
   state: {},
+  programStart: null,
+  day3Completed: false,
 };
 jest.mock("../storage", () => ({
   storage: {
@@ -79,6 +85,9 @@ jest.mock("../storage", () => ({
       mockDb.scheduled = true;
     },
     hasChallengeDayStarted: async () => mockDb.day2Started,
+    hasChallengeDayCompleted: async (_w: number, d: number) =>
+      d === 3 && mockDb.day3Completed,
+    getProgramStartDate: async () => mockDb.programStart,
     isChallengeDay2InAppNudgePending: async () => mockDb.pending,
     setChallengeDay2InAppNudgePending: async (p: boolean) => {
       mockDb.pending = p;
@@ -118,6 +127,8 @@ beforeEach(() => {
     path: null,
     completedDates: [],
     state: {},
+    programStart: null,
+    day3Completed: false,
   });
 });
 
@@ -182,6 +193,13 @@ describe("scheduleChallengeDay2Nudge — accelerated path", () => {
     await scheduleChallengeDay2Nudge(DAY1);
     expect(schedule).toHaveBeenCalledTimes(1);
   });
+
+  it("never schedules the Day-3 push", async () => {
+    await scheduleChallengeDay2Nudge(DAY1);
+    const ids = schedule.mock.calls.map((c) => c[0].identifier);
+    expect(ids).not.toContain(__day2NudgeTestUtils.DAY3_PUSH_ID);
+    expect(mockDb.state.followupD3).toBeUndefined();
+  });
 });
 
 describe.each(["standard", "gentle", null] as Path[])(
@@ -191,12 +209,56 @@ describe.each(["standard", "gentle", null] as Path[])(
       mockDb.path = path;
     });
 
-    it("schedules no Day-2 push or banner and logs no scheduled event", async () => {
+    it("schedules only the Day-3 push, at 9:00 local on challenge Day 3", async () => {
+      await scheduleChallengeDay2Nudge(DAY1);
+      expect(schedule).toHaveBeenCalledTimes(1);
+      const req = schedule.mock.calls[0][0];
+      expect(req.identifier).toBe("challenge-followup-d3");
+      expect(req.identifier).not.toBe(__day2NudgeTestUtils.NUDGE_ID);
+      expect(req.content.title).toBe("Day 3 is ready");
+      expect(req.content.body).toBe("Pick up where you left off.");
+      expect(req.content.body).not.toMatch(/minute/i);
+      expect(req.content.data).toMatchObject({
+        screen: "ChallengeDay",
+        week: 1,
+        day: 3,
+        nudge: "followup",
+        followup_day: 3,
+      });
+      const fire = new Date(req.content.data.fire_at as string);
+      // Day 1 = Nov 17 -> Day 3 = Nov 19, 9:00 local.
+      expect([fire.getMonth(), fire.getDate(), fire.getHours()]).toEqual([
+        10, 19, 9,
+      ]);
+      expect(fire.getMinutes()).toBe(0);
+      expect(mockTrack.scheduled).toHaveBeenCalledTimes(1);
+      expect(mockTrack.scheduled).toHaveBeenCalledWith({
+        channel: "push",
+        followup_day: 3,
+        fire_at: req.content.data.fire_at,
+      });
+      expect(mockDb.pending).toBe(false);
+      expect(mockDb.scheduled).toBe(true);
+    });
+
+    it("schedules nothing without push permission (no Day-2 banner either)", async () => {
+      mockPermission.status = "denied";
       await scheduleChallengeDay2Nudge(DAY1);
       expect(schedule).not.toHaveBeenCalled();
       expect(mockDb.pending).toBe(false);
       expect(mockTrack.scheduled).not.toHaveBeenCalled();
-      expect(mockDb.scheduled).toBe(true);
+    });
+
+    it("counts Day 3 from the program start date and skips a passed time", async () => {
+      mockDb.programStart = "2026-11-15"; // late first session on Day 3
+      await scheduleChallengeDay2Nudge(DAY1);
+      expect(schedule).not.toHaveBeenCalled();
+    });
+
+    it("skips the Day-3 push when Day 3 is already complete", async () => {
+      mockDb.day3Completed = true;
+      await scheduleChallengeDay2Nudge(DAY1);
+      expect(schedule).not.toHaveBeenCalled();
     });
 
     it("never shows the Day-2 banner, even with a legacy pending flag", async () => {
@@ -300,5 +362,50 @@ describe("push delivery vs tap", () => {
     await cancelChallengeDay2Nudge();
     expect(cancel).toHaveBeenCalledWith("challenge-day2-nudge");
     expect(mockDb.state.push).toBeNull();
+  });
+});
+
+describe("Day-3 push (rest-day paths) lifecycle", () => {
+  beforeEach(async () => {
+    mockDb.path = "standard";
+    await scheduleChallengeDay2Nudge(DAY1);
+    jest.clearAllMocks();
+  });
+
+  it("is cancelled when Day 3 is completed", async () => {
+    await cancelChallengeDay3Push();
+    expect(cancel).toHaveBeenCalledWith("challenge-followup-d3");
+    expect(cancel).not.toHaveBeenCalledWith("challenge-day2-nudge");
+    expect(mockDb.state.followupD3).toBeNull();
+  });
+
+  it("is cancelled on open if Day 3 was completed elsewhere", async () => {
+    await reconcileChallengeDay3Push();
+    expect(cancel).not.toHaveBeenCalled();
+    mockDb.day3Completed = true;
+    await reconcileChallengeDay3Push();
+    expect(cancel).toHaveBeenCalledWith("challenge-followup-d3");
+  });
+
+  it("logs received and fire-passed once each with followup_day 3", async () => {
+    await reportDay2NudgeReceived({ nudge: "followup", followup_day: 3 });
+    await reportDay2NudgeReceived({ nudge: "followup", followup_day: 3 });
+    expect(mockTrack.received).toHaveBeenCalledTimes(1);
+    expect(mockTrack.received).toHaveBeenCalledWith({
+      nudge: "followup",
+      followup_day: 3,
+      method: "foreground",
+    });
+
+    await reportDay2NudgeFirePassed(NEXT_DAY); // before Nov 19 9:00
+    expect(mockTrack.firePassed).not.toHaveBeenCalled();
+    await reportDay2NudgeFirePassed(new Date(2026, 10, 19, 9, 30));
+    await reportDay2NudgeFirePassed(new Date(2026, 10, 20, 9, 30));
+    expect(mockTrack.firePassed).toHaveBeenCalledTimes(1);
+    expect(mockTrack.firePassed).toHaveBeenCalledWith({
+      nudge: "followup",
+      followup_day: 3,
+      permission_status: "granted",
+    });
   });
 });

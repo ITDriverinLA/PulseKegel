@@ -85,10 +85,18 @@ const localDate = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
 function seedChallengeNudge() {
-  mockScheduled.push({
-    identifier: "challenge-day2-nudge",
-    content: { data: { screen: "ChallengeDay", nudge: "day2" } },
-  });
+  mockScheduled.push(
+    {
+      identifier: "challenge-day2-nudge",
+      content: { data: { screen: "ChallengeDay", nudge: "day2" } },
+    },
+    {
+      identifier: "challenge-followup-d3",
+      content: {
+        data: { screen: "ChallengeDay", nudge: "followup", followup_day: 3 },
+      },
+    },
+  );
 }
 const ids = () => mockScheduled.map((r) => r.identifier).sort();
 
@@ -106,26 +114,38 @@ describe("daily reminder keeps challenge nudges scheduled", () => {
     await scheduleDailyReminder("08:00");
     await scheduleDailyReminder("09:30");
     expect(cancelAll).not.toHaveBeenCalled();
-    expect(ids()).toEqual(["challenge-day2-nudge", DAILY_REMINDER_ID]);
+    expect(ids()).toEqual([
+      "challenge-day2-nudge",
+      "challenge-followup-d3",
+      DAILY_REMINDER_ID,
+    ]);
   });
 
   it("rescheduleAfterCompletion (Day-1 / Breathwork completion)", async () => {
     await rescheduleAfterCompletion();
     expect(cancelAll).not.toHaveBeenCalled();
-    expect(ids()).toEqual(["challenge-day2-nudge", DAILY_REMINDER_ID]);
+    expect(ids()).toEqual([
+      "challenge-day2-nudge",
+      "challenge-followup-d3",
+      DAILY_REMINDER_ID,
+    ]);
   });
 
   it("cancelAllReminders (Settings toggle off) cancels only the reminder", async () => {
     await scheduleDailyReminder("08:00");
     await cancelAllReminders();
     expect(cancelAll).not.toHaveBeenCalled();
-    expect(ids()).toEqual(["challenge-day2-nudge"]);
+    expect(ids()).toEqual(["challenge-day2-nudge", "challenge-followup-d3"]);
   });
 
   it("keeps a reminder scheduled when today (local date) is already done", async () => {
     mockStore.completedDates = [localDate(new Date())];
     await scheduleDailyReminder("08:00");
-    expect(ids()).toEqual(["challenge-day2-nudge", DAILY_REMINDER_ID]);
+    expect(ids()).toEqual([
+      "challenge-day2-nudge",
+      "challenge-followup-d3",
+      DAILY_REMINDER_ID,
+    ]);
   });
 });
 
@@ -136,7 +156,7 @@ describe("legacy daily reminder migration", () => {
       { identifier: "legacy-uuid-2", content: { data: { screen: "Home" } } },
       { identifier: "badge-x", content: { data: { screen: "Badges" } } },
       {
-        identifier: "challenge-followup-d3",
+        identifier: "challenge-followup-d5",
         content: { data: { screen: "Home" } },
       },
     );
@@ -145,6 +165,7 @@ describe("legacy daily reminder migration", () => {
       "badge-x",
       "challenge-day2-nudge",
       "challenge-followup-d3",
+      "challenge-followup-d5",
     ]);
     expect(mockStore.migrated).toBe(true);
 
