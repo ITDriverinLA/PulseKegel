@@ -8,7 +8,7 @@ import OpenAI from "openai";
 import { privacyPolicyHtml } from "./staticContent";
 import { db } from "./db";
 import { analyticsEvents } from "../shared/schema";
-import { sql, countDistinct, inArray } from "drizzle-orm";
+import { sql, countDistinct, inArray, and, or, gte, lt } from "drizzle-orm";
 import {
   createRateLimiter,
   requireAnalyticsAdmin,
@@ -17,6 +17,15 @@ import {
 import { analyticsBatchSchema, weeklyReviewSchema } from "./requestValidation";
 import { insertAnalyticsEvents, toAnalyticsRows } from "./analyticsIngest";
 import { summarizeP7Day1 } from "./p7AnalyticsSummary";
+import {
+  P8_DAY1_EVENT_TYPES,
+  P8_EVENT_TYPES,
+  P8_LOOKAHEAD_DAYS,
+  P8_LOOKBACK_DAYS,
+  resolveP8Range,
+  summarizeP8Retention,
+  type P8Range,
+} from "./p8RetentionSummary";
 import { registerSyncRoutes } from "./syncRoutes";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -194,7 +203,7 @@ function buildFallback(
   weekNumber: number,
 ): string {
   if (daysWorkedOut === 0) {
-    return `Week ${weekNumber} passed without a session. That happens, but it means starting from scratch on the streak. This week is a clean slate — one session is all it takes to get back on track.`;
+    return `No sessions in Week ${weekNumber}, and that's okay. This week is a fresh start, and one short session is all it takes to get going again.`;
   }
   const missedDays = Math.max(0, scheduledDays - daysWorkedOut);
   if (missedDays === 0) {
@@ -203,7 +212,83 @@ function buildFallback(
   if (daysWorkedOut >= 3 && missedDays <= 2) {
     return `${daysWorkedOut} of ${scheduledDays} sessions done this week — ${missedDays} missed. The progress is real, but the full week is where the results compound. Aim to close that gap next week.`;
   }
-  return `${daysWorkedOut} of ${scheduledDays} scheduled sessions completed this week — ${missedDays} missed. That is not the week you needed. Next week, start on day one and do not let the first miss become two.`;
+  return `${daysWorkedOut} of ${scheduledDays} sessions this week. Every session counts, and next week is a fresh start. One short session is an easy way to get going again.`;
+}
+
+const P8_DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * P8 retention for a UTC date range. Loads only the P8 event types, from
+ * P8_LOOKBACK_DAYS before `from` (pushes scheduled earlier that fire in range)
+ * to P8_LOOKAHEAD_DAYS after `to` (7-day second-session window). Day-1
+ * completions load with no lower bound so each device's true first Day 1 is used.
+ */
+async function loadP8Retention(range: P8Range, now: Date) {
+  const lower = new Date(range.fromMs - P8_LOOKBACK_DAYS * P8_DAY_MS);
+  const upper = new Date(range.toEndMs + P8_LOOKAHEAD_DAYS * P8_DAY_MS);
+  const rows = await db
+    .select({
+      deviceId: analyticsEvents.deviceId,
+      platform: analyticsEvents.platform,
+      eventType: analyticsEvents.eventType,
+      eventData: analyticsEvents.eventData,
+      createdAt: analyticsEvents.createdAt,
+    })
+    .from(analyticsEvents)
+    .where(
+      and(
+        inArray(analyticsEvents.eventType, [...P8_EVENT_TYPES]),
+        lt(analyticsEvents.createdAt, upper),
+        or(
+          gte(analyticsEvents.createdAt, lower),
+          inArray(analyticsEvents.eventType, [...P8_DAY1_EVENT_TYPES]),
+        ),
+      ),
+    );
+  const summary = summarizeP8Retention(rows, range, { now });
+
+  // Weekly active devices by platform (same counting as wauByPlatform, but
+  // per UTC Monday-start week inside the range).
+  const fromDate = new Date(range.fromMs);
+  const toEndDate = new Date(range.toEndMs);
+  const weeklyRaw = await db.execute<{
+    week_start: string;
+    platform: string;
+    devices: number;
+  }>(
+    sql`
+    SELECT
+      to_char(date_trunc('week', created_at), 'YYYY-MM-DD') AS week_start,
+      COALESCE(platform, 'unknown') AS platform,
+      COUNT(DISTINCT device_id)::int AS devices
+    FROM analytics_events
+    WHERE created_at >= ${fromDate} AND created_at < ${toEndDate}
+    GROUP BY 1, 2
+    UNION ALL
+    SELECT
+      to_char(date_trunc('week', created_at), 'YYYY-MM-DD') AS week_start,
+      'all' AS platform,
+      COUNT(DISTINCT device_id)::int AS devices
+    FROM analytics_events
+    WHERE created_at >= ${fromDate} AND created_at < ${toEndDate}
+    GROUP BY 1
+    ORDER BY 1, 2
+  `,
+  );
+  const weeklyActiveDevices = weeklyRaw.rows.map((row) => {
+    const weekStartMs = Date.parse(`${row.week_start}T00:00:00.000Z`);
+    return {
+      weekStart: row.week_start,
+      platform: row.platform,
+      devices: Number(row.devices) || 0,
+      // True when the range covers only part of this Monday–Sunday week.
+      partialWeek:
+        weekStartMs < range.fromMs ||
+        weekStartMs + 7 * P8_DAY_MS > range.toEndMs,
+    };
+  });
+
+  return { ...summary, weeklyActiveDevices };
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -284,7 +369,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         let modeInstructions: string;
         if (daysWorkedOut === 0) {
-          modeInstructions = `This person completed 0 of ${scheduledDays} scheduled sessions this week — they did not train at all. Acknowledge that plainly and directly. Do not open with praise or pivot quickly to encouragement. The second or third sentence can note what picking it back up looks like. End with one brief forward-looking sentence.`;
+          modeInstructions = `This person did not train this week. Acknowledge it briefly and kindly, without guilt. Suggest that one short session is an easy way back. End with one friendly forward-looking sentence. Speak as a training coach. Don't mention health conditions, symptoms, medical advice, or results such as performance or bladder outcomes.`;
         } else if (missedDays === 0) {
           modeInstructions = `This person hit every session this week: ${daysWorkedOut} of ${scheduledDays} scheduled.${streak > 1 ? ` Their current streak is ${streak} days.` : ""} Celebrate this with specific reference to their session count${streak > 1 ? ` and streak` : ""}. Make the praise feel earned — reference the actual numbers, not generic effort.`;
         } else if (daysWorkedOut >= 3 && missedDays <= 2) {
@@ -294,7 +379,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               : ` Their streak did not hold this week.`;
           modeInstructions = `This person completed ${daysWorkedOut} of ${scheduledDays} scheduled sessions this week, missing ${missedDays}.${streakNote} Acknowledge the missed sessions by number — do not skip over it. Note that the full week of consistency is what compounds into results. Encourage them to close that gap next week. Tone: honest and supportive, not punishing.`;
         } else {
-          modeInstructions = `This person completed only ${daysWorkedOut} of ${scheduledDays} scheduled sessions this week — missing ${missedDays}.${streak <= 1 ? " Their streak was broken." : ""} Be direct: state the missed session count clearly. Do not lead with praise or bury the accountability. Challenge them to do better next week. End with one forward-looking sentence. Tone: firm and honest, but not harsh.`;
+          modeInstructions = `This person completed ${daysWorkedOut} of ${scheduledDays} scheduled sessions this week. Mention the count once, without judgment. Make restarting feel easy: one short session is enough to get going again. End with one friendly forward-looking sentence. Tone: warm and encouraging, never scolding. Speak as a training coach. Don't mention health conditions, symptoms, medical advice, or results such as performance or bladder outcomes.`;
         }
 
         const reviewData = JSON.stringify({
@@ -1168,6 +1253,21 @@ ${blogUrls}
           cutoffIso: process.env.P7_CUTOFF_ISO,
         });
 
+        // P8: last-7-day retention block. Isolated so a failure here never
+        // breaks the rest of the summary; it reports null instead.
+        let p8Retention: Awaited<ReturnType<typeof loadP8Retention>> | null =
+          null;
+        try {
+          const p8Range = resolveP8Range(undefined, undefined, now);
+          if (p8Range.ok)
+            p8Retention = await loadP8Retention(p8Range.range, now);
+        } catch (p8Err) {
+          console.error("P8 retention summary error:", {
+            message:
+              p8Err instanceof Error ? p8Err.message.split("\n")[0] : "unknown",
+          });
+        }
+
         res.json({
           totalDevices: totalDevices?.count ?? 0,
           dau: dau?.count ?? 0,
@@ -1201,6 +1301,7 @@ ${blogUrls}
             count: Number(row.count) || 0,
           })),
           day1Howto,
+          p8Retention,
           day1PaywallReach: {
             finishers: Number(day1Reach?.finishers ?? 0),
             reachedAny: Number(day1Reach?.reached_any ?? 0),
@@ -1232,6 +1333,30 @@ ${blogUrls}
       } catch (err) {
         console.error("Analytics summary error:", err);
         res.status(500).json({ error: "Failed to load analytics summary" });
+      }
+    },
+  );
+
+  // P8.1: per-device Day-2 / follow-up retention by UTC date, platform and
+  // channel. Same read-only key mechanism as /api/analytics/summary.
+  app.get(
+    "/api/analytics/retention",
+    requireAnalyticsReadAccess,
+    async (req, res) => {
+      const now = new Date();
+      const resolved = resolveP8Range(req.query.from, req.query.to, now);
+      if (!resolved.ok) {
+        res.status(400).json({ error: resolved.error });
+        return;
+      }
+      try {
+        res.json(await loadP8Retention(resolved.range, now));
+      } catch (err) {
+        console.error("Analytics retention error:", {
+          message:
+            err instanceof Error ? err.message.split("\n")[0] : "unknown",
+        });
+        res.status(500).json({ error: "Failed to load retention summary" });
       }
     },
   );

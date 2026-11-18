@@ -42,6 +42,24 @@ const eventMetadata = {
   windowWidthBucket: z.enum(["<500", "500-800", ">800"]).optional(),
 };
 
+// P8: optional nudge props. Old clients send only `channel`, which still passes.
+const nudgeChannelSchema = z.enum(["push", "in_app"]);
+const nudgeFollowupDaySchema = z.union([z.literal(3), z.literal(5)]);
+const nudgeKindSchema = z.enum(["day2", "followup"]);
+const nudgeFireAtSchema = z.string().max(40).datetime({ offset: true });
+const pushPermissionStatusSchema = z.enum([
+  "granted",
+  "denied",
+  "undetermined",
+  "provisional",
+  "ephemeral",
+  "unknown",
+]);
+const prePromptSchema = z.enum(["day1_complete", "second_session", "none"]);
+const prePromptAttemptSchema = z.union([z.literal(1), z.literal(2)]);
+const comebackSourceSchema = z.enum(["followup", "home"]);
+const idleDaysSchema = z.number().int().min(0).max(3650);
+
 const analyticsEventSchema = z.discriminatedUnion("type", [
   z
     .object({
@@ -446,6 +464,7 @@ const analyticsEventSchema = z.discriminatedUnion("type", [
           status: z.string().trim().min(1).max(32).optional(),
           deferred: z.boolean().optional(),
           after_first_session: z.boolean().optional(),
+          pre_prompt: prePromptSchema.optional(),
         })
         .strict(),
       ...eventMetadata,
@@ -462,6 +481,7 @@ const analyticsEventSchema = z.discriminatedUnion("type", [
           deferred: z.boolean().optional(),
           already_granted: z.boolean().optional(),
           after_first_session: z.boolean().optional(),
+          pre_prompt: prePromptSchema.optional(),
         })
         .strict(),
       ...eventMetadata,
@@ -563,7 +583,9 @@ const analyticsEventSchema = z.discriminatedUnion("type", [
       type: z.literal("challenge_day2_nudge_scheduled"),
       data: z
         .object({
-          channel: z.enum(["push", "in_app"]),
+          channel: nudgeChannelSchema,
+          followup_day: nudgeFollowupDaySchema.optional(),
+          fire_at: nudgeFireAtSchema.optional(),
         })
         .strict(),
       ...eventMetadata,
@@ -574,7 +596,8 @@ const analyticsEventSchema = z.discriminatedUnion("type", [
       type: z.literal("challenge_day2_nudge_shown"),
       data: z
         .object({
-          channel: z.enum(["push", "in_app"]),
+          channel: nudgeChannelSchema,
+          followup_day: nudgeFollowupDaySchema.optional(),
         })
         .strict(),
       ...eventMetadata,
@@ -585,7 +608,98 @@ const analyticsEventSchema = z.discriminatedUnion("type", [
       type: z.literal("challenge_day2_nudge_tapped"),
       data: z
         .object({
-          channel: z.enum(["push", "in_app"]),
+          channel: nudgeChannelSchema,
+          followup_day: nudgeFollowupDaySchema.optional(),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("challenge_nudge_received"),
+      data: z
+        .object({
+          nudge: nudgeKindSchema,
+          followup_day: nudgeFollowupDaySchema.optional(),
+          method: z.literal("foreground"),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("challenge_nudge_fire_passed"),
+      data: z
+        .object({
+          nudge: nudgeKindSchema,
+          followup_day: nudgeFollowupDaySchema.optional(),
+          permission_status: pushPermissionStatusSchema,
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("push_preprompt_shown"),
+      data: z
+        .object({
+          surface: z.string().trim().min(1).max(64),
+          attempt: prePromptAttemptSchema,
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("push_preprompt_result"),
+      data: z
+        .object({
+          surface: z.string().trim().min(1).max(64),
+          attempt: prePromptAttemptSchema,
+          choice: z.enum(["yes", "not_now", "dismissed"]),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("comeback_shown"),
+      data: z
+        .object({
+          idle_days: idleDaysSchema,
+          has_access: z.boolean(),
+          source: comebackSourceSchema.optional(),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("comeback_tapped"),
+      data: z
+        .object({
+          idle_days: idleDaysSchema,
+          has_access: z.boolean(),
+          action: z.enum(["start", "not_now"]),
+          source: comebackSourceSchema.optional(),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("comeback_completed"),
+      data: z
+        .object({
+          idle_days: idleDaysSchema,
+          source: comebackSourceSchema.optional(),
         })
         .strict(),
       ...eventMetadata,
