@@ -220,20 +220,38 @@ export function localDateString(d: Date): string {
 }
 
 /**
- * P8.2 / Rev L1: when today is already done and the reminder time is still
- * ahead today, a DAILY trigger would still fire today. Expo's DAILY trigger
- * has no start date, so instead we schedule a WEEKLY trigger for each of the
- * other six weekdays (repeating forever) plus a one-off DATE trigger for the
- * same weekday next week. The next launch, completion or Settings change
- * re-arms the plain DAILY reminder. A user who never opens the app again
- * still gets the reminder 6 days a week indefinitely (7 for the first week).
+ * P8.2 / Rev L1 + L8: when today is already done and the reminder time is
+ * still ahead today, a DAILY trigger would still fire today. Expo's DAILY
+ * (and WEEKLY) triggers have no start date on either platform, and a
+ * repeating TIME_INTERVAL can't be anchored to a clock time, so "every day
+ * from tomorrow on, forever" isn't expressible as one trigger. Instead:
+ *   - a repeating WEEKLY trigger for each of the other six weekdays
+ *     (`daily-reminder-wd<1-7>`, open-ended), plus
+ *   - a rolling window of one-off DATE triggers for today's weekday, 1..N
+ *     weeks out (`daily-reminder-once-<1-N>`).
+ * Every launch, completion and Settings change rebuilds this (or goes back
+ * to the plain DAILY trigger when today isn't done), so the window keeps
+ * rolling for anyone who opens the app. A user who stops opening it gets the
+ * reminder 7 days a week for N weeks, then 6 days a week indefinitely
+ * (today's weekday drops out once the window runs dry). That's the remaining
+ * limitation; N is bounded to stay well inside iOS's 64 pending
+ * notifications (6 + N = 14 here, alongside the few challenge pushes).
  */
+export const DAILY_REMINDER_SAME_WEEKDAY_WEEKS = 8;
 const WEEKDAY_REMINDER_IDS = [1, 2, 3, 4, 5, 6, 7].map(
   (weekday) => `${DAILY_REMINDER_ID}-wd${weekday}`,
 );
+const ONE_OFF_REMINDER_IDS = Array.from(
+  { length: DAILY_REMINDER_SAME_WEEKDAY_WEEKS },
+  (_, k) => `${DAILY_REMINDER_ID}-once-${k + 1}`,
+);
 
-/** Every id the daily reminder can use (plain DAILY + weekday split). */
-export const DAILY_REMINDER_IDS = [DAILY_REMINDER_ID, ...WEEKDAY_REMINDER_IDS];
+/** Every id the daily reminder can use (plain DAILY + the done-today split). */
+export const DAILY_REMINDER_IDS = [
+  DAILY_REMINDER_ID,
+  ...WEEKDAY_REMINDER_IDS,
+  ...ONE_OFF_REMINDER_IDS,
+];
 
 async function cancelDailyReminderOnly(): Promise<void> {
   for (const id of DAILY_REMINDER_IDS) {
@@ -285,30 +303,30 @@ async function scheduleDailyReminderNotification(
   // Today is done and today's time is still ahead: skip today only.
   const today = expoWeekday(now);
   for (let weekday = 1; weekday <= 7; weekday++) {
-    const identifier = `${DAILY_REMINDER_ID}-wd${weekday}`;
-    if (weekday === today) {
-      const nextWeek = new Date(todayFire);
-      nextWeek.setDate(nextWeek.getDate() + 7);
-      await Notifications.scheduleNotificationAsync({
-        identifier,
-        content,
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.DATE,
-          date: nextWeek,
-        },
-      });
-    } else {
-      await Notifications.scheduleNotificationAsync({
-        identifier,
-        content,
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
-          weekday,
-          hour: hours,
-          minute: minutes,
-        },
-      });
-    }
+    if (weekday === today) continue;
+    await Notifications.scheduleNotificationAsync({
+      identifier: `${DAILY_REMINDER_ID}-wd${weekday}`,
+      content,
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+        weekday,
+        hour: hours,
+        minute: minutes,
+      },
+    });
+  }
+  for (let week = 1; week <= DAILY_REMINDER_SAME_WEEKDAY_WEEKS; week++) {
+    // Calendar arithmetic (setDate), so DST shifts keep the local time.
+    const date = new Date(todayFire);
+    date.setDate(date.getDate() + 7 * week);
+    await Notifications.scheduleNotificationAsync({
+      identifier: `${DAILY_REMINDER_ID}-once-${week}`,
+      content,
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date,
+      },
+    });
   }
 }
 

@@ -2004,6 +2004,14 @@ export const storage = {
   },
 
   async resetChallengeProgress(): Promise<void> {
+    // Runs on the nudge-state chain so a mutate already in flight can't
+    // write the old nudge state back after the reset (Rev #36 nit).
+    const run = nudgeStateChain.then(() => this.removeChallengeProgressKeys());
+    nudgeStateChain = run.catch(() => undefined);
+    await run;
+  },
+
+  async removeChallengeProgressKeys(): Promise<void> {
     try {
       await AsyncStorage.multiRemove([
         STORAGE_KEYS.COMPLETED_DATES,

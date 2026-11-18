@@ -5,6 +5,7 @@
 import * as Notifications from "expo-notifications";
 import {
   DAILY_REMINDER_ID,
+  DAILY_REMINDER_SAME_WEEKDAY_WEEKS,
   cancelAllReminders,
   migrateLegacyDailyReminders,
   rescheduleAfterCompletion,
@@ -164,16 +165,27 @@ describe("daily reminder keeps challenge nudges scheduled", () => {
       const reminders = mockScheduled.filter((r) =>
         r.identifier.startsWith(DAILY_REMINDER_ID),
       );
-      expect(reminders).toHaveLength(7);
+      expect(reminders).toHaveLength(6 + DAILY_REMINDER_SAME_WEEKDAY_WEEKS);
       expect(reminders.some((r) => r.trigger?.type === "daily")).toBe(false);
       const weekly = reminders.filter((r) => r.trigger?.type === "weekly");
       expect(weekly.map((r) => r.trigger?.weekday).sort()).toEqual([
         1, 2, 3, 5, 6, 7,
       ]); // Wednesday (4) skipped
-      const oneOff = reminders.find((r) => r.trigger?.type === "date");
-      const date = oneOff?.trigger?.date as Date;
-      expect([date.getMonth(), date.getDate(), date.getHours()]).toEqual([
-        10, 25, 8,
+      const oneOffs = reminders
+        .filter((r) => r.trigger?.type === "date")
+        .map((r) => r.trigger?.date as Date);
+      expect(oneOffs).toHaveLength(DAILY_REMINDER_SAME_WEEKDAY_WEEKS);
+      expect(
+        oneOffs.map((d) => [d.getMonth(), d.getDate(), d.getHours()]),
+      ).toEqual([
+        [10, 25, 8],
+        [11, 2, 8],
+        [11, 9, 8],
+        [11, 16, 8],
+        [11, 23, 8],
+        [11, 30, 8],
+        [0, 6, 8],
+        [0, 13, 8],
       ]);
       expect(ids()).toContain("challenge-day2-nudge");
       expect(ids()).toContain("challenge-followup-d3");
@@ -185,6 +197,66 @@ describe("daily reminder keeps challenge nudges scheduled", () => {
         r.identifier.startsWith(DAILY_REMINDER_ID),
       );
       expect(after.map((r) => r.identifier)).toEqual([DAILY_REMINDER_ID]);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("L8: a lapsed user gets the reminder 7 days a week for the whole window, never today", async () => {
+    const now = new Date(2026, 10, 18, 7, 0); // Wed 07:00
+    jest.useFakeTimers({ now });
+    try {
+      mockStore.completedDates = [localDate(new Date())];
+      await scheduleDailyReminder("08:00");
+      const reminders = mockScheduled.filter((r) =>
+        r.identifier.startsWith(DAILY_REMINDER_ID),
+      );
+      // Expand every trigger into concrete fire days over the window.
+      const fireDays = new Set<string>();
+      const days = 7 * DAILY_REMINDER_SAME_WEEKDAY_WEEKS;
+      for (let i = 0; i <= days; i++) {
+        const day = new Date(2026, 10, 18 + i, 8, 0);
+        for (const r of reminders) {
+          const t = r.trigger ?? {};
+          const hit =
+            (t.type === "weekly" && t.weekday === day.getDay() + 1) ||
+            (t.type === "date" && (t.date as Date).getTime() === day.getTime());
+          if (hit) fireDays.add(localDate(day));
+        }
+      }
+      expect(fireDays.has(localDate(now))).toBe(false); // not again today
+      for (let i = 1; i <= days; i++) {
+        expect(fireDays.has(localDate(new Date(2026, 10, 18 + i)))).toBe(true);
+      }
+      // Ids are unique and well inside iOS's 64 pending limit.
+      const reminderIds = reminders.map((r) => r.identifier);
+      expect(new Set(reminderIds).size).toBe(reminderIds.length);
+      expect(mockScheduled.length).toBeLessThanOrEqual(20);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("L8: the window rolls forward on every rebuild (no stale or duplicate ids)", async () => {
+    jest.useFakeTimers({ now: new Date(2026, 10, 18, 7, 0) });
+    try {
+      mockStore.completedDates = [localDate(new Date())];
+      await scheduleDailyReminder("08:00");
+      jest.setSystemTime(new Date(2026, 10, 19, 7, 0)); // Thu, done again
+      mockStore.completedDates = [localDate(new Date())];
+      await scheduleDailyReminder("08:00");
+      const reminders = mockScheduled.filter((r) =>
+        r.identifier.startsWith(DAILY_REMINDER_ID),
+      );
+      expect(reminders).toHaveLength(6 + DAILY_REMINDER_SAME_WEEKDAY_WEEKS);
+      const weekly = reminders.filter((r) => r.trigger?.type === "weekly");
+      expect(weekly.map((r) => r.trigger?.weekday).sort()).toEqual([
+        1, 2, 3, 4, 6, 7,
+      ]); // Thursday (5) skipped now; Wednesday is back
+      const first = reminders.find(
+        (r) => r.identifier === `${DAILY_REMINDER_ID}-once-1`,
+      );
+      expect((first?.trigger?.date as Date).getDate()).toBe(26);
     } finally {
       jest.useRealTimers();
     }

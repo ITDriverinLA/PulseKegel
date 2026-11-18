@@ -122,4 +122,20 @@ describe("nudge state is serialized (real storage)", () => {
     const state = await storage.getChallengeDay2NudgeState();
     expect(state.lastShownLocalDate).toBe("2026-11-19");
   });
+
+  it("reset runs on the chain: an in-flight mutate can't write old state back", async () => {
+    for (let i = 0; i < 20; i++) {
+      store.clear();
+      await storage.updateChallengeDay2NudgeState({
+        push: { fireAt: PAST },
+        lastHandledResponseKey: "old",
+      });
+      const inFlight = claimNotificationResponse(`k|${i}`);
+      const reset = storage.resetChallengeProgress();
+      await Promise.all([inFlight, reset]);
+      const state = await storage.getChallengeDay2NudgeState();
+      expect(state.push ?? null).toBeNull();
+      expect(state.lastHandledResponseKey ?? null).toBeNull();
+    }
+  });
 });
