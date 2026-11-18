@@ -22,14 +22,17 @@ export interface P8SummaryEvent {
   createdAt: Date | string | number;
 }
 
-/** Event types the summary reads. The route loads only these. */
+/** Day-1 completion event types (challenge_day_completed only for week 1, day 1). */
 export const P8_DAY1_EVENT_TYPES = [
   "first_session_completed",
   "challenge_day_completed",
 ] as const;
 
-export const P8_EVENT_TYPES = [
-  ...P8_DAY1_EVENT_TYPES,
+/**
+ * Types the route loads only inside the lookback/lookahead window. Day-1
+ * completions are loaded separately with no lower bound (see the route).
+ */
+export const P8_WINDOW_EVENT_TYPES = [
   "session_started",
   "challenge_day_started",
   "challenge_day2_nudge_scheduled",
@@ -43,6 +46,11 @@ export const P8_EVENT_TYPES = [
   "comeback_shown",
   "comeback_tapped",
   "comeback_completed",
+] as const;
+
+export const P8_EVENT_TYPES = [
+  ...P8_DAY1_EVENT_TYPES,
+  ...P8_WINDOW_EVENT_TYPES,
 ] as const;
 
 const SESSION_START_TYPES = new Set([
@@ -286,6 +294,8 @@ export interface P8ComebackRow {
   completed: number;
   /** Completed a comeback session and started another session within 7 days after it. */
   anotherSessionWithin7d: number;
+  /** False while some completed comeback's 7-day window is still open. */
+  anotherSessionWindowComplete: boolean;
 }
 
 export interface P8RetentionSummary {
@@ -318,7 +328,9 @@ export const P8_DEFINITIONS: Record<string, string> = {
   firstReturnDay3:
     "First later session was two UTC days after Day 1 (Day-3 return).",
   challengeDay2Started:
-    "challenge_day_started day 2. Meaningful only on the accelerated path; Day 2 is a rest day elsewhere.",
+    "challenge_day_started with day 2 and week 1 (or no week). Meaningful only on the accelerated path; Day 2 is a rest day elsewhere.",
+  firstReturnByDate:
+    "Devices whose first session after their Day-1 UTC date started on this date. Devices with an older Day 1 are checked against their full session history, so an earlier return is never re-counted.",
   estimatedDelivered:
     "Estimated. Push scheduled with fire_at that has passed, with no session start or re-schedule of the same nudge on that device in between. Grouped by fire_at date. Focus modes, revoked permission or battery rules can still hide it.",
   receivedForeground:
@@ -331,6 +343,10 @@ export const P8_DEFINITIONS: Record<string, string> = {
   sessionStartedAfterTap:
     "Tapped, then started a session within 24 hours. Grouped by tap date.",
   nudge: "day2, or followup (followup_day 3 or 5).",
+  osGranted:
+    "permission_result with type push and status granted, attributed to a pre-prompt attempt by its pre_prompt prop: day1_complete = attempt 1, second_session = attempt 2. pre_prompt none or missing is not counted.",
+  anotherSessionWithin7d:
+    "Comeback session completed, then another session start within 7 days after it. anotherSessionWindowComplete is false while any of those 7-day windows is still open.",
 };
 
 function emptyCounts(): Record<NudgeMetric, Set<string>> {
@@ -384,12 +400,31 @@ function isDay1Completion(
   return false;
 }
 
+export interface P8SummaryOptions {
+  now?: Date;
+  /**
+   * Start of the session-start history in `events`. Session starts are only
+   * loaded from P8_LOOKBACK_DAYS before `from`, while Day-1 completions load
+   * with no lower bound. For a device whose Day 1 is older than this, the
+   * caller must say whether it already returned before this instant.
+   */
+  sessionHistoryFromMs?: number;
+  /**
+   * Devices whose first session after their Day-1 date happened before
+   * `sessionHistoryFromMs` (one SQL row per device). Such a device's first
+   * return is never inside the range, so it is left out of firstReturnByDate.
+   */
+  returnedBeforeSessionHistory?: ReadonlySet<string>;
+}
+
 export function summarizeP8Retention(
   events: P8SummaryEvent[],
   range: P8Range,
-  options?: { now?: Date },
+  options?: P8SummaryOptions,
 ): P8RetentionSummary {
   const nowMs = (options?.now ?? new Date()).getTime();
+  const sessionHistoryFromMs = options?.sessionHistoryFromMs;
+  const returnedBefore = options?.returnedBeforeSessionHistory ?? new Set();
   const inRange = (ms: number) => ms >= range.fromMs && ms < range.toEndMs;
 
   // Normalise and sort once so "earliest" logic is simple.
@@ -469,7 +504,11 @@ export function summarizeP8Retention(
 
   const challengeDay2Devices = new Set<string>();
   for (const { event, data, at } of rows) {
-    if (event.eventType === "challenge_day_started" && data?.day === 2) {
+    if (
+      event.eventType === "challenge_day_started" &&
+      data?.day === 2 &&
+      (data?.week === undefined || data?.week === 1)
+    ) {
       challengeDay2Devices.add(event.deviceId);
       if (inRange(at)) {
         addDatePlatform(
@@ -489,7 +528,13 @@ export function summarizeP8Retention(
       (t) => dayIndex(t) > d1Day,
     );
     const firstLater = later.length ? Math.min(...later) : null;
-    if (firstLater != null && inRange(firstLater)) {
+    // Day-1's next UTC day starts before the loaded session history: only
+    // trust firstLater when the device had no return before that history.
+    const historyCoversReturn =
+      sessionHistoryFromMs == null ||
+      (d1Day + 1) * DAY_MS >= sessionHistoryFromMs ||
+      !returnedBefore.has(deviceId);
+    if (firstLater != null && historyCoversReturn && inRange(firstLater)) {
       addDatePlatform(
         firstReturnByDate,
         utcDate(firstLater),
@@ -733,6 +778,7 @@ export function summarizeP8Retention(
     notNow: Set<string>;
     completed: Set<string>;
     another: Set<string>;
+    windowComplete: boolean;
   };
   const cb = new Map<string, CbAcc>();
   const cbAcc = (platform: string, source: string) => {
@@ -745,6 +791,7 @@ export function summarizeP8Retention(
         notNow: new Set(),
         completed: new Set(),
         another: new Set(),
+        windowComplete: true,
       };
       cb.set(k, acc);
     }
@@ -766,6 +813,7 @@ export function summarizeP8Retention(
     } else if (event.eventType === "comeback_completed") {
       const acc = cbAcc(platform, source);
       acc.completed.add(event.deviceId);
+      if (at + 7 * DAY_MS > nowMs) acc.windowComplete = false;
       // Another session after this one: any later start beyond a short grace
       // (the comeback session's own session_started comes before completion).
       if (hasSessionBetween(event.deviceId, at + 60_000, at + 7 * DAY_MS)) {
@@ -784,6 +832,7 @@ export function summarizeP8Retention(
         tappedNotNow: acc.notNow.size,
         completed: acc.completed.size,
         anotherSessionWithin7d: acc.another.size,
+        anotherSessionWindowComplete: acc.windowComplete,
       };
     })
     .sort(

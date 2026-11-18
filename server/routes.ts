@@ -18,8 +18,7 @@ import { analyticsBatchSchema, weeklyReviewSchema } from "./requestValidation";
 import { insertAnalyticsEvents, toAnalyticsRows } from "./analyticsIngest";
 import { summarizeP7Day1 } from "./p7AnalyticsSummary";
 import {
-  P8_DAY1_EVENT_TYPES,
-  P8_EVENT_TYPES,
+  P8_WINDOW_EVENT_TYPES,
   P8_LOOKAHEAD_DAYS,
   P8_LOOKBACK_DAYS,
   resolveP8Range,
@@ -218,14 +217,27 @@ function buildFallback(
 const P8_DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
- * P8 retention for a UTC date range. Loads only the P8 event types, from
+ * P8 retention for a UTC date range. Window event types load from
  * P8_LOOKBACK_DAYS before `from` (pushes scheduled earlier that fire in range)
- * to P8_LOOKAHEAD_DAYS after `to` (7-day second-session window). Day-1
- * completions load with no lower bound so each device's true first Day 1 is used.
+ * to P8_LOOKAHEAD_DAYS after `to` (7-day windows). Day-1 completions
+ * (first_session_completed, and challenge_day_completed week 1 day 1 only)
+ * load with no lower bound so each device's true first Day 1 is used.
+ *
+ * Devices whose Day 1 is older than the lookback get one extra bounded query
+ * (one row per device): did they already return before the lookback? If so,
+ * their first return can't be in range and isn't counted in firstReturnByDate.
  */
 async function loadP8Retention(range: P8Range, now: Date) {
   const lower = new Date(range.fromMs - P8_LOOKBACK_DAYS * P8_DAY_MS);
   const upper = new Date(range.toEndMs + P8_LOOKAHEAD_DAYS * P8_DAY_MS);
+  const day1Condition = sql`(
+    ${analyticsEvents.eventType} = 'first_session_completed'
+    OR (
+      ${analyticsEvents.eventType} = 'challenge_day_completed'
+      AND ${analyticsEvents.eventData}->>'day' = '1'
+      AND COALESCE(${analyticsEvents.eventData}->>'week', '1') = '1'
+    )
+  )`;
   const rows = await db
     .select({
       deviceId: analyticsEvents.deviceId,
@@ -237,15 +249,45 @@ async function loadP8Retention(range: P8Range, now: Date) {
     .from(analyticsEvents)
     .where(
       and(
-        inArray(analyticsEvents.eventType, [...P8_EVENT_TYPES]),
         lt(analyticsEvents.createdAt, upper),
         or(
-          gte(analyticsEvents.createdAt, lower),
-          inArray(analyticsEvents.eventType, [...P8_DAY1_EVENT_TYPES]),
+          and(
+            inArray(analyticsEvents.eventType, [...P8_WINDOW_EVENT_TYPES]),
+            gte(analyticsEvents.createdAt, lower),
+          ),
+          day1Condition,
         ),
       ),
     );
-  const summary = summarizeP8Retention(rows, range, { now });
+
+  // Devices with Day 1 before the lookback that already started a session
+  // on a later UTC day, before the lookback. One row per such device.
+  const returnedBeforeRaw = await db.execute<{ device_id: string }>(
+    sql`
+    WITH d1 AS (
+      SELECT device_id, MIN(created_at) AS d1_at
+      FROM analytics_events
+      WHERE ${day1Condition} AND created_at < ${lower}
+      GROUP BY device_id
+    )
+    SELECT DISTINCT d1.device_id
+    FROM d1
+    JOIN analytics_events s
+      ON s.device_id = d1.device_id
+     AND s.event_type IN ('session_started', 'challenge_day_started')
+     AND s.created_at >= date_trunc('day', d1.d1_at) + INTERVAL '1 day'
+     AND s.created_at < ${lower}
+  `,
+  );
+  const returnedBeforeSessionHistory = new Set(
+    returnedBeforeRaw.rows.map((row) => row.device_id),
+  );
+
+  const summary = summarizeP8Retention(rows, range, {
+    now,
+    sessionHistoryFromMs: lower.getTime(),
+    returnedBeforeSessionHistory,
+  });
 
   // Weekly active devices by platform (same counting as wauByPlatform, but
   // per UTC Monday-start week inside the range).

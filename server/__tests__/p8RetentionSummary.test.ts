@@ -347,7 +347,110 @@ describe("summarizeP8Retention — pre-prompt and comeback funnels", () => {
         tappedNotNow: 0,
         completed: 1,
         anotherSessionWithin7d: 1,
+        anotherSessionWindowComplete: true,
       },
     ]);
+  });
+});
+
+describe("summarizeP8Retention — review fixes", () => {
+  it("M1: counts challenge Day 2 only for week 1 (or no week)", () => {
+    const events: P8SummaryEvent[] = [
+      ev(A, "ios", "first_session_completed", "2026-11-09T10:00:00Z"),
+      // Week 3 day 2: not the challenge Day 2.
+      ev(A, "ios", "challenge_day_started", "2026-11-10T10:00:00Z", {
+        week: 3,
+        day: 2,
+      }),
+      ev(B, "ios", "first_session_completed", "2026-11-09T10:00:00Z"),
+      ev(B, "ios", "challenge_day_started", "2026-11-10T10:00:00Z", {
+        week: 1,
+        day: 2,
+      }),
+      ev(C, "android", "first_session_completed", "2026-11-09T10:00:00Z"),
+      ev(C, "android", "challenge_day_started", "2026-11-10T10:00:00Z", {
+        day: 2,
+      }),
+    ];
+    const s = summarizeP8Retention(events, range, { now: NOW });
+    expect(s.challengeDay2StartedByDate).toEqual([
+      { date: "2026-11-10", platform: "android", devices: 1 },
+      { date: "2026-11-10", platform: "ios", devices: 1 },
+    ]);
+    const all = s.secondSession.cohortsByWeek.find((r) => r.platform === "all");
+    expect(all?.challengeDay2Started).toBe(2);
+  });
+
+  describe("M2: Day 1 older than the session lookback", () => {
+    // Rev's repro: Day 1 Oct 1, session Nov 12, range Nov 9–15. Session
+    // starts are only loaded from Oct 25 (from − 15 days).
+    const lookbackMs = range.fromMs - 15 * 24 * 60 * 60 * 1000;
+    const events: P8SummaryEvent[] = [
+      ev(A, "ios", "first_session_completed", "2026-10-01T10:00:00Z"),
+      ev(A, "ios", "session_started", "2026-11-12T10:00:00Z"),
+    ];
+
+    it("does not count a device that already returned before the lookback", () => {
+      const s = summarizeP8Retention(events, range, {
+        now: NOW,
+        sessionHistoryFromMs: lookbackMs,
+        returnedBeforeSessionHistory: new Set([A]),
+      });
+      expect(s.secondSession.firstReturnByDate).toEqual([]);
+    });
+
+    it("counts it when the device had no earlier return (true first return)", () => {
+      const s = summarizeP8Retention(events, range, {
+        now: NOW,
+        sessionHistoryFromMs: lookbackMs,
+        returnedBeforeSessionHistory: new Set(),
+      });
+      expect(s.secondSession.firstReturnByDate).toEqual([
+        { date: "2026-11-12", platform: "ios", devices: 1 },
+      ]);
+    });
+
+    it("never affects in-range Day-1 cohorts", () => {
+      const inRangeEvents: P8SummaryEvent[] = [
+        ev(B, "ios", "first_session_completed", "2026-11-09T10:00:00Z"),
+        ev(B, "ios", "session_started", "2026-11-10T10:00:00Z"),
+      ];
+      const s = summarizeP8Retention(inRangeEvents, range, {
+        now: NOW,
+        sessionHistoryFromMs: lookbackMs,
+        returnedBeforeSessionHistory: new Set([B]),
+      });
+      expect(s.secondSession.firstReturnByDate).toEqual([
+        { date: "2026-11-10", platform: "ios", devices: 1 },
+      ]);
+      expect(s.secondSession.cohortsByWeek[0]).toMatchObject({
+        secondSessionWithin7d: 1,
+        firstReturnDay2: 1,
+      });
+    });
+  });
+
+  it("L2: flags comeback windows that are still open", () => {
+    const events: P8SummaryEvent[] = [
+      ev(C, "ios", "comeback_completed", "2026-11-14T08:00:00Z", {
+        idle_days: 3,
+      }),
+    ];
+    const open = summarizeP8Retention(events, range, {
+      now: new Date("2026-11-16T00:00:00Z"),
+    });
+    expect(open.comeback[0]).toMatchObject({
+      completed: 1,
+      anotherSessionWithin7d: 0,
+      anotherSessionWindowComplete: false,
+    });
+    const closed = summarizeP8Retention(events, range, { now: NOW });
+    expect(closed.comeback[0].anotherSessionWindowComplete).toBe(true);
+  });
+
+  it("L3: documents the osGranted pre_prompt-to-attempt mapping", () => {
+    const s = summarizeP8Retention([], range, { now: NOW });
+    expect(s.definitions.osGranted).toMatch(/day1_complete = attempt 1/);
+    expect(s.definitions.osGranted).toMatch(/second_session = attempt 2/);
   });
 });
