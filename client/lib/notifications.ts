@@ -215,35 +215,123 @@ export function buildReminderMessage(
 export const DAILY_REMINDER_ID = "daily-reminder";
 
 /** Local calendar date as YYYY-MM-DD (same format as completedDates). */
-function localDateStr(d: Date): string {
+export function localDateString(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+/**
+ * P8.2 / Rev L1: when today is already done and the reminder time is still
+ * ahead today, a DAILY trigger would still fire today. Expo's DAILY trigger
+ * has no start date, so instead we schedule a WEEKLY trigger for each of the
+ * other six weekdays (repeating forever) plus a one-off DATE trigger for the
+ * same weekday next week. The next launch, completion or Settings change
+ * re-arms the plain DAILY reminder. A user who never opens the app again
+ * still gets the reminder 6 days a week indefinitely (7 for the first week).
+ */
+const WEEKDAY_REMINDER_IDS = [1, 2, 3, 4, 5, 6, 7].map(
+  (weekday) => `${DAILY_REMINDER_ID}-wd${weekday}`,
+);
+
+/** Every id the daily reminder can use (plain DAILY + weekday split). */
+export const DAILY_REMINDER_IDS = [DAILY_REMINDER_ID, ...WEEKDAY_REMINDER_IDS];
+
 async function cancelDailyReminderOnly(): Promise<void> {
-  try {
-    await Notifications.cancelScheduledNotificationAsync(DAILY_REMINDER_ID);
-  } catch {}
+  for (const id of DAILY_REMINDER_IDS) {
+    try {
+      await Notifications.cancelScheduledNotificationAsync(id);
+    } catch {}
+  }
+}
+
+/** Expo weekday numbering: 1 = Sunday … 7 = Saturday. */
+function expoWeekday(d: Date): number {
+  return d.getDay() + 1;
 }
 
 async function scheduleDailyReminderNotification(
   timeStr: string,
   message: { title: string; body: string },
+  options: { todayDone?: boolean; now?: Date } = {},
 ): Promise<void> {
   const [hours, minutes] = timeStr.split(":").map(Number);
-  await Notifications.scheduleNotificationAsync({
-    identifier: DAILY_REMINDER_ID,
-    content: {
-      title: message.title,
-      body: message.body,
-      data: { screen: "Home" },
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.DAILY,
-      hour: hours,
-      minute: minutes,
-    },
-  });
+  const content = {
+    title: message.title,
+    body: message.body,
+    data: { screen: "Home" },
+  };
+  const now = options.now ?? new Date();
+  const todayFire = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    hours,
+    minutes,
+    0,
+    0,
+  );
+  if (!options.todayDone || todayFire.getTime() <= now.getTime()) {
+    // Next DAILY fire is already tomorrow (or today isn't done): plain daily.
+    await Notifications.scheduleNotificationAsync({
+      identifier: DAILY_REMINDER_ID,
+      content,
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        hour: hours,
+        minute: minutes,
+      },
+    });
+    return;
+  }
+  // Today is done and today's time is still ahead: skip today only.
+  const today = expoWeekday(now);
+  for (let weekday = 1; weekday <= 7; weekday++) {
+    const identifier = `${DAILY_REMINDER_ID}-wd${weekday}`;
+    if (weekday === today) {
+      const nextWeek = new Date(todayFire);
+      nextWeek.setDate(nextWeek.getDate() + 7);
+      await Notifications.scheduleNotificationAsync({
+        identifier,
+        content,
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: nextWeek,
+        },
+      });
+    } else {
+      await Notifications.scheduleNotificationAsync({
+        identifier,
+        content,
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+          weekday,
+          hour: hours,
+          minute: minutes,
+        },
+      });
+    }
+  }
 }
+
+/**
+ * Spec open Q3 default (Ashley-approved): no follow-up push when the daily
+ * reminder is on, since those users already get a morning ping. When the
+ * reminder is (re)armed, drop a pending Day-3 push that hasn't fired yet.
+ * Kept here (not in challengeNudge) to avoid a circular import.
+ */
+async function cancelPendingDay3PushForReminder(now: Date): Promise<void> {
+  try {
+    const state = await storage.getChallengeDay2NudgeState();
+    const fireMs = state.followupD3 ? Date.parse(state.followupD3.fireAt) : NaN;
+    if (!Number.isFinite(fireMs) || fireMs <= now.getTime()) return;
+    await Notifications.cancelScheduledNotificationAsync(
+      CHALLENGE_DAY3_PUSH_ID,
+    );
+    await storage.updateChallengeDay2NudgeState({ followupD3: null });
+  } catch {}
+}
+
+/** Id of the rest-day Day-3 push (see challengeNudge.scheduleChallengeDay3Push). */
+export const CHALLENGE_DAY3_PUSH_ID = "challenge-followup-d3";
 
 /** Reminder content as of tomorrow (used once today is already done). */
 async function buildTomorrowReminderMessage(): Promise<{
@@ -284,14 +372,19 @@ export async function scheduleDailyReminder(timeStr: string): Promise<void> {
 
     const progress = await storage.getProgress();
     // P8.2 side-bug fix: completedDates are local dates, so compare local.
-    const today = localDateStr(new Date());
+    const today = localDateString(new Date());
     const todayCompleted = progress.completedDates.includes(today);
 
+    // Q3 default: reminder on -> no Day-3 follow-up push.
+    await cancelPendingDay3PushForReminder(new Date());
+
     if (todayCompleted) {
-      // Keep a reminder scheduled (tomorrow's message) instead of none.
+      // Keep a reminder scheduled (tomorrow's message) instead of none, but
+      // don't fire again today (see scheduleDailyReminderNotification).
       await scheduleDailyReminderNotification(
         timeStr,
         await buildTomorrowReminderMessage(),
+        { todayDone: true },
       );
       return;
     }
@@ -310,7 +403,7 @@ export async function scheduleDailyReminder(timeStr: string): Promise<void> {
 
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = localDateStr(yesterday);
+    const yesterdayStr = localDateString(yesterday);
     const yesterdayMissed = !progress.completedDates.includes(yesterdayStr);
     const isFirstEver = progress.totalSessions === 0;
 
@@ -346,7 +439,7 @@ export async function migrateLegacyDailyReminders(): Promise<void> {
         const id = request.identifier ?? "";
         const data = request.content?.data as { screen?: unknown } | undefined;
         if (
-          id !== DAILY_REMINDER_ID &&
+          !id.startsWith(DAILY_REMINDER_ID) &&
           !id.startsWith("challenge-") &&
           data?.screen === "Home"
         ) {
@@ -388,10 +481,13 @@ export async function rescheduleAfterCompletion(): Promise<void> {
     // P8.2: replace only the daily reminder; challenge-* nudges survive.
     await cancelDailyReminderOnly();
 
+    await cancelPendingDay3PushForReminder(new Date());
+
     const timeStr = settings.reminderTime || "08:00";
     await scheduleDailyReminderNotification(
       timeStr,
       await buildTomorrowReminderMessage(),
+      { todayDone: true },
     );
   } catch {}
 }

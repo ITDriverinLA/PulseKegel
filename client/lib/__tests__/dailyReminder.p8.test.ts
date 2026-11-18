@@ -16,6 +16,7 @@ jest.mock("react-native", () => ({ Platform: { OS: "ios" } }));
 type Req = {
   identifier: string;
   content: { data?: Record<string, unknown> };
+  trigger?: Record<string, unknown>;
 };
 const mockScheduled: Req[] = [];
 
@@ -23,14 +24,24 @@ jest.mock("expo-notifications", () => ({
   SchedulableTriggerInputTypes: {
     TIME_INTERVAL: "timeInterval",
     DAILY: "daily",
+    WEEKLY: "weekly",
+    DATE: "date",
   },
   setNotificationHandler: jest.fn(),
   scheduleNotificationAsync: jest.fn(
-    async (req: { identifier?: string; content: Req["content"] }) => {
+    async (req: {
+      identifier?: string;
+      content: Req["content"];
+      trigger?: Record<string, unknown>;
+    }) => {
       const identifier = req.identifier ?? `auto-${mockScheduled.length}`;
       const i = mockScheduled.findIndex((r) => r.identifier === identifier);
       if (i >= 0) mockScheduled.splice(i, 1);
-      mockScheduled.push({ identifier, content: req.content });
+      mockScheduled.push({
+        identifier,
+        content: req.content,
+        trigger: req.trigger,
+      });
       return identifier;
     },
   ),
@@ -53,6 +64,7 @@ const mockStore = {
   completedDates: [] as string[],
   reminderEnabled: true,
   migrated: false,
+  nudgeState: {} as Record<string, unknown>,
 };
 jest.mock("../storage", () => ({
   storage: {
@@ -69,6 +81,11 @@ jest.mock("../storage", () => ({
       reminderTime: "08:00",
     }),
     hasCompletedFirstSession: async () => true,
+    getChallengeDay2NudgeState: async () => ({ ...mockStore.nudgeState }),
+    updateChallengeDay2NudgeState: async (patch: Record<string, unknown>) => {
+      mockStore.nudgeState = { ...mockStore.nudgeState, ...patch };
+      return mockStore.nudgeState;
+    },
     isDailyReminderIdMigrated: async () => mockStore.migrated,
     markDailyReminderIdMigrated: async () => {
       mockStore.migrated = true;
@@ -106,6 +123,7 @@ beforeEach(() => {
   mockStore.completedDates = [];
   mockStore.reminderEnabled = true;
   mockStore.migrated = false;
+  mockStore.nudgeState = {};
   seedChallengeNudge();
 });
 
@@ -138,14 +156,70 @@ describe("daily reminder keeps challenge nudges scheduled", () => {
     expect(ids()).toEqual(["challenge-day2-nudge", "challenge-followup-d3"]);
   });
 
-  it("keeps a reminder scheduled when today (local date) is already done", async () => {
-    mockStore.completedDates = [localDate(new Date())];
+  it("today done, time still ahead: skips today but keeps every other day", async () => {
+    jest.useFakeTimers({ now: new Date(2026, 10, 18, 7, 0) }); // Wed 07:00
+    try {
+      mockStore.completedDates = [localDate(new Date())];
+      await scheduleDailyReminder("08:00");
+      const reminders = mockScheduled.filter((r) =>
+        r.identifier.startsWith(DAILY_REMINDER_ID),
+      );
+      expect(reminders).toHaveLength(7);
+      expect(reminders.some((r) => r.trigger?.type === "daily")).toBe(false);
+      const weekly = reminders.filter((r) => r.trigger?.type === "weekly");
+      expect(weekly.map((r) => r.trigger?.weekday).sort()).toEqual([
+        1, 2, 3, 5, 6, 7,
+      ]); // Wednesday (4) skipped
+      const oneOff = reminders.find((r) => r.trigger?.type === "date");
+      const date = oneOff?.trigger?.date as Date;
+      expect([date.getMonth(), date.getDate(), date.getHours()]).toEqual([
+        10, 25, 8,
+      ]);
+      expect(ids()).toContain("challenge-day2-nudge");
+      expect(ids()).toContain("challenge-followup-d3");
+
+      // Next launch on a not-done day re-arms the plain DAILY reminder.
+      mockStore.completedDates = [];
+      await scheduleDailyReminder("08:00");
+      const after = mockScheduled.filter((r) =>
+        r.identifier.startsWith(DAILY_REMINDER_ID),
+      );
+      expect(after.map((r) => r.identifier)).toEqual([DAILY_REMINDER_ID]);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("today done, time already passed: plain DAILY (next fire is tomorrow)", async () => {
+    jest.useFakeTimers({ now: new Date(2026, 10, 18, 20, 0) });
+    try {
+      mockStore.completedDates = [localDate(new Date())];
+      await scheduleDailyReminder("08:00");
+      const reminders = mockScheduled.filter((r) =>
+        r.identifier.startsWith(DAILY_REMINDER_ID),
+      );
+      expect(reminders.map((r) => r.trigger?.type)).toEqual(["daily"]);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("open Q3: arming the reminder drops a pending (unfired) Day-3 push", async () => {
+    mockStore.nudgeState = {
+      followupD3: { fireAt: new Date(Date.now() + 86_400_000).toISOString() },
+    };
     await scheduleDailyReminder("08:00");
-    expect(ids()).toEqual([
-      "challenge-day2-nudge",
-      "challenge-followup-d3",
-      DAILY_REMINDER_ID,
-    ]);
+    expect(ids()).not.toContain("challenge-followup-d3");
+    expect(ids()).toContain("challenge-day2-nudge");
+    expect(mockStore.nudgeState.followupD3).toBeNull();
+  });
+
+  it("open Q3: a Day-3 push that already fired is left alone", async () => {
+    mockStore.nudgeState = {
+      followupD3: { fireAt: new Date(Date.now() - 60_000).toISOString() },
+    };
+    await scheduleDailyReminder("08:00");
+    expect(ids()).toContain("challenge-followup-d3");
   });
 });
 
@@ -153,6 +227,10 @@ describe("legacy daily reminder migration", () => {
   it("cancels unidentified Home reminders once and never challenge-* ids", async () => {
     mockScheduled.push(
       { identifier: "legacy-uuid-1", content: { data: { screen: "Home" } } },
+      {
+        identifier: "daily-reminder-wd3",
+        content: { data: { screen: "Home" } },
+      },
       { identifier: "legacy-uuid-2", content: { data: { screen: "Home" } } },
       { identifier: "badge-x", content: { data: { screen: "Badges" } } },
       {
@@ -166,6 +244,7 @@ describe("legacy daily reminder migration", () => {
       "challenge-day2-nudge",
       "challenge-followup-d3",
       "challenge-followup-d5",
+      "daily-reminder-wd3",
     ]);
     expect(mockStore.migrated).toBe(true);
 

@@ -47,6 +47,9 @@ import { asAppState, didAppBecomeActive } from "@/lib/appState";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
+// P8.1.6: notification responses already handled in this process.
+const handledResponseKeys = new Set<string>();
+
 markColdLaunch();
 
 function parseChallengeDayLink(
@@ -158,6 +161,11 @@ function AppContent() {
         // P8.1.6: getLastNotificationResponseAsync replays the last tap on
         // every cold launch. Handle each response once (id + fire date).
         const key = `${response.notification.request.identifier}|${response.notification.date}`;
+        // Same-process double delivery (response listener + getLast on a
+        // cold launch): a synchronous in-memory check catches it before any
+        // await. The persisted atomic claim covers later cold launches.
+        if (handledResponseKeys.has(key)) return;
+        handledResponseKeys.add(key);
         if (!(await claimNotificationResponse(key))) return;
         try {
           await Notifications.clearLastNotificationResponseAsync();

@@ -230,7 +230,7 @@ export interface ChallengeDay2NudgeState {
   eligibleFromLocalDate?: string;
   /** Local date the in-app banner last logged "shown" (once per day). */
   lastShownLocalDate?: string;
-  /** Banner rendered on an eligible day; leaving Home now clears it. */
+  /** Banner seen (visible on focused Home for a moment); leaving Home now clears it. */
   renderedOnEligibleDay?: boolean;
   /** Scheduled Day-2 push, for foreground-receipt / fire-passed events. */
   push?: {
@@ -447,6 +447,9 @@ const runScoreSerialized = <T>(fn: () => Promise<T>): Promise<T> => {
   scoreWriteQueue = next.catch(() => undefined);
   return next;
 };
+
+// Serializes writes to the P8 Day-2 nudge state (see mutateChallengeDay2NudgeState).
+let nudgeStateChain: Promise<unknown> = Promise.resolve();
 
 export const storage = {
   async getCompletedDates(): Promise<string[]> {
@@ -1824,19 +1827,46 @@ export const storage = {
     }
   },
 
-  async updateChallengeDay2NudgeState(
+  /**
+   * Atomic read-modify-write of the Day-2 nudge state. Every write to this
+   * key goes through one module-level promise chain, so concurrent callers
+   * (cold-launch tap + fire-passed check, Home render + blur) never lose
+   * each other's fields. `fn` sees the latest state and returns an optional
+   * patch plus a result. Do not call other nudge-state writers inside `fn`.
+   */
+  mutateChallengeDay2NudgeState<T>(
+    fn: (state: ChallengeDay2NudgeState) => {
+      patch?: Partial<ChallengeDay2NudgeState>;
+      result: T;
+    },
+  ): Promise<T> {
+    const run = nudgeStateChain.then(async () => {
+      const current = await this.getChallengeDay2NudgeState();
+      const { patch, result } = fn(current);
+      if (patch) {
+        try {
+          await AsyncStorage.setItem(
+            STORAGE_KEYS.CHALLENGE_DAY2_NUDGE_STATE,
+            JSON.stringify({ ...current, ...patch }),
+          );
+        } catch (error) {
+          console.error("Error saving day2 nudge state:", error);
+        }
+      }
+      return result;
+    });
+    nudgeStateChain = run.catch(() => undefined);
+    return run;
+  },
+
+  /** Serialized merge of `patch` into the Day-2 nudge state. */
+  updateChallengeDay2NudgeState(
     patch: Partial<ChallengeDay2NudgeState>,
   ): Promise<ChallengeDay2NudgeState> {
-    const next = { ...(await this.getChallengeDay2NudgeState()), ...patch };
-    try {
-      await AsyncStorage.setItem(
-        STORAGE_KEYS.CHALLENGE_DAY2_NUDGE_STATE,
-        JSON.stringify(next),
-      );
-    } catch (error) {
-      console.error("Error saving day2 nudge state:", error);
-    }
-    return next;
+    return this.mutateChallengeDay2NudgeState((state) => ({
+      patch,
+      result: { ...state, ...patch },
+    }));
   },
 
   async isDailyReminderIdMigrated(): Promise<boolean> {

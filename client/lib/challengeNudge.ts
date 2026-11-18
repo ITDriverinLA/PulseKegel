@@ -26,7 +26,9 @@ import {
   type PushPermissionStatusValue,
 } from "./analytics";
 import {
+  CHALLENGE_DAY3_PUSH_ID,
   getNotificationPermissionStatus,
+  localDateString,
   requestNotificationPermissionInstrumented,
 } from "./notifications";
 import { getWeek1WorkoutForDayIndex } from "@/data/workoutProgram";
@@ -38,7 +40,7 @@ const NUDGE_ID = "challenge-day2-nudge";
  * id, so scheduling it overwrites this notification, and this Phase B
  * scheduler should be removed in the same change.
  */
-const DAY3_PUSH_ID = "challenge-followup-d3";
+const DAY3_PUSH_ID = CHALLENGE_DAY3_PUSH_ID; // "challenge-followup-d3"
 const MIN_DELAY_MS = 20 * 60 * 60 * 1000;
 const MAX_DELAY_MS = 28 * 60 * 60 * 1000;
 const DEFAULT_DELAY_MS = 24 * 60 * 60 * 1000;
@@ -58,10 +60,8 @@ function computeDay2TriggerDate(from: Date = new Date()): Date {
   return target;
 }
 
-/** Local calendar date as YYYY-MM-DD (same format as completedDates). */
-export function localDateString(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
+// Single local-date helper, shared with the daily reminder.
+export { localDateString };
 
 /** The local calendar day after `d` (DST-safe: calendar arithmetic). */
 export function nextLocalDateString(d: Date): string {
@@ -110,6 +110,11 @@ export async function scheduleChallengeDay2Nudge(
       push: null,
     });
 
+    // The post-Day-1 permission ask stays ahead of the path check on purpose:
+    // rest-day paths (standard, gentle, uncalibrated) now get the Day-3 push,
+    // which needs permission just like the accelerated Day-2 push. P8.4
+    // (Phase C) moves this ask to the soft pre-prompt; attribute prompts by
+    // surface, not as "Day-2 push" prompts.
     let channel: "push" | "in_app" = "in_app";
     const status = await getNotificationPermissionStatus();
 
@@ -204,6 +209,13 @@ export async function scheduleChallengeDay3Push(
 ): Promise<void> {
   try {
     if (await storage.hasChallengeDayCompleted(1, 3)) return;
+    // Spec open Q3 default (Ashley-approved): daily reminder on -> no
+    // follow-up push; they already get a morning ping. If the reminder is
+    // turned on later, notifications.ts cancels a pending Day-3 push. If it
+    // is turned off before Day 3, we don't re-schedule (kept simple; Phase C
+    // replaces this push anyway).
+    const settings = await storage.getSettings();
+    if (settings.reminderEnabled) return;
     const start = (await storage.getProgramStartDate()) ?? localDateString(now);
     const when = challengeDayMorning(start, 3);
     const seconds = Math.round((when.getTime() - now.getTime()) / 1000);
@@ -255,6 +267,21 @@ export async function cancelChallengeDay3Push(): Promise<void> {
   }
 }
 
+/**
+ * P8.3 cancel rule (Rev L5): any session start after Day 1 cancels the
+ * Day-3 push. Called from the workout player's session-start effect; the
+ * push only exists after Day-1 completion, so the Day-1 start never hits it.
+ */
+export async function cancelChallengeDay3PushOnSessionStart(): Promise<void> {
+  try {
+    const state = await storage.getChallengeDay2NudgeState();
+    if (!state.followupD3) return;
+    await cancelChallengeDay3Push();
+  } catch {
+    /* ignore */
+  }
+}
+
 /** On open: Day 3 already completed (e.g. restored progress) — drop the push. */
 export async function reconcileChallengeDay3Push(): Promise<void> {
   try {
@@ -271,13 +298,13 @@ export async function reconcileChallengeDay3Push(): Promise<void> {
 /**
  * Log challenge_nudge_fire_passed once per scheduled push (Day-2 and the
  * Day-3 push) whose fire time has passed. Called on every app open / resume,
- * and before cancelling.
+ * and before cancelling. The due check and the "logged" mark are one atomic
+ * step in storage, so concurrent callers can't log twice or drop the mark.
  */
 export async function reportDay2NudgeFirePassed(
   now: Date = new Date(),
 ): Promise<void> {
   try {
-    const state = await storage.getChallengeDay2NudgeState();
     const due = (
       r: { fireAt: string; firePassedLogged?: boolean } | null | undefined,
     ) => {
@@ -285,17 +312,32 @@ export async function reportDay2NudgeFirePassed(
       const fireMs = Date.parse(r.fireAt);
       return Number.isFinite(fireMs) && fireMs <= now.getTime();
     };
-    const day2Due = due(state.push);
-    const day3Due = due(state.followupD3);
+    const { day2Due, day3Due } = await storage.mutateChallengeDay2NudgeState(
+      (state) => {
+        const d2 = due(state.push);
+        const d3 = due(state.followupD3);
+        return {
+          patch:
+            d2 || d3
+              ? {
+                  ...(d2 && state.push
+                    ? { push: { ...state.push, firePassedLogged: true } }
+                    : {}),
+                  ...(d3 && state.followupD3
+                    ? {
+                        followupD3: {
+                          ...state.followupD3,
+                          firePassedLogged: true,
+                        },
+                      }
+                    : {}),
+                }
+              : undefined,
+          result: { day2Due: d2, day3Due: d3 },
+        };
+      },
+    );
     if (!day2Due && !day3Due) return;
-    await storage.updateChallengeDay2NudgeState({
-      ...(day2Due && state.push
-        ? { push: { ...state.push, firePassedLogged: true } }
-        : {}),
-      ...(day3Due && state.followupD3
-        ? { followupD3: { ...state.followupD3, firePassedLogged: true } }
-        : {}),
-    });
     const permission_status = toPermissionStatus(
       await getNotificationPermissionStatus(),
     );
@@ -314,35 +356,39 @@ export async function reportDay2NudgeFirePassed(
   }
 }
 
-/** Foreground receipt of a challenge push (app open when it fired). Once each. */
+/**
+ * Foreground receipt of a challenge push (app open when it fired). Once each,
+ * via an atomic check-and-set. When there is no stored push record (e.g. a
+ * pre-P8 Day-2 push that was already scheduled at upgrade) there is nothing
+ * to mark, so it isn't deduped: that push fires at most once, so at most one
+ * event is logged.
+ */
 export async function reportDay2NudgeReceived(
   data: { nudge?: unknown; followup_day?: unknown } | null | undefined,
 ): Promise<void> {
   const isDay3 = data?.nudge === "followup" && data?.followup_day === 3;
   if (data?.nudge !== "day2" && !isDay3) return;
   try {
-    const state = await storage.getChallengeDay2NudgeState();
+    const shouldLog = await storage.mutateChallengeDay2NudgeState((state) => {
+      const record = isDay3 ? state.followupD3 : state.push;
+      if (record?.receivedLogged) return { result: false };
+      if (!record) return { result: true };
+      const marked = { ...record, receivedLogged: true };
+      return {
+        patch: isDay3 ? { followupD3: marked } : { push: marked },
+        result: true,
+      };
+    });
+    if (!shouldLog) return;
     if (isDay3) {
-      if (state.followupD3?.receivedLogged) return;
-      if (state.followupD3) {
-        await storage.updateChallengeDay2NudgeState({
-          followupD3: { ...state.followupD3, receivedLogged: true },
-        });
-      }
       trackChallengeNudgeReceived({
         nudge: "followup",
         followup_day: 3,
         method: "foreground",
       });
-      return;
+    } else {
+      trackChallengeNudgeReceived({ nudge: "day2", method: "foreground" });
     }
-    if (state.push?.receivedLogged) return;
-    if (state.push) {
-      await storage.updateChallengeDay2NudgeState({
-        push: { ...state.push, receivedLogged: true },
-      });
-    }
-    trackChallengeNudgeReceived({ nudge: "day2", method: "foreground" });
   } catch {
     /* ignore */
   }
@@ -350,16 +396,16 @@ export async function reportDay2NudgeReceived(
 
 /**
  * P8.1.6: a cold launch replays the last notification response. Returns
- * true the first time a response key is seen, false for repeats.
+ * true the first time a response key is seen, false for repeats. Atomic
+ * check-and-set, so two concurrent claims of one key return [true, false].
  */
 export async function claimNotificationResponse(key: string): Promise<boolean> {
   try {
-    const state = await storage.getChallengeDay2NudgeState();
-    if (state.lastHandledResponseKey === key) return false;
-    await storage.updateChallengeDay2NudgeState({
-      lastHandledResponseKey: key,
-    });
-    return true;
+    return await storage.mutateChallengeDay2NudgeState((state) =>
+      state.lastHandledResponseKey === key
+        ? { result: false }
+        : { patch: { lastHandledResponseKey: key }, result: true },
+    );
   } catch {
     return true;
   }
@@ -416,37 +462,50 @@ export async function shouldShowInAppDay2Nudge(
   return localDateString(now) >= eligibleFrom;
 }
 
-/** Banner rendered on an eligible day: log "shown" once per local day. */
+/**
+ * Banner has actually been seen: Home focused with the banner visible for
+ * DAY2_BANNER_SEEN_MS (HomeScreen runs the timer). Logs "shown" once per
+ * local day and arms clear-on-leave. Atomic, so a concurrent blur can't
+ * drop the mark.
+ */
 export async function markInAppDay2NudgeRendered(
   now: Date = new Date(),
 ): Promise<void> {
   try {
     const today = localDateString(now);
-    const state = await storage.getChallengeDay2NudgeState();
-    const firstToday = state.lastShownLocalDate !== today;
-    await storage.updateChallengeDay2NudgeState({
-      lastShownLocalDate: today,
-      renderedOnEligibleDay: true,
-    });
+    const firstToday = await storage.mutateChallengeDay2NudgeState((state) => ({
+      patch: {
+        lastShownLocalDate: today,
+        renderedOnEligibleDay: true,
+      },
+      result: state.lastShownLocalDate !== today,
+    }));
     if (firstToday) trackChallengeDay2NudgeShown({ channel: "in_app" });
   } catch {
     /* ignore */
   }
 }
 
-/** User left Home after the banner rendered on an eligible day: clear it. */
+/**
+ * User navigated away from Home after the banner was seen: clear it. A blur
+ * before the banner was seen (e.g. a modal or paywall auto-presented right
+ * after Home loads) never armed the clear, so it does nothing.
+ */
 export async function onHomeLeftAfterDay2Nudge(): Promise<void> {
   try {
-    const state = await storage.getChallengeDay2NudgeState();
-    if (!state.renderedOnEligibleDay) return;
-    await storage.setChallengeDay2InAppNudgePending(false);
-    await storage.updateChallengeDay2NudgeState({
-      renderedOnEligibleDay: false,
-    });
+    const wasSeen = await storage.mutateChallengeDay2NudgeState((state) =>
+      state.renderedOnEligibleDay
+        ? { patch: { renderedOnEligibleDay: false }, result: true }
+        : { result: false },
+    );
+    if (wasSeen) await storage.setChallengeDay2InAppNudgePending(false);
   } catch {
     /* ignore */
   }
 }
+
+/** How long the banner must be visible on a focused Home to count as seen. */
+export const DAY2_BANNER_SEEN_MS = 2000;
 
 /** Exported for tests — delay bounds used by scheduler. */
 export const __day2NudgeTestUtils = {

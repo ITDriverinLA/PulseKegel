@@ -94,6 +94,7 @@ import {
 import {
   cancelChallengeDay2Nudge,
   cancelChallengeDay3Push,
+  cancelChallengeDay3PushOnSessionStart,
   scheduleChallengeDay2Nudge,
 } from "@/lib/challengeNudge";
 
@@ -234,6 +235,8 @@ export default function WorkoutPlayerScreen() {
       weekNumber,
       dayNumber,
     });
+    // P8 Phase B: any session start after Day 1 cancels the Day-3 push.
+    void cancelChallengeDay3PushOnSessionStart();
     if (
       weekNumber === 1 &&
       typeof dayNumber === "number" &&

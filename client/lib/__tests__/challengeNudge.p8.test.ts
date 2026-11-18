@@ -7,6 +7,7 @@ import {
   __day2NudgeTestUtils,
   cancelChallengeDay2Nudge,
   cancelChallengeDay3Push,
+  cancelChallengeDay3PushOnSessionStart,
   claimNotificationResponse,
   isDay2WorkoutDay,
   markInAppDay2NudgeRendered,
@@ -52,6 +53,9 @@ jest.mock("../analytics", () => ({
 
 const mockPermission = { status: "granted", requestGrants: false };
 jest.mock("../notifications", () => ({
+  CHALLENGE_DAY3_PUSH_ID: "challenge-followup-d3",
+  localDateString: (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
   getNotificationPermissionStatus: jest.fn(async () => mockPermission.status),
   requestNotificationPermissionInstrumented: jest.fn(
     async () => mockPermission.requestGrants,
@@ -68,6 +72,7 @@ const mockDb: {
   state: Record<string, unknown>;
   programStart: string | null;
   day3Completed: boolean;
+  reminderEnabled: boolean;
 } = {
   scheduled: false,
   day2Started: false,
@@ -77,6 +82,7 @@ const mockDb: {
   state: {},
   programStart: null,
   day3Completed: false,
+  reminderEnabled: false,
 };
 jest.mock("../storage", () => ({
   storage: {
@@ -98,7 +104,18 @@ jest.mock("../storage", () => ({
       calibrationCompleted: mockDb.path != null,
     }),
     getProgress: async () => ({ completedDates: mockDb.completedDates }),
+    getSettings: async () => ({ reminderEnabled: mockDb.reminderEnabled }),
     getChallengeDay2NudgeState: async () => ({ ...mockDb.state }),
+    mutateChallengeDay2NudgeState: async <T>(
+      fn: (st: Record<string, unknown>) => {
+        patch?: Record<string, unknown>;
+        result: T;
+      },
+    ) => {
+      const { patch, result } = fn({ ...mockDb.state });
+      if (patch) mockDb.state = { ...mockDb.state, ...patch };
+      return result;
+    },
     updateChallengeDay2NudgeState: async (patch: Record<string, unknown>) => {
       mockDb.state = { ...mockDb.state, ...patch };
       return mockDb.state;
@@ -129,6 +146,7 @@ beforeEach(() => {
     state: {},
     programStart: null,
     day3Completed: false,
+    reminderEnabled: false,
   });
 });
 
@@ -255,6 +273,13 @@ describe.each(["standard", "gentle", null] as Path[])(
       expect(schedule).not.toHaveBeenCalled();
     });
 
+    it("skips the Day-3 push when the daily reminder is on (open Q3)", async () => {
+      mockDb.reminderEnabled = true;
+      await scheduleChallengeDay2Nudge(DAY1);
+      expect(schedule).not.toHaveBeenCalled();
+      expect(mockTrack.scheduled).not.toHaveBeenCalled();
+    });
+
     it("skips the Day-3 push when Day 3 is already complete", async () => {
       mockDb.day3Completed = true;
       await scheduleChallengeDay2Nudge(DAY1);
@@ -377,6 +402,15 @@ describe("Day-3 push (rest-day paths) lifecycle", () => {
     expect(cancel).toHaveBeenCalledWith("challenge-followup-d3");
     expect(cancel).not.toHaveBeenCalledWith("challenge-day2-nudge");
     expect(mockDb.state.followupD3).toBeNull();
+  });
+
+  it("is cancelled by any session start after Day 1", async () => {
+    await cancelChallengeDay3PushOnSessionStart();
+    expect(cancel).toHaveBeenCalledWith("challenge-followup-d3");
+    expect(mockDb.state.followupD3).toBeNull();
+    cancel.mockClear();
+    await cancelChallengeDay3PushOnSessionStart(); // nothing left to cancel
+    expect(cancel).not.toHaveBeenCalled();
   });
 
   it("is cancelled on open if Day 3 was completed elsewhere", async () => {

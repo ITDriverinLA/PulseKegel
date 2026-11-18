@@ -65,6 +65,7 @@ import {
 } from "@/lib/analytics";
 import {
   cancelChallengeDay2Nudge,
+  DAY2_BANNER_SEEN_MS,
   markInAppDay2NudgeRendered,
   onHomeLeftAfterDay2Nudge,
   shouldShowInAppDay2Nudge,
@@ -350,12 +351,21 @@ export default function HomeScreen() {
     return unsubscribe;
   }, [navigation, loadData]);
 
-  // P8.1.2: "shown" means seen — log when the banner renders (once a day).
+  // P8.1.2: "shown" means seen. The banner counts as seen only after it has
+  // been visible on a focused Home for DAY2_BANNER_SEEN_MS. A modal or
+  // paywall auto-presented right after Home loads blurs Home first, which
+  // cancels the timer, so that blur neither logs "shown" nor clears it.
   useEffect(() => {
-    if (showDay2Nudge) void markInAppDay2NudgeRendered();
-  }, [showDay2Nudge]);
+    if (!showDay2Nudge || !isFocused) return;
+    const timer = setTimeout(() => {
+      if (appStateRef.current === "active") {
+        void markInAppDay2NudgeRendered();
+      }
+    }, DAY2_BANNER_SEEN_MS);
+    return () => clearTimeout(timer);
+  }, [showDay2Nudge, isFocused]);
 
-  // P8.1.2: leaving Home after the banner rendered clears it.
+  // P8.1.2: navigating away from Home after the banner was seen clears it.
   useEffect(() => {
     const unsubscribe = navigation.addListener("blur", () => {
       void onHomeLeftAfterDay2Nudge();
