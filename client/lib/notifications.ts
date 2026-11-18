@@ -211,17 +211,88 @@ export function buildReminderMessage(
   };
 }
 
+/** P8.2: fixed id so the daily reminder can be replaced without cancel-all. */
+export const DAILY_REMINDER_ID = "daily-reminder";
+
+/** Local calendar date as YYYY-MM-DD (same format as completedDates). */
+function localDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+async function cancelDailyReminderOnly(): Promise<void> {
+  try {
+    await Notifications.cancelScheduledNotificationAsync(DAILY_REMINDER_ID);
+  } catch {}
+}
+
+async function scheduleDailyReminderNotification(
+  timeStr: string,
+  message: { title: string; body: string },
+): Promise<void> {
+  const [hours, minutes] = timeStr.split(":").map(Number);
+  await Notifications.scheduleNotificationAsync({
+    identifier: DAILY_REMINDER_ID,
+    content: {
+      title: message.title,
+      body: message.body,
+      data: { screen: "Home" },
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DAILY,
+      hour: hours,
+      minute: minutes,
+    },
+  });
+}
+
+/** Reminder content as of tomorrow (used once today is already done). */
+async function buildTomorrowReminderMessage(): Promise<{
+  title: string;
+  body: string;
+}> {
+  const progress = await storage.getProgress();
+  const earnedBadges = await storage.getEarnedBadges();
+  const earnedIds = earnedBadges.map((b: { badgeId: string }) => b.badgeId);
+  const programStartDate = await storage.getProgramStartDate();
+  const calibrationState = await storage.getCalibrationState();
+
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const isRestDay = programStartDate
+    ? isRestDayForDate(
+        tomorrow,
+        programStartDate,
+        calibrationState.difficultyPath,
+      )
+    : false;
+
+  const isFirstEver = progress.totalSessions <= 1;
+
+  return buildReminderMessage(
+    progress.currentStreak,
+    isRestDay,
+    earnedIds,
+    false,
+    isFirstEver,
+  );
+}
+
 export async function scheduleDailyReminder(timeStr: string): Promise<void> {
   try {
-    await Notifications.cancelAllScheduledNotificationsAsync();
-
-    const [hours, minutes] = timeStr.split(":").map(Number);
+    // P8.2: replace only the daily reminder; challenge-* nudges survive.
+    await cancelDailyReminderOnly();
 
     const progress = await storage.getProgress();
-    const today = new Date().toISOString().split("T")[0];
+    // P8.2 side-bug fix: completedDates are local dates, so compare local.
+    const today = localDateStr(new Date());
     const todayCompleted = progress.completedDates.includes(today);
 
     if (todayCompleted) {
+      // Keep a reminder scheduled (tomorrow's message) instead of none.
+      await scheduleDailyReminderNotification(
+        timeStr,
+        await buildTomorrowReminderMessage(),
+      );
       return;
     }
 
@@ -239,7 +310,7 @@ export async function scheduleDailyReminder(timeStr: string): Promise<void> {
 
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split("T")[0];
+    const yesterdayStr = localDateStr(yesterday);
     const yesterdayMissed = !progress.completedDates.includes(yesterdayStr);
     const isFirstEver = progress.totalSessions === 0;
 
@@ -251,23 +322,40 @@ export async function scheduleDailyReminder(timeStr: string): Promise<void> {
       isFirstEver,
     );
 
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: message.title,
-        body: message.body,
-        data: { screen: "Home" },
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DAILY,
-        hour: hours,
-        minute: minutes,
-      },
-    });
+    await scheduleDailyReminderNotification(timeStr, message);
   } catch {}
 }
 
+/** P8.2: cancels only the daily reminder (Settings toggle). */
 export async function cancelAllReminders(): Promise<void> {
-  await Notifications.cancelAllScheduledNotificationsAsync();
+  await cancelDailyReminderOnly();
+}
+
+/**
+ * P8.2 one-time migration: builds before P8 scheduled the daily reminder
+ * with no identifier. Cancel those legacy reminders (no daily-reminder id,
+ * data.screen === "Home"); never touch challenge-* ids. The caller then
+ * reschedules with the id if the reminder is on.
+ */
+export async function migrateLegacyDailyReminders(): Promise<void> {
+  try {
+    if (await storage.isDailyReminderIdMigrated()) return;
+    if (Platform.OS !== "web") {
+      const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+      for (const request of scheduled) {
+        const id = request.identifier ?? "";
+        const data = request.content?.data as { screen?: unknown } | undefined;
+        if (
+          id !== DAILY_REMINDER_ID &&
+          !id.startsWith("challenge-") &&
+          data?.screen === "Home"
+        ) {
+          await Notifications.cancelScheduledNotificationAsync(id);
+        }
+      }
+    }
+    await storage.markDailyReminderIdMigrated();
+  } catch {}
 }
 
 export async function sendBadgeEarnedNotification(
@@ -297,48 +385,13 @@ export async function rescheduleAfterCompletion(): Promise<void> {
     const settings = await storage.getSettings();
     if (!settings.reminderEnabled) return;
 
-    await Notifications.cancelAllScheduledNotificationsAsync();
+    // P8.2: replace only the daily reminder; challenge-* nudges survive.
+    await cancelDailyReminderOnly();
 
     const timeStr = settings.reminderTime || "08:00";
-    const [hours, minutes] = timeStr.split(":").map(Number);
-
-    const progress = await storage.getProgress();
-    const earnedBadges = await storage.getEarnedBadges();
-    const earnedIds = earnedBadges.map((b: { badgeId: string }) => b.badgeId);
-    const programStartDate = await storage.getProgramStartDate();
-    const calibrationState = await storage.getCalibrationState();
-
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const isRestDay = programStartDate
-      ? isRestDayForDate(
-          tomorrow,
-          programStartDate,
-          calibrationState.difficultyPath,
-        )
-      : false;
-
-    const isFirstEver = progress.totalSessions <= 1;
-
-    const message = buildReminderMessage(
-      progress.currentStreak,
-      isRestDay,
-      earnedIds,
-      false,
-      isFirstEver,
+    await scheduleDailyReminderNotification(
+      timeStr,
+      await buildTomorrowReminderMessage(),
     );
-
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: message.title,
-        body: message.body,
-        data: { screen: "Home" },
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DAILY,
-        hour: hours,
-        minute: minutes,
-      },
-    });
   } catch {}
 }

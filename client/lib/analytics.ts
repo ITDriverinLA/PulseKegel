@@ -467,22 +467,57 @@ export function trackChallengeDayCompleted(data: {
   trackEvent("challenge_day_completed", data as Record<string, unknown>);
 }
 
+// P8: optional props accepted by the server since Phase A (#35).
+// followup_day is reserved for Phase C follow-ups (3 | 5).
+export type ChallengeNudgeFollowupDay = 3 | 5;
+export type ChallengeNudgeKind = "day2" | "followup";
+export type PushPermissionStatusValue =
+  | "granted"
+  | "denied"
+  | "undetermined"
+  | "provisional"
+  | "ephemeral"
+  | "unknown";
+
 export function trackChallengeDay2NudgeScheduled(data: {
   channel: "push" | "in_app";
+  followup_day?: ChallengeNudgeFollowupDay;
+  /** ISO time the push is set to fire; push channel only. */
+  fire_at?: string;
 }): void {
   trackEvent("challenge_day2_nudge_scheduled", data as Record<string, unknown>);
 }
 
 export function trackChallengeDay2NudgeShown(data: {
   channel: "push" | "in_app";
+  followup_day?: ChallengeNudgeFollowupDay;
 }): void {
   trackEvent("challenge_day2_nudge_shown", data as Record<string, unknown>);
 }
 
 export function trackChallengeDay2NudgeTapped(data: {
   channel: "push" | "in_app";
+  followup_day?: ChallengeNudgeFollowupDay;
 }): void {
   trackEvent("challenge_day2_nudge_tapped", data as Record<string, unknown>);
+}
+
+/** P8: the app was open (foreground) when a challenge nudge push fired. */
+export function trackChallengeNudgeReceived(data: {
+  nudge: ChallengeNudgeKind;
+  followup_day?: ChallengeNudgeFollowupDay;
+  method: "foreground";
+}): void {
+  trackEvent("challenge_nudge_received", data as Record<string, unknown>);
+}
+
+/** P8: on an app open, a scheduled challenge nudge's fire time had passed. */
+export function trackChallengeNudgeFirePassed(data: {
+  nudge: ChallengeNudgeKind;
+  followup_day?: ChallengeNudgeFollowupDay;
+  permission_status: PushPermissionStatusValue;
+}): void {
+  trackEvent("challenge_nudge_fire_passed", data as Record<string, unknown>);
 }
 
 export function trackSettingsTipShown(): void {

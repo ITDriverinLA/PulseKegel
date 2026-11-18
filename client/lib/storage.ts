@@ -74,6 +74,10 @@ const STORAGE_KEYS = {
   SEGMENT_TYPE_HISTORY: "pulsekegel_segment_type_history",
   CHALLENGE_DAY2_NUDGE_SCHEDULED: "pulsekegel_challenge_day2_nudge_scheduled",
   CHALLENGE_DAY2_IN_APP_NUDGE: "pulsekegel_challenge_day2_in_app_nudge",
+  // P8 Phase B: Day-2 nudge timing / delivery bookkeeping (JSON).
+  CHALLENGE_DAY2_NUDGE_STATE: "pulsekegel_challenge_day2_nudge_state",
+  // P8.2: one-time removal of legacy (unidentified) daily reminders.
+  DAILY_REMINDER_ID_MIGRATED: "pulsekegel_daily_reminder_id_migrated",
   CHALLENGE_DAYS_STARTED: "pulsekegel_challenge_days_started",
   CHALLENGE_DAYS_COMPLETED: "pulsekegel_challenge_days_completed",
   CHALLENGE_DAY_VIEWED: "pulsekegel_challenge_day_viewed",
@@ -219,6 +223,24 @@ const levelToPath = (level: CalibrationLevel): DifficultyPath =>
     : level === "tooHard"
       ? "gentle"
       : "standard";
+
+/** P8 Phase B: Day-2 nudge bookkeeping. Dates are local YYYY-MM-DD. */
+export interface ChallengeDay2NudgeState {
+  /** Local date after Day-1 completion; the banner shows on/after this day. */
+  eligibleFromLocalDate?: string;
+  /** Local date the in-app banner last logged "shown" (once per day). */
+  lastShownLocalDate?: string;
+  /** Banner rendered on an eligible day; leaving Home now clears it. */
+  renderedOnEligibleDay?: boolean;
+  /** Scheduled Day-2 push, for foreground-receipt / fire-passed events. */
+  push?: {
+    fireAt: string;
+    receivedLogged?: boolean;
+    firePassedLogged?: boolean;
+  } | null;
+  /** Last handled notification response, so a cold-launch replay is ignored. */
+  lastHandledResponseKey?: string;
+}
 
 export interface WeeklyReviewEntry {
   weekNumber: number;
@@ -1784,6 +1806,56 @@ export const storage = {
     }
   },
 
+  async getChallengeDay2NudgeState(): Promise<ChallengeDay2NudgeState> {
+    try {
+      const raw = await AsyncStorage.getItem(
+        STORAGE_KEYS.CHALLENGE_DAY2_NUDGE_STATE,
+      );
+      const parsed = raw ? JSON.parse(raw) : {};
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch {
+      return {};
+    }
+  },
+
+  async updateChallengeDay2NudgeState(
+    patch: Partial<ChallengeDay2NudgeState>,
+  ): Promise<ChallengeDay2NudgeState> {
+    const next = { ...(await this.getChallengeDay2NudgeState()), ...patch };
+    try {
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.CHALLENGE_DAY2_NUDGE_STATE,
+        JSON.stringify(next),
+      );
+    } catch (error) {
+      console.error("Error saving day2 nudge state:", error);
+    }
+    return next;
+  },
+
+  async isDailyReminderIdMigrated(): Promise<boolean> {
+    try {
+      return (
+        (await AsyncStorage.getItem(
+          STORAGE_KEYS.DAILY_REMINDER_ID_MIGRATED,
+        )) === "true"
+      );
+    } catch {
+      return false;
+    }
+  },
+
+  async markDailyReminderIdMigrated(): Promise<void> {
+    try {
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.DAILY_REMINDER_ID_MIGRATED,
+        "true",
+      );
+    } catch (error) {
+      console.error("Error marking daily reminder migration:", error);
+    }
+  },
+
   async setChallengeDay2InAppNudgePending(pending: boolean): Promise<void> {
     try {
       if (pending) {
@@ -1911,6 +1983,7 @@ export const storage = {
         STORAGE_KEYS.WEEKLY_CALIBRATION_PROMPTED,
         STORAGE_KEYS.CHALLENGE_DAY2_NUDGE_SCHEDULED,
         STORAGE_KEYS.CHALLENGE_DAY2_IN_APP_NUDGE,
+        STORAGE_KEYS.CHALLENGE_DAY2_NUDGE_STATE,
         STORAGE_KEYS.CHALLENGE_DAYS_STARTED,
         STORAGE_KEYS.CHALLENGE_DAYS_COMPLETED,
         STORAGE_KEYS.CHALLENGE_DAY_VIEWED,
@@ -1969,6 +2042,29 @@ export const storage = {
       );
     } catch (error) {
       console.error("Error saving calibration state:", error);
+    }
+  },
+
+  /**
+   * Weekly check-in answer (Ashley-approved addition, Nov 17 2026). Saves the
+   * weekly level and, only when there is no calibration record yet, also sets
+   * the Week-1 calibration from the same answer via setCalibrationState (same
+   * levelToPath mapping as Day 1). Existing records are never changed.
+   */
+  async saveWeeklyCalibrationAnswer(
+    weekNumber: number,
+    level: CalibrationLevel,
+  ): Promise<void> {
+    await this.setWeeklyCalibrationLevel(weekNumber, level);
+    try {
+      const existing = await AsyncStorage.getItem(
+        STORAGE_KEYS.CHALLENGE_CALIBRATION,
+      );
+      if (existing == null) {
+        await this.setCalibrationState(level);
+      }
+    } catch (error) {
+      console.error("Error applying weekly answer to calibration:", error);
     }
   },
 

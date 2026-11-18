@@ -65,7 +65,9 @@ import {
 } from "@/lib/analytics";
 import {
   cancelChallengeDay2Nudge,
-  consumeInAppDay2Nudge,
+  markInAppDay2NudgeRendered,
+  onHomeLeftAfterDay2Nudge,
+  shouldShowInAppDay2Nudge,
 } from "@/lib/challengeNudge";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import {
@@ -145,6 +147,8 @@ export default function HomeScreen() {
   const [controlModeWeekCount, setControlModeWeekCount] = useState(0);
   const [challengeDayOf7, setChallengeDayOf7] = useState<number | null>(null);
   const [showDay2Nudge, setShowDay2Nudge] = useState(false);
+  // P8.1.3: this path's challenge Day 2 is a rest day (Home chrome copy).
+  const [challengeDay2IsRest, setChallengeDay2IsRest] = useState(false);
   const challengeDayViewedRef = useRef<string | null>(null);
 
   const loadData = useCallback(async () => {
@@ -271,6 +275,7 @@ export default function HomeScreen() {
           calibState.difficultyPath,
         );
         setChallengeDayOf7(dayOf7);
+        setChallengeDay2IsRest(dayOf7 === 2 && pathDay.isRestDay === true);
         const viewedKey = `1-${dayOf7}`;
         if (challengeDayViewedRef.current !== viewedKey) {
           challengeDayViewedRef.current = viewedKey;
@@ -290,8 +295,9 @@ export default function HomeScreen() {
       }
     }
 
-    // Epic C: in-app Day-2 nudge if push was declined / unavailable.
-    const showNudge = await consumeInAppDay2Nudge();
+    // Epic C / P8.1: in-app Day-2 nudge if push was declined / unavailable.
+    // Eligible from the next local day; logging happens on render.
+    const showNudge = await shouldShowInAppDay2Nudge();
     setShowDay2Nudge(showNudge);
 
     const reviewCheck = await storage.shouldShowWeeklyReview(
@@ -343,6 +349,19 @@ export default function HomeScreen() {
     const unsubscribe = navigation.addListener("focus", loadData);
     return unsubscribe;
   }, [navigation, loadData]);
+
+  // P8.1.2: "shown" means seen — log when the banner renders (once a day).
+  useEffect(() => {
+    if (showDay2Nudge) void markInAppDay2NudgeRendered();
+  }, [showDay2Nudge]);
+
+  // P8.1.2: leaving Home after the banner rendered clears it.
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("blur", () => {
+      void onHomeLeftAfterDay2Nudge();
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextState) => {
@@ -828,12 +847,18 @@ export default function HomeScreen() {
                 style={[styles.scoreNudgeText, { color: cp.text }]}
                 testID="text-challenge-day-of-7"
               >
-                Day {challengeDayOf7} of 7
-                {challengeDayOf7 === 1 && !isTodayComplete
-                  ? " · Begin Day 1"
-                  : challengeDayOf7 === 2 && !isTodayComplete
-                    ? " · Day 2 unlocks today"
-                    : ""}
+                {challengeDayOf7 === 2 && challengeDay2IsRest ? (
+                  "Day 2 · Rest day"
+                ) : (
+                  <>
+                    Day {challengeDayOf7} of 7
+                    {challengeDayOf7 === 1 && !isTodayComplete
+                      ? " · Begin Day 1"
+                      : challengeDayOf7 === 2 && !isTodayComplete
+                        ? " · Day 2 unlocks today"
+                        : ""}
+                  </>
+                )}
               </Text>
             </View>
           </Animated.View>
