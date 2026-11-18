@@ -12,6 +12,7 @@ export const privacyPolicyHtml = `<!doctype html>
 <meta property="og:description" content="Minimal data. No selling. No sharing. Your data stays yours." />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://pulsekegel.com/privacy" />
+<link rel="canonical" href="https://pulsekegel.com/privacy" />
 
 <!-- Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
