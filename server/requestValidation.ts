@@ -21,7 +21,36 @@ const purchaseResultSchema = z.enum([
   "cancelled",
   "failed",
   "unavailable",
+  "entitlement_missing",
 ]);
+const storeSchema = z.enum(["app_store", "play_store", "none"]);
+const buildEnvSchema = z.enum([
+  "simulator",
+  "dev",
+  "expo_go",
+  "testflight",
+  "xcode",
+  "production",
+  "unknown",
+]);
+const periodTypeSchema = z.enum(["TRIAL", "INTRO", "NORMAL", "PREPAID"]);
+const rcCodeSchema = z.number().int().min(0).max(99);
+const readableErrorCodeSchema = z.string().trim().min(1).max(64);
+const errorMessageSchema = z.string().trim().min(1).max(100);
+const offeringIdSchema = z.string().trim().min(1).max(100);
+const purchaseContextFields = {
+  store: storeSchema.optional(),
+  buildEnv: buildEnvSchema.optional(),
+  isSandbox: z.boolean().optional(),
+  offeringId: offeringIdSchema.optional(),
+  rcCode: rcCodeSchema.optional(),
+  readableErrorCode: readableErrorCodeSchema.optional(),
+  errorMessage: errorMessageSchema.optional(),
+  userCancelled: z.boolean().optional(),
+  periodType: periodTypeSchema.optional(),
+  isTrial: z.boolean().optional(),
+  recoveredAfterRefresh: z.boolean().optional(),
+};
 const purchaseDataSchema = z
   .object({
     result: purchaseResultSchema,
@@ -29,6 +58,7 @@ const purchaseDataSchema = z
     productIdentifier: z.string().trim().min(1).max(150).optional(),
     errorCode: z.string().trim().min(1).max(100).optional(),
     source: paywallSourceSchema.optional(),
+    ...purchaseContextFields,
   })
   .strict();
 const eventMetadata = {
@@ -178,6 +208,8 @@ const analyticsEventSchema = z.discriminatedUnion("type", [
           trialDaysRemaining: z.number().int().min(0).max(7),
           completedCoreSessions: z.number().int().min(0).max(100).optional(),
           totalCoreSessions: z.number().int().min(0).max(100).optional(),
+          store: storeSchema.optional(),
+          buildEnv: buildEnvSchema.optional(),
         })
         .strict(),
       ...eventMetadata,
@@ -211,6 +243,7 @@ const analyticsEventSchema = z.discriminatedUnion("type", [
           packageIdentifier: z.string().trim().min(1).max(100).optional(),
           productIdentifier: z.string().trim().min(1).max(150).optional(),
           displayedPrice: z.string().trim().min(1).max(50).optional(),
+          hasPackages: z.boolean().optional(),
         })
         .strict(),
       ...eventMetadata,
@@ -827,6 +860,103 @@ const analyticsEventSchema = z.discriminatedUnion("type", [
         .object({
           result: z.enum(["started", "completed", "not_found", "failed"]),
           errorCode: z.string().trim().min(1).max(100).optional(),
+          reason: z.enum(["not_configured"]).optional(),
+          ...purchaseContextFields,
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("offering_fallback_used"),
+      data: z
+        .object({
+          offeringId: offeringIdSchema,
+          reason: z.enum(["no_current", "current_empty"]),
+          surface: z.enum(["launch", "paywall_retry"]),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("offerings_failed"),
+      data: z
+        .object({
+          surface: z.enum(["launch", "paywall_retry"]),
+          configured: z.boolean().optional(),
+          store: storeSchema.optional(),
+          buildEnv: buildEnvSchema.optional(),
+          rcCode: rcCodeSchema.optional(),
+          readableErrorCode: readableErrorCodeSchema.optional(),
+          errorMessage: errorMessageSchema.optional(),
+          reason: z
+            .enum([
+              "not_configured",
+              "no_offerings",
+              "no_current_offering",
+              "current_offering_empty",
+              "fetch_error",
+            ])
+            .optional(),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("purchase_entitlement_missing"),
+      data: z
+        .object({
+          result: z.literal("entitlement_missing").optional(),
+          packageIdentifier: z.string().trim().min(1).max(100).optional(),
+          productIdentifier: z.string().trim().min(1).max(150).optional(),
+          offeringId: offeringIdSchema.optional(),
+          refreshed: z.boolean().optional(),
+          store: storeSchema.optional(),
+          buildEnv: buildEnvSchema.optional(),
+          isSandbox: z.boolean().optional(),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("entitlement_mismatch"),
+      data: z
+        .object({
+          expected: z.string().trim().min(1).max(150),
+          activeIds: z.array(z.string().trim().min(1).max(150)).max(5),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("subscription_status_changed"),
+      data: z
+        .object({
+          from: z.enum(["none", "trial", "paid"]),
+          to: z.enum(["none", "trial", "paid"]),
+          periodType: periodTypeSchema.optional(),
+          isSandbox: z.boolean().optional(),
+          store: storeSchema.optional(),
+        })
+        .strict(),
+      ...eventMetadata,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("paywall_retry_tapped"),
+      data: z
+        .object({
+          code: z.union([z.string().trim().min(1).max(100), rcCodeSchema]),
         })
         .strict(),
       ...eventMetadata,
