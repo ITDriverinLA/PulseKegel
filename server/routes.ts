@@ -25,6 +25,15 @@ import {
   summarizeP8Retention,
   type P8Range,
 } from "./p8RetentionSummary";
+import {
+  P9_PURCHASE_EVENT_TYPES,
+  summarizeP9Purchases,
+} from "./p9PurchaseSummary";
+import {
+  isTestDevicePredicateSql,
+  notTestDeviceSql,
+  wantIncludeTest,
+} from "./testDevices";
 import { registerSyncRoutes } from "./syncRoutes";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -227,7 +236,21 @@ const P8_DAY_MS = 24 * 60 * 60 * 1000;
  * (one row per device): did they already return before the lookback? If so,
  * their first return can't be in range and isn't counted in firstReturnByDate.
  */
-async function loadP8Retention(range: P8Range, now: Date) {
+async function countTestDevices(): Promise<number> {
+  const raw = await db.execute<{ count: number }>(
+    sql`
+    SELECT COUNT(DISTINCT device_id)::int AS count
+    FROM analytics_events
+    WHERE ${isTestDevicePredicateSql()}
+  `,
+  );
+  return Number(raw.rows[0]?.count ?? 0);
+}
+
+async function loadP8Retention(range: P8Range, now: Date, includeTest = false) {
+  const noTest = (column: Parameters<typeof notTestDeviceSql>[0]) =>
+    notTestDeviceSql(column, includeTest);
+  const testDevicesExcluded = includeTest ? 0 : await countTestDevices();
   const lower = new Date(range.fromMs - P8_LOOKBACK_DAYS * P8_DAY_MS);
   const upper = new Date(range.toEndMs + P8_LOOKAHEAD_DAYS * P8_DAY_MS);
   const day1Condition = sql`(
@@ -257,6 +280,7 @@ async function loadP8Retention(range: P8Range, now: Date) {
           ),
           day1Condition,
         ),
+        noTest(analyticsEvents.deviceId),
       ),
     );
 
@@ -268,6 +292,7 @@ async function loadP8Retention(range: P8Range, now: Date) {
       SELECT device_id, MIN(created_at) AS d1_at
       FROM analytics_events
       WHERE ${day1Condition} AND created_at < ${lower}
+        AND ${noTest("device_id")}
       GROUP BY device_id
     )
     SELECT DISTINCT d1.device_id
@@ -277,6 +302,7 @@ async function loadP8Retention(range: P8Range, now: Date) {
      AND s.event_type IN ('session_started', 'challenge_day_started')
      AND s.created_at >= date_trunc('day', d1.d1_at) + INTERVAL '1 day'
      AND s.created_at < ${lower}
+     AND ${noTest("s.device_id")}
   `,
   );
   const returnedBeforeSessionHistory = new Set(
@@ -305,6 +331,7 @@ async function loadP8Retention(range: P8Range, now: Date) {
       COUNT(DISTINCT device_id)::int AS devices
     FROM analytics_events
     WHERE created_at >= ${fromDate} AND created_at < ${toEndDate}
+      AND ${noTest("device_id")}
     GROUP BY 1, 2
     UNION ALL
     SELECT
@@ -313,6 +340,7 @@ async function loadP8Retention(range: P8Range, now: Date) {
       COUNT(DISTINCT device_id)::int AS devices
     FROM analytics_events
     WHERE created_at >= ${fromDate} AND created_at < ${toEndDate}
+      AND ${noTest("device_id")}
     GROUP BY 1
     ORDER BY 1, 2
   `,
@@ -330,7 +358,37 @@ async function loadP8Retention(range: P8Range, now: Date) {
     };
   });
 
-  return { ...summary, weeklyActiveDevices };
+  return { ...summary, weeklyActiveDevices, includeTest, testDevicesExcluded };
+}
+
+async function loadP9Purchases(
+  range: P8Range,
+  now: Date,
+  includeTest: boolean,
+) {
+  const testDevicesExcluded = includeTest ? 0 : await countTestDevices();
+  const rows = await db
+    .select({
+      deviceId: analyticsEvents.deviceId,
+      platform: analyticsEvents.platform,
+      eventType: analyticsEvents.eventType,
+      eventData: analyticsEvents.eventData,
+      createdAt: analyticsEvents.createdAt,
+    })
+    .from(analyticsEvents)
+    .where(
+      and(
+        inArray(analyticsEvents.eventType, [...P9_PURCHASE_EVENT_TYPES]),
+        gte(analyticsEvents.createdAt, new Date(range.fromMs)),
+        lt(analyticsEvents.createdAt, new Date(range.toEndMs)),
+        notTestDeviceSql(analyticsEvents.deviceId, includeTest),
+      ),
+    );
+  return summarizeP9Purchases(rows, range, {
+    now,
+    includeTest,
+    testDevicesExcluded,
+  });
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -709,31 +767,42 @@ ${blogUrls}
   app.get(
     "/api/analytics/summary",
     requireAnalyticsReadAccess,
-    async (_req, res) => {
+    async (req, res) => {
       try {
         const now = new Date();
+        const includeTest = wantIncludeTest(req.query);
+        const noTest = (column: Parameters<typeof notTestDeviceSql>[0]) =>
+          notTestDeviceSql(column, includeTest);
+        const testDevicesExcluded = includeTest ? 0 : await countTestDevices();
         const h24 = new Date(now.getTime() - 24 * 60 * 60 * 1000);
         const d7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         const d30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
         const [totalDevices] = await db
           .select({ count: countDistinct(analyticsEvents.deviceId) })
-          .from(analyticsEvents);
+          .from(analyticsEvents)
+          .where(noTest(analyticsEvents.deviceId));
 
         const [dau] = await db
           .select({ count: countDistinct(analyticsEvents.deviceId) })
           .from(analyticsEvents)
-          .where(sql`${analyticsEvents.createdAt} >= ${h24}`);
+          .where(
+            sql`${analyticsEvents.createdAt} >= ${h24} AND ${noTest(analyticsEvents.deviceId)}`,
+          );
 
         const [wau] = await db
           .select({ count: countDistinct(analyticsEvents.deviceId) })
           .from(analyticsEvents)
-          .where(sql`${analyticsEvents.createdAt} >= ${d7}`);
+          .where(
+            sql`${analyticsEvents.createdAt} >= ${d7} AND ${noTest(analyticsEvents.deviceId)}`,
+          );
 
         const [mau] = await db
           .select({ count: countDistinct(analyticsEvents.deviceId) })
           .from(analyticsEvents)
-          .where(sql`${analyticsEvents.createdAt} >= ${d30}`);
+          .where(
+            sql`${analyticsEvents.createdAt} >= ${d30} AND ${noTest(analyticsEvents.deviceId)}`,
+          );
 
         const eventCounts = await db
           .select({
@@ -741,6 +810,7 @@ ${blogUrls}
             count: sql<number>`count(*)::int`,
           })
           .from(analyticsEvents)
+          .where(noTest(analyticsEvents.deviceId))
           .groupBy(analyticsEvents.eventType)
           .orderBy(sql`count(*) desc`);
 
@@ -751,7 +821,8 @@ ${blogUrls}
             sql`${analyticsEvents.deviceId} not in (
             select distinct device_id from analytics_events
             where created_at < ${d7}
-          )`,
+              AND ${noTest("device_id")}
+          ) AND ${noTest(analyticsEvents.deviceId)}`,
           );
 
         const topWeeklyDevicesRaw = await db
@@ -759,7 +830,9 @@ ${blogUrls}
             eventCount: sql<number>`count(*)::int`,
           })
           .from(analyticsEvents)
-          .where(sql`${analyticsEvents.createdAt} >= ${d7}`)
+          .where(
+            sql`${analyticsEvents.createdAt} >= ${d7} AND ${noTest(analyticsEvents.deviceId)}`,
+          )
           .groupBy(analyticsEvents.deviceId)
           .orderBy(sql`count(*) desc`)
           .limit(10);
@@ -784,6 +857,7 @@ ${blogUrls}
           ) AS days(day)
           LEFT JOIN analytics_events ae
             ON date_trunc('day', ae.created_at AT TIME ZONE 'UTC') = days.day
+            AND ${noTest("ae.device_id")}
           GROUP BY days.day
           ORDER BY days.day
         `,
@@ -798,6 +872,7 @@ ${blogUrls}
             COALESCE(platform, 'unknown') AS platform,
             COUNT(DISTINCT device_id)::int AS count
           FROM analytics_events
+          WHERE ${noTest("device_id")}
           GROUP BY COALESCE(platform, 'unknown')
           ORDER BY count DESC
         `,
@@ -821,6 +896,7 @@ ${blogUrls}
               END AS result_rank
             FROM analytics_events
             WHERE event_type = 'challenge_result_viewed'
+              AND ${noTest("device_id")}
             ORDER BY device_id, created_at DESC
           ),
           recorded_sessions AS (
@@ -832,6 +908,7 @@ ${blogUrls}
             FROM analytics_events
             WHERE event_type = 'session_complete'
               AND event_data->>'weekNumber' = '1'
+              AND ${noTest("device_id")}
             GROUP BY device_id
           ),
           furthest_progress AS (
@@ -876,6 +953,7 @@ ${blogUrls}
             COUNT(DISTINCT device_id)::int AS count
           FROM analytics_events
           WHERE created_at >= ${d7}
+            AND ${noTest("device_id")}
           GROUP BY COALESCE(platform, 'unknown')
           ORDER BY count DESC
         `,
@@ -890,7 +968,8 @@ ${blogUrls}
             sql`${analyticsEvents.deviceId} NOT IN (
             SELECT DISTINCT device_id FROM analytics_events
             WHERE event_type = 'session_complete'
-          )`,
+              AND ${noTest("device_id")}
+          ) AND ${noTest(analyticsEvents.deviceId)}`,
           );
 
         // All-time devices that opened the app but never completed onboarding.
@@ -902,7 +981,8 @@ ${blogUrls}
             AND ${analyticsEvents.deviceId} NOT IN (
               SELECT DISTINCT device_id FROM analytics_events
               WHERE event_type = 'onboarding_complete'
-            )`,
+                AND ${noTest("device_id")}
+            ) AND ${noTest(analyticsEvents.deviceId)}`,
           );
 
         // ── NEW ANALYTICS ────────────────────────────────────────────────────
@@ -917,6 +997,7 @@ ${blogUrls}
           WITH cohort AS (
             SELECT device_id, MIN(created_at) AS first_seen
             FROM analytics_events
+            WHERE ${noTest("device_id")}
             GROUP BY device_id
           )
           SELECT 'D1' AS period,
@@ -926,6 +1007,7 @@ ${blogUrls}
               WHERE r.device_id = cohort.device_id
                 AND r.created_at >= cohort.first_seen + INTERVAL '23 hours'
                 AND r.created_at <  cohort.first_seen + INTERVAL '48 hours'
+                AND ${noTest("r.device_id")}
             ) THEN 1 END)::int AS returned
           FROM cohort WHERE cohort.first_seen <= NOW() - INTERVAL '1 day'
           UNION ALL
@@ -936,6 +1018,7 @@ ${blogUrls}
               WHERE r.device_id = cohort.device_id
                 AND r.created_at >= cohort.first_seen + INTERVAL '6 days 23 hours'
                 AND r.created_at <  cohort.first_seen + INTERVAL '14 days'
+                AND ${noTest("r.device_id")}
             ) THEN 1 END)::int
           FROM cohort WHERE cohort.first_seen <= NOW() - INTERVAL '7 days'
           UNION ALL
@@ -946,6 +1029,7 @@ ${blogUrls}
               WHERE r.device_id = cohort.device_id
                 AND r.created_at >= cohort.first_seen + INTERVAL '29 days 23 hours'
                 AND r.created_at <  cohort.first_seen + INTERVAL '60 days'
+                AND ${noTest("r.device_id")}
             ) THEN 1 END)::int
           FROM cohort WHERE cohort.first_seen <= NOW() - INTERVAL '30 days'
         `,
@@ -955,17 +1039,26 @@ ${blogUrls}
         const [funnelOnboarded] = await db
           .select({ count: countDistinct(analyticsEvents.deviceId) })
           .from(analyticsEvents)
-          .where(sql`${analyticsEvents.eventType} = 'onboarding_complete'`);
+          .where(
+            sql`${analyticsEvents.eventType} = 'onboarding_complete'
+            AND ${noTest(analyticsEvents.deviceId)}`,
+          );
 
         const [funnelSession] = await db
           .select({ count: countDistinct(analyticsEvents.deviceId) })
           .from(analyticsEvents)
-          .where(sql`${analyticsEvents.eventType} = 'session_complete'`);
+          .where(
+            sql`${analyticsEvents.eventType} = 'session_complete'
+            AND ${noTest(analyticsEvents.deviceId)}`,
+          );
 
         const [funnelSessionStarted] = await db
           .select({ count: countDistinct(analyticsEvents.deviceId) })
           .from(analyticsEvents)
-          .where(sql`${analyticsEvents.eventType} = 'session_started'`);
+          .where(
+            sql`${analyticsEvents.eventType} = 'session_started'
+            AND ${noTest(analyticsEvents.deviceId)}`,
+          );
 
         // Epic D: platform-split activation funnel (unique devices per stage).
         const funnelByPlatformRaw = await db.execute<{
@@ -982,21 +1075,25 @@ ${blogUrls}
             WHERE device_id IN (
               SELECT DISTINCT device_id FROM analytics_events
               WHERE event_type = 'onboarding_complete'
+                AND ${noTest("device_id")}
             )
           )::int AS onboarded,
           COUNT(DISTINCT device_id) FILTER (
             WHERE device_id IN (
               SELECT DISTINCT device_id FROM analytics_events
               WHERE event_type = 'session_started'
+                AND ${noTest("device_id")}
             )
           )::int AS started,
           COUNT(DISTINCT device_id) FILTER (
             WHERE device_id IN (
               SELECT DISTINCT device_id FROM analytics_events
               WHERE event_type = 'session_complete'
+                AND ${noTest("device_id")}
             )
           )::int AS sessions
         FROM analytics_events
+        WHERE ${noTest("device_id")}
         GROUP BY COALESCE(platform, 'unknown')
         ORDER BY opens DESC
       `);
@@ -1020,12 +1117,14 @@ ${blogUrls}
           FROM analytics_events
           WHERE event_type = 'first_open_path'
             AND (event_data->>'onboarded_already') = 'false'
+            AND ${noTest("device_id")}
           ORDER BY device_id, created_at ASC
         ),
         stages AS (
           SELECT device_id, event_type
           FROM analytics_events
           WHERE device_id IN (SELECT device_id FROM cohort)
+            AND ${noTest("device_id")}
             AND event_type IN (
               'onboarding_complete',
               'first_session_gate_shown',
@@ -1060,6 +1159,7 @@ ${blogUrls}
           'subscribe_tapped',
           'purchase_completed'
         )
+          AND ${noTest("device_id")}
         GROUP BY event_type
       `);
         // P4b: paywall_viewed split by source (unique devices per source).
@@ -1071,6 +1171,7 @@ ${blogUrls}
           COUNT(DISTINCT device_id)::int AS count
         FROM analytics_events
         WHERE event_type = 'paywall_viewed'
+          AND ${noTest("device_id")}
         GROUP BY COALESCE(event_data->>'source', 'unknown')
         ORDER BY count DESC
       `);
@@ -1100,6 +1201,7 @@ ${blogUrls}
           WHERE event_type = 'session_complete'
             AND event_data->>'weekNumber' = '1'
             AND event_data->>'dayNumber' = '1'
+            AND ${noTest("device_id")}
           GROUP BY device_id
         ),
         reach AS (
@@ -1109,6 +1211,7 @@ ${blogUrls}
               WHERE p.device_id = f.device_id
                 AND p.event_type = 'paywall_viewed'
                 AND p.created_at >= f.finished_at
+                AND ${noTest("p.device_id")}
             ) AS any_pw,
             EXISTS (
               SELECT 1 FROM analytics_events p
@@ -1116,6 +1219,7 @@ ${blogUrls}
                 AND p.event_type = 'paywall_viewed'
                 AND p.event_data->>'source' = 'day1_soft'
                 AND p.created_at >= f.finished_at
+                AND ${noTest("p.device_id")}
             ) AS soft_pw
           FROM finishers f
         )
@@ -1145,6 +1249,7 @@ ${blogUrls}
           COUNT(DISTINCT device_id)::int AS count
         FROM analytics_events
         WHERE event_type = 'paywall_dismissed'
+          AND ${noTest("device_id")}
         GROUP BY COALESCE(event_data->>'source', 'unknown')
         ORDER BY count DESC
       `);
@@ -1152,6 +1257,7 @@ ${blogUrls}
         SELECT COUNT(DISTINCT device_id)::int AS count
         FROM analytics_events
         WHERE event_type = 'day1_soft_paywall_deferred'
+          AND ${noTest("device_id")}
       `);
 
         const subscriptionFunnel = Object.fromEntries(
@@ -1175,6 +1281,7 @@ ${blogUrls}
             AND event_data->>'programWeek' IS NOT NULL
             AND event_data->>'programWeek' ~ '^[0-9]+$'
             AND created_at >= NOW() - INTERVAL '30 days'
+            AND ${noTest("device_id")}
           GROUP BY event_data->>'programWeek'
           ORDER BY (event_data->>'programWeek')::int
         `,
@@ -1191,6 +1298,7 @@ ${blogUrls}
             COUNT(*)::int AS count
           FROM analytics_events
           WHERE event_type = 'session_complete'
+            AND ${noTest("device_id")}
           GROUP BY COALESCE(event_data->>'workoutType', 'unknown')
           ORDER BY count DESC
         `,
@@ -1207,6 +1315,7 @@ ${blogUrls}
             COUNT(DISTINCT device_id)::int AS count
           FROM analytics_events
           WHERE event_type = 'onboarding_complete'
+            AND ${noTest("device_id")}
           GROUP BY COALESCE(event_data->>'anatomyType', 'unknown')
           ORDER BY count DESC
         `,
@@ -1223,6 +1332,7 @@ ${blogUrls}
             COUNT(DISTINCT device_id)::int AS count
           FROM analytics_events
           WHERE created_at >= NOW() - INTERVAL '7 days'
+            AND ${noTest("device_id")}
           GROUP BY COALESCE(app_version, 'unknown')
           ORDER BY count DESC
           LIMIT 10
@@ -1235,7 +1345,8 @@ ${blogUrls}
           .from(analyticsEvents)
           .where(
             sql`${analyticsEvents.eventType} = 'session_complete'
-            AND ${analyticsEvents.createdAt} >= ${d7}`,
+            AND ${analyticsEvents.createdAt} >= ${d7}
+            AND ${noTest(analyticsEvents.deviceId)}`,
           );
         const wauCount = Number(wau?.count ?? 0);
         const avgSessionsPerWau =
@@ -1270,6 +1381,7 @@ ${blogUrls}
             AND event_data->>'daysWorkedOut' IS NOT NULL
             AND event_data->>'scheduledDays' IS NOT NULL
             AND created_at >= NOW() - INTERVAL '30 days'
+            AND ${noTest("device_id")}
         `,
         );
 
@@ -1283,12 +1395,15 @@ ${blogUrls}
           })
           .from(analyticsEvents)
           .where(
-            inArray(analyticsEvents.eventType, [
-              "howto_card_shown",
-              "howto_card_dismissed",
-              "first_session_abandoned",
-              "first_session_completed",
-            ]),
+            and(
+              inArray(analyticsEvents.eventType, [
+                "howto_card_shown",
+                "howto_card_dismissed",
+                "first_session_abandoned",
+                "first_session_completed",
+              ]),
+              noTest(analyticsEvents.deviceId),
+            ),
           );
         const day1Howto = summarizeP7Day1(p7EventRows, {
           // Set on the server at ship time. Unset falls back to the first card.
@@ -1302,7 +1417,11 @@ ${blogUrls}
         try {
           const p8Range = resolveP8Range(undefined, undefined, now);
           if (p8Range.ok)
-            p8Retention = await loadP8Retention(p8Range.range, now);
+            p8Retention = await loadP8Retention(
+              p8Range.range,
+              now,
+              includeTest,
+            );
         } catch (p8Err) {
           console.error("P8 retention summary error:", {
             message:
@@ -1310,7 +1429,26 @@ ${blogUrls}
           });
         }
 
+        let p9Purchases: Awaited<ReturnType<typeof loadP9Purchases>> | null =
+          null;
+        try {
+          const p9Range = resolveP8Range(undefined, undefined, now);
+          if (p9Range.ok)
+            p9Purchases = await loadP9Purchases(
+              p9Range.range,
+              now,
+              includeTest,
+            );
+        } catch (p9Err) {
+          console.error("P9 purchase summary error:", {
+            message:
+              p9Err instanceof Error ? p9Err.message.split("\n")[0] : "unknown",
+          });
+        }
+
         res.json({
+          includeTest,
+          testDevicesExcluded,
           totalDevices: totalDevices?.count ?? 0,
           dau: dau?.count ?? 0,
           wau: wau?.count ?? 0,
@@ -1344,6 +1482,7 @@ ${blogUrls}
           })),
           day1Howto,
           p8Retention,
+          p9Purchases,
           day1PaywallReach: {
             finishers: Number(day1Reach?.finishers ?? 0),
             reachedAny: Number(day1Reach?.reached_any ?? 0),
@@ -1392,13 +1531,37 @@ ${blogUrls}
         return;
       }
       try {
-        res.json(await loadP8Retention(resolved.range, now));
+        const includeTest = wantIncludeTest(req.query);
+        res.json(await loadP8Retention(resolved.range, now, includeTest));
       } catch (err) {
         console.error("Analytics retention error:", {
           message:
             err instanceof Error ? err.message.split("\n")[0] : "unknown",
         });
         res.status(500).json({ error: "Failed to load retention summary" });
+      }
+    },
+  );
+
+  app.get(
+    "/api/analytics/purchases",
+    requireAnalyticsReadAccess,
+    async (req, res) => {
+      const now = new Date();
+      const resolved = resolveP8Range(req.query.from, req.query.to, now);
+      if (!resolved.ok) {
+        res.status(400).json({ error: resolved.error });
+        return;
+      }
+      try {
+        const includeTest = wantIncludeTest(req.query);
+        res.json(await loadP9Purchases(resolved.range, now, includeTest));
+      } catch (err) {
+        console.error("Analytics purchases error:", {
+          message:
+            err instanceof Error ? err.message.split("\n")[0] : "unknown",
+        });
+        res.status(500).json({ error: "Failed to load purchase summary" });
       }
     },
   );
