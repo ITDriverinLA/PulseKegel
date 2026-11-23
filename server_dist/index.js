@@ -30,6 +30,7 @@ var privacyPolicyHtml = `<!doctype html>
 <meta property="og:description" content="Minimal data. No selling. No sharing. Your data stays yours." />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://pulsekegel.com/privacy" />
+<link rel="canonical" href="https://pulsekegel.com/privacy" />
 
 <!-- Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -1290,7 +1291,7 @@ var pool = new Pool({
 var db = drizzle(pool, { schema: schema_exports });
 
 // server/routes.ts
-import { sql as sql2, countDistinct, inArray } from "drizzle-orm";
+import { sql as sql2, countDistinct, inArray, and as and2, or, gte, lt } from "drizzle-orm";
 
 // server/security.ts
 import { timingSafeEqual } from "node:crypto";
@@ -1478,6 +1479,22 @@ var eventMetadata = {
   displayClass: z.enum(["compact", "regular"]).optional(),
   windowWidthBucket: z.enum(["<500", "500-800", ">800"]).optional()
 };
+var nudgeChannelSchema = z.enum(["push", "in_app"]);
+var nudgeFollowupDaySchema = z.union([z.literal(3), z.literal(5)]);
+var nudgeKindSchema = z.enum(["day2", "followup"]);
+var nudgeFireAtSchema = z.string().max(40).datetime({ offset: true });
+var pushPermissionStatusSchema = z.enum([
+  "granted",
+  "denied",
+  "undetermined",
+  "provisional",
+  "ephemeral",
+  "unknown"
+]);
+var prePromptSchema = z.enum(["day1_complete", "second_session", "none"]);
+var prePromptAttemptSchema = z.union([z.literal(1), z.literal(2)]);
+var comebackSourceSchema = z.enum(["followup", "home"]);
+var idleDaysSchema = z.number().int().min(0).max(3650);
 var analyticsEventSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("app_open"),
@@ -1755,7 +1772,8 @@ var analyticsEventSchema = z.discriminatedUnion("type", [
       surface: z.string().trim().min(1).max(64).optional(),
       status: z.string().trim().min(1).max(32).optional(),
       deferred: z.boolean().optional(),
-      after_first_session: z.boolean().optional()
+      after_first_session: z.boolean().optional(),
+      pre_prompt: prePromptSchema.optional()
     }).strict(),
     ...eventMetadata
   }).strict(),
@@ -1767,7 +1785,8 @@ var analyticsEventSchema = z.discriminatedUnion("type", [
       surface: z.string().trim().min(1).max(64).optional(),
       deferred: z.boolean().optional(),
       already_granted: z.boolean().optional(),
-      after_first_session: z.boolean().optional()
+      after_first_session: z.boolean().optional(),
+      pre_prompt: prePromptSchema.optional()
     }).strict(),
     ...eventMetadata
   }).strict(),
@@ -1839,21 +1858,87 @@ var analyticsEventSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("challenge_day2_nudge_scheduled"),
     data: z.object({
-      channel: z.enum(["push", "in_app"])
+      channel: nudgeChannelSchema,
+      followup_day: nudgeFollowupDaySchema.optional(),
+      fire_at: nudgeFireAtSchema.optional()
     }).strict(),
     ...eventMetadata
   }).strict(),
   z.object({
     type: z.literal("challenge_day2_nudge_shown"),
     data: z.object({
-      channel: z.enum(["push", "in_app"])
+      channel: nudgeChannelSchema,
+      followup_day: nudgeFollowupDaySchema.optional()
     }).strict(),
     ...eventMetadata
   }).strict(),
   z.object({
     type: z.literal("challenge_day2_nudge_tapped"),
     data: z.object({
-      channel: z.enum(["push", "in_app"])
+      channel: nudgeChannelSchema,
+      followup_day: nudgeFollowupDaySchema.optional()
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("challenge_nudge_received"),
+    data: z.object({
+      nudge: nudgeKindSchema,
+      followup_day: nudgeFollowupDaySchema.optional(),
+      method: z.literal("foreground")
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("challenge_nudge_fire_passed"),
+    data: z.object({
+      nudge: nudgeKindSchema,
+      followup_day: nudgeFollowupDaySchema.optional(),
+      permission_status: pushPermissionStatusSchema
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("push_preprompt_shown"),
+    data: z.object({
+      surface: z.string().trim().min(1).max(64),
+      attempt: prePromptAttemptSchema
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("push_preprompt_result"),
+    data: z.object({
+      surface: z.string().trim().min(1).max(64),
+      attempt: prePromptAttemptSchema,
+      choice: z.enum(["yes", "not_now", "dismissed"])
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("comeback_shown"),
+    data: z.object({
+      idle_days: idleDaysSchema,
+      has_access: z.boolean(),
+      source: comebackSourceSchema.optional()
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("comeback_tapped"),
+    data: z.object({
+      idle_days: idleDaysSchema,
+      has_access: z.boolean(),
+      action: z.enum(["start", "not_now"]),
+      source: comebackSourceSchema.optional()
+    }).strict(),
+    ...eventMetadata
+  }).strict(),
+  z.object({
+    type: z.literal("comeback_completed"),
+    data: z.object({
+      idle_days: idleDaysSchema,
+      source: comebackSourceSchema.optional()
     }).strict(),
     ...eventMetadata
   }).strict(),
@@ -2196,6 +2281,545 @@ ${rep == null ? "" : String(rep)}`;
     },
     abandonsByPhaseAndRep,
     day1CompletionByPlatform
+  };
+}
+
+// server/p8RetentionSummary.ts
+var P8_DAY1_EVENT_TYPES = [
+  "first_session_completed",
+  "challenge_day_completed"
+];
+var P8_WINDOW_EVENT_TYPES = [
+  "session_started",
+  "challenge_day_started",
+  "challenge_day2_nudge_scheduled",
+  "challenge_day2_nudge_shown",
+  "challenge_day2_nudge_tapped",
+  "challenge_nudge_received",
+  "challenge_nudge_fire_passed",
+  "push_preprompt_shown",
+  "push_preprompt_result",
+  "permission_result",
+  "comeback_shown",
+  "comeback_tapped",
+  "comeback_completed"
+];
+var P8_EVENT_TYPES = [
+  ...P8_DAY1_EVENT_TYPES,
+  ...P8_WINDOW_EVENT_TYPES
+];
+var SESSION_START_TYPES = /* @__PURE__ */ new Set([
+  "session_started",
+  "challenge_day_started"
+]);
+var DAY_MS = 24 * 60 * 60 * 1e3;
+var P8_MAX_RANGE_DAYS = 92;
+var P8_LOOKBACK_DAYS = 15;
+var P8_LOOKAHEAD_DAYS = 8;
+var MAX_FIRE_AHEAD_MS = 14 * DAY_MS;
+var TAP_TO_SESSION_MS = DAY_MS;
+var DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+function parseUtcDate(value) {
+  if (!DATE_RE.test(value))
+    return null;
+  const ms = Date.parse(`${value}T00:00:00.000Z`);
+  if (!Number.isFinite(ms))
+    return null;
+  if (new Date(ms).toISOString().slice(0, 10) !== value)
+    return null;
+  return ms;
+}
+function utcDate(ms) {
+  return new Date(ms).toISOString().slice(0, 10);
+}
+function resolveP8Range(fromRaw, toRaw, now = /* @__PURE__ */ new Date()) {
+  const todayMs = parseUtcDate(utcDate(now.getTime()));
+  const blank = (v) => v === void 0 || v === null || typeof v === "string" && v.trim() === "";
+  if (!blank(fromRaw) && typeof fromRaw !== "string") {
+    return { ok: false, error: "from must be YYYY-MM-DD" };
+  }
+  if (!blank(toRaw) && typeof toRaw !== "string") {
+    return { ok: false, error: "to must be YYYY-MM-DD" };
+  }
+  let toMs = todayMs;
+  if (!blank(toRaw)) {
+    const parsed = parseUtcDate(toRaw.trim());
+    if (parsed == null)
+      return { ok: false, error: "to must be YYYY-MM-DD" };
+    toMs = parsed;
+  }
+  let fromMs = toMs - 6 * DAY_MS;
+  if (!blank(fromRaw)) {
+    const parsed = parseUtcDate(fromRaw.trim());
+    if (parsed == null)
+      return { ok: false, error: "from must be YYYY-MM-DD" };
+    fromMs = parsed;
+  }
+  if (fromMs > toMs)
+    return { ok: false, error: "from must be on or before to" };
+  if ((toMs - fromMs) / DAY_MS + 1 > P8_MAX_RANGE_DAYS) {
+    return {
+      ok: false,
+      error: `range must be at most ${P8_MAX_RANGE_DAYS} days`
+    };
+  }
+  return {
+    ok: true,
+    range: {
+      from: utcDate(fromMs),
+      to: utcDate(toMs),
+      fromMs,
+      toEndMs: toMs + DAY_MS
+    }
+  };
+}
+function utcWeekStart(ms) {
+  const dayStart = Math.floor(ms / DAY_MS) * DAY_MS;
+  const dow = new Date(dayStart).getUTCDay();
+  const back = (dow + 6) % 7;
+  return utcDate(dayStart - back * DAY_MS);
+}
+function eventTime2(value) {
+  if (value instanceof Date) {
+    const t = value.getTime();
+    return Number.isFinite(t) ? t : null;
+  }
+  if (typeof value === "number")
+    return Number.isFinite(value) ? value : null;
+  if (typeof value === "string") {
+    const t = Date.parse(value);
+    return Number.isFinite(t) ? t : null;
+  }
+  return null;
+}
+function asRecord2(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    return null;
+  return value;
+}
+function platformOf(event) {
+  return typeof event.platform === "string" && event.platform.trim() ? event.platform : "unknown";
+}
+function dayIndex(ms) {
+  return Math.floor(ms / DAY_MS);
+}
+function nudgeKeyOf(event, data, channelOverride) {
+  const followupDay = data?.followup_day === 3 || data?.followup_day === 5 ? data.followup_day : null;
+  const nudge = followupDay != null || data?.nudge === "followup" ? "followup" : "day2";
+  const channel = channelOverride ?? (data?.channel === "push" || data?.channel === "in_app" ? data.channel : "unknown");
+  return { platform: platformOf(event), channel, nudge, followupDay };
+}
+function keyString(k) {
+  return `${k.platform}
+${k.channel}
+${k.nudge}
+${k.followupDay ?? ""}`;
+}
+var NUDGE_METRICS = [
+  "scheduled",
+  "estimatedDelivered",
+  "receivedForeground",
+  "firePassedReported",
+  "shown",
+  "tapped",
+  "sessionStartedAfterTap"
+];
+var P8_DEFINITIONS = {
+  counting: "Distinct devices only. Days are UTC calendar days.",
+  day1Completer: "Earliest first_session_completed or challenge_day_completed (week 1, day 1) per device.",
+  secondSessionRate: "Main measure. Day-1 completers in the cohort week who started any session (session_started or challenge_day_started) on a later UTC day within 7 days, divided by Day-1 completers.",
+  firstReturnDay2: "First later session was on the UTC day after Day 1 (Day-2 return).",
+  firstReturnDay3: "First later session was two UTC days after Day 1 (Day-3 return).",
+  challengeDay2Started: "challenge_day_started with day 2 and week 1 (or no week). Meaningful only on the accelerated path; Day 2 is a rest day elsewhere.",
+  firstReturnByDate: "Devices whose first session after their Day-1 UTC date started on this date. Devices with an older Day 1 are checked against their full session history, so an earlier return is never re-counted.",
+  estimatedDelivered: "Estimated. Push scheduled with fire_at that has passed, with no session start or re-schedule of the same nudge on that device in between. Grouped by fire_at date. Focus modes, revoked permission or battery rules can still hide it.",
+  receivedForeground: "challenge_nudge_received: the app was open when the push fired.",
+  firePassedReported: "challenge_nudge_fire_passed: on a later open, the device saw that a scheduled push's fire time had passed.",
+  shown: "challenge_day2_nudge_shown (in-app banner actually rendered; old builds logged push taps here too).",
+  tapped: "challenge_day2_nudge_tapped.",
+  sessionStartedAfterTap: "Tapped, then started a session within 24 hours. Grouped by tap date.",
+  nudge: "day2, or followup (followup_day 3 or 5).",
+  osGranted: "permission_result with type push and status granted, attributed to a pre-prompt attempt by its pre_prompt prop: day1_complete = attempt 1, second_session = attempt 2. pre_prompt none or missing is not counted.",
+  anotherSessionWithin7d: "Comeback session completed, then another session start within 7 days after it. anotherSessionWindowComplete is false while any of those 7-day windows is still open."
+};
+function emptyCounts() {
+  const out = {};
+  for (const m of NUDGE_METRICS)
+    out[m] = /* @__PURE__ */ new Set();
+  return out;
+}
+function countsOf(sets) {
+  const out = {};
+  for (const m of NUDGE_METRICS)
+    out[m] = sets[m].size;
+  return out;
+}
+function addDatePlatform(map, date, platform, deviceId) {
+  const key = `${date}
+${platform}`;
+  let set = map.get(key);
+  if (!set) {
+    set = /* @__PURE__ */ new Set();
+    map.set(key, set);
+  }
+  set.add(deviceId);
+}
+function datePlatformRows(map) {
+  return Array.from(map.entries()).map(([key, set]) => {
+    const [date, platform] = key.split("\n");
+    return { date, platform, devices: set.size };
+  }).sort(
+    (a, b) => a.date !== b.date ? a.date.localeCompare(b.date) : a.platform.localeCompare(b.platform)
+  );
+}
+function isDay1Completion(eventType, data) {
+  if (eventType === "first_session_completed")
+    return true;
+  if (eventType === "challenge_day_completed") {
+    return data?.day === 1 && (data?.week === void 0 || data?.week === 1);
+  }
+  return false;
+}
+function summarizeP8Retention(events, range, options) {
+  const nowMs = (options?.now ?? /* @__PURE__ */ new Date()).getTime();
+  const sessionHistoryFromMs = options?.sessionHistoryFromMs;
+  const returnedBefore = options?.returnedBeforeSessionHistory ?? /* @__PURE__ */ new Set();
+  const inRange = (ms) => ms >= range.fromMs && ms < range.toEndMs;
+  const rows = events.map((event) => ({
+    event,
+    data: asRecord2(event.eventData),
+    at: eventTime2(event.createdAt)
+  })).filter(
+    (r) => !!r.event.deviceId && r.at != null
+  ).sort((a, b) => a.at - b.at);
+  const day1 = /* @__PURE__ */ new Map();
+  const sessionStarts = /* @__PURE__ */ new Map();
+  for (const { event, data, at } of rows) {
+    if (isDay1Completion(event.eventType, data) && !day1.has(event.deviceId)) {
+      day1.set(event.deviceId, { at, platform: platformOf(event) });
+    }
+    if (SESSION_START_TYPES.has(event.eventType)) {
+      let list = sessionStarts.get(event.deviceId);
+      if (!list) {
+        list = [];
+        sessionStarts.set(event.deviceId, list);
+      }
+      list.push(at);
+    }
+  }
+  const hasSessionBetween = (deviceId, startMs, endMs) => (sessionStarts.get(deviceId) ?? []).some((t) => t >= startMs && t < endMs);
+  const day1ByDate = /* @__PURE__ */ new Map();
+  const firstReturnByDate = /* @__PURE__ */ new Map();
+  const challengeDay2ByDate = /* @__PURE__ */ new Map();
+  const cohorts = /* @__PURE__ */ new Map();
+  const cohortAcc = (week, platform) => {
+    const key = `${week}
+${platform}`;
+    let acc = cohorts.get(key);
+    if (!acc) {
+      acc = {
+        completers: /* @__PURE__ */ new Set(),
+        within7: /* @__PURE__ */ new Set(),
+        d2: /* @__PURE__ */ new Set(),
+        d3: /* @__PURE__ */ new Set(),
+        d4to8: /* @__PURE__ */ new Set(),
+        challengeDay2: /* @__PURE__ */ new Set(),
+        windowComplete: true
+      };
+      cohorts.set(key, acc);
+    }
+    return acc;
+  };
+  const challengeDay2Devices = /* @__PURE__ */ new Set();
+  for (const { event, data, at } of rows) {
+    if (event.eventType === "challenge_day_started" && data?.day === 2 && (data?.week === void 0 || data?.week === 1)) {
+      challengeDay2Devices.add(event.deviceId);
+      if (inRange(at)) {
+        addDatePlatform(
+          challengeDay2ByDate,
+          utcDate(at),
+          platformOf(event),
+          event.deviceId
+        );
+      }
+    }
+  }
+  for (const [deviceId, d1] of day1.entries()) {
+    const d1Day = dayIndex(d1.at);
+    const later = (sessionStarts.get(deviceId) ?? []).filter(
+      (t) => dayIndex(t) > d1Day
+    );
+    const firstLater = later.length ? Math.min(...later) : null;
+    const historyCoversReturn = sessionHistoryFromMs == null || (d1Day + 1) * DAY_MS >= sessionHistoryFromMs || !returnedBefore.has(deviceId);
+    if (firstLater != null && historyCoversReturn && inRange(firstLater)) {
+      addDatePlatform(
+        firstReturnByDate,
+        utcDate(firstLater),
+        d1.platform,
+        deviceId
+      );
+    }
+    if (!inRange(d1.at))
+      continue;
+    addDatePlatform(day1ByDate, utcDate(d1.at), d1.platform, deviceId);
+    const week = utcWeekStart(d1.at);
+    const windowEndMs = (d1Day + 8) * DAY_MS;
+    for (const platform of [d1.platform, "all"]) {
+      const acc = cohortAcc(week, platform);
+      acc.completers.add(deviceId);
+      if (windowEndMs > nowMs)
+        acc.windowComplete = false;
+      if (challengeDay2Devices.has(deviceId))
+        acc.challengeDay2.add(deviceId);
+      if (firstLater != null && firstLater < windowEndMs) {
+        acc.within7.add(deviceId);
+        const offset = dayIndex(firstLater) - d1Day;
+        if (offset === 1)
+          acc.d2.add(deviceId);
+        else if (offset === 2)
+          acc.d3.add(deviceId);
+        else
+          acc.d4to8.add(deviceId);
+      }
+    }
+  }
+  const cohortsByWeek = Array.from(cohorts.entries()).map(([key, acc]) => {
+    const [cohortWeek, platform] = key.split("\n");
+    const completers = acc.completers.size;
+    return {
+      cohortWeek,
+      platform,
+      day1Completers: completers,
+      secondSessionWithin7d: acc.within7.size,
+      secondSessionRate: completers > 0 ? Math.round(acc.within7.size / completers * 1e3) / 1e3 : null,
+      firstReturnDay2: acc.d2.size,
+      firstReturnDay3: acc.d3.size,
+      firstReturnDay4to8: acc.d4to8.size,
+      challengeDay2Started: acc.challengeDay2.size,
+      windowComplete: acc.windowComplete
+    };
+  }).sort((a, b) => {
+    if (a.cohortWeek !== b.cohortWeek)
+      return a.cohortWeek.localeCompare(b.cohortWeek);
+    if (a.platform === "all")
+      return -1;
+    if (b.platform === "all")
+      return 1;
+    return a.platform.localeCompare(b.platform);
+  });
+  const daily = /* @__PURE__ */ new Map();
+  const totals = /* @__PURE__ */ new Map();
+  const record = (key, ms, metric, deviceId) => {
+    if (!inRange(ms))
+      return;
+    const date = utcDate(ms);
+    const ks = keyString(key);
+    const dk = `${date}
+${ks}`;
+    let d = daily.get(dk);
+    if (!d) {
+      d = { key, date, sets: emptyCounts() };
+      daily.set(dk, d);
+    }
+    d.sets[metric].add(deviceId);
+    let t = totals.get(ks);
+    if (!t) {
+      t = { key, sets: emptyCounts() };
+      totals.set(ks, t);
+    }
+    t.sets[metric].add(deviceId);
+  };
+  const schedules = /* @__PURE__ */ new Map();
+  const scheduleKey = (deviceId, k) => `${deviceId}
+${k.nudge}
+${k.followupDay ?? ""}`;
+  for (const { event, data, at } of rows) {
+    if (event.eventType !== "challenge_day2_nudge_scheduled")
+      continue;
+    const sk = scheduleKey(event.deviceId, nudgeKeyOf(event, data));
+    let list = schedules.get(sk);
+    if (!list) {
+      list = [];
+      schedules.set(sk, list);
+    }
+    list.push(at);
+  }
+  for (const { event, data, at } of rows) {
+    switch (event.eventType) {
+      case "challenge_day2_nudge_scheduled": {
+        const key = nudgeKeyOf(event, data);
+        record(key, at, "scheduled", event.deviceId);
+        if (key.channel !== "push")
+          break;
+        const fireMs = typeof data?.fire_at === "string" ? Date.parse(data.fire_at) : Number.NaN;
+        if (!Number.isFinite(fireMs))
+          break;
+        if (fireMs > nowMs)
+          break;
+        if (fireMs < at - 6e4 || fireMs > at + MAX_FIRE_AHEAD_MS)
+          break;
+        if (hasSessionBetween(event.deviceId, at, fireMs))
+          break;
+        const resched = (schedules.get(scheduleKey(event.deviceId, key)) ?? []).some((t) => t > at && t < fireMs);
+        if (resched)
+          break;
+        record(key, fireMs, "estimatedDelivered", event.deviceId);
+        break;
+      }
+      case "challenge_day2_nudge_shown":
+        record(nudgeKeyOf(event, data), at, "shown", event.deviceId);
+        break;
+      case "challenge_day2_nudge_tapped": {
+        const key = nudgeKeyOf(event, data);
+        record(key, at, "tapped", event.deviceId);
+        if (hasSessionBetween(event.deviceId, at, at + TAP_TO_SESSION_MS)) {
+          record(key, at, "sessionStartedAfterTap", event.deviceId);
+        }
+        break;
+      }
+      case "challenge_nudge_received":
+        record(
+          nudgeKeyOf(event, data, "push"),
+          at,
+          "receivedForeground",
+          event.deviceId
+        );
+        break;
+      case "challenge_nudge_fire_passed":
+        record(
+          nudgeKeyOf(event, data, "push"),
+          at,
+          "firePassedReported",
+          event.deviceId
+        );
+        break;
+      default:
+        break;
+    }
+  }
+  const sortNudge = (a, b) => a.platform.localeCompare(b.platform) || a.channel.localeCompare(b.channel) || a.nudge.localeCompare(b.nudge) || (a.followupDay ?? 0) - (b.followupDay ?? 0);
+  const nudgeTotals = Array.from(totals.values()).map(({ key, sets }) => ({ ...key, ...countsOf(sets) })).sort(sortNudge);
+  const nudgeDaily = Array.from(daily.values()).map(({ key, date, sets }) => ({ date, ...key, ...countsOf(sets) })).sort((a, b) => a.date.localeCompare(b.date) || sortNudge(a, b));
+  const pre = /* @__PURE__ */ new Map();
+  const preAcc = (platform, attempt) => {
+    const k = `${platform}
+${attempt ?? ""}`;
+    let acc = pre.get(k);
+    if (!acc) {
+      acc = {
+        shown: /* @__PURE__ */ new Set(),
+        yes: /* @__PURE__ */ new Set(),
+        notNow: /* @__PURE__ */ new Set(),
+        dismissed: /* @__PURE__ */ new Set(),
+        granted: /* @__PURE__ */ new Set()
+      };
+      pre.set(k, acc);
+    }
+    return acc;
+  };
+  const attemptOf = (data) => data?.attempt === 1 || data?.attempt === 2 ? data.attempt : null;
+  for (const { event, data, at } of rows) {
+    if (!inRange(at))
+      continue;
+    const platform = platformOf(event);
+    if (event.eventType === "push_preprompt_shown") {
+      preAcc(platform, attemptOf(data)).shown.add(event.deviceId);
+    } else if (event.eventType === "push_preprompt_result") {
+      const acc = preAcc(platform, attemptOf(data));
+      if (data?.choice === "yes")
+        acc.yes.add(event.deviceId);
+      else if (data?.choice === "not_now")
+        acc.notNow.add(event.deviceId);
+      else if (data?.choice === "dismissed")
+        acc.dismissed.add(event.deviceId);
+    } else if (event.eventType === "permission_result" && data?.type === "push" && data?.status === "granted" && (data?.pre_prompt === "day1_complete" || data?.pre_prompt === "second_session")) {
+      const attempt = data.pre_prompt === "day1_complete" ? 1 : 2;
+      preAcc(platform, attempt).granted.add(event.deviceId);
+    }
+  }
+  const prePrompt = Array.from(pre.entries()).map(([k, acc]) => {
+    const [platform, attemptRaw] = k.split("\n");
+    return {
+      platform,
+      attempt: attemptRaw === "" ? null : Number(attemptRaw),
+      shown: acc.shown.size,
+      yes: acc.yes.size,
+      notNow: acc.notNow.size,
+      dismissed: acc.dismissed.size,
+      osGranted: acc.granted.size
+    };
+  }).sort(
+    (a, b) => a.platform.localeCompare(b.platform) || (a.attempt ?? 0) - (b.attempt ?? 0)
+  );
+  const cb = /* @__PURE__ */ new Map();
+  const cbAcc = (platform, source) => {
+    const k = `${platform}
+${source}`;
+    let acc = cb.get(k);
+    if (!acc) {
+      acc = {
+        shown: /* @__PURE__ */ new Set(),
+        start: /* @__PURE__ */ new Set(),
+        notNow: /* @__PURE__ */ new Set(),
+        completed: /* @__PURE__ */ new Set(),
+        another: /* @__PURE__ */ new Set(),
+        windowComplete: true
+      };
+      cb.set(k, acc);
+    }
+    return acc;
+  };
+  for (const { event, data, at } of rows) {
+    if (!inRange(at))
+      continue;
+    const platform = platformOf(event);
+    const source = data?.source === "followup" || data?.source === "home" ? data.source : "home";
+    if (event.eventType === "comeback_shown") {
+      cbAcc(platform, source).shown.add(event.deviceId);
+    } else if (event.eventType === "comeback_tapped") {
+      const acc = cbAcc(platform, source);
+      if (data?.action === "start")
+        acc.start.add(event.deviceId);
+      else if (data?.action === "not_now")
+        acc.notNow.add(event.deviceId);
+    } else if (event.eventType === "comeback_completed") {
+      const acc = cbAcc(platform, source);
+      acc.completed.add(event.deviceId);
+      if (at + 7 * DAY_MS > nowMs)
+        acc.windowComplete = false;
+      if (hasSessionBetween(event.deviceId, at + 6e4, at + 7 * DAY_MS)) {
+        acc.another.add(event.deviceId);
+      }
+    }
+  }
+  const comeback = Array.from(cb.entries()).map(([k, acc]) => {
+    const [platform, source] = k.split("\n");
+    return {
+      platform,
+      source,
+      shown: acc.shown.size,
+      tappedStart: acc.start.size,
+      tappedNotNow: acc.notNow.size,
+      completed: acc.completed.size,
+      anotherSessionWithin7d: acc.another.size,
+      anotherSessionWindowComplete: acc.windowComplete
+    };
+  }).sort(
+    (a, b) => a.platform.localeCompare(b.platform) || a.source.localeCompare(b.source)
+  );
+  return {
+    range: { from: range.from, to: range.to, timezone: "UTC" },
+    generatedAt: new Date(nowMs).toISOString(),
+    definitions: P8_DEFINITIONS,
+    secondSession: {
+      cohortsByWeek,
+      firstReturnByDate: datePlatformRows(firstReturnByDate)
+    },
+    day1CompletersByDate: datePlatformRows(day1ByDate),
+    challengeDay2StartedByDate: datePlatformRows(challengeDay2ByDate),
+    nudges: { totals: nudgeTotals, byDate: nudgeDaily },
+    prePrompt,
+    comeback
   };
 }
 
@@ -2616,7 +3240,7 @@ var MALE_HEALTH_BENEFITS = [
 ];
 function buildFallback(daysWorkedOut, scheduledDays, weekNumber) {
   if (daysWorkedOut === 0) {
-    return `Week ${weekNumber} passed without a session. That happens, but it means starting from scratch on the streak. This week is a clean slate \u2014 one session is all it takes to get back on track.`;
+    return `No sessions in Week ${weekNumber}, and that's okay. This week is a fresh start, and one short session is all it takes to get going again.`;
   }
   const missedDays = Math.max(0, scheduledDays - daysWorkedOut);
   if (missedDays === 0) {
@@ -2625,7 +3249,96 @@ function buildFallback(daysWorkedOut, scheduledDays, weekNumber) {
   if (daysWorkedOut >= 3 && missedDays <= 2) {
     return `${daysWorkedOut} of ${scheduledDays} sessions done this week \u2014 ${missedDays} missed. The progress is real, but the full week is where the results compound. Aim to close that gap next week.`;
   }
-  return `${daysWorkedOut} of ${scheduledDays} scheduled sessions completed this week \u2014 ${missedDays} missed. That is not the week you needed. Next week, start on day one and do not let the first miss become two.`;
+  return `${daysWorkedOut} of ${scheduledDays} sessions this week. Every session counts, and next week is a fresh start. One short session is an easy way to get going again.`;
+}
+var P8_DAY_MS = 24 * 60 * 60 * 1e3;
+async function loadP8Retention(range, now) {
+  const lower = new Date(range.fromMs - P8_LOOKBACK_DAYS * P8_DAY_MS);
+  const upper = new Date(range.toEndMs + P8_LOOKAHEAD_DAYS * P8_DAY_MS);
+  const day1Condition = sql2`(
+    ${analyticsEvents.eventType} = 'first_session_completed'
+    OR (
+      ${analyticsEvents.eventType} = 'challenge_day_completed'
+      AND ${analyticsEvents.eventData}->>'day' = '1'
+      AND COALESCE(${analyticsEvents.eventData}->>'week', '1') = '1'
+    )
+  )`;
+  const rows = await db.select({
+    deviceId: analyticsEvents.deviceId,
+    platform: analyticsEvents.platform,
+    eventType: analyticsEvents.eventType,
+    eventData: analyticsEvents.eventData,
+    createdAt: analyticsEvents.createdAt
+  }).from(analyticsEvents).where(
+    and2(
+      lt(analyticsEvents.createdAt, upper),
+      or(
+        and2(
+          inArray(analyticsEvents.eventType, [...P8_WINDOW_EVENT_TYPES]),
+          gte(analyticsEvents.createdAt, lower)
+        ),
+        day1Condition
+      )
+    )
+  );
+  const returnedBeforeRaw = await db.execute(
+    sql2`
+    WITH d1 AS (
+      SELECT device_id, MIN(created_at) AS d1_at
+      FROM analytics_events
+      WHERE ${day1Condition} AND created_at < ${lower}
+      GROUP BY device_id
+    )
+    SELECT DISTINCT d1.device_id
+    FROM d1
+    JOIN analytics_events s
+      ON s.device_id = d1.device_id
+     AND s.event_type IN ('session_started', 'challenge_day_started')
+     AND s.created_at >= date_trunc('day', d1.d1_at) + INTERVAL '1 day'
+     AND s.created_at < ${lower}
+  `
+  );
+  const returnedBeforeSessionHistory = new Set(
+    returnedBeforeRaw.rows.map((row) => row.device_id)
+  );
+  const summary = summarizeP8Retention(rows, range, {
+    now,
+    sessionHistoryFromMs: lower.getTime(),
+    returnedBeforeSessionHistory
+  });
+  const fromDate = new Date(range.fromMs);
+  const toEndDate = new Date(range.toEndMs);
+  const weeklyRaw = await db.execute(
+    sql2`
+    SELECT
+      to_char(date_trunc('week', created_at), 'YYYY-MM-DD') AS week_start,
+      COALESCE(platform, 'unknown') AS platform,
+      COUNT(DISTINCT device_id)::int AS devices
+    FROM analytics_events
+    WHERE created_at >= ${fromDate} AND created_at < ${toEndDate}
+    GROUP BY 1, 2
+    UNION ALL
+    SELECT
+      to_char(date_trunc('week', created_at), 'YYYY-MM-DD') AS week_start,
+      'all' AS platform,
+      COUNT(DISTINCT device_id)::int AS devices
+    FROM analytics_events
+    WHERE created_at >= ${fromDate} AND created_at < ${toEndDate}
+    GROUP BY 1
+    ORDER BY 1, 2
+  `
+  );
+  const weeklyActiveDevices = weeklyRaw.rows.map((row) => {
+    const weekStartMs = Date.parse(`${row.week_start}T00:00:00.000Z`);
+    return {
+      weekStart: row.week_start,
+      platform: row.platform,
+      devices: Number(row.devices) || 0,
+      // True when the range covers only part of this Monday–Sunday week.
+      partialWeek: weekStartMs < range.fromMs || weekStartMs + 7 * P8_DAY_MS > range.toEndMs
+    };
+  });
+  return { ...summary, weeklyActiveDevices };
 }
 async function registerRoutes(app2) {
   registerSyncRoutes(app2);
@@ -2684,14 +3397,14 @@ async function registerRoutes(app2) {
         const anatomyLabel = anatomyType === "male" ? "male" : "female";
         let modeInstructions;
         if (daysWorkedOut === 0) {
-          modeInstructions = `This person completed 0 of ${scheduledDays} scheduled sessions this week \u2014 they did not train at all. Acknowledge that plainly and directly. Do not open with praise or pivot quickly to encouragement. The second or third sentence can note what picking it back up looks like. End with one brief forward-looking sentence.`;
+          modeInstructions = `This person did not train this week. Acknowledge it briefly and kindly, without guilt. Suggest that one short session is an easy way back. End with one friendly forward-looking sentence. Speak as a training coach. Don't mention health conditions, symptoms, medical advice, or results such as performance or bladder outcomes.`;
         } else if (missedDays === 0) {
           modeInstructions = `This person hit every session this week: ${daysWorkedOut} of ${scheduledDays} scheduled.${streak > 1 ? ` Their current streak is ${streak} days.` : ""} Celebrate this with specific reference to their session count${streak > 1 ? ` and streak` : ""}. Make the praise feel earned \u2014 reference the actual numbers, not generic effort.`;
         } else if (daysWorkedOut >= 3 && missedDays <= 2) {
           const streakNote = streak > 1 ? ` Their current streak is ${streak} days, which means those missed sessions did not break momentum entirely.` : ` Their streak did not hold this week.`;
           modeInstructions = `This person completed ${daysWorkedOut} of ${scheduledDays} scheduled sessions this week, missing ${missedDays}.${streakNote} Acknowledge the missed sessions by number \u2014 do not skip over it. Note that the full week of consistency is what compounds into results. Encourage them to close that gap next week. Tone: honest and supportive, not punishing.`;
         } else {
-          modeInstructions = `This person completed only ${daysWorkedOut} of ${scheduledDays} scheduled sessions this week \u2014 missing ${missedDays}.${streak <= 1 ? " Their streak was broken." : ""} Be direct: state the missed session count clearly. Do not lead with praise or bury the accountability. Challenge them to do better next week. End with one forward-looking sentence. Tone: firm and honest, but not harsh.`;
+          modeInstructions = `This person completed ${daysWorkedOut} of ${scheduledDays} scheduled sessions this week. Mention the count once, without judgment. Make restarting feel easy: one short session is enough to get going again. End with one friendly forward-looking sentence. Tone: warm and encouraging, never scolding. Speak as a training coach. Don't mention health conditions, symptoms, medical advice, or results such as performance or bladder outcomes.`;
         }
         const reviewData = JSON.stringify({
           name: userName || null,
@@ -3367,6 +4080,16 @@ ${blogUrls}
           // Set on the server at ship time. Unset falls back to the first card.
           cutoffIso: process.env.P7_CUTOFF_ISO
         });
+        let p8Retention = null;
+        try {
+          const p8Range = resolveP8Range(void 0, void 0, now);
+          if (p8Range.ok)
+            p8Retention = await loadP8Retention(p8Range.range, now);
+        } catch (p8Err) {
+          console.error("P8 retention summary error:", {
+            message: p8Err instanceof Error ? p8Err.message.split("\n")[0] : "unknown"
+          });
+        }
         res.json({
           totalDevices: totalDevices?.count ?? 0,
           dau: dau?.count ?? 0,
@@ -3400,6 +4123,7 @@ ${blogUrls}
             count: Number(row.count) || 0
           })),
           day1Howto,
+          p8Retention,
           day1PaywallReach: {
             finishers: Number(day1Reach?.finishers ?? 0),
             reachedAny: Number(day1Reach?.reached_any ?? 0),
@@ -3431,6 +4155,26 @@ ${blogUrls}
       } catch (err) {
         console.error("Analytics summary error:", err);
         res.status(500).json({ error: "Failed to load analytics summary" });
+      }
+    }
+  );
+  app2.get(
+    "/api/analytics/retention",
+    requireAnalyticsReadAccess,
+    async (req, res) => {
+      const now = /* @__PURE__ */ new Date();
+      const resolved = resolveP8Range(req.query.from, req.query.to, now);
+      if (!resolved.ok) {
+        res.status(400).json({ error: resolved.error });
+        return;
+      }
+      try {
+        res.json(await loadP8Retention(resolved.range, now));
+      } catch (err) {
+        console.error("Analytics retention error:", {
+          message: err instanceof Error ? err.message.split("\n")[0] : "unknown"
+        });
+        res.status(500).json({ error: "Failed to load retention summary" });
       }
     }
   );
