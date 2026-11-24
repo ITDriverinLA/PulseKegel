@@ -15,6 +15,9 @@ import type {
   HowtoCardAction,
 } from "./day1Howto";
 
+import type { BuildEnv, PurchaseStore } from "./purchaseContext";
+import type { PeriodType } from "./premiumEntitlement";
+
 export type { Day1AbandonPhase, Day1ExitSource, HowtoCardAction };
 
 const DEVICE_ID_KEY = "pulsekegel_analytics_device_id";
@@ -211,6 +214,9 @@ export function trackPaywallViewed(data: {
   trialDaysRemaining: number;
   completedCoreSessions?: number;
   totalCoreSessions?: number;
+  // P9a.6
+  store?: PurchaseStore;
+  buildEnv?: BuildEnv;
 }): void {
   trackEvent("paywall_viewed", data as Record<string, unknown>);
 }
@@ -232,25 +238,129 @@ export function trackSubscribeTapped(data: {
   packageIdentifier?: string;
   productIdentifier?: string;
   displayedPrice?: string;
+  // P9a.3
+  hasPackages?: boolean;
 }): void {
   trackEvent("subscribe_tapped", data as Record<string, unknown>);
 }
 
-export function trackPurchaseResult(data: {
-  result: "started" | "completed" | "cancelled" | "failed" | "unavailable";
-  packageIdentifier?: string;
-  productIdentifier?: string;
-  errorCode?: string;
-  source?: PaywallSource;
-}): void {
-  trackEvent(`purchase_${data.result}`, data as Record<string, unknown>);
+/** P9a.4: context + error fields shared by purchase_* and restore_*. */
+export interface PurchaseEventContext {
+  store?: PurchaseStore;
+  buildEnv?: BuildEnv;
+  isSandbox?: boolean;
+  offeringId?: string;
+  rcCode?: number;
+  readableErrorCode?: string;
+  errorMessage?: string;
+  userCancelled?: boolean;
 }
 
-export function trackRestoreResult(data: {
-  result: "started" | "completed" | "not_found" | "failed";
-  errorCode?: string;
+/**
+ * `purchase_*` events. Entitlement-missing is deliberately not a result here:
+ * it is only ever logged as `purchase_entitlement_missing` (Rev L5, PR #39).
+ */
+export function trackPurchaseResult(
+  data: {
+    result: "started" | "completed" | "cancelled" | "failed" | "unavailable";
+    packageIdentifier?: string;
+    productIdentifier?: string;
+    errorCode?: string;
+    source?: PaywallSource;
+    periodType?: PeriodType;
+    isTrial?: boolean;
+    recoveredAfterRefresh?: boolean;
+  } & PurchaseEventContext,
+): void {
+  trackEvent(
+    `purchase_${data.result}`,
+    data as unknown as Record<string, unknown>,
+  );
+}
+
+export function trackRestoreResult(
+  data: {
+    result: "started" | "completed" | "not_found" | "failed";
+    errorCode?: string;
+    reason?: "not_configured";
+    periodType?: PeriodType;
+    isTrial?: boolean;
+  } & PurchaseEventContext,
+): void {
+  trackEvent(
+    `restore_${data.result}`,
+    data as unknown as Record<string, unknown>,
+  );
+}
+
+export type OfferingsSurface = "launch" | "paywall_retry";
+export type OfferingsFailedReason =
+  | "not_configured"
+  | "no_offerings"
+  | "no_current_offering"
+  | "current_offering_empty"
+  | "fetch_error";
+
+/** P9a.5 */
+export function trackOfferingFallbackUsed(data: {
+  offeringId: string;
+  reason: "no_current" | "current_empty";
+  surface: OfferingsSurface;
 }): void {
-  trackEvent(`restore_${data.result}`, data as Record<string, unknown>);
+  trackEvent("offering_fallback_used", data as Record<string, unknown>);
+}
+
+/** P9a.5: replaces the silent console.error on a failed offerings load. */
+export function trackOfferingsFailed(data: {
+  surface: OfferingsSurface;
+  configured?: boolean;
+  store?: PurchaseStore;
+  buildEnv?: BuildEnv;
+  rcCode?: number;
+  readableErrorCode?: string;
+  errorMessage?: string;
+  reason?: OfferingsFailedReason;
+}): void {
+  trackEvent("offerings_failed", data as Record<string, unknown>);
+}
+
+/** P9a.5: purchase resolved, refreshed once, entitlement still missing. */
+export function trackPurchaseEntitlementMissing(data: {
+  packageIdentifier?: string;
+  productIdentifier?: string;
+  offeringId?: string;
+  refreshed?: boolean;
+  store?: PurchaseStore;
+  buildEnv?: BuildEnv;
+  isSandbox?: boolean;
+}): void {
+  trackEvent("purchase_entitlement_missing", data as Record<string, unknown>);
+}
+
+/** P9a.5 / decision 2: named entitlement missing, another one active. */
+export function trackEntitlementMismatch(data: {
+  expected: string;
+  activeIds: string[];
+}): void {
+  trackEvent("entitlement_mismatch", data as Record<string, unknown>);
+}
+
+export type SubscriptionStatusValue = "none" | "trial" | "paid";
+
+/** P9a.5: from the CustomerInfo listener / foreground refresh, deduped. */
+export function trackSubscriptionStatusChanged(data: {
+  from: SubscriptionStatusValue;
+  to: SubscriptionStatusValue;
+  periodType?: PeriodType;
+  isSandbox?: boolean;
+  store?: PurchaseStore;
+}): void {
+  trackEvent("subscription_status_changed", data as Record<string, unknown>);
+}
+
+/** P9a.5 / P9b.1: Retry on the paywall's unavailable state. */
+export function trackPaywallRetryTapped(data: { code: string | number }): void {
+  trackEvent("paywall_retry_tapped", data as Record<string, unknown>);
 }
 
 export function trackSessionStarted(data: {

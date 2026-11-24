@@ -21,7 +21,10 @@ import RootStackNavigator, {
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
 import { AudioProvider } from "@/contexts/AudioContext";
-import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
+import {
+  SubscriptionProvider,
+  useSubscription,
+} from "@/contexts/SubscriptionContext";
 import {
   ThemePreferenceProvider,
   useThemePreference,
@@ -103,6 +106,10 @@ function AppContent() {
   const navigationRef =
     useRef<NavigationContainerRef<RootStackParamList>>(null);
   const appStateRef = useRef<AppStateStatus>(asAppState(AppState.currentState));
+  // P9b.5: pick up pending / Ask to Buy approvals, renewals and expiry.
+  const { refreshOnForeground } = useSubscription();
+  const refreshOnForegroundRef = useRef(refreshOnForeground);
+  refreshOnForegroundRef.current = refreshOnForeground;
 
   useEffect(() => {
     (async () => {
@@ -139,6 +146,7 @@ function AppContent() {
       if (didAppBecomeActive(appStateRef.current, next)) {
         markWarmResume();
         void reportDay2NudgeFirePassed();
+        void refreshOnForegroundRef.current();
       }
       appStateRef.current = next;
     };
