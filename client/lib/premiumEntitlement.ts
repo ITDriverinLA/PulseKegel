@@ -2,9 +2,10 @@
  * P9b.7 (decision 2): one named entitlement with a safety net.
  *
  * `PREMIUM_ENTITLEMENT_ID` is the RevenueCat entitlement that unlocks
- * PulseKegel. It is read from the RevenueCat dashboard during the decision-3
- * checklist and must be filled in before the 2.2.7 store submit. While it is
- * null, any active entitlement counts (today's behavior) and nothing is logged.
+ * PulseKegel, as read from the RevenueCat dashboard (Tally, 2026-11-23). It
+ * must be verified against a sandbox purchase's
+ * `customerInfo.entitlements.active` keys before the 2.2.7 store submit. If
+ * set to null, any active entitlement counts and nothing is logged.
  *
  * Safety net: if the named entitlement is missing but another one is active,
  * the user still gets access and the caller logs `entitlement_mismatch`, so no

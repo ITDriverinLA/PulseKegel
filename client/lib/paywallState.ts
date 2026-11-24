@@ -37,6 +37,11 @@ export type PaywallView =
 export function derivePaywallView(input: {
   hasPackages: boolean;
   failure: PaywallFailure | null;
+  /**
+   * Offerings loaded but the chosen package has no store price string.
+   * Shown as unavailable (with Retry) instead of an endless "Loading price…".
+   */
+  packageWithoutPrice?: boolean;
 }): PaywallView {
   if (input.failure) {
     return {
@@ -49,6 +54,9 @@ export function derivePaywallView(input: {
     };
   }
   if (input.hasPackages) return { kind: "priced" };
+  if (input.packageWithoutPrice) {
+    return { kind: "unavailable", variant: "generic", code: "no_price" };
+  }
   return { kind: "loading" };
 }
 

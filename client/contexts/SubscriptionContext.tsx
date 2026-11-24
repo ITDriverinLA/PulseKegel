@@ -225,6 +225,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     const apiKey = platformApiKey();
     if (!apiKey) return false;
     try {
+      // configure() is synchronous; it returns before any network call.
       Purchases.configure({ apiKey });
       registerListener();
       return true;

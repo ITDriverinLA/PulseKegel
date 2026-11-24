@@ -214,6 +214,7 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
   const view = derivePaywallView({
     hasPackages: Boolean(selectedPackage && storePrice),
     failure,
+    packageWithoutPrice: Boolean(selectedPackage && !storePrice),
   });
   const isChallengeConversion = source === "challenge_complete";
   const isDay1Soft = source === "day1_soft";

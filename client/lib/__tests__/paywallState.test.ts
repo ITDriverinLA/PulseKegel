@@ -308,3 +308,24 @@ describe("A10: no hardcoded $4.99 in app code", () => {
     expect(offenders).toEqual([]);
   });
 });
+
+describe("derivePaywallView: package without a price (Rev L3)", () => {
+  it("shows unavailable with Retry instead of loading forever", () => {
+    expect(
+      derivePaywallView({
+        hasPackages: false,
+        failure: null,
+        packageWithoutPrice: true,
+      }),
+    ).toEqual({ kind: "unavailable", variant: "generic", code: "no_price" });
+  });
+  it("a real failure still wins", () => {
+    expect(
+      derivePaywallView({
+        hasPackages: false,
+        failure: { rcCode: 3, code: "rc_3" },
+        packageWithoutPrice: true,
+      }),
+    ).toMatchObject({ kind: "unavailable", variant: "not_allowed" });
+  });
+});
