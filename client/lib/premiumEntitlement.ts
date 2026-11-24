@@ -10,7 +10,8 @@
  * the user still gets access and the caller logs `entitlement_mismatch`, so no
  * paying user is ever locked out by this change.
  */
-export const PREMIUM_ENTITLEMENT_ID: string | null = null;
+export const PREMIUM_ENTITLEMENT_ID: string | null =
+  "Avatar Generation LLC / PulseKegel Pro";
 
 export type SubscriptionStatus = "none" | "trial" | "paid";
 export type PeriodType = "TRIAL" | "INTRO" | "NORMAL" | "PREPAID";
