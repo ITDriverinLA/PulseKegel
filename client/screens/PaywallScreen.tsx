@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
+  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -21,7 +22,7 @@ import {
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-import Purchases, { PurchasesPackage } from "react-native-purchases";
+import Purchases from "react-native-purchases";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { Spacing, BorderRadius } from "@/constants/theme";
@@ -39,9 +40,35 @@ import {
 import {
   trackPaywallViewed,
   trackPaywallDismissed,
+  trackPaywallRetryTapped,
   trackPurchaseResult,
   trackSubscribeTapped,
 } from "@/lib/analytics";
+import {
+  ENTITLEMENT_CONFIRMING_NOTE,
+  FREE_WEEK_CTA,
+  PAYMENT_PENDING_NOTE,
+  PAYWALL_LOADING_PRICE,
+  RESTORE_UNREACHABLE_BODY,
+  RESTORE_UNREACHABLE_TITLE,
+  continueTrainingCta,
+  freeWeekPriceLine,
+  subscribeCta,
+} from "@/constants/paywallCopy";
+import { getPurchaseContext } from "@/lib/purchaseContext";
+import {
+  chooseAnnualPackage,
+  packageIds,
+  storePriceString,
+} from "@/lib/purchaseFlow";
+import {
+  derivePaywallView,
+  freeWeekEligible,
+  iosHasFreeWeekIntro,
+  shouldLoadOnMount,
+  unavailableCopyFor,
+  type PaywallFailure,
+} from "@/lib/paywallState";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type PaywallRouteProp = RouteProp<RootStackParamList, "Paywall">;
@@ -50,21 +77,6 @@ interface ChallengeStats {
   completedCoreSessions: number;
   totalCoreSessions: number;
   completedOptionalSessions: number;
-}
-
-function chooseAnnualPackage(
-  pkgs: PurchasesPackage[],
-): PurchasesPackage | null {
-  return (
-    pkgs.find(
-      (pkg) =>
-        String(pkg.packageType).toLowerCase().includes("annual") ||
-        pkg.identifier.toLowerCase().includes("annual") ||
-        pkg.product.identifier.toLowerCase().includes("annual"),
-    ) ??
-    pkgs[0] ??
-    null
-  );
 }
 
 interface PaywallScreenProps {
@@ -84,12 +96,22 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
     isLoading,
     trialDaysRemaining,
     isTrialActive,
+    isSubscribed,
+    loadOfferings,
   } = useSubscription();
   const { cp, isDarkMode } = useThemePreference();
 
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [localPackages, setLocalPackages] = useState(packages);
+  // P9b.1: why there's nothing to buy (code 3 → billing-not-allowed copy).
+  const [failure, setFailure] = useState<PaywallFailure | null>(null);
+  const [isRetrying, setIsRetrying] = useState(false);
+  // P9b.1 / P9b.4: inline notes instead of a failure alert.
+  const [purchaseNote, setPurchaseNote] = useState<string | null>(null);
+  const [iosIntroStatus, setIosIntroStatus] = useState<number | null>(null);
+  const closedRef = useRef(false);
+  const subscribedAtMountRef = useRef(isSubscribed);
   const [challengeStats, setChallengeStats] = useState<ChallengeStats | null>(
     null,
   );
@@ -97,7 +119,57 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
 
   React.useEffect(() => {
     setLocalPackages(packages);
+    if (packages.length > 0) setFailure(null);
   }, [packages]);
+
+  const mountedRef = useRef(true);
+  React.useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  // P9b.3: nothing cached and the launch load is done → load once here so the
+  // paywall shows loading, then the real price or the unavailable state.
+  const mountLoadDoneRef = useRef(false);
+  React.useEffect(() => {
+    if (mountLoadDoneRef.current) return;
+    if (localPackages.length > 0) {
+      mountLoadDoneRef.current = true;
+      return;
+    }
+    if (
+      !shouldLoadOnMount({
+        hasPackages: false,
+        contextLoading: isLoading,
+        alreadyLoading: false,
+      })
+    ) {
+      return;
+    }
+    mountLoadDoneRef.current = true;
+    (async () => {
+      const result = await loadOfferings("paywall_retry");
+      if (!mountedRef.current) return;
+      if (result.ok) {
+        setLocalPackages(result.packages);
+        setFailure(null);
+      } else {
+        setFailure({ rcCode: result.rcCode, code: result.errorCode });
+      }
+    })();
+  }, [isLoading, loadOfferings, localPackages.length]);
+
+  // P9b.5: a late purchase (pending / Ask to Buy / another device) unlocks
+  // through the listener; close the paywall if it's still open.
+  React.useEffect(() => {
+    if (isSubscribed && !subscribedAtMountRef.current && !closedRef.current) {
+      closedRef.current = true;
+      onClose?.();
+      navigation.goBack();
+    }
+  }, [isSubscribed, navigation, onClose]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -110,6 +182,7 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
       setChallengeStats(stats);
       if (!paywallTrackedRef.current) {
         paywallTrackedRef.current = true;
+        const purchaseCtx = await getPurchaseContext();
         await recordPaywallView(
           {
             source,
@@ -118,7 +191,13 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
             totalCoreSessions: stats?.totalCoreSessions,
           },
           {
-            trackPaywallViewed,
+            // P9a.6: store + buildEnv so the funnel's first step filters too.
+            trackPaywallViewed: (data) =>
+              trackPaywallViewed({
+                ...data,
+                store: purchaseCtx.store,
+                buildEnv: purchaseCtx.buildEnv,
+              }),
             markDay1SoftPaywallShown: () => storage.markDay1SoftPaywallShown(),
           },
         );
@@ -130,9 +209,62 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
   }, [source, trialDaysRemaining]);
 
   const selectedPackage = chooseAnnualPackage(localPackages);
-  const displayedPrice = selectedPackage?.product.priceString ?? "$4.99";
+  // P9b.3: only ever the store's price string; no fallback price.
+  const storePrice = storePriceString(selectedPackage);
+  const view = derivePaywallView({
+    hasPackages: Boolean(selectedPackage && storePrice),
+    failure,
+  });
   const isChallengeConversion = source === "challenge_complete";
   const isDay1Soft = source === "day1_soft";
+
+  // P9b.6: iOS free-week eligibility for this user.
+  const selectedProductId = selectedPackage?.product.identifier;
+  const selectedHasIosIntro =
+    Platform.OS === "ios" && iosHasFreeWeekIntro(selectedPackage?.product);
+  React.useEffect(() => {
+    if (!selectedHasIosIntro || !selectedProductId) {
+      setIosIntroStatus(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const result = await Purchases.checkTrialOrIntroductoryPriceEligibility(
+          [selectedProductId],
+        );
+        if (!cancelled) {
+          setIosIntroStatus(result[selectedProductId]?.status ?? null);
+        }
+      } catch {
+        if (!cancelled) setIosIntroStatus(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedHasIosIntro, selectedProductId]);
+  const showFreeWeek =
+    view.kind === "priced" &&
+    freeWeekEligible({
+      os: Platform.OS,
+      product: selectedPackage?.product,
+      iosEligibilityStatus: iosIntroStatus,
+    });
+
+  const unavailableCopy = unavailableCopyFor(
+    view.kind === "unavailable" ? view.variant : "generic",
+    Platform.OS,
+  );
+
+  const ctaLabel = (() => {
+    if (isDay1Soft) return DAY1_SOFT_CTA;
+    if (showFreeWeek) return FREE_WEEK_CTA;
+    if (!storePrice) return "";
+    return isChallengeConversion
+      ? continueTrainingCta(storePrice)
+      : subscribeCta(storePrice);
+  })();
 
   const challengeTitle = (() => {
     if (!challengeStats) return "Keep Your Momentum Going";
@@ -145,80 +277,74 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
     return "Keep Your Momentum Going";
   })();
 
+  const closePaywall = () => {
+    if (closedRef.current) return;
+    closedRef.current = true;
+    onClose?.();
+    navigation.goBack();
+  };
+
   const handlePurchase = async () => {
     let pkgs = localPackages;
-    // H3: why there were no packages (RevenueCat error code or empty offering).
-    let unavailableCode = "no_packages_cached";
-
-    if (pkgs.length === 0) {
-      setIsPurchasing(true);
-      try {
-        console.log(
-          "[PulseKegel] Paywall: No packages cached, retrying offerings fetch...",
-        );
-        const offerings = await Purchases.getOfferings();
-        if (offerings.current?.availablePackages?.length) {
-          pkgs = offerings.current.availablePackages;
-          setLocalPackages(pkgs);
-          console.log(
-            "[PulseKegel] Paywall: Retry succeeded, got",
-            pkgs.length,
-            "packages",
-          );
-        } else if (Object.keys(offerings.all).length > 0) {
-          const firstOffering = Object.values(offerings.all)[0];
-          if (firstOffering?.availablePackages?.length) {
-            pkgs = firstOffering.availablePackages;
-            setLocalPackages(pkgs);
-          }
-        }
-        if (pkgs.length === 0) {
-          unavailableCode = offerings.current
-            ? "current_offering_empty"
-            : Object.keys(offerings.all).length > 0
-              ? "no_current_offering"
-              : "no_offerings";
-        }
-      } catch (error) {
-        console.error("[PulseKegel] Paywall: Retry failed:", error);
-        const code = (error as { code?: unknown } | null)?.code;
-        unavailableCode =
-          typeof code === "string" || typeof code === "number"
-            ? `rc_${String(code)}`.slice(0, 100)
-            : "offerings_fetch_error";
-      }
-      setIsPurchasing(false);
-    }
-
-    if (pkgs.length === 0) {
-      trackPurchaseResult({
-        result: "unavailable",
-        source,
-        errorCode: unavailableCode,
-      });
-      Alert.alert(
-        "Not Available",
-        "Subscriptions are not available right now. Please check your internet connection and try again.",
-        [{ text: "OK" }],
-      );
-      return;
-    }
-
-    const pkg = chooseAnnualPackage(pkgs);
-    if (!pkg) return;
-
+    let pkg = chooseAnnualPackage(pkgs);
+    const shownPrice = view.kind === "priced" ? storePrice : undefined;
+    // P9a.3 / A1: log the tap first, including taps that end unavailable.
     trackSubscribeTapped({
       source,
-      packageIdentifier: pkg.identifier,
-      productIdentifier: pkg.product.identifier,
-      displayedPrice: pkg.product.priceString,
+      ...(pkg
+        ? {
+            packageIdentifier: packageIds(pkg).packageIdentifier,
+            productIdentifier: packageIds(pkg).productIdentifier,
+          }
+        : {}),
+      ...(shownPrice ? { displayedPrice: shownPrice } : {}),
+      hasPackages: pkgs.length > 0,
     });
+    setPurchaseNote(null);
+
+    if (!pkg) {
+      setIsPurchasing(true);
+      const result = await loadOfferings("paywall_retry");
+      setIsPurchasing(false);
+      if (!result.ok) {
+        const ctx = await getPurchaseContext();
+        trackPurchaseResult({
+          result: "unavailable",
+          source,
+          errorCode: result.errorCode,
+          store: ctx.store,
+          buildEnv: ctx.buildEnv,
+          ...(ctx.isSandbox !== undefined ? { isSandbox: ctx.isSandbox } : {}),
+          ...(result.rcCode !== undefined ? { rcCode: result.rcCode } : {}),
+          ...(result.readableErrorCode
+            ? { readableErrorCode: result.readableErrorCode }
+            : {}),
+          ...(result.errorMessage ? { errorMessage: result.errorMessage } : {}),
+        });
+        // P9b.1: inline unavailable state instead of an alert.
+        setFailure({ rcCode: result.rcCode, code: result.errorCode });
+        return;
+      }
+      pkgs = result.packages;
+      setLocalPackages(pkgs);
+      setFailure(null);
+      pkg = chooseAnnualPackage(pkgs);
+      if (!pkg) return;
+    }
+
     setIsPurchasing(true);
     try {
       const result = await purchasePackage(pkg, source);
       if (result === "success") {
-        onClose?.();
-        navigation.goBack();
+        closePaywall();
+      } else if (result === "not_allowed") {
+        // P9b.1: code 3 on purchase → billing-not-allowed state, no price.
+        setLocalPackages([]);
+        setFailure({ rcCode: 3, code: "rc_3" });
+      } else if (result === "pending") {
+        setPurchaseNote(PAYMENT_PENDING_NOTE);
+      } else if (result === "confirming") {
+        setPurchaseNote(ENTITLEMENT_CONFIRMING_NOTE);
       } else if (result === "failed" || result === "unavailable") {
         Alert.alert(
           "Purchase Not Completed",
@@ -231,16 +357,39 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
     }
   };
 
+  // P9b.1: Retry re-runs the offerings fetch. One fetch per tap, no loop.
+  const handleRetry = async () => {
+    if (isRetrying || view.kind !== "unavailable") return;
+    trackPaywallRetryTapped({ code: view.code });
+    setIsRetrying(true);
+    try {
+      const result = await loadOfferings("paywall_retry");
+      if (!mountedRef.current) return;
+      if (result.ok) {
+        setLocalPackages(result.packages);
+        setFailure(null);
+      } else {
+        setFailure({ rcCode: result.rcCode, code: result.errorCode });
+      }
+    } finally {
+      if (mountedRef.current) setIsRetrying(false);
+    }
+  };
+
   const handleRestore = async () => {
     setIsRestoring(true);
     try {
-      const success = await restorePurchases();
-      if (success) {
+      const outcome = await restorePurchases();
+      if (outcome === "restored") {
         Alert.alert("Success", "Your purchases have been restored!", [
           { text: "OK" },
         ]);
-        onClose?.();
-        navigation.goBack();
+        closePaywall();
+      } else if (outcome === "error") {
+        // P9b.8: the store call failed; don't claim nothing was found.
+        Alert.alert(RESTORE_UNREACHABLE_TITLE, RESTORE_UNREACHABLE_BODY, [
+          { text: "OK" },
+        ]);
       } else {
         Alert.alert(
           "No Purchases Found",
@@ -398,26 +547,76 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
               FULL 12-WEEK PROGRAM
             </Text>
           </View>
-          <Text
-            style={[
-              styles.price,
-              {
-                fontSize: 36 * fontScale,
-                color: cp.neonGreen,
-                textShadowColor: `${cp.neonGreen}80`,
-              },
-            ]}
-          >
-            {displayedPrice}
-          </Text>
-          <Text
-            style={[
-              styles.priceSubtext,
-              { fontSize: 16 * fontScale, color: cp.text },
-            ]}
-          >
-            per year
-          </Text>
+          {view.kind === "priced" ? (
+            <>
+              <Text
+                style={[
+                  styles.price,
+                  {
+                    fontSize: 36 * fontScale,
+                    color: cp.neonGreen,
+                    textShadowColor: `${cp.neonGreen}80`,
+                  },
+                ]}
+                testID="text-store-price"
+              >
+                {storePrice}
+              </Text>
+              <Text
+                style={[
+                  styles.priceSubtext,
+                  { fontSize: 16 * fontScale, color: cp.text },
+                ]}
+              >
+                per year
+              </Text>
+              {showFreeWeek && storePrice ? (
+                <Text
+                  style={[
+                    styles.priceNote,
+                    { fontSize: 13 * fontScale, color: cp.text },
+                  ]}
+                  testID="text-free-week"
+                >
+                  {freeWeekPriceLine(storePrice)}
+                </Text>
+              ) : null}
+            </>
+          ) : view.kind === "loading" ? (
+            <View style={styles.priceLoading} testID="text-price-loading">
+              <ActivityIndicator color={cp.neonGreen} size="small" />
+              <Text
+                style={[
+                  styles.priceSubtext,
+                  { fontSize: 16 * fontScale, color: cp.textSecondary },
+                ]}
+              >
+                {PAYWALL_LOADING_PRICE}
+              </Text>
+            </View>
+          ) : (
+            <View
+              style={styles.unavailableState}
+              testID={`paywall-unavailable-${view.variant}`}
+            >
+              <Text
+                style={[
+                  styles.unavailableTitle,
+                  { fontSize: 18 * fontScale, color: cp.text },
+                ]}
+              >
+                {unavailableCopy.title}
+              </Text>
+              <Text
+                style={[
+                  styles.unavailableBody,
+                  { fontSize: 14 * fontScale, color: cp.textSecondary },
+                ]}
+              >
+                {unavailableCopy.body}
+              </Text>
+            </View>
+          )}
           <Text
             style={[
               styles.priceNote,
@@ -432,48 +631,103 @@ export default function PaywallScreen({ onClose }: PaywallScreenProps) {
           entering={FadeInUp.delay(ANIM_DELAY_XL)}
           style={styles.ctaSection}
         >
-          <Pressable
-            style={[
-              styles.subscribeButton,
-              { backgroundColor: cp.neonGreen, shadowColor: cp.neonGreen },
-              (isPurchasing || isLoading) && styles.buttonDisabled,
-            ]}
-            onPress={handlePurchase}
-            disabled={isPurchasing || isLoading}
-            testID="button-subscribe"
-          >
-            {isPurchasing ? (
-              <ActivityIndicator color={cp.bg} />
-            ) : (
-              <>
-                <Feather name="unlock" size={20} color={cp.bg} />
-                <Text style={[styles.subscribeButtonText, { color: cp.bg }]}>
-                  {isDay1Soft
-                    ? DAY1_SOFT_CTA
-                    : isChallengeConversion
-                      ? `Continue My Training — ${displayedPrice}/year`
-                      : `Subscribe — ${displayedPrice}/year`}
-                </Text>
-              </>
-            )}
-          </Pressable>
-
-          {isDay1Soft ? (
-            <Pressable
-              style={styles.restoreButton}
-              onPress={() => handleClose("not_now")}
-              testID="button-day1-soft-not-now"
-            >
-              <Text
+          {view.kind === "unavailable" ? (
+            <>
+              <Pressable
                 style={[
-                  styles.restoreButtonText,
-                  { fontSize: 15 * fontScale, color: cp.textSecondary },
+                  styles.subscribeButton,
+                  { backgroundColor: cp.neonGreen, shadowColor: cp.neonGreen },
+                  isRetrying && styles.buttonDisabled,
                 ]}
+                onPress={handleRetry}
+                disabled={isRetrying}
+                testID="button-paywall-retry"
               >
-                {DAY1_SOFT_DISMISS}
-              </Text>
-            </Pressable>
-          ) : null}
+                {isRetrying ? (
+                  <ActivityIndicator color={cp.bg} />
+                ) : (
+                  <>
+                    <Feather name="refresh-cw" size={20} color={cp.bg} />
+                    <Text
+                      style={[styles.subscribeButtonText, { color: cp.bg }]}
+                    >
+                      {unavailableCopy.retry}
+                    </Text>
+                  </>
+                )}
+              </Pressable>
+              <Pressable
+                style={styles.restoreButton}
+                onPress={() => handleClose("not_now")}
+                testID="button-paywall-not-now"
+              >
+                <Text
+                  style={[
+                    styles.restoreButtonText,
+                    { fontSize: 15 * fontScale, color: cp.textSecondary },
+                  ]}
+                >
+                  {unavailableCopy.dismiss}
+                </Text>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <Pressable
+                style={[
+                  styles.subscribeButton,
+                  { backgroundColor: cp.neonGreen, shadowColor: cp.neonGreen },
+                  (isPurchasing || view.kind === "loading") &&
+                    styles.buttonDisabled,
+                ]}
+                onPress={handlePurchase}
+                disabled={isPurchasing || view.kind === "loading"}
+                testID="button-subscribe"
+              >
+                {isPurchasing || view.kind === "loading" ? (
+                  <ActivityIndicator color={cp.bg} />
+                ) : (
+                  <>
+                    <Feather name="unlock" size={20} color={cp.bg} />
+                    <Text
+                      style={[styles.subscribeButtonText, { color: cp.bg }]}
+                    >
+                      {ctaLabel}
+                    </Text>
+                  </>
+                )}
+              </Pressable>
+
+              {purchaseNote ? (
+                <Text
+                  style={[
+                    styles.purchaseNote,
+                    { fontSize: 14 * fontScale, color: cp.textSecondary },
+                  ]}
+                  testID="text-purchase-note"
+                >
+                  {purchaseNote}
+                </Text>
+              ) : null}
+
+              {isDay1Soft ? (
+                <Pressable
+                  style={styles.restoreButton}
+                  onPress={() => handleClose("not_now")}
+                  testID="button-day1-soft-not-now"
+                >
+                  <Text
+                    style={[
+                      styles.restoreButtonText,
+                      { fontSize: 15 * fontScale, color: cp.textSecondary },
+                    ]}
+                  >
+                    {DAY1_SOFT_DISMISS}
+                  </Text>
+                </Pressable>
+              ) : null}
+            </>
+          )}
 
           <Pressable
             style={styles.restoreButton}
@@ -681,6 +935,28 @@ const styles = StyleSheet.create({
   },
   priceNote: {
     marginTop: Spacing.sm,
+  },
+  priceLoading: {
+    alignItems: "center",
+    gap: Spacing.sm,
+    paddingVertical: Spacing.sm,
+  },
+  unavailableState: {
+    alignItems: "center",
+    gap: Spacing.sm,
+    paddingVertical: Spacing.sm,
+  },
+  unavailableTitle: {
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  unavailableBody: {
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  purchaseNote: {
+    textAlign: "center",
+    marginTop: Spacing.md,
   },
   ctaSection: {
     marginBottom: Spacing.xl,

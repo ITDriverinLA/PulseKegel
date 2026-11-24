@@ -1,7 +1,8 @@
 /**
  * P4a: one-time, dismissible soft paywall shown right after the Day 1
  * celebration. Copy is Manager-cleared (Oct 12) — do not edit without a
- * claims check.
+ * claims check. P9 (decision 1, Keg-cleared Nov 23): the body says
+ * "7-day challenge", not "free week", since the store's free week is separate.
  */
 
 export const DAY1_SOFT_HEADLINE = "Day 1, done. Here's the plan from here.";
@@ -19,7 +20,7 @@ export function buildDay1SoftBody(
     return DAY1_SOFT_BODY_REST;
   }
   const unit = days === 1 ? "day" : "days";
-  return `You've got ${days} ${unit} left in your free week. ${DAY1_SOFT_BODY_REST}`;
+  return `You've got ${days} ${unit} left in your 7-day challenge. ${DAY1_SOFT_BODY_REST}`;
 }
 
 export type Day1SoftPaywallDecision = "show" | "wait" | "drop" | "none";

@@ -55,6 +55,10 @@ import { hapticsManager } from "@/lib/hapticsManager";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import {
+  RESTORE_UNREACHABLE_BODY,
+  RESTORE_UNREACHABLE_TITLE,
+} from "@/constants/paywallCopy";
+import {
   useThemePreference,
   ThemeMode,
 } from "@/contexts/ThemePreferenceContext";
@@ -285,8 +289,13 @@ export default function SettingsScreen() {
   const handleRestorePurchases = async () => {
     setIsRestoring(true);
     try {
-      const success = await restorePurchases();
-      if (success) {
+      const outcome = await restorePurchases();
+      if (outcome === "error") {
+        // P9b.8: the store call failed; don't claim nothing was found.
+        Alert.alert(RESTORE_UNREACHABLE_TITLE, RESTORE_UNREACHABLE_BODY, [
+          { text: "OK" },
+        ]);
+      } else if (outcome === "restored") {
         Alert.alert(
           "Subscription Restored",
           "Your subscription has been restored successfully.",

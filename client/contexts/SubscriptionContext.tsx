@@ -11,15 +11,27 @@ import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Purchases, {
   CustomerInfo,
+  CustomerInfoUpdateListener,
   PurchasesPackage,
 } from "react-native-purchases";
 
 import { GENERATED_ENV } from "@/lib/env-config.generated";
+import type { OfferingsSurface, PaywallSource } from "@/lib/analytics";
 import {
-  PaywallSource,
-  trackPurchaseResult,
-  trackRestoreResult,
-} from "@/lib/analytics";
+  PREMIUM_ENTITLEMENT_ID,
+  hasPremium,
+  parseStoredStatus,
+} from "@/lib/premiumEntitlement";
+import {
+  createCustomerInfoApplier,
+  loadOfferingsWith,
+  runPurchase,
+  runRestore,
+  shouldRefreshOnForeground,
+  type OfferingsLoadResult,
+  type PurchaseOutcome,
+  type RestoreOutcome,
+} from "@/lib/purchaseFlow";
 
 const STORAGE_KEYS = {
   INSTALL_DATE: "pulsekegel_install_date",
@@ -30,7 +42,13 @@ const TRIAL_DURATION_DAYS = 7;
 
 const TEST_PAYWALL_MODE = false;
 
-export type PurchaseResult = "success" | "cancelled" | "failed" | "unavailable";
+// P9b.5: last subscription status seen, so status changes log once.
+const LAST_SUB_STATUS_KEY = "pulsekegel_last_subscription_status";
+
+export { PREMIUM_ENTITLEMENT_ID, hasPremium };
+
+export type PurchaseResult = PurchaseOutcome;
+export type { RestoreOutcome };
 
 interface SubscriptionContextType {
   isSubscribed: boolean;
@@ -43,8 +61,14 @@ interface SubscriptionContextType {
     pkg: PurchasesPackage,
     source?: PaywallSource,
   ) => Promise<PurchaseResult>;
-  restorePurchases: () => Promise<boolean>;
+  restorePurchases: () => Promise<RestoreOutcome>;
   checkSubscription: () => Promise<void>;
+  /** P9b.2: shared offerings loader (isConfigured gate + logging). */
+  loadOfferings: (
+    surface: OfferingsSurface,
+  ) => Promise<OfferingsLoadResult<PurchasesPackage>>;
+  /** P9b.5: refresh CustomerInfo on foreground (throttled to 60 s). */
+  refreshOnForeground: () => Promise<void>;
   hasAccess: boolean;
 }
 
@@ -56,8 +80,14 @@ const SubscriptionContext = createContext<SubscriptionContextType>({
   isLoading: true,
   packages: [],
   purchasePackage: async () => "unavailable",
-  restorePurchases: async () => false,
+  restorePurchases: async () => "error",
   checkSubscription: async () => {},
+  loadOfferings: async () => ({
+    ok: false,
+    reason: "not_configured",
+    errorCode: "not_configured",
+  }),
+  refreshOnForeground: async () => {},
   hasAccess: true,
 });
 
@@ -70,6 +100,20 @@ const REVENUECAT_API_KEY_ANDROID =
   GENERATED_ENV.REVENUECAT_ANDROID_KEY ||
   "";
 
+function platformApiKey(): string {
+  return Platform.OS === "ios"
+    ? REVENUECAT_API_KEY_IOS
+    : REVENUECAT_API_KEY_ANDROID;
+}
+
+async function isRevenueCatConfigured(): Promise<boolean> {
+  try {
+    return await Purchases.isConfigured();
+  } catch {
+    return false;
+  }
+}
+
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isTrialActive, setIsTrialActive] = useState(true);
@@ -78,7 +122,9 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [daysSinceInstall, setDaysSinceInstall] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
-  const configuredRef = useRef(false);
+  const listenerRef = useRef<CustomerInfoUpdateListener | null>(null);
+  const subscribedRef = useRef(false);
+  const lastForegroundRefreshRef = useRef<number | null>(null);
 
   const checkTrialStatus = useCallback(async () => {
     try {
@@ -119,157 +165,158 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const purchasePackage = useCallback(
-    async (
-      pkg: PurchasesPackage,
-      source?: PaywallSource,
-    ): Promise<PurchaseResult> => {
-      if (!configuredRef.current) {
-        console.log(
-          "[PulseKegel] Purchase attempted but RevenueCat not configured",
-        );
-        trackPurchaseResult({
-          result: "unavailable",
-          packageIdentifier: pkg.identifier,
-          productIdentifier: pkg.product.identifier,
-          source,
-        });
-        return "unavailable";
-      }
-
-      try {
-        trackPurchaseResult({
-          result: "started",
-          packageIdentifier: pkg.identifier,
-          productIdentifier: pkg.product.identifier,
-          source,
-        });
-        console.log(
-          "[PulseKegel] Attempting purchase for package:",
-          pkg.identifier,
-        );
-        const { customerInfo } = await Purchases.purchasePackage(pkg);
-        const hasActiveEntitlement =
-          Object.keys(customerInfo.entitlements.active).length > 0;
-        console.log(
-          "[PulseKegel] Purchase result - active entitlements:",
-          Object.keys(customerInfo.entitlements.active),
-        );
-        setIsSubscribed(hasActiveEntitlement);
-        if (hasActiveEntitlement) {
-          trackPurchaseResult({
-            result: "completed",
-            packageIdentifier: pkg.identifier,
-            productIdentifier: pkg.product.identifier,
-            source,
-          });
-          return "success";
-        }
-        trackPurchaseResult({
-          result: "failed",
-          packageIdentifier: pkg.identifier,
-          productIdentifier: pkg.product.identifier,
-          source,
-        });
-        return "failed";
-      } catch (error: any) {
-        if (!error.userCancelled) {
-          console.error(
-            "[PulseKegel] Purchase failed:",
-            error.message || error,
-          );
-          trackPurchaseResult({
-            result: "failed",
-            packageIdentifier: pkg.identifier,
-            productIdentifier: pkg.product.identifier,
-            source,
-            errorCode: typeof error.code === "string" ? error.code : undefined,
-          });
-        } else {
-          console.log("[PulseKegel] Purchase cancelled by user");
-          trackPurchaseResult({
-            result: "cancelled",
-            packageIdentifier: pkg.identifier,
-            productIdentifier: pkg.product.identifier,
-            source,
-          });
-        }
-        return error.userCancelled ? "cancelled" : "failed";
-      }
-    },
+  // One place that applies CustomerInfo: named entitlement + safety net
+  // (P9b.7), sandbox flag for the purchase context, and the deduped
+  // subscription_status_changed log (P9b.5).
+  const applierRef = useRef<ReturnType<
+    typeof createCustomerInfoApplier
+  > | null>(null);
+  if (!applierRef.current) {
+    applierRef.current = createCustomerInfoApplier({
+      setSubscribed: (subscribed) => {
+        const was = subscribedRef.current;
+        subscribedRef.current = subscribed;
+        setIsSubscribed(subscribed);
+        // Lost the subscription (expiry/refund): re-read the local challenge
+        // state so access doesn't ride on a stale isTrialActive.
+        if (was && !subscribed) void checkTrialStatus();
+      },
+      loadStoredStatus: async () =>
+        parseStoredStatus(await AsyncStorage.getItem(LAST_SUB_STATUS_KEY)),
+      saveStatus: async (status) => {
+        await AsyncStorage.setItem(LAST_SUB_STATUS_KEY, status);
+      },
+    });
+  }
+  const applyCustomerInfo = useCallback(
+    (info: CustomerInfo) => applierRef.current!.apply(info),
     [],
   );
 
-  const restorePurchases = useCallback(async (): Promise<boolean> => {
-    if (!configuredRef.current) {
-      console.log(
-        "[PulseKegel] Restore attempted but RevenueCat not configured",
-      );
-      return false;
-    }
-
+  // P9b.5: one listener, registered after configure, removed on unmount.
+  const registerListener = useCallback(() => {
+    if (listenerRef.current) return;
+    const listener: CustomerInfoUpdateListener = (info) => {
+      applyCustomerInfo(info);
+    };
     try {
-      console.log("[PulseKegel] Restoring purchases...");
-      trackRestoreResult({ result: "started" });
-      const customerInfo = await Purchases.restorePurchases();
-      const hasActiveEntitlement =
-        Object.keys(customerInfo.entitlements.active).length > 0;
-      console.log(
-        "[PulseKegel] Restore result - active entitlements:",
-        Object.keys(customerInfo.entitlements.active),
-      );
-      setIsSubscribed(hasActiveEntitlement);
-      trackRestoreResult({
-        result: hasActiveEntitlement ? "completed" : "not_found",
-      });
-      return hasActiveEntitlement;
+      Purchases.addCustomerInfoUpdateListener(listener);
+      listenerRef.current = listener;
     } catch (error) {
-      console.error("[PulseKegel] Restore failed:", error);
-      const code = (error as { code?: unknown } | null)?.code;
-      trackRestoreResult({
-        result: "failed",
-        errorCode:
-          typeof code === "string" || typeof code === "number"
-            ? String(code).slice(0, 100)
-            : "unknown",
-      });
+      console.warn("[PulseKegel] CustomerInfo listener failed:", error);
+    }
+  }, [applyCustomerInfo]);
+
+  useEffect(() => {
+    return () => {
+      if (listenerRef.current) {
+        try {
+          Purchases.removeCustomerInfoUpdateListener(listenerRef.current);
+        } catch {
+          // unmounting anyway
+        }
+        listenerRef.current = null;
+      }
+    };
+  }, []);
+
+  /** Configure RevenueCat with the platform key; true on success. */
+  const configureRevenueCat = useCallback(async (): Promise<boolean> => {
+    const apiKey = platformApiKey();
+    if (!apiKey) return false;
+    try {
+      Purchases.configure({ apiKey });
+      registerListener();
+      return true;
+    } catch (error) {
+      console.error("[PulseKegel] Failed to configure RevenueCat:", error);
       return false;
     }
-  }, []);
+  }, [registerListener]);
+
+  const loadOfferings = useCallback(
+    (surface: OfferingsSurface) =>
+      loadOfferingsWith<PurchasesPackage>(surface, {
+        isConfigured: isRevenueCatConfigured,
+        configure: configureRevenueCat,
+        getOfferings: () => Purchases.getOfferings(),
+      }),
+    [configureRevenueCat],
+  );
+
+  const purchasePackage = useCallback(
+    (pkg: PurchasesPackage, source?: PaywallSource): Promise<PurchaseResult> =>
+      runPurchase(pkg, source, {
+        isConfigured: isRevenueCatConfigured,
+        purchasePackage: (p) => Purchases.purchasePackage(p),
+        refreshCustomerInfo: async () => {
+          await Purchases.invalidateCustomerInfoCache();
+          return Purchases.getCustomerInfo();
+        },
+        applyCustomerInfo: (info) => applyCustomerInfo(info as CustomerInfo),
+      }),
+    [applyCustomerInfo],
+  );
+
+  const restorePurchases = useCallback(
+    (): Promise<RestoreOutcome> =>
+      runRestore({
+        isConfigured: isRevenueCatConfigured,
+        configure: configureRevenueCat,
+        restorePurchases: () => Purchases.restorePurchases(),
+        applyCustomerInfo: (info) => applyCustomerInfo(info as CustomerInfo),
+      }),
+    [applyCustomerInfo, configureRevenueCat],
+  );
 
   const checkSubscription = useCallback(async () => {
     setIsLoading(true);
 
     let subscribed = false;
-    if (configuredRef.current) {
+    if (await isRevenueCatConfigured()) {
       try {
         const customerInfo: CustomerInfo = await Purchases.getCustomerInfo();
-        subscribed = Object.keys(customerInfo.entitlements.active).length > 0;
-        console.log(
-          "[PulseKegel] Subscription check - active entitlements:",
-          Object.keys(customerInfo.entitlements.active),
-        );
+        subscribed = applyCustomerInfo(customerInfo).active;
       } catch (error) {
         console.error("[PulseKegel] Failed to check subscription:", error);
+        subscribedRef.current = false;
+        setIsSubscribed(false);
       }
+    } else {
+      subscribedRef.current = false;
+      setIsSubscribed(false);
     }
-
-    setIsSubscribed(subscribed);
 
     if (!subscribed) {
       await checkTrialStatus();
     }
 
     setIsLoading(false);
-  }, [checkTrialStatus]);
+  }, [applyCustomerInfo, checkTrialStatus]);
+
+  const refreshOnForeground = useCallback(async () => {
+    const now = Date.now();
+    if (!shouldRefreshOnForeground(lastForegroundRefreshRef.current, now)) {
+      return;
+    }
+    if (!(await isRevenueCatConfigured())) return;
+    lastForegroundRefreshRef.current = now;
+    try {
+      await Purchases.invalidateCustomerInfoCache();
+      const info = await Purchases.getCustomerInfo();
+      applyCustomerInfo(info);
+    } catch (error) {
+      console.warn(
+        "[PulseKegel] Foreground CustomerInfo refresh failed:",
+        error,
+      );
+    }
+  }, [applyCustomerInfo]);
 
   useEffect(() => {
     const init = async () => {
       try {
-        const apiKey =
-          Platform.OS === "ios"
-            ? REVENUECAT_API_KEY_IOS
-            : REVENUECAT_API_KEY_ANDROID;
+        const apiKey = platformApiKey();
 
         if (!apiKey) {
           await checkTrialStatus();
@@ -287,11 +334,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           );
         }
 
-        try {
-          await Purchases.configure({ apiKey });
-          configuredRef.current = true;
-        } catch (error: any) {
-          console.error("[PulseKegel] Failed to configure RevenueCat:", error);
+        if (!(await configureRevenueCat())) {
           await checkTrialStatus();
           setIsLoading(false);
           return;
@@ -321,8 +364,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         let subscribed = false;
         try {
           const customerInfo: CustomerInfo = await Purchases.getCustomerInfo();
-          subscribed = Object.keys(customerInfo.entitlements.active).length > 0;
-          setIsSubscribed(subscribed);
+          subscribed = applyCustomerInfo(customerInfo).active;
         } catch (error) {
           console.error("[PulseKegel] Failed to get customer info:", error);
         }
@@ -347,23 +389,10 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           }
         }
 
-        try {
-          const offerings = await Purchases.getOfferings();
-
-          if (offerings.current?.availablePackages) {
-            setPackages(offerings.current.availablePackages);
-          } else {
-            const allKeys = Object.keys(offerings.all);
-            if (allKeys.length > 0) {
-              const firstOffering = Object.values(offerings.all)[0];
-              if (firstOffering?.availablePackages?.length > 0) {
-                setPackages(firstOffering.availablePackages);
-              }
-            }
-          }
-        } catch (error: any) {
-          console.error("[PulseKegel] Failed to load offerings:", error);
-        }
+        // P9b.2: shared loader; failures are logged as offerings_failed
+        // (replaces the silent console.error). The paywall loads again.
+        const result = await loadOfferings("launch");
+        if (result.ok) setPackages(result.packages);
 
         setIsLoading(false);
       } catch (outerError: any) {
@@ -377,7 +406,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     };
 
     init();
-  }, [checkTrialStatus]);
+  }, [applyCustomerInfo, checkTrialStatus, configureRevenueCat, loadOfferings]);
 
   const hasAccess = isSubscribed || isTrialActive;
 
@@ -393,6 +422,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         purchasePackage,
         restorePurchases,
         checkSubscription,
+        loadOfferings,
+        refreshOnForeground,
         hasAccess,
       }}
     >
