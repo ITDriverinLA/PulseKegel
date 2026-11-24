@@ -1098,6 +1098,7 @@ export const privacyPolicyHtml = `<!doctype html>
       <ul>
         <li><a href="https://pulsekegel.com/">Home</a></li>
         <li><a href="https://pulsekegel.com/blog/">Blog</a></li>
+        <li><a href="https://pulsekegel.com/about">About</a></li>
         <li><a href="https://pulsekegel.com/privacy" aria-current="page">Privacy</a></li>
       </ul>
     </div>
@@ -1163,6 +1164,932 @@ export const privacyPolicyHtml = `<!doctype html>
 
 <script>
 (function(){var A='https://play.google.com/store/apps/details?id=com.pulsekegel.app&pcampaignid=web_share';if(!/android/i.test(navigator.userAgent))return;var e=document.getElementById('cta-privacy-nav');if(e)e.href=A;})();
+</script>
+</body>
+</html>
+`;
+
+export const aboutPageHtml = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>About — PulseKegel</title>
+<meta name="description" content="PulseKegel is an iOS and Android app that guides men and women through daily pelvic floor (Kegel) workouts. General fitness guidance, not medical advice." />
+<meta name="theme-color" content="#0B0E26" />
+
+<!-- Open Graph -->
+<meta property="og:title" content="About — PulseKegel" />
+<meta property="og:description" content="PulseKegel is an iOS and Android app that guides men and women through daily pelvic floor (Kegel) workouts. General fitness guidance, not medical advice." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://pulsekegel.com/about" />
+<link rel="canonical" href="https://pulsekegel.com/about" />
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<style>
+  /* =========================================================
+     PULSEKEGEL — ABOUT
+     Brand system shared with pk-premium-hero-concept-v2.html
+     and pk-blog-index.html
+     ========================================================= */
+  :root {
+    --navy-deep: #080A20;
+    --navy: #0B0E26;
+    --navy-soft: #15183A;
+    --teal: #36E7B3;
+    --teal-dim: #1E8A6B;
+    --white: #F6F7FB;
+    --gray: #A8ACC4;
+    --gray-dim: #6B6F88;
+    --violet: #8B5CF6;
+    --line: rgba(255, 255, 255, 0.08);
+    --line-strong: rgba(255, 255, 255, 0.14);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--navy-deep);
+    color: var(--white);
+    font-family: 'Poppins', system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  a { color: inherit; text-decoration: none; }
+
+  ::selection { background: var(--teal); color: var(--navy-deep); }
+
+  /* ---------- SHARED HUD BRACKETS ---------- */
+  .bracket {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border-color: var(--teal);
+    border-style: solid;
+    border-width: 0;
+    opacity: 0.65;
+    pointer-events: none;
+  }
+  .bracket.tl { top: 18px; left: 18px; border-top-width: 2px; border-left-width: 2px; }
+  .bracket.tr { top: 18px; right: 18px; border-top-width: 2px; border-right-width: 2px; }
+  .bracket.bl { bottom: 18px; left: 18px; border-bottom-width: 2px; border-left-width: 2px; }
+  .bracket.br { bottom: 18px; right: 18px; border-bottom-width: 2px; border-right-width: 2px; }
+
+  /* ---------- SIDE READOUTS (vertical rails) ---------- */
+  .rail-left, .rail-right {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%) rotate(-90deg);
+    transform-origin: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.25em;
+    color: var(--gray-dim);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .rail-left  { left: -40px; }
+  .rail-right { right: -64px; color: var(--teal-dim); }
+  .rail-right .live {
+    color: var(--teal);
+    animation: blink 1.6s steps(2, end) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0.25; } }
+
+  /* ---------- TOP NAV ---------- */
+  .site-nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    padding: 20px 44px;
+    background: rgba(8, 10, 32, 0.88);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .wordmark {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: 20px;
+    letter-spacing: -0.01em;
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .wordmark .dot {
+    width: 8px;
+    height: 8px;
+    background: var(--teal);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--teal);
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.45; transform: scale(0.85); }
+    50%      { opacity: 1;    transform: scale(1.1);  }
+  }
+  .menu {
+    display: flex;
+    gap: 28px;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gray);
+  }
+  .menu a {
+    padding-bottom: 2px;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .menu a:hover { color: var(--teal); border-bottom-color: var(--teal); }
+  .menu a[aria-current="page"] { color: var(--white); }
+
+  .btn-primary {
+    background: var(--teal);
+    color: var(--navy-deep);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 10px 18px;
+    border-radius: 3px;
+    transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(54, 231, 179, 0.25);
+  }
+  .btn-primary .arrow { transition: transform 0.2s; }
+  .btn-primary:hover .arrow { transform: translateX(3px); }
+
+  /* ---------- HERO ---------- */
+  .privacy-hero {
+    position: relative;
+    padding: 120px 44px 90px;
+    background:
+      radial-gradient(ellipse at 28% 60%, rgba(54, 231, 179, 0.10) 0%, transparent 50%),
+      linear-gradient(180deg, var(--navy) 0%, var(--navy-deep) 100%);
+    border-bottom: 1px solid var(--line);
+  }
+  .privacy-hero-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    position: relative;
+  }
+  .privacy-hero .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: var(--teal);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 36px;
+  }
+  .privacy-hero .eyebrow::before {
+    content: '';
+    width: 38px;
+    height: 1px;
+    background: var(--teal);
+    opacity: 0.6;
+  }
+  .privacy-hero h1 {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: clamp(44px, 6.5vw, 88px);
+    line-height: 0.98;
+    letter-spacing: -0.025em;
+    color: var(--white);
+    max-width: 920px;
+    margin-bottom: 28px;
+  }
+  .privacy-hero h1 .accent { color: var(--teal); }
+  .privacy-hero .subtitle {
+    font-size: clamp(17px, 1.6vw, 20px);
+    line-height: 1.55;
+    color: var(--gray);
+    max-width: 640px;
+    margin-bottom: 40px;
+  }
+  .privacy-hero .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 28px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--gray-dim);
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px dashed var(--line);
+  }
+  .privacy-hero .meta-row span .k { color: var(--teal); margin-right: 8px; }
+
+  /* ---------- TOC STRIP ---------- */
+  .toc-strip {
+    position: relative;
+    padding: 32px 44px;
+    background: var(--navy);
+    border-bottom: 1px solid var(--line);
+  }
+  .toc-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 20px 26px;
+  }
+  .toc-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gray-dim);
+  }
+  .toc-inner a {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gray);
+    padding: 6px 0;
+    border-bottom: 1px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .toc-inner a:hover {
+    color: var(--teal);
+    border-bottom-color: var(--teal);
+  }
+
+  /* ---------- SHARED SECTION SHELL ---------- */
+  .privacy-section {
+    position: relative;
+    padding: 90px 44px 70px;
+    border-bottom: 1px solid var(--line);
+  }
+  .privacy-section:nth-of-type(even) {
+    background:
+      radial-gradient(ellipse at 78% 30%, rgba(54, 231, 179, 0.04) 0%, transparent 55%),
+      var(--navy-deep);
+  }
+  .section-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .section-divider {
+    border-top: 1px dashed var(--line);
+    padding-top: 14px;
+    display: flex;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    color: var(--gray-dim);
+    text-transform: uppercase;
+    margin-bottom: 40px;
+  }
+  .section-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-bottom: 40px;
+  }
+  .section-head h2 {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: clamp(30px, 3.6vw, 48px);
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    color: var(--white);
+    max-width: 780px;
+  }
+  .section-head h2 .accent { color: var(--teal); }
+  .section-head .head-note {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gray);
+    max-width: 280px;
+    text-align: right;
+  }
+  .section-head .head-note .k { color: var(--teal); }
+
+  /* ---------- BODY COPY ---------- */
+  .body-copy {
+    font-size: 17px;
+    line-height: 1.7;
+    color: var(--gray);
+    max-width: 760px;
+  }
+  .body-copy + .body-copy { margin-top: 18px; }
+  .body-copy strong { color: var(--white); font-weight: 600; }
+  .body-copy a {
+    color: var(--teal);
+    border-bottom: 1px solid rgba(54, 231, 179, 0.3);
+    transition: border-color 0.2s;
+  }
+  .body-copy a:hover { border-bottom-color: var(--teal); }
+
+  /* ---------- DATA LIST ---------- */
+  .data-list {
+    list-style: none;
+    margin-top: 28px;
+    max-width: 800px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .data-list li {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 24px;
+    padding: 18px 0;
+    border-bottom: 1px dashed var(--line);
+  }
+  .data-list li:last-child { border-bottom: none; }
+  .data-list .k {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--teal);
+    padding-top: 3px;
+  }
+  .data-list .v {
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--white);
+  }
+  .data-list .v .note {
+    display: block;
+    color: var(--gray);
+    font-size: 14px;
+    margin-top: 4px;
+  }
+
+  /* ---------- BULLETS ---------- */
+  .use-list {
+    list-style: none;
+    margin-top: 22px;
+    max-width: 760px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .use-list li {
+    display: flex;
+    gap: 16px;
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--white);
+  }
+  .use-list li::before {
+    content: '●';
+    color: var(--teal);
+    font-size: 10px;
+    line-height: 1.7;
+    flex-shrink: 0;
+  }
+
+  /* ---------- RIGHTS GRID ---------- */
+  .rights-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-top: 12px;
+  }
+  .right-card {
+    position: relative;
+    padding: 28px 26px;
+    background: var(--navy);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .right-card:hover {
+    border-color: var(--teal);
+    transform: translateY(-2px);
+  }
+  .right-card .num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    color: var(--teal);
+    margin-bottom: 14px;
+  }
+  .right-card h3 {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    line-height: 1.2;
+    color: var(--white);
+    margin-bottom: 10px;
+  }
+  .right-card p {
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--gray);
+  }
+
+  /* ---------- CALLOUT ---------- */
+  .callout {
+    margin-top: 32px;
+    padding: 28px 28px;
+    background: linear-gradient(90deg, rgba(54, 231, 179, 0.06) 0%, rgba(54, 231, 179, 0) 100%);
+    border-left: 2px solid var(--teal);
+    border-radius: 0 4px 4px 0;
+    max-width: 800px;
+  }
+  .callout .k {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin-bottom: 10px;
+    display: block;
+  }
+  .callout p {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--white);
+  }
+
+  /* ---------- CONTACT BLOCK ---------- */
+  .contact-block {
+    position: relative;
+    padding: 110px 44px 120px;
+    background:
+      radial-gradient(ellipse at 50% 50%, rgba(54, 231, 179, 0.08) 0%, transparent 55%),
+      var(--navy);
+    border-bottom: 1px solid var(--line);
+    text-align: center;
+  }
+  .contact-block .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin-bottom: 26px;
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .contact-block .eyebrow::before,
+  .contact-block .eyebrow::after {
+    content: '';
+    width: 28px;
+    height: 1px;
+    background: var(--teal);
+    opacity: 0.6;
+  }
+  .contact-block h2 {
+    font-family: 'General Sans', 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: clamp(34px, 4.4vw, 56px);
+    line-height: 1.04;
+    letter-spacing: -0.02em;
+    color: var(--white);
+    max-width: 780px;
+    margin: 0 auto 20px;
+  }
+  .contact-block h2 .accent { color: var(--teal); }
+  .contact-block p {
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--gray);
+    max-width: 560px;
+    margin: 0 auto 36px;
+  }
+  .contact-email {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 28px;
+    background: var(--navy-deep);
+    border: 1px solid var(--line-strong);
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--white);
+    letter-spacing: 0.04em;
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  }
+  .contact-email:hover {
+    border-color: var(--teal);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(54, 231, 179, 0.2);
+  }
+  .contact-email .k {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--teal);
+  }
+  .contact-email .sep {
+    width: 1px;
+    height: 18px;
+    background: var(--line-strong);
+  }
+
+  /* ---------- FOOTER ---------- */
+  .page-footer {
+    position: relative;
+    padding: 70px 44px 32px;
+    background: var(--navy-deep);
+  }
+  .page-footer::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 48px;
+    height: 2px;
+    background: var(--teal);
+    box-shadow: 0 0 12px rgba(54, 231, 179, 0.6);
+  }
+  .footer-main {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr 1fr;
+    gap: 56px;
+    padding-bottom: 48px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .footer-col h4 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--gray-dim);
+    margin-bottom: 18px;
+  }
+  .footer-col .wordmark { margin-bottom: 14px; }
+  .footer-col p.tag {
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--gray);
+    max-width: 280px;
+  }
+  .footer-col ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .footer-col li a {
+    color: var(--gray);
+    font-size: 14px;
+    transition: color 0.2s;
+  }
+  .footer-col li a:hover { color: var(--teal); }
+  .footer-col li a[aria-current="page"] { color: var(--white); }
+  .footer-col .social-row {
+    display: flex;
+    gap: 14px;
+  }
+  .footer-col .social-row a {
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gray);
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .footer-col .social-row a:hover {
+    color: var(--teal);
+    border-color: var(--teal);
+  }
+  .footer-col .social-row svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+  }
+  .footer-bottom {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding-top: 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    color: var(--gray-dim);
+    text-transform: uppercase;
+  }
+  .footer-bottom .left span { color: var(--teal); }
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width: 1100px) {
+    .rights-grid { grid-template-columns: repeat(2, 1fr); }
+    .rail-left, .rail-right { display: none; }
+  }
+  @media (max-width: 900px) {
+    .site-nav { padding: 16px 32px; }
+    .privacy-hero { padding: 90px 32px 70px; }
+    .toc-strip { padding: 28px 32px; }
+    .privacy-section { padding: 70px 32px 56px; }
+    .contact-block { padding: 90px 32px; }
+    .data-list li { grid-template-columns: 1fr; gap: 6px; }
+    .footer-main { grid-template-columns: 1fr 1fr; gap: 40px; }
+    .footer-main .brand-col { grid-column: 1 / -1; }
+    .page-footer { padding: 60px 32px 28px; }
+  }
+  @media (max-width: 600px) {
+    .menu .nav-link { display: none; }
+    .menu { gap: 14px; }
+    .site-nav { padding: 14px 20px; }
+    .privacy-hero { padding: 80px 20px 60px; }
+    .toc-strip { padding: 24px 20px; }
+    .privacy-section { padding: 60px 20px 48px; }
+    .rights-grid { grid-template-columns: 1fr; }
+    .contact-block { padding: 80px 20px; }
+    .contact-block .eyebrow::before,
+    .contact-block .eyebrow::after { width: 22px; }
+    .contact-email {
+      flex-wrap: wrap;
+      justify-content: center;
+      font-size: 14px;
+    }
+    .section-head { flex-direction: column; align-items: flex-start; }
+    .section-head .head-note { text-align: left; }
+    .page-footer { padding: 48px 20px 24px; }
+    .footer-main {
+      grid-template-columns: 1fr;
+      gap: 32px;
+      padding-bottom: 32px;
+    }
+    .footer-bottom {
+      flex-direction: column;
+      align-items: flex-start;
+      font-size: 9px;
+    }
+  }
+
+  /* ---------- SCROLL REVEALS ---------- */
+  @keyframes reveal-up {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .reveal {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  .reveal.in-view {
+    opacity: 1;
+    transform: translateY(0);
+    animation: reveal-up 0.6s cubic-bezier(0.22, 0.7, 0.2, 1) backwards;
+  }
+  .reveal-stagger > * {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  .reveal-stagger.in-view > * {
+    opacity: 1;
+    transform: translateY(0);
+    animation: reveal-up 0.55s ease-out backwards;
+  }
+  .reveal-stagger.in-view > *:nth-child(1) { animation-delay:  40ms; }
+  .reveal-stagger.in-view > *:nth-child(2) { animation-delay: 110ms; }
+  .reveal-stagger.in-view > *:nth-child(3) { animation-delay: 180ms; }
+  .reveal-stagger.in-view > *:nth-child(4) { animation-delay: 250ms; }
+  .reveal-stagger.in-view > *:nth-child(5) { animation-delay: 320ms; }
+  .reveal-stagger.in-view > *:nth-child(6) { animation-delay: 390ms; }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .reveal, .reveal-stagger > * {
+      opacity: 1 !important;
+      transform: none !important;
+      animation: none !important;
+    }
+  }
+</style>
+  <!-- Privacy-friendly analytics by Plausible -->
+  <script async src="https://plausible.io/js/pa-R6DrrA_T3Ucr4LAudvptX.js"></script>
+  <script>
+    window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+    plausible.init()
+  </script>
+</head>
+
+<body>
+
+<!-- =========================================================
+     TOP NAV
+     ========================================================= -->
+<header class="site-nav">
+  <div class="nav-inner">
+    <a class="wordmark" href="https://pulsekegel.com/" aria-label="PulseKegel home">
+      <span class="dot" aria-hidden="true"></span>
+      PulseKegel
+    </a>
+    <nav class="menu" aria-label="Primary">
+      <a class="nav-link" href="https://pulsekegel.com/">Home</a>
+      <a class="nav-link" href="https://pulsekegel.com/blog/">Blog</a>
+      <a id="cta-about-nav" class="btn-primary" href="https://apps.apple.com/us/app/pulsekegel/id6758308054" target="_blank" rel="noopener">
+        Start Training
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+    </nav>
+  </div>
+</header>
+
+<!-- =========================================================
+     HERO
+     ========================================================= -->
+<section class="privacy-hero" aria-labelledby="about-title">
+  <span class="bracket tl" aria-hidden="true"></span>
+  <span class="bracket tr" aria-hidden="true"></span>
+  <span class="bracket bl" aria-hidden="true"></span>
+  <span class="bracket br" aria-hidden="true"></span>
+
+  <span class="rail-left" aria-hidden="true">ABOUT ▸ PULSEKEGEL</span>
+  <span class="rail-right" aria-hidden="true">SITE <span class="live">●</span> LIVE · v1.0</span>
+
+  <div class="privacy-hero-inner">
+    <div class="eyebrow reveal">About</div>
+    <h1 id="about-title" class="reveal">
+      About<br />
+      <span class="accent">PulseKegel</span>
+    </h1>
+    <p class="subtitle reveal">
+      Private, evidence-based pelvic floor training. Built for the one muscle nobody talks about.
+    </p>
+  </div>
+</section>
+
+<!-- =========================================================
+     ABOUT
+     ========================================================= -->
+<section class="privacy-section" aria-labelledby="about-body-title">
+  <div class="section-inner">
+    <div class="section-divider reveal">
+      <span>01 · The app</span>
+      <span>General fitness guidance</span>
+    </div>
+
+    <div class="section-head">
+      <h2 id="about-body-title" class="reveal">
+        General fitness guidance,<br />
+        <span class="accent">not medical advice.</span>
+      </h2>
+    </div>
+
+    <p class="body-copy reveal">
+      PulseKegel is an iOS and Android app that guides men and women through daily pelvic floor (Kegel) workouts using a 12-week progressive program, real-time visual cues, and haptic feedback. Workouts take 5–10 minutes a day with no equipment.
+    </p>
+
+    <p class="body-copy reveal">
+      PulseKegel provides general fitness guidance, not medical advice.
+    </p>
+
+    <p class="body-copy reveal">
+      Founded by <a href="https://ashley-mason.com/">Ashley Mason</a>.
+    </p>
+
+    <p class="body-copy reveal">
+      Get the app on the <a href="https://apps.apple.com/us/app/pulsekegel/id6758308054" target="_blank" rel="noopener">App Store</a> or <a href="https://play.google.com/store/apps/details?id=com.pulsekegel.app&pcampaignid=web_share" target="_blank" rel="noopener">Google Play</a>. Read the <a href="https://pulsekegel.com/blog/">blog</a> or the <a href="https://pulsekegel.com/privacy">privacy policy</a>.
+    </p>
+  </div>
+</section>
+
+<!-- =========================================================
+     FOOTER
+     ========================================================= -->
+<footer class="page-footer">
+  <div class="footer-main">
+    <div class="footer-col brand-col">
+      <a class="wordmark" href="https://pulsekegel.com/" aria-label="PulseKegel home">
+        <span class="dot" aria-hidden="true"></span>
+        PulseKegel
+      </a>
+      <p class="tag">Private, evidence-based pelvic floor training. Built for the one muscle nobody talks about.</p>
+    </div>
+
+    <div class="footer-col">
+      <h4>Navigate</h4>
+      <ul>
+        <li><a href="https://pulsekegel.com/">Home</a></li>
+        <li><a href="https://pulsekegel.com/blog/">Blog</a></li>
+        <li><a href="https://pulsekegel.com/about" aria-current="page">About</a></li>
+        <li><a href="https://pulsekegel.com/privacy">Privacy</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4>Get the App</h4>
+      <ul>
+        <li><a href="https://apps.apple.com/us/app/pulsekegel/id6758308054" target="_blank" rel="noopener">App Store</a></li>
+        <li><a href="https://play.google.com/store/apps/details?id=com.pulsekegel.app&pcampaignid=web_share" target="_blank" rel="noopener">Google Play</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4>Follow</h4>
+      <div class="social-row">
+        <a href="https://www.facebook.com/profile.php?id=61570994844642" target="_blank" rel="noopener" aria-label="Facebook">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12A10 10 0 1 0 10.5 21.9v-7H8v-3h2.5V9.3c0-2.5 1.5-3.9 3.7-3.9 1.1 0 2.2.2 2.2.2v2.4h-1.2c-1.2 0-1.6.8-1.6 1.6V12h2.7l-.4 3h-2.3v7A10 10 0 0 0 22 12z"/></svg>
+        </a>
+        <a href="https://www.instagram.com/pulsekegel/" target="_blank" rel="noopener" aria-label="Instagram">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.2c3.2 0 3.6 0 4.8.1 1.2 0 1.8.3 2.3.4.6.2 1 .5 1.4.9.4.4.7.9.9 1.4.2.5.4 1.1.4 2.3.1 1.3.1 1.7.1 4.8s0 3.6-.1 4.8c0 1.2-.3 1.8-.4 2.3-.2.6-.5 1-.9 1.4-.4.4-.9.7-1.4.9-.5.2-1.1.4-2.3.4-1.3.1-1.7.1-4.8.1s-3.6 0-4.8-.1c-1.2 0-1.8-.3-2.3-.4-.6-.2-1-.5-1.4-.9-.4-.4-.7-.9-.9-1.4-.2-.5-.4-1.1-.4-2.3C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.8c0-1.2.3-1.8.4-2.3.2-.6.5-1 .9-1.4.4-.4.9-.7 1.4-.9.5-.2 1.1-.4 2.3-.4 1.3-.1 1.7-.1 4.8-.1m0-2.2C8.7 0 8.3 0 7 .1c-1.3.1-2.2.3-3 .6-.8.3-1.6.8-2.3 1.5C1 2.9.6 3.7.3 4.5c-.3.8-.5 1.7-.6 3C-.4 8.7-.4 9.1-.4 12.4s0 3.7.1 5c.1 1.3.3 2.2.6 3 .3.8.8 1.6 1.5 2.3.7.7 1.5 1.1 2.3 1.5.8.3 1.7.5 3 .6 1.3.1 1.7.1 5 .1s3.7 0 5-.1c1.3-.1 2.2-.3 3-.6.8-.3 1.6-.8 2.3-1.5.7-.7 1.1-1.5 1.5-2.3.3-.8.5-1.7.6-3 .1-1.3.1-1.7.1-5s0-3.7-.1-5c-.1-1.3-.3-2.2-.6-3-.3-.8-.8-1.6-1.5-2.3C21.1 1 20.3.6 19.5.3c-.8-.3-1.7-.5-3-.6C15.2 0 14.8 0 11.6 0h.4zm0 5.8a6.2 6.2 0 1 0 0 12.4 6.2 6.2 0 0 0 0-12.4zm0 10.2a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.5-11.9a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/></svg>
+        </a>
+        <a href="https://www.threads.com/@pulsekegel" target="_blank" rel="noopener" aria-label="Threads">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.6 11.2c-.1 0-.1 0 0 0-.1-2.4-1.5-3.9-3.6-4-.1 0-.2 0-.3 0-1.4 0-2.5.6-3.2 1.6l1.2.8c.5-.7 1.2-1 2-1h.2c.7 0 1.3.2 1.7.6.3.3.5.7.6 1.2-.7-.1-1.5-.2-2.3-.1-2.3.1-3.8 1.4-3.7 3.3 0 1 .5 1.9 1.4 2.4.7.4 1.6.7 2.7.6 1.4-.1 2.4-.6 3.1-1.6.5-.7.8-1.7.9-2.9.6.4 1.1 1 1.3 1.7.5 1.2.5 3.1-1.1 4.7-1.4 1.4-3 2-5.5 2.1-2.7-.1-4.8-1-6.2-2.7-1.3-1.6-2-3.9-2-6.8 0-2.9.7-5.2 2-6.8C6.9 2.5 9 1.6 11.7 1.5c2.7.1 4.9 1 6.3 2.7.7.8 1.2 1.8 1.6 3l1.4-.4c-.4-1.4-1.1-2.6-1.9-3.6C17.3.8 14.7-.3 11.6-.3 8.5-.3 6 .8 4.2 2.9 2.6 4.8 1.8 7.6 1.8 11v.1C1.8 14.5 2.6 17.2 4.2 19.1c1.7 2.1 4.3 3.1 7.4 3.2h.1c2.8 0 4.7-.7 6.3-2.4 2.1-2.1 2.1-4.8 1.3-6.6-.5-1.1-1.3-1.9-2.2-2.4 0 .1.3.1.5.3z"/></svg>
+        </a>
+        <a href="https://www.tiktok.com/@pulsekegel" target="_blank" rel="noopener" aria-label="TikTok">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.3 6.5a5.9 5.9 0 0 1-3.5-1.1 5.9 5.9 0 0 1-2.4-4.3h-3.6v14a3 3 0 1 1-2.1-2.9V8.5A6.7 6.7 0 1 0 13.5 15V9.3a9.4 9.4 0 0 0 5.8 2z"/></svg>
+        </a>
+        <a href="https://www.youtube.com/@PulseKegel" target="_blank" rel="noopener" aria-label="YouTube">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23 7s-.3-2-1.2-2.8c-1.1-1.2-2.4-1.2-3-1.3C16.1 2.8 12 2.8 12 2.8s-4.1 0-6.8.2c-.6 0-1.9.1-3 1.3C1.3 5 1 7 1 7S.7 9.1.7 11.3v2c0 2.2.3 4.3.3 4.3s.3 2 1.2 2.8c1.1 1.2 2.6 1.1 3.3 1.2C7.2 21.8 12 21.8 12 21.8s4.1 0 6.8-.3c.6 0-1.9-.1 3-1.3.9-.8 1.2-2.8 1.2-2.8s.3-2.1.3-4.3v-2C23.3 9.1 23 7 23 7zm-13.4 8.6V8.4l8.1 3.6-8.1 3.6z"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <div class="left">
+      <span>●</span> © 2026 PulseKegel. All rights reserved. · Founded by <a href="https://ashley-mason.com/">Ashley Mason</a>
+    </div>
+    <div class="right">v1.0 · ABOUT</div>
+  </div>
+</footer>
+
+<script>
+  /* One-shot reveals on scroll — same IntersectionObserver pattern
+     used on the home page and blog index. */
+  (function setupReveals() {
+    const targets = document.querySelectorAll('.reveal, .reveal-stagger');
+    if (!('IntersectionObserver' in window) || !targets.length) {
+      targets.forEach(el => el.classList.add('in-view'));
+      return;
+    }
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in-view');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -5% 0px' });
+    targets.forEach(el => io.observe(el));
+  })();
+</script>
+
+<script>
+(function(){var A='https://play.google.com/store/apps/details?id=com.pulsekegel.app&pcampaignid=web_share';if(!/android/i.test(navigator.userAgent))return;var e=document.getElementById('cta-about-nav');if(e)e.href=A;})();
 </script>
 </body>
 </html>

@@ -5,7 +5,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import OpenAI from "openai";
-import { privacyPolicyHtml } from "./staticContent";
+import { aboutPageHtml, privacyPolicyHtml } from "./staticContent";
 import { db } from "./db";
 import { analyticsEvents } from "../shared/schema";
 import { sql, countDistinct, inArray, and, or, gte, lt } from "drizzle-orm";
@@ -598,6 +598,7 @@ ${blogLines}
 ## Links
 
 - Website: https://pulsekegel.com/
+- About: https://pulsekegel.com/about
 - Partner guide: https://pulsekegel.com/for-partners
 - Privacy policy: https://pulsekegel.com/privacy
 - Sitemap: https://pulsekegel.com/sitemap.xml
@@ -624,6 +625,12 @@ Sitemap: https://pulsekegel.com/sitemap.xml
     <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://pulsekegel.com/about</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
   </url>
   <url>
     <loc>https://pulsekegel.com/privacy</loc>
@@ -714,6 +721,11 @@ ${blogUrls}
       return res.sendFile(partnersPagePath);
     }
     res.status(404).send("Not found");
+  });
+
+  app.get(["/about", "/about/"], (_req, res) => {
+    res.setHeader("Content-Type", "text/html");
+    res.send(aboutPageHtml);
   });
 
   app.get("/privacy", (_req, res) => {
